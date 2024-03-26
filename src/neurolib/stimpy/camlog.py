@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import re
 from pathlib import Path
-from typing import Any, get_args, Final
+from typing import Any, get_args, Final, Literal
 
 import numpy as np
 import polars as pl
@@ -17,10 +17,14 @@ from neurolib.util.util_verbose import fprint
 from neurolib.util.utils import uglob
 
 __all__ = [
+    'CAMERA_VERSION',
+    #
     'AbstractCamlog',
     'LabCamlog',
     'PyCamlog'
 ]
+
+CAMERA_VERSION = Literal['labcam', 'pycam']
 
 
 class AbstractCamlog(metaclass=abc.ABCMeta):
@@ -78,7 +82,9 @@ class AbstractCamlog(metaclass=abc.ABCMeta):
         return self.frame_id[-1]
 
 
-# ==== #
+# ======= #
+# LabCams #
+# ======= #
 
 class LabCamlog(AbstractCamlog):
 
@@ -145,7 +151,9 @@ class LabCamlog(AbstractCamlog):
         )(self.frame_id)
 
 
-# ==== #
+# ====== #
+# PyCams #
+# ====== #
 
 class PyCamlog(AbstractCamlog):
     """Pycams log, 2023 AP dev"""

@@ -86,7 +86,6 @@ class RiglogData(Baselog):
                 from .stimpy_git import StimlogGit
                 self.__stimlog_cache = StimlogGit(self, self.stimlog_file, self._diode_offset)
             elif self.version == 'stimpy-bit':
-                from rscvp.util.stimlog import Stimlog
                 self.__stimlog_cache = Stimlog(self, self.stimlog_file, self._diode_offset)
             else:
                 raise ValueError(f'unknown version: {self.version}')
@@ -270,7 +269,7 @@ class Stimlog(StimlogBase):
     def session_trials(self) -> dict[Session, SessionInfo]:
         """get session dict"""
 
-        from rscvp.util.protocol import get_protocol_sessions
+        from neurolib.stimpy.protocol import get_protocol_sessions
         return {
             prot.name: prot
             for prot in get_protocol_sessions(self)

@@ -3,21 +3,23 @@ from __future__ import annotations
 import dataclasses
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import final
 
-from neurolib.stimpy.baselog import Baselog, LOG_SUFFIX
+import attrs
+import numpy as np
+import polars as pl
+from scipy.interpolate import interp1d
+
+from neurolib.stimpy.baselog import Baselog, LOG_SUFFIX, StimlogBase, AbstractStimTimeProfile
 from neurolib.stimpy.baseprot import AbstractStimProtocol
+from neurolib.stimpy.session import Session, SessionInfo
+from neurolib.stimpy.stimulus import StimPattern
 from neurolib.stimpy.util import try_casting_number, unfold_stimuli_condition
 from neurolib.util.util_type import PathLike
 from neurolib.util.util_verbose import fprint
 
-if TYPE_CHECKING:
-    from rscvp.util.stimlog_pyvstim import StimlogPyVStim
-
-import numpy as np
-import polars as pl
-
 __all__ = ['PyVlog',
+           'StimlogPyVStim',
            'PyVProtocol']
 
 
@@ -73,7 +75,6 @@ class PyVlog(Baselog):
     # ===== #
 
     def stimlog_data(self) -> 'StimlogPyVStim':
-        from rscvp.util.stimlog_pyvstim import StimlogPyVStim
         return StimlogPyVStim(self)
 
     def get_prot_file(self) -> PyVProtocol:
@@ -81,6 +82,171 @@ class PyVlog(Baselog):
             self.__prot_cache = PyVProtocol.load(self.stim_prot_file)
 
         return self.__prot_cache
+
+
+# ======= #
+# Stimlog #
+# ======= #
+
+@final
+class StimlogPyVStim(StimlogBase):
+    v_present_time: np.ndarray
+    """(T,) in ms"""
+    v_stim: np.ndarray
+    """(T,), stim type index. value from 1 to S"""
+    v_trial: np.ndarray
+    """(T,) number of trial. value from 1 to R. *last is 1, reset?"""
+    v_frame: np.ndarray
+    """(T,), value 0, 1, 2... TBD"""
+    v_blank: np.ndarray
+    """(T,). whether is background only. 0: stim display, 1: no stim"""
+    v_contrast: np.ndarray
+    """(T, ) background contrast, 0 to 1?"""
+    v_pos_x: np.ndarray
+    """(T, ) display pos x"""
+    v_pos_y: np.ndarray
+    """(T, ) display pos y"""
+    v_ap_x: np.ndarray
+    """(T, ) stim center x"""
+    v_ap_y: np.ndarray
+    """(T, ) stim center y"""
+    v_indicator_flag: np.ndarray
+    """(T,). photo-indicator, for stim-onset. 1: stim display, 0: no stim"""
+    v_duino_time: np.ndarray
+    """(T,). extrapolate duinotime from screen indicator. sync arduino time in sec"""
+
+    def __init__(self, riglog: 'PyVlog'):
+        super().__init__(riglog, file_path=None)
+        self._reset()
+
+    def _reset(self):
+        _attrs = (
+            'v_present_time',
+            'v_stim',
+            'v_trial',
+            'v_frame',
+            'v_blank',
+            'v_contrast',
+            'v_pos_x',
+            'v_pos_y',
+            'v_ap_x',
+            'v_ap_y',
+            'v_indicator_flag'
+        )
+        code = self.riglog_data.dat[:, 0] == 10
+        for i, it in enumerate(self.riglog_data.dat[code, 1:].T):
+            setattr(self, f'{_attrs[i]}', it)
+
+        self.v_duino_time = self._get_stim_duino_time(self.riglog_data.dat[code, -1].T)
+
+    def _get_stim_duino_time(self, indicator_flag: np.ndarray) -> np.ndarray:
+        """extrapolate duinotime from screen indicator. sync arduino time in (T,) sec"""
+        fliploc = np.where(
+            np.diff(np.hstack([0, indicator_flag, 0])) != 0
+        )[0]
+
+        return interp1d(
+            fliploc,
+            self.riglog_data.screen_event.time,
+            fill_value="extrapolate"
+        )(np.arange(len(indicator_flag)))
+
+    @property
+    def exp_start_time(self) -> float:
+        return self.v_duino_time[0]
+
+    @property
+    def stimulus_segment(self) -> np.ndarray:
+        return self.get_time_profile().get_time_interval()
+
+    def session_trials(self) -> dict[Session, SessionInfo]:
+        raise NotImplementedError('')
+
+    @property
+    def time_offset(self) -> float:
+        """directly used interpolation using diode signal already"""
+        return 0
+
+    def get_stim_pattern(self) -> StimPattern:
+        raise NotImplementedError('')
+
+    def exp_end_time(self) -> float:
+        return self.v_duino_time[-1]
+
+    # =========== #
+    # retinotopic #
+    # =========== #
+
+    @property
+    def stim_loc(self) -> np.ndarray:
+        return np.vstack([self.v_ap_x, self.v_ap_y]).T
+
+    @property
+    def avg_refresh_rate(self) -> float:
+        """in Hz"""
+        return 1 / (np.diff(self.v_duino_time).mean())
+
+    def plot_stim_animation(self):
+        from rscvp.util.util_draw import plot_scatter_animation
+        plot_scatter_animation(self.v_ap_x,
+                               self.v_ap_y,
+                               self.v_duino_time,
+                               step=int(self.avg_refresh_rate))  # TODO check refresh rate?
+
+    def get_time_profile(self) -> StimTimeProfile:
+        return StimTimeProfile(self)
+
+
+@final
+@attrs.frozen(repr=False, str=False)
+class StimTimeProfile(AbstractStimTimeProfile):
+    """aggregate per stimulus"""
+    stim: StimlogPyVStim
+
+    def __repr__(self):
+        ret = {
+            'n_trials': self.n_trials,
+            'foreach_trial_time': np.diff(self.get_time_interval(), axis=1),
+            'n_cycle:': self.stim.riglog_data.get_prot_file().get_loops_expr().n_cycles
+        }
+        return repr(ret)
+
+    __str__ = __repr__
+
+    @property
+    def unique_stimuli_set(self) -> pl.DataFrame:
+        df = pl.DataFrame({
+            'i_stims': self.stim.v_stim.astype(int),
+            'i_trials': self.stim.v_trial.astype(int)
+        }).unique(maintain_order=True)
+        return df
+
+    @property
+    def n_trials(self) -> int:
+        """nTR"""
+        return self.unique_stimuli_set.shape[0]
+
+    @property
+    def i_stim(self) -> np.ndarray:
+        """(TR, ) value: stim type index"""
+        return self.unique_stimuli_set.get_column('i_stims').to_numpy()
+
+    @property
+    def i_trial(self) -> np.ndarray:
+        """(TR, ). value: trial"""
+        return self.unique_stimuli_set.get_column('i_trials').to_numpy()
+
+    def get_time_interval(self) -> np.ndarray:
+        """(TR, 2) with (start, end)"""
+        ustims = self.stim.v_stim * (1 - self.stim.v_blank)
+        utrials = self.stim.v_trial * (1 - self.stim.v_blank)
+
+        ret = np.zeros([self.n_trials, 2])
+        for i, (st, tr) in enumerate(self.unique_stimuli_set.iter_rows()):
+            idx = np.where((ustims == st) & (utrials == tr))[0]
+            ret[i, :] = self.stim.v_duino_time[[idx[0], idx[-1]]]
+
+        return ret
 
 
 # ======== #
