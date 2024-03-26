@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Iterable
+from typing import NamedTuple, Iterable, TYPE_CHECKING
 
 import numpy as np
 from typing_extensions import TypeAlias, Self
 
-from neurolib.stimpy.baselog import R
+if TYPE_CHECKING:
+    from neurolib.stimpy.baselog import R
 
 __all__ = [
     'Degree',
@@ -35,7 +36,7 @@ class StimPattern(NamedTuple):
     """theoretical duration in prot file, not actual detected using diode"""
 
     @classmethod
-    def of(cls, rig: R) -> Self:
+    def of(cls, rig: 'R') -> Self:
         return rig.stimlog_data().get_stim_pattern()
 
     @property
