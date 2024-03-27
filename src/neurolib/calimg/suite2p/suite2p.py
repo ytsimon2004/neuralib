@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-from typing import Literal, NamedTuple, TypedDict
+from typing import Literal, TypedDict
 
 import attrs
 import numpy as np
-from scipy.ndimage import gaussian_filter, filters
 
 __all__ = [
     'SIGNAL_TYPE',
