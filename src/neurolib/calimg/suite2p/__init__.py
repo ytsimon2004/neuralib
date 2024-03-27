@@ -1,2 +1,2 @@
-from .suite2p import *
+from .core import *
 from .signal import *

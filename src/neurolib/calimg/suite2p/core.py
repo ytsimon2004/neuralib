@@ -7,14 +7,14 @@ from typing import Literal, TypedDict
 import attrs
 import numpy as np
 
+from neurolib.util.util_type import PathLike
+from neurolib.util.util_verbose import fprint
+
 __all__ = [
     'SIGNAL_TYPE',
     'CALCIUM_TYPE',
     'Suite2PResult',
 ]
-
-from neurolib.util.util_type import PathLike
-from neurolib.util.util_verbose import fprint
 
 SIGNAL_TYPE = Literal["df_f", "spks"]
 CALCIUM_TYPE = Literal['baseline', 'transient']
@@ -218,7 +218,7 @@ class Suite2PResult:
 
     @classmethod
     def launch_gui(cls, directory: PathLike) -> None:
-        from suite2p.gui import gui2p
+        from core.gui import gui2p
 
         if not isinstance(directory, Path):
             directory = Path(directory)
@@ -436,6 +436,3 @@ class Suite2PResult:
             ret[i] = np.array([x, y])
 
         return ret
-
-
-

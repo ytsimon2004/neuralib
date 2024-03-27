@@ -5,7 +5,7 @@ from typing import Literal, NamedTuple
 import numpy as np
 from scipy.ndimage import gaussian_filter, filters
 
-from neurolib.calimg.suite2p.suite2p import Suite2PResult, SIGNAL_TYPE
+from neurolib.calimg.suite2p.core import Suite2PResult, SIGNAL_TYPE
 
 __all__ = [
     'get_neuron_signal',

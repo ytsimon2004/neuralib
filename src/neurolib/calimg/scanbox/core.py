@@ -10,7 +10,7 @@ from typing import TypeVar, Generic, TypedDict
 import numpy as np
 from scipy.io import loadmat
 
-from neurolib.util.io import JsonEncodeHandler
+from neurolib.util.json import JsonEncodeHandler
 from neurolib.util.util_type import PathLike
 
 __all__ = [
