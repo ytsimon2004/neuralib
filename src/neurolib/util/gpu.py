@@ -9,8 +9,8 @@ import GPUtil
 import polars as pl
 import torch
 
-from rscvp.util.util_logging import setup_clogger
-from rscvp.util.util_table import rich_data_frame_table
+from neurolib.util.color_logging import setup_clogger
+from neurolib.util.table import rich_data_frame_table
 
 __all__ = [
     'print_gpu_table',
