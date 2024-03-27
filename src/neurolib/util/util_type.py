@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import BufferedIOBase, BufferedReader
 from pathlib import Path
-from typing import BinaryIO, Union, TypeVar
+from typing import BinaryIO, Union, TypeVar, Any
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,9 @@ __all__ = [
     'PathLike',
     #
     'Series',
-    'DataFrame'
+    'DataFrame',
+    #
+    'is_iterable'
 ]
 
 T = TypeVar('T')
@@ -24,3 +26,9 @@ PathLike = Union[str, Path, bytes, BinaryIO, BufferedIOBase, BufferedReader]
 #
 Series = Union[pd.Series, pl.Series]
 DataFrame = Union[pd.DataFrame, pl.DataFrame]
+
+
+
+def is_iterable(val: Any) -> bool:
+    from collections.abc import Iterable
+    return isinstance(val, Iterable) and not isinstance(val, str)
