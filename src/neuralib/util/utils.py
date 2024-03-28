@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import re
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,7 @@ from neuralib.util.util_type import PathLike, ArrayLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = ['uglob',
+           'glob_re',
            'joinn',
            'flat_ls',
            'array2str',
@@ -39,6 +41,11 @@ def uglob(d: PathLike,
         return f[0]
     else:
         raise RuntimeError(f'multiple files were found in {d} in pattern {pattern} >>> {f}')
+
+
+def glob_re(pattern: str, strings: list[str]) -> list[str]:
+    """find list of str element fit for re pattern"""
+    return list(filter(re.compile(pattern).match, strings))
 
 
 def joinn(sep: str, *part: str | None) -> str:
