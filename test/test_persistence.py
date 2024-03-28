@@ -1,7 +1,7 @@
 import numpy as np
 
 from neurolib.persistence import persistence
-from rscvp.util.argp import AbstractParser
+from neurolib.argp import AbstractParser
 from rscvp.util.cli import CommonOptions
 from rscvp.util.cli_presistence import PersistenceOptions
 

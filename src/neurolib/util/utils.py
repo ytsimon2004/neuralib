@@ -9,6 +9,7 @@ from neurolib.util.util_verbose import fprint
 
 __all__ = ['uglob',
            'joinn',
+           'flat_ls',
            'array2str',
            'deprecated']
 
