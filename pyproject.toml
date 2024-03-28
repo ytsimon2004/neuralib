@@ -28,6 +28,9 @@ Issues = "https://github.com/ytsimon2004/neuralib/issues"
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
 
+[tool.setuptools.dynamic.optional-dependencies]
+opt = { file = ["requirements-optional.txt"] }
+
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = ["setuptools>=61.0"]

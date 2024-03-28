@@ -1,0 +1,23 @@
+# Tools
+allensdk
+aicspylibczi
+suite2p
+ScanImageTiffReader
+cellpose==3.0.5
+stardist
+facemap
+sbxreader
+rastermap
+neuropop
+roifile==2022.3.18
+brainrender==2.1.5
+iblatlas
+vedo
+bokeh>=3.3.0
+
+# GPUs
+torch
+tensorflow
+
+# visual stim.
+psychopy>=2020.2.10
