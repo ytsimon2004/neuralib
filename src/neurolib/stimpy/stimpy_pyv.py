@@ -187,7 +187,7 @@ class StimlogPyVStim(StimlogBase):
         return 1 / (np.diff(self.v_duino_time).mean())
 
     def plot_stim_animation(self):
-        from rscvp.util.util_draw import plot_scatter_animation
+        from neurolib.plot import plot_scatter_animation
         plot_scatter_animation(self.v_ap_x,
                                self.v_ap_y,
                                self.v_duino_time,

@@ -6,7 +6,6 @@ from typing import Literal, TypeVar, Generic
 
 import numpy as np
 import polars as pl
-from rscvp.util.util_type import PathLike
 
 from neurolib.stimpy.event import RigEvent, CamEvent
 from neurolib.stimpy.session import Session, SessionInfo
@@ -21,6 +20,8 @@ __all__ = [
     'StimlogBase',
     'AbstractStimTimeProfile'
 ]
+
+from neurolib.util.util_type import PathLike
 
 STIMPY_SOURCE_VERSION = Literal['pyvstim', 'stimpy-bit', 'stimpy-git', 'debug']
 LOG_SUFFIX = Literal['.log', '.riglog']

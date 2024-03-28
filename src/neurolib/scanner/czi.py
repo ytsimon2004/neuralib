@@ -9,9 +9,9 @@ import aicspylibczi
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from rscvp.util.cli_output import joinn
+from neurolib.util.utils import joinn
 from neurolib.scanner import AbstractSliceScanner, SceneIdx, DimCode, ZEISS_CZI_CHANNELS_ORDER, ZPROJ_TYPE
-from rscvp.util.util_type import PathLike
+from neurolib.util.util_type import PathLike
 
 __all__ = ['CziSliceScanner']
 

@@ -71,7 +71,7 @@ class SBXViewer:
     def display(self, frames: slice | np.ndarray | None,
                 plane: int,
                 channel: int):
-        from rscvp.util.imglib.viewer import ImageSequencesViewer
+        # from rscvp.util.imglib.viewer import ImageSequencesViewer # TODO fix
 
         if frames is None:
             frames = np.arange(0, self.n_frames)

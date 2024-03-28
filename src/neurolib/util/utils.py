@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 from pathlib import Path
 
@@ -5,12 +7,13 @@ from neurolib.util.util_type import PathLike
 from neurolib.util.util_verbose import fprint
 
 __all__ = ['uglob',
+           'joinn',
            'deprecated']
 
 
 def uglob(d: PathLike,
           pattern: str,
-          sort=True,
+          sort: bool = True,
           is_dir: bool = False) -> Path:
     """Unique glob"""
     if not isinstance(d, Path):
@@ -33,6 +36,11 @@ def uglob(d: PathLike,
         return f[0]
     else:
         raise RuntimeError(f'multiple files were found in {d} in pattern {pattern} >>> {f}')
+
+
+def joinn(sep: str, *part: str | None) -> str:
+    """join not-None str"""
+    return sep.join(str(it) for it in part if it is not None)
 
 
 def deprecated(f=None, *, reason: str = None):

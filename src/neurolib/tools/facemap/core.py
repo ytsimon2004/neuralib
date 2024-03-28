@@ -163,14 +163,15 @@ class FaceMapResult:
 
     @classmethod
     def launch_facemap_gui(cls, directory: PathLike,
-                           with_keypoints: bool) -> None:
+                           with_keypoints: bool,
+                           env_name: str = 'rscvp') -> None:
         """GUI view via cli.
         ** Note that launching the GUI required the same source root video path"""
         import subprocess
 
         svd_path = uglob(directory, '*.npy')
 
-        cmds = ['conda', 'run', '-n', 'rscvp', 'python', '-m', 'facemap']
+        cmds = ['conda', 'run', '-n', f'{env_name}', 'python', '-m', 'facemap']
         cmds.extend(CliArgs('--proc_npy', str(svd_path)).as_command())
 
         if with_keypoints:

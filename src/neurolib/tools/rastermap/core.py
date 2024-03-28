@@ -6,7 +6,7 @@ from typing import TypedDict
 import attrs
 import numpy as np
 
-from rscvp.util.util_verbose import fprint
+from neurolib.util.util_verbose import fprint
 
 __all__ = ['UserCluster',
            'RasterOptions',

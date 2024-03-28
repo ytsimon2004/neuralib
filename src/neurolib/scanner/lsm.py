@@ -15,8 +15,8 @@ from neurolib.scanner import (
     ZPROJ_TYPE
 )
 
-from rscvp.util.util_plot import plot_figure, insert_colorbar
-from rscvp.util.util_type import PathLike
+from neurolib.plot import plot_figure, insert_colorbar
+from neurolib.util.util_type import PathLike
 
 __all__ = ['LSMSliceScanner']
 

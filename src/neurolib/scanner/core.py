@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, NewType, Literal
 
 import numpy as np
-from rscvp.util.util_type import PathLike
+from neurolib.util.util_type import PathLike
 from tifffile import tifffile
 from typing_extensions import TypeAlias
 

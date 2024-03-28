@@ -11,7 +11,10 @@ from matplotlib.axes import Axes
 from matplotlib.colorbar import ColorbarBase
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-__all__ = ['plot_figure']
+__all__ = ['plot_figure',
+           'ax_set_default_style',
+           'insert_colorbar',
+           'ax_merge']
 
 MPL_BACKEND_TYPE = Literal[
     'GTK3Agg', 'GTK3Cairo', 'GTK4Agg', 'GTK4Cairo', 'MacOSX', 'nbAgg',

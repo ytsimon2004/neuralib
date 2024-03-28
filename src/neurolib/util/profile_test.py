@@ -5,7 +5,7 @@ import numpy as np
 import psutil
 from memory_profiler import profile
 
-from rscvp.util.util_verbose import fprint
+from neurolib.util.util_verbose import fprint
 
 __all__ = ['profile_test']
 

@@ -8,7 +8,7 @@ Define a persistence class
 Import
 
 >>> import numpy as np
->>> from neurolib.util import persistence
+>>> from neurolib import persistence
 
 Define class
 

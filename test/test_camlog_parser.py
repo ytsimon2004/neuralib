@@ -9,7 +9,7 @@ from pyvstim import parseVStimLog
 
 from neurolib.stimpy.camlog import LabCamlog
 from neurolib.stimpy.stimpy_pyv import PyVlog
-from rscvp.port.wfield_manual import parse_camlog, get_camera_time
+from rscvp.port.wfield_manual import parse_camlog, get_camera_time  # TODO
 
 
 class TestCamlogParse(unittest.TestCase):
