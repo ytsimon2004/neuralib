@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 from pyvstim import getStimuliTimesFromLog
 
-from neurolib.stimpy.stimpy_pyv import PyVProtocol, StimlogPyVStim, PyVlog
+from neuralib.stimpy.stimpy_pyv import PyVProtocol, StimlogPyVStim, PyVlog
 from rscvp.port.wfield_manual import find_nloops_from_prot
 
 

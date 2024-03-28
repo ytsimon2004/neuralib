@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from typing import Optional, Literal
 
-from neurolib.argp import *
+from neuralib.argp import *
 
 
 class TypeAnnotationTest(unittest.TestCase):

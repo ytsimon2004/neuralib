@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from neurolib.util.csv import csv_header
+from neuralib.util.csv import csv_header
 
 
 def test_quotes_csv():

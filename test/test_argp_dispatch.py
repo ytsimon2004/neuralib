@@ -1,7 +1,7 @@
 import textwrap
 
-from neurolib.argp import AbstractParser
-from neurolib.argp.dispatch import DispatchOption
+from neuralib.argp import AbstractParser
+from neuralib.argp.dispatch import DispatchOption
 
 
 class Test(AbstractParser, DispatchOption):

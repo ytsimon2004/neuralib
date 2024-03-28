@@ -7,8 +7,8 @@ from typing import Any
 import numpy as np
 from pyvstim import parseVStimLog
 
-from neurolib.stimpy.camlog import LabCamlog
-from neurolib.stimpy.stimpy_pyv import PyVlog
+from neuralib.stimpy.camlog import LabCamlog
+from neuralib.stimpy.stimpy_pyv import PyVlog
 from rscvp.port.wfield_manual import parse_camlog, get_camera_time  # TODO
 
 

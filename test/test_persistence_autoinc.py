@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 
-from neurolib.persistence import persistence
+from neuralib.persistence import persistence
 
 
 @persistence.persistence_class

@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from pyvstim.utils import parseVStimLog
 
-from neurolib.stimpy.stimpy_pyv import PyVlog
+from neuralib.stimpy.stimpy_pyv import PyVlog
 
 
 class TestPvStimParse(unittest.TestCase):
