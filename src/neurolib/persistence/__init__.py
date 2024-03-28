@@ -1,2 +1,2 @@
 from .persistence import *
-from verbose import *
+from .verbose import *
