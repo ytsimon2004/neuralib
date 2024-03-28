@@ -2,7 +2,6 @@
 Test if customized parsing method show the same result from Joao's pyvstim repo
 """
 import unittest
-from pathlib import Path
 from typing import Any
 
 import numpy as np

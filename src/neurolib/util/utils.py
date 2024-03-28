@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import functools
 from pathlib import Path
+from typing import Any
 
-from neurolib.util.util_type import PathLike
+from neurolib.util.util_type import PathLike, ArrayLike
 from neurolib.util.util_verbose import fprint
 
 __all__ = ['uglob',
            'joinn',
+           'array2str',
            'deprecated']
 
 
@@ -41,6 +43,24 @@ def uglob(d: PathLike,
 def joinn(sep: str, *part: str | None) -> str:
     """join not-None str"""
     return sep.join(str(it) for it in part if it is not None)
+
+
+def flat_ls(ls: list[ArrayLike]) -> list[Any]:
+    """flatten the list"""
+    from itertools import chain
+    return list(chain(*ls))
+
+
+def array2str(x: ArrayLike, sep=' ') -> str:
+    """
+    covert array to str with sep.
+    i.e., used in csv writing of array in a specific cell
+
+    :param x: 1D
+    :param sep:
+    :return:
+    """
+    return sep.join(map(str, x))
 
 
 def deprecated(f=None, *, reason: str = None):

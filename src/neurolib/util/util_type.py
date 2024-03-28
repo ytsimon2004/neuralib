@@ -7,9 +7,16 @@ from typing import BinaryIO, Union, TypeVar, Any
 import numpy as np
 import pandas as pd
 import polars as pl
+from matplotlib.axes import Axes
+from numpy.typing import NDArray
 
 __all__ = [
     'ArrayLike',
+    'NDArrayInt',
+    'NDArrayFloat',
+    'NDArrayBool',
+    'AxesArrayLike',
+    #
     'PathLike',
     #
     'Series',
@@ -21,13 +28,21 @@ __all__ = [
 T = TypeVar('T')
 ArrayLike = Union[np.ndarray, list[T], tuple[T, ...]]
 
+NDArrayInt = NDArray[np.int_]
+NDArrayFloat = NDArray[np.float_]
+NDArrayBool = NDArray[np.bool_]
+
 PathLike = Union[str, Path, bytes, BinaryIO, BufferedIOBase, BufferedReader]
 
 #
 Series = Union[pd.Series, pl.Series]
 DataFrame = Union[pd.DataFrame, pl.DataFrame]
 
+#
+AxesArrayLike = Union[np.ndarray, list[Axes]]
 
+
+# ============ #
 
 def is_iterable(val: Any) -> bool:
     from collections.abc import Iterable
