@@ -20,10 +20,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ytsimon2004/neurolib"
-#Documentation = "https://github.com/ytsimon2004/neurolib/wiki"
-Repository = "https://github.com/ytsimon2004/neurolib"
-Issues = "https://github.com/ytsimon2004/neurolib/issues"
+Homepage = "https://github.com/ytsimon2004/neuralib"
+#Documentation = "https://github.com/ytsimon2004/neuralib/wiki"
+Repository = "https://github.com/ytsimon2004/neuralib"
+Issues = "https://github.com/ytsimon2004/neuralib/issues"
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
