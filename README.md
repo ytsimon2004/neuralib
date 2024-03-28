@@ -1,1 +1,1 @@
-# Tools for general parsing and lab usage
+# Utility tools for system neuroscience research, including Open Source Wrapper or Parser

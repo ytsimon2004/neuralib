@@ -1,0 +1,33 @@
+[project]
+name = "neurolib"
+version = "0.0.0"
+requires-python = ">=3.9"
+description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
+authors = [
+    { name = "Yu-Ting Wei", email = "ytsimon2004@gmail.com" }
+]
+license = "BSD-3-Clause"
+readme = "README.md"
+keywords = ["Neuroscience", "visual neuroscience", "cellular imaging", "brain mapping", "spatial navigation"]
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    'Intended Audience :: Science/Research',
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/ytsimon2004/neurolib"
+#Documentation = "https://github.com/ytsimon2004/neurolib/wiki"
+Repository = "https://github.com/ytsimon2004/neurolib"
+Issues = "https://github.com/ytsimon2004/neurolib/issues"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0"]
