@@ -1,5 +1,6 @@
 # Tools
 allensdk
+allensdk
 aicspylibczi
 suite2p
 ScanImageTiffReader
