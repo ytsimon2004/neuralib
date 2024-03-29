@@ -224,21 +224,41 @@ class Stimlog(StimlogBase):
 
     @property
     def exp_start_time(self) -> float:
-        return self.v_present_time[0] + self.time_offset
+        tstart = self.v_present_time[0]
+
+        if isinstance(self.time_offset, float):
+            return tstart + self.time_offset
+        elif isinstance(self.time_offset, np.ndarray):
+            return tstart + self.time_offset[0]
 
     @property
     def exp_end_time(self) -> float:
-        return self.v_present_time[-1] + self.time_offset
+        tend = self.v_present_time[-1]
+
+        if isinstance(self.time_offset, float):
+            return tend + self.time_offset
+        elif isinstance(self.time_offset, np.ndarray):
+            return tend + self.time_offset[-1]
 
     @property
     def stim_start_time(self) -> float:
         v_start = np.nonzero(self.v_stim_idx == 1)[0][0]
-        return self.v_present_time[v_start] + self.time_offset
+        tstart = self.v_present_time[v_start]
+
+        if isinstance(self.time_offset, float):
+            return tstart + self.time_offset
+        elif isinstance(self.time_offset, np.ndarray):
+            return tstart + self.time_offset[0]
 
     @property
     def stim_end_time(self) -> float:
         v_end = np.nonzero(np.diff(self.v_stim_idx) < 0)[0][-1] + 1
-        return self.v_present_time[v_end] + self.time_offset
+        tend = self.v_present_time[v_end]
+
+        if isinstance(self.time_offset, float):
+            return tend + self.time_offset
+        elif isinstance(self.time_offset, np.ndarray):
+            return tend + self.time_offset[-1]
 
     @property
     def stimulus_segment(self) -> np.ndarray:
