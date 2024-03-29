@@ -6,6 +6,8 @@ from neuralib.argp import argument, str_tuple_type
 from neuralib.atlas.brainrender.core import BrainReconstructor, RoiType
 from rscvp.util.util_ccf import iter_source_coordinates
 
+__all__ = ['RoisReconstructor']
+
 
 class RoisReconstructor(BrainReconstructor):
     DESCRIPTION = 'For labelled rois reconstruction from 2dccf pipeline'

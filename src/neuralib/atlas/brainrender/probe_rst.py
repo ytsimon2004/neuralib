@@ -13,6 +13,8 @@ from neuralib.atlas.brainrender.util import roi_points_converter
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.util.segement import grouped_iter
 
+__all__ = ['ProbeReconstructor']
+
 
 class ProbeReconstructor(BrainReconstructor):
     DESCRIPTION = 'For probe(s) track reconstruction'
