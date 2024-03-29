@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from neuralib.util.util_type import PathLike, ArrayLike
 from neuralib.util.util_verbose import fprint
@@ -13,7 +13,8 @@ __all__ = ['uglob',
            'joinn',
            'flat_ls',
            'array2str',
-           'deprecated']
+           'deprecated',
+           'key_from_value']
 
 
 def uglob(d: PathLike,
@@ -105,3 +106,24 @@ def deprecated(f=None, *, reason: str = None):
         return _deprecated
     else:
         return _deprecated(f)
+
+
+# ============================== #
+
+KT = TypeVar('KT')
+VT = TypeVar('VT')
+
+
+def key_from_value(it: dict[KT, VT], value: VT) -> KT:
+    """Get dict key from dict value"""
+    kk = []
+    for k, v in it.items():
+        if (isinstance(v, (str, int)) and v == value) or (isinstance(v, (list, tuple)) and value in v):
+            kk.append(k)
+
+    if len(kk) == 0:
+        raise KeyError(f'{value} not in the dict')
+    if len(kk) == 1:
+        return kk[0]
+    else:
+        raise RuntimeError(f'multiple key found by the value: {kk}: {value}')

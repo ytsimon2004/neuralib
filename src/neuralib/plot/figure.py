@@ -8,12 +8,9 @@ from typing import Literal
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-from matplotlib.colorbar import ColorbarBase
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 __all__ = ['plot_figure',
            'ax_set_default_style',
-           'insert_colorbar',
            'ax_merge']
 
 MPL_BACKEND_TYPE = Literal[
@@ -129,29 +126,6 @@ def ax_set_default_style(ax: Axes,
 
     if set_equal_scale:
         ax.set_aspect('equal')
-
-
-# ======== #
-# ColorBar #
-# ======== #
-
-
-def ax_colorbar(ax: Axes, height="25%") -> Axes:
-    return inset_axes(
-        ax,
-        width="5%",
-        height=height,
-        loc='upper left',
-        bbox_to_anchor=(1.01, 0., 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
-
-
-def insert_colorbar(ax: Axes, im, **kwargs) -> ColorbarBase:
-    cax = ax_colorbar(ax)
-
-    return ax.figure.colorbar(im, cax=cax, **kwargs)
 
 
 # ========= #

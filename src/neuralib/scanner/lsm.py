@@ -6,6 +6,9 @@ from typing import Any, final
 
 import numpy as np
 import tifffile
+
+from neuralib.plot import plot_figure
+from neuralib.plot.colormap import insert_colorbar
 from neuralib.scanner import (
     AbstractSliceScanner,
     parse_tif_meta,
@@ -14,12 +17,9 @@ from neuralib.scanner import (
     ZEISS_LSM_CHANNELS_ORDER,
     ZPROJ_TYPE
 )
-
-from neuralib.plot import plot_figure, insert_colorbar
 from neuralib.util.util_type import PathLike
 
 __all__ = ['LSMSliceScanner']
-
 
 
 # TODO multiple scenes not impl.
