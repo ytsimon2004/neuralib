@@ -34,3 +34,6 @@ opt = { file = ["requirements-optional.txt"] }
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = ["setuptools>=61.0"]
+
+[project.scripts]
+brender = "neuralib.atlas.brainrender.main_app:main"
