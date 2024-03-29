@@ -17,7 +17,6 @@ def main():
         >> brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
         >> brender roi -F <FILE>
         >> brender probe -F <FILE> --depth <DEPTH in um>
-        
         """
     )
 
