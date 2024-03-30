@@ -37,3 +37,4 @@ requires = ["setuptools>=61.0"]
 
 [project.scripts]
 brender = "neuralib.atlas.brainrender.main_app:main"
+ppv = "neuralib.tools.pkl_parq_view.main_app:main"
