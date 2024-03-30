@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar, final, Self, Literal
+from typing import Generic, TypeVar, final, Literal
 
 import attrs
 import cv2
 import numpy as np
+from typing_extensions import Self
 
 from neuralib.util.util_type import PathLike
 
 __all__ = [
     'ImageProcFactory',
+    'IMAGE_CHANNEL_TYPE',
     #
     'apply_transformation',
     'detect_feature'
