@@ -13,7 +13,7 @@ from typing_extensions import Self
 
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA, ALLEN_SOURCE_TYPE
 from neuralib.plot import plot_figure
-from rscvp.util.imglib.factory import ImageFactory
+from neuralib.imglib.factory import ImageProcFactory
 
 
 __all__ = [
@@ -403,7 +403,7 @@ class SlicePlane:
             ann_img = (AllenReferenceWrapper
                        .load_slice_view('npy', self.view.plane_type, self.view.resolution)
                        .plane(self.plane_offset))
-            ann = ImageFactory(ann_img).covert_grey_scale().edge_detection(10, 0).image
+            ann = ImageProcFactory(ann_img).covert_grey_scale().edge_detection(10, 0).image
 
             ann = ann.astype(float)
             ann[ann <= 10] = np.nan

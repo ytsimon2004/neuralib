@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from typing import Union
-
 import numpy as np
-from brainrender._colors import get_random_colors
 import pandas as pd
 import polars as pl
+from brainrender._colors import get_random_colors
+
 from neuralib.util.util_type import DataFrame
 
 __all__ = ['get_color', 'roi_points_converter']
-
 
 
 def get_color(i, color_pattern: str | tuple[str, ...] | list[str]) -> str:
