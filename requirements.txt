@@ -4,6 +4,7 @@ matplotlib
 seaborn~=0.12.1
 memory_profiler
 numpy
+numba
 pandas~=1.5.0
 pyarrow
 psutil
