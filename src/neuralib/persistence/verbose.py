@@ -12,6 +12,7 @@ __all__ = ['print_load',
            'print_save']
 
 
+# TODO move to neuralib.util.util_verbose
 def print_load(file: Union[str, Path], verb='LOAD') -> Path:
     """print message for loading file.
 
@@ -44,6 +45,7 @@ def print_load(file: Union[str, Path], verb='LOAD') -> Path:
     return file
 
 
+# TODO move to neuralib.util.util_verbose
 def print_save(file: Union[str, Path], verb='SAVE') -> Path:
     """print message for saving file.
 

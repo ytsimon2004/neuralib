@@ -2,6 +2,9 @@
 Persistence Class
 =================
 
+:author:
+    Ta-Shun Su
+
 Define a persistence class
 -----------------------
 
@@ -24,7 +27,7 @@ Define class
 
 Load/Save
 
->>> example = Example(use_animal='TS00', use_session='', use_date='1234')
+>>> example = Example(use_animal='A00', use_session='', use_date='1234')
 >>> save(example, 'example.pkl')
 >>> example_2 = load(Example, 'example.pkl') # example and example_2 should be content identical
 
@@ -32,12 +35,11 @@ Load/Save
 Cooperate with PersistenceOptions
 ---------------------------------
 
->>> from rscvp.util.cli import CommonOptions
->>> from rscvp.util.cli_presistence import PersistenceOptions
->>> class ExampleHandle(CommonOptions, PersistenceOptions[Example]):
+>>> from neuralib.persistence.cli_presistence import PersistenceOptions
+>>> class ExampleHandle(PersistenceOptions[Example]):
 ...     def empty_cache(self) -> Example:
-...         return Example(use_animal='TS00', use_session='', use_date='1234') # with attribute initialization
-...     def _compute_cache(self, result: Example) -> Example:
+...         return Example(use_animal='A00', use_session='', use_date='1234') # with attribute initialization
+...     def compute_cache(self, result: Example) -> Example:
 ...         result.channels = [0, 1, 2]
 ...         result.riglog = np.array(result.channels)
 ...         return result
