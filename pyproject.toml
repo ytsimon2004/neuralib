@@ -30,6 +30,7 @@ dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools.dynamic.optional-dependencies]
 opt = { file = ["requirements-optional.txt"] }
+doc = { file = ["requirements-document.txt"] }
 
 [build-system]
 build-backend = "setuptools.build_meta"
