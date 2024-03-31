@@ -59,7 +59,6 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
     def __init__(self, root: PathLike,
                  auto_mkdir: bool = True,
                  with_overlap_sources: bool = True):
-
         self.root: Final[Path] = root
 
         if auto_mkdir:

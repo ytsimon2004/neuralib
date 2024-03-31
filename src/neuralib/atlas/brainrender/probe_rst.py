@@ -9,8 +9,8 @@ from scipy.interpolate import interp1d
 
 from neuralib.argp import as_argument, argument
 from neuralib.atlas.brainrender.core import BrainReconstructor
-from neuralib.atlas.brainrender.util import roi_points_converter
 from neuralib.atlas.util import PLANE_TYPE
+from neuralib.atlas.util import roi_points_converter
 from neuralib.util.segement import grouped_iter
 
 __all__ = ['ProbeReconstructor']

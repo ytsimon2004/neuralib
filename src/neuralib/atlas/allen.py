@@ -180,7 +180,6 @@ class AllenReferenceWrapper:
             fprint(f'DOWNLOAD! {filename} in {dest}', vtype='io')
 
         elif src_type in ('annotation', 'template'):
-            import requests
 
             if src_type == 'annotation':
                 url = 'https://figshare.com/ndownloader/files/44925493'

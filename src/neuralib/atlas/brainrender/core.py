@@ -10,7 +10,8 @@ from brainrender.actors import Points
 from typing_extensions import TypeAlias
 
 from neuralib.argp import AbstractParser, argument, str_tuple_type
-from neuralib.atlas.brainrender.util import get_color, roi_points_converter
+from neuralib.atlas.brainrender.util import get_color
+from neuralib.atlas.util import roi_points_converter
 from neuralib.util.color_logging import setup_clogger
 from rscvp.util.util_plot import REGION_COLORS
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from neuralib.argp import argument, str_tuple_type
 from neuralib.atlas.brainrender.core import BrainReconstructor, RoiType
-from rscvp.util.util_ccf import iter_source_coordinates
+from neuralib.atlas.util import iter_source_coordinates
 
 __all__ = ['RoisReconstructor']
 
