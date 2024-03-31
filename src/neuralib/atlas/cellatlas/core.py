@@ -3,14 +3,13 @@ from __future__ import annotations
 import dataclasses
 import io
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import polars as pl
 
+from neuralib.atlas.allen import AllenReferenceWrapper
 from neuralib.util.io import ATLAS_CACHE_DIRECTORY
 from neuralib.util.util_verbose import fprint
-from rscvp.util.atlas.allen import AllenReferenceWrapper
 
 __all__ = ['CellAtlas']
 
@@ -38,7 +37,7 @@ class CellAtlas:
 
     @classmethod
     def load_from_csv(cls,
-                      file: Optional[Path] = None,
+                      file: Path | None = None,
                       only_neuron: bool = True,
                       ignore_detail_info: bool = True) -> 'CellAtlas':
         """
