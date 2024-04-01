@@ -10,7 +10,6 @@ from neuralib.util.util_verbose import fprint
 __all__ = ['profile_test']
 
 
-
 class profile_test:
     def __init__(self, enable=False, output_file='profile.png'):
         self._enable = enable
