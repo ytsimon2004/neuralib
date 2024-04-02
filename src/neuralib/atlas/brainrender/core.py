@@ -11,9 +11,9 @@ from typing_extensions import TypeAlias
 
 from neuralib.argp import AbstractParser, argument, str_tuple_type
 from neuralib.atlas.brainrender.util import get_color
+from neuralib.atlas.type import Source
 from neuralib.atlas.util import roi_points_converter
 from neuralib.util.color_logging import setup_clogger
-from rscvp.util.util_plot import REGION_COLORS
 
 __all__ = [
     'ROI_COLORS',
@@ -170,10 +170,20 @@ class BrainReconstructor(AbstractParser):
 
     def _reconstruct_source(self):
         """Depending on the experimental purpose, i.e., viral injection site, targeted location..."""
-        from rscvp.histology.roi_classifier import SOURCE_COORDINATES
-        for source, coords in SOURCE_COORDINATES.items():
+        # TODO generalize
+        src: dict[Source, np.ndarray] = {
+            'aRSC': np.array([-1.5, 1, 0.4]),
+            'pRSC': np.array([-3.2, 0.8, 0.4])
+        }
+
+        color: dict[Source, str] = {
+            'aRSC': 'gold',
+            'pRSC': 'violet'
+        }
+
+        for source, coords in src.items():
             points = roi_points_converter(coords)
-            self.scene.add(Points(points, colors=REGION_COLORS[source], radius=120))
+            self.scene.add(Points(points, colors=color[source], radius=120))
 
     def _reconstruct_region(self):
         if self.region_colors is not None:
