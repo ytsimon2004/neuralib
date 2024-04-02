@@ -83,7 +83,7 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
 
         for file, found in handler.load_all(cache):
             if validator:
-                if not self._validate_cache(file, found):
+                if not self.validate_cache(file, found):
                     continue
 
             ret.append(found)
