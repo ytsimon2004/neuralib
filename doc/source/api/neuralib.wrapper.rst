@@ -8,5 +8,6 @@ neuralib.wrapper
     :maxdepth: 1
     :caption: Modules:
     
-
-
+    neuralib.wrapper.deeplabcut
+    neuralib.wrapper.facemap
+    neuralib.wrapper.rastermap

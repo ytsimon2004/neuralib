@@ -56,6 +56,9 @@ for p, ds, fs in os.walk(src):
                 for f in (Path(p) / d).iterdir():
                     if f.suffix == '.py' and not f.name.startswith('_'):
                         module_list.append(k + '.' + f.stem)
+                    elif f.is_dir() and (f / '__init__.py').exists():
+                        module_list.append(k + '.' + f.name)
+
                 module_list.sort()
                 module_list_content = textwrap.indent('\n'.join(module_list), '    ')
                 with open(o, 'w') as of:

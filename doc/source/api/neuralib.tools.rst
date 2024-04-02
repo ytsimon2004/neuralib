@@ -9,4 +9,6 @@ neuralib.tools
     :caption: Modules:
     
 
+    neuralib.tools.pkl_parq_view
+    neuralib.tools.slack_bot
 

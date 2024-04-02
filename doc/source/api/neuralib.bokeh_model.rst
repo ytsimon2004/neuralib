@@ -15,3 +15,8 @@ neuralib.bokeh_model
     neuralib.bokeh_model.util
     neuralib.bokeh_model.view_brain
 
+.. toctree::
+    :maxdepth: 1
+    :caption: Examples:
+
+    neuralib.bokeh_model.example
