@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Any, NewType, Literal
 
 import numpy as np
-from neuralib.util.util_type import PathLike
 from tifffile import tifffile
 from typing_extensions import TypeAlias
+
+from neuralib.util.util_type import PathLike
 
 __all__ = [
     #
@@ -124,7 +125,7 @@ def parse_tif_meta(file: Path, **kwargs) -> dict[str, Any]:
                 if isinstance(meta, dict):  # i.e., lsm
                     meta_collect.update(meta)
 
-                elif isinstance(meta, tuple):  # type: tuple[dict[str, Any]]
+                elif isinstance(meta, tuple):  # tuple[dict[str, Any]]
                     for it in meta:
 
                         # if isinstance(it, str):

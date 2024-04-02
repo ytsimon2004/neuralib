@@ -24,3 +24,6 @@ exclude_patterns = []
 
 html_theme = 'classic'
 html_static_path = ['_static']
+
+# -- Options for nbsphinx -------------------------------------
+nbsphinx_execute = 'never'

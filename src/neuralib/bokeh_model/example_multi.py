@@ -27,7 +27,8 @@ class Pool(View):
         return column(Div(text='pool'))
 
 
-VIEW_TOP = Top()
-VIEW_POOL = Pool()
+if __name__ == '__main__':
+    VIEW_TOP = Top()
+    VIEW_POOL = Pool()
 
-BokehServer().start({'/': VIEW_TOP, '/pool': VIEW_POOL})
+    BokehServer().start({'/': VIEW_TOP, '/pool': VIEW_POOL})

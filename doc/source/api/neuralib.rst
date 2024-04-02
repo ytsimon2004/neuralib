@@ -12,7 +12,7 @@ neuralib package
     neuralib.atlas.cellatlas
     neuralib.atlas.ibl
     neuralib.bokeh_model
-    neuralib.bokeh_model.example
+    neuralib.bokeh_model.examples
     neuralib.calimg
     neuralib.calimg.scan_image
     neuralib.calimg.scanbox
