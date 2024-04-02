@@ -1,2 +1,2 @@
+from .cli_presistence import *
 from .persistence import *
-from .verbose import *
