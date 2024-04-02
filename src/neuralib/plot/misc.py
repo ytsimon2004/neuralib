@@ -9,6 +9,8 @@ from neuralib.plot import plot_figure
 from neuralib.util.util_type import PathLike
 
 
+# TODO __all__
+
 # ================= #
 
 class GanttDict(TypedDict, total=False):
@@ -18,13 +20,13 @@ class GanttDict(TypedDict, total=False):
     resource: str
 
 
-def plot_gantt(jobs: list[GanttDict]):
+def plot_gantt(jobs: list[GanttDict]):  # TODO renamed as plot_task_gantt
     """
     plot gantt
     * Example
 
     >>> x = [GanttDict(task='task1', start='2023-09-01', finish='2023-11-30'),
-    >>>      GanttDict(task='task2', start='2024-01-01', finish='2024-09-30')]
+    ...      GanttDict(task='task2', start='2024-01-01', finish='2024-09-30')]
     >>> plot_gantt(x)
 
     :param jobs:

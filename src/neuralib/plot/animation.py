@@ -18,14 +18,16 @@ def plot_scatter_animation(x: np.ndarray,
     """
     Plot xy scatter with animation
 
-    :param x:
-    :param y:
-    :param t: time array in sec
-    :param size:
-    :param step: step run
+    TODO what animation it is. from t=0~end
+
+    :param x: TODO what shape it is? is (T, X)?
+    :param y: TODO what shape it is? is (T, Y)?
+    :param t: time array in sec TODO what shape it is? is (T, )?
+    :param size: TODO scatter(s)?
+    :param step: step run TODO what unit it is?
     :param output: output for animation. i.e., *.gif
-    :param kwargs:
-    :return:
+    :param kwargs: TODO FuncAnimation(**kwargs)?
+    :return: TODO None?
     """
     from matplotlib.animation import FuncAnimation
 

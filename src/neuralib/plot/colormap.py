@@ -16,12 +16,12 @@ __all__ = [
 ]
 
 
-class ColorMapper:
+class ColorMapper:  # TODO named as DiscreteColorMapper
     """map color to iterable object
 
     **Example of a `Dict` palette**
 
-        >>> cmapper = ColorMapper(Category20c, 20)
+        >>> cmapper = ColorMapper(Category20c, 20) # TODO import Category20c
         >>> x = ['1', '2', '3']
         >>> color_list = [cmapper[i] for i in x]
 

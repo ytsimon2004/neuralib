@@ -104,11 +104,11 @@ def _os_handler(win_backend: MPL_BACKEND_TYPE = 'WXCairo'):
         mpl.use(win_backend)
 
 
-def _mplrc_set():
+def _mplrc_set():  # TODO read from rc file with plt.rc_context()
     plt.rcParams['font.sans-serif'] = "Arial"
 
 
-def ax_set_default_style(ax: Axes,
+def ax_set_default_style(ax: Axes,  # TODO read from rc file with plt.rc_context()
                          set_square=False,
                          set_equal_scale=False):
     if 'polar' in ax.spines.keys():
@@ -149,5 +149,5 @@ class AxesMergeHelper:
         return ret
 
 
-def ax_merge(ax: np.ndarray) -> AxesMergeHelper:
+def ax_merge(ax: np.ndarray) -> AxesMergeHelper:  # TODO give doc with examples
     return AxesMergeHelper(ax)
