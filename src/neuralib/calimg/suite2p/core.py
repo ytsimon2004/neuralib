@@ -218,7 +218,7 @@ class Suite2PResult:
 
     @classmethod
     def launch_gui(cls, directory: PathLike) -> None:
-        from core.gui import gui2p
+        from suite2p.gui import gui2p
 
         if not isinstance(directory, Path):
             directory = Path(directory)
