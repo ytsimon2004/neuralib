@@ -1,9 +1,13 @@
 """
 Value dispatch function
------------------------
+=======================
+
+:author:
+    Ta-Shun Su
 
 Work with AbstractParser.
 
+>>> from neuralib.argp import AbstractParser
 >>> class Test(AbstractParser, DispatchOption):
 ...     target: str = DispatchOption.argument(
 ...         '--run'
@@ -32,7 +36,7 @@ Work with AbstractParser.
 
 from typing import Union, NamedTuple, Optional, Callable, TypeVar, Any, Final, Type
 
-from neuralib.argp import Argument
+from .core import Argument
 
 __all__ = [
     'dispatch',
@@ -47,7 +51,7 @@ __all__ = [
 T = TypeVar('T')
 missing = object()
 
-neuralib_DISPATCH_INFO = '__neuralib_DISPATCH_INFO__'
+NEURALIB_DISPATCH_INFO = '__NEURALIB_DISPATCH_INFO__'
 
 
 def dispatch(command: str,
@@ -78,10 +82,10 @@ def dispatch(command: str,
         alias = [alias]
 
     def _dispatch(f):
-        if hasattr(f, neuralib_DISPATCH_INFO):
+        if hasattr(f, NEURALIB_DISPATCH_INFO):
             raise RuntimeError()
 
-        setattr(f, neuralib_DISPATCH_INFO, DispatchCommand(command, tuple(alias), group, f))
+        setattr(f, NEURALIB_DISPATCH_INFO, DispatchCommand(command, tuple(alias), group, f))
         return f
 
     return _dispatch
@@ -129,7 +133,7 @@ def list_commands(host: Union[T, Type[T]], group: Optional[str] = missing) -> li
 
     for attr in dir(host_type):
         attr_value = getattr(host_type, attr)
-        if (info := getattr(attr_value, neuralib_DISPATCH_INFO, None)) is not None:
+        if (info := getattr(attr_value, NEURALIB_DISPATCH_INFO, None)) is not None:
             if group is missing or group == info.group:
                 ret.append(info)
 
@@ -149,7 +153,7 @@ def find_command(host: T, command: str, group: Optional[str] = missing) -> Optio
     host_type = type(host)
     for attr in dir(host_type):
         attr_value = getattr(host_type, attr)
-        if (info := getattr(attr_value, neuralib_DISPATCH_INFO, None)) is not None:
+        if (info := getattr(attr_value, NEURALIB_DISPATCH_INFO, None)) is not None:
             if group is missing or group == info.group:
                 if command == info.command or command in info.aliases:
                     return info

@@ -2,8 +2,11 @@
 Bokeh Base module
 =================
 
-[Bokeh](https://docs.bokeh.org/en/latest/) base module for building bokeh application 
-which is web-based, interactive and python communicate-able. 
+:author:
+    Ta-Shun Su
+
+[Bokeh](https://docs.bokeh.org/en/latest/) base module for building bokeh application
+which is web-based, interactive and python communicate-able.
 
 Simple Example
 --------------
