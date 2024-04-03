@@ -1,9 +1,6 @@
 neuralib.argp
 =============
 
-.. automodule:: neuralib.argp
-   :members:
-   
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
@@ -11,3 +8,5 @@ neuralib.argp
     neuralib.argp.core
     neuralib.argp.dispatch
 
+.. automodule:: neuralib.argp
+   :members:
