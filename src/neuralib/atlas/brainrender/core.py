@@ -52,12 +52,16 @@ class BrainReconstructor(AbstractParser):
     source: str = argument('--source', default='allen_mouse_10um',
                            help='atlas source name. allen_human_500um for human')
 
+    # scene
+    no_root: bool = argument('--no-root', help='render without root(brain) mesh')
+
     # source notation
     with_source: bool = argument('-S', '--src', help='whether draw the location for source (experiment dependent)')
 
     # points
     csv_file: Optional[Path] = argument('-F', '--file', type=Path, default=None, help='csv file')
     points_file: list[Path] = argument('--points', metavar='FILE', type=Path, default=[], action='append')
+    radius: float = argument('--roi-radius', default=30, help='each roi radius')
     output: Path = argument('-O', '--out', default=None, help='output path for the html, if None, preview')
 
     # region
@@ -102,7 +106,7 @@ class BrainReconstructor(AbstractParser):
         self._render_settings()
 
     def run(self):
-        self.scene = brainrender.Scene(inset=False, title=self.title, screenshots_folder='.')
+        self.scene = brainrender.Scene(root=not self.no_root, inset=False, title=self.title, screenshots_folder='.')
         self.load()
         self.add_points_from_file()
         self.reconstruct()
@@ -202,7 +206,7 @@ class BrainReconstructor(AbstractParser):
                 Logger.info(f'Plot Rois File: {i}, {region}, {color}')
                 self.scene.add_brain_region(region, color=color, alpha=self.regions_alpha, hemisphere=self.hemisphere)
 
-    def _reconstruct_points_from_file(self, radius=30):
+    def _reconstruct_points_from_file(self):
         for i, file in enumerate(self.points_list):
             data = np.load(file)
 
@@ -212,7 +216,7 @@ class BrainReconstructor(AbstractParser):
             if data.shape[1] == 3:
                 colors = get_color(i, ROI_COLORS)
                 Logger.info(f'Plot Rois File: {i}, {file}, {colors}')
-                self.scene.add(Points(data, name='roi', colors=colors, alpha=0.9, radius=radius))
+                self.scene.add(Points(data, name='roi', colors=colors, alpha=0.9, radius=self.radius))
 
             elif data.shape[1] == 4:  # TODO not test yet
                 k = data[:, 3].astype(int)
@@ -222,7 +226,7 @@ class BrainReconstructor(AbstractParser):
                         name='rois',
                         colors=get_color(t, ROI_COLORS),
                         alpha=0.6,
-                        radius=radius
+                        radius=self.radius
                     ))
             else:
                 raise ValueError(f'wrong shape: {data.shape}: {file}')
