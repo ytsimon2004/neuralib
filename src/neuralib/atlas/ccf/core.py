@@ -340,7 +340,14 @@ def load_transform_matrix(filepath: PathLike,
     except ValueError:
         name = default_name
 
-    return CCFTransMatrix(name, mat, plane_type, resolution=resolution)
+    return CCFTransMatrix(name,
+                          MatMatrix(
+                              mat.allen_location,
+                              mat.transform,
+                              mat.transform_points
+                          ),
+                          plane_type,
+                          resolution=resolution)
 
 
 @attrs.frozen
