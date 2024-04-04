@@ -8,6 +8,13 @@ from neuralib.atlas.util import iter_source_coordinates
 
 __all__ = ['RoisReconstructor']
 
+# user-specific lookup table for map the ipsi/contra hemisphere to brainrender
+_HEMI_LUT = {
+    'right': 'ipsi',
+    'left': 'contra',
+    'both': 'both'
+}
+
 
 class RoisReconstructor(BrainReconstructor):
     DESCRIPTION = 'For labelled rois reconstruction from 2dccf pipeline'
@@ -43,7 +50,8 @@ class RoisReconstructor(BrainReconstructor):
         if self.csv_file is not None:
             iter_coords = iter_source_coordinates(self.csv_file,
                                                   only_areas=self.only_roi_region,
-                                                  region_col=self.region_col)
+                                                  region_col=self.region_col,
+                                                  hemisphere=_HEMI_LUT[self.hemisphere])
             for sc in iter_coords:
                 ret.append(sc.coordinates)
 
