@@ -5,7 +5,7 @@ Annotation-based argparse
 :author:
     Ta-Shun Su
 
-This module provide a way to integrate python `argparse` module into class attribute
+This module provide a way to integrate python ``argparse`` module into class attribute
 and annotation type, that allow options have type information, and allow parser combination
 easily.
 
@@ -19,18 +19,18 @@ A simple option class that contains several options carried by their attributes.
 ...     EXP_DATE: str = argument('--EXP_DATE')
 ...     OUTPUT_DIR: str = argument()
 
-In `ExampleOptions`, `ANIMAL` is an attribute with type annotation `str`. it has
-a class variable :class:`Argument` (:func:`argument`'s return) which contains the
-arguments of :meth:`argparse.ArgumentParser.add_argument`. For now, we have an optional
-argument `--ANIMAL` which accept one argument. `EXP_DATE` is another optional argument
-`--EXP_DATE`. `OUTPUT_DIR` is a potional argument because it doesn't have dashed options.
+In ``ExampleOptions``, ``ANIMAL`` is an attribute with type annotation ``str``. it has
+a class variable :class:`~neuralib.argp.core.Argument` (:func:`~neuralib.argp.core.argument()` return) which contains the
+arguments of ``ArgumentParser.add_argument``. For now, we have an optional
+argument ``--ANIMAL`` which accept one argument. ``EXP_DATE`` as is another optional argument.
+And ``OUTPUT_DIR`` are a potional argument because it doesn't have dashed options.
 
 >>> opt = parse_args(ExampleOptions())
 ... print(opt.animal)
 
-After class declared, you can use :func:`parse_args` to parse cli arguments. This
-function will create an :class:`argparse.ArgumentParser` and find out all argument
-attributes. Then set the attributes from parsed result.
+After class declared, you can use :meth:`~neuralib.argp.core.parse_args()` to parse cli arguments. This
+function will create an ``ArgumentParser`` and find out all argument attributes.
+Then set the attributes from parsed result.
 
 Commandline usage
 ~~~~~~~~~~~~~~~~~
@@ -39,30 +39,30 @@ In bash, you can call this option class ::
 
     python -m module.path --ANIMAL name --EXP_DATE date output
 
-:func:`print_help` does the similar things but print the help document to the stdout.
+:func:`~neuralib.argp.core.print_help()` does the similar things but print the help document to the stdout.
 
 >>> print_help(opt)
 
-Or use `-h` options ::
+Or use ``-h`` options ::
 
     python -m module.path -h
 
 Annotation type infering
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-In general, you can think :func:`argument` just a delegate funcion that passes the arguments
-to the :meth:`argparse.ArgumentParser.add_argument`. However, this function will try to
-infer missing arguments based on the annotation type when creating the :class:`argparse.ArgumentParser`.
+In general, you can think :func:`~neuralib.argp.core.argument` just a delegate funcion that passes the arguments
+to the ``ArgumentParser.add_argument``. However, this function will try to
+infer missing arguments based on the annotation type when creating the ``ArgumentParser``.
 For now, this module is not powerful to handle all possible case. there are support type
-(Please see :meth:`Argument.complete_kwargs` for detailed):
+(Please see :meth:`~neuralib.argp.core.Argument.complete_kwargs()` for detailed):
 
-1. `bool`: infer parameter `action` to `store_true`, `default` to `False`.
-2. `Literal[...]` : infer parameter `choices`.
-3. `Optional[T]`: infer parameter `type` to `T` if it is callable. If it is `Literal`, apply 2.
-4. `callable(T)` : infer parameter `type` to `T`
-5. parameter `dest` always use attribute name.
+1. ``bool``: infer parameter ``action`` to ``store_true``, ``default`` to ``False``.
+2. ``Literal[...]`` : infer parameter ``choices``.
+3. ``Optional[T]``: infer parameter ``type`` to ``T`` if it is callable. If it is ``Literal``, apply 2.
+4. ``callable(...)`` with signature ``Callable[[str], T]``: infer parameter ``type`` to ``T``
+5. parameter ``dest`` always use the attribute name.
 
-Additionally, :class:`Argument` also provide a parameter `group` to reduce the complexity of
+Additionally, :class:`~neuralib.argp.core.Argument` also provide a parameter ``group`` to reduce the complexity of
 create subgrouping parser.
 
 Option class compose
@@ -80,7 +80,7 @@ argument. As well as disable it (by replacing a value)
 ...     OUTPUT_DIR: str = 'output' # just replace with a value
 
 Change options name is more complicate, because you might want to add more name, remove some name,
-or rename some name. :meth:`Argument.with_options` allow you to do that:
+or rename some name. :meth:`~neuralib.argp.core.Argument.with_options()` allow you to do that:
 
 >>> class ChangeExample(ExampleOptions):
 ...     # replace option name: --animal
@@ -95,8 +95,8 @@ or rename some name. :meth:`Argument.with_options` allow you to do that:
 Utility function for option class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`ExampleOptions` doesn't declated neither `__str__` nor `__repr__`, so it is not convenient to debug.
-funciont :func:`as_dict` provide a way to take argument attribute's value into a dictionary.
+``ExampleOptions`` doesn't declated neither ``__str__`` nor ``__repr__``, so it is not convenient to debug.
+funciont :func:`~neuralib.argp.core.as_dict()` provide a way to take argument attribute's value into a dictionary.
 
 >>> as_dict(opt)
 {'ANIMAL': ..., 'EXP_DATE': ..., 'OUTPUT_DIR': ...}
@@ -106,7 +106,7 @@ Option class is not restricted into only one use case. It works like a normal cl
 class AbstractParser
 --------------------
 
-This class provide a main like class that has more control on :class:`argparse.ArgumentParser`
+This class provide a main like class that has more control on ``argparse.ArgumentParser``
 creation.
 
 >>> class ExampleParser(AbstractParser, ExampleOptions):
