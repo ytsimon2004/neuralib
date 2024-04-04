@@ -13,7 +13,9 @@ from neuralib.util.util_verbose import fprint
 __all__ = [
     'SIGNAL_TYPE',
     'CALCIUM_TYPE',
-    'Suite2PResult',
+    'Suite2pGUIOptions',
+    'Suite2pRoiStat',
+    'Suite2PResult'
 ]
 
 SIGNAL_TYPE = Literal["df_f", "spks"]
@@ -22,6 +24,8 @@ BASELINE_METHOD = Literal['maximin', 'constant', 'constant_prctile']
 
 
 class Suite2pGUIOptions(TypedDict, total=False):
+    """ Suite2p GUI setting.
+    See `suite2p doc <https://suite2p.readthedocs.io/en/latest/settings.html>`_"""
     look_one_level_down: float
     fast_disk: str
     delete_bin: bool
@@ -151,6 +155,9 @@ class Suite2pGUIOptions(TypedDict, total=False):
 
 
 class Suite2pRoiStat(TypedDict, total=False):
+    """Suite2p GUI imaging.
+    See `suite2p doc <https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields>`_
+    """
     ypix: np.ndarray
     xpix: np.ndarray
     lam: np.ndarray
@@ -178,6 +185,8 @@ class Suite2pRoiStat(TypedDict, total=False):
 
 @attrs.frozen
 class Suite2PResult:
+    """suite2p result container"""
+
     directory: Path
     """s2p src path"""
 
@@ -218,6 +227,7 @@ class Suite2PResult:
 
     @classmethod
     def launch_gui(cls, directory: PathLike) -> None:
+        """launch the suite2p GUI"""
         from suite2p.gui import gui2p
 
         if not isinstance(directory, Path):
@@ -233,9 +243,10 @@ class Suite2PResult:
             runconfig_frate: float | None = 30.0,
     ) -> Suite2PResult:
         """
-        Load Suite2p output files
+        Load suite2p result from directory
 
         :param directory: directory contain all the s2p output files
+                e.g., <SUITE2P_OUTPUT>/suite2p/plane<P>
         :param cell_prob: cell probability,
                     bool type: use the criteria when set during the registration
                     float type: value in iscell[:, 1]

@@ -1,24 +1,30 @@
-# Tools
+# atlas
 allensdk
-allensdk
+brainrender==2.1.5
+vedo
+iblatlas
+
+# scanner
 aicspylibczi
+roifile==2022.3.18
+
+# calimg
+scanimage-tiff-reader
 suite2p
-ScanImageTiffReader
+sbxreader
+
+# segmentation
 cellpose==3.0.5
 stardist
+
+# wrapper
 facemap
-sbxreader
 rastermap
 neuropop
-roifile==2022.3.18
-brainrender==2.1.5
-iblatlas
-vedo
+
+# gui
 bokeh>=3.3.0
 
 # GPUs
 torch
 tensorflow
-
-# visual stim.
-psychopy>=2020.2.10

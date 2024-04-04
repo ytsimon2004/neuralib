@@ -10,7 +10,8 @@ See detail in the https://brainglobe.info/documentation/brainrender/index.html.
 The wrapper provide three main usage cases, and can be run as command line once the package installed
 
 Region reconstruction (area mode)
-~~~~~~~~~
+-----------
+
 Plot brain regions
 
 Example of reconstruct the Visual Cortex ::
@@ -25,7 +26,8 @@ See the available options use `-h` option ::
 
 
 ROI reconstruction (roi mode)
-~~~~~~~~~
+-----------
+
 Plot brain regions with ROIs label
 
 Example of reconstruct ROIs in the Somatosensory Cortex for ipsilateral hemisphere(assume right hemisphere)::
@@ -48,51 +50,28 @@ CSV FILE example (auto transformed coordinates space from allen to brainrender):
     │ Temporal association areas layer… ┆ TEa5    ┆ -2.91       ┆ 4.02        ┆ 4.55        ┆ 365     ┆ rfp     ┆ pRSC   ┆ Temporal association area ┆ TEa          ┆ ipsi   ┆ TEa        ┆ TEa        ┆ TEa        ┆ TEa        ┆ TEa        ┆ ISOCORTEX │
     └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┴─────────┴────────┴───────────────────────────┴──────────────┴────────┴────────────┴────────────┴────────────┴────────────┴────────────┴───────────┘
 
-See how to create the csv after ccf pipeline ::
+See how to create the csv after ccf pipeline
 
-    >>> from neuralib.atlas.ccf.classifier import RoiClassifier
-    >>> from neuralib.atlas.ccf.core import AbstractCCFDir
-    >>> root = ...
-    >>> ccf_dir = AbstractCCFDir(root, with_overlap_sources=False)
-    >>> classifier = RoiClassifier(ccf_dir, plane='coronal')
-    >>> df = classifier.parsed_df
+.. code-block:: python
 
-Example ccf data folder structure in ::
+    from neuralib.atlas.ccf.classifier import RoiClassifier
+    from neuralib.atlas.ccf.core import AbstractCCFDir
+    root = ...
+    ccf_dir = AbstractCCFDir(root, with_overlap_sources=False)
+    classifier = RoiClassifier(ccf_dir, plane='coronal')
+    df = classifier.parsed_df
 
-    ANIMAL_001/ (root)
-        ├── raw/ (optional)
-        ├── zproj/
-        │    └── ANIMAL_001_g*_s*_{channel}.tif
-        ├── roi/
-        │    └── ANIMAL_001_g*_s*_{channel}.roi
-        ├── roi_cpose/
-        │    └── ANIMAL_001_g*_s*_{channel}.roi
-        ├── resize/ (src for the allenccf)
-        │    ├── ANIMAL_001_g*_s*_resize.tif
-        │    └── processed/
-        │           ├── ANIMAL_001_g*_s*_resize_processed.tif
-        │           └── transformations/
-        │                 ├── ANIMAL_001_g*_s*_resize_processed_transformed.tif
-        │                 │
-        │                 ├── ANIMAL_001_g*_s*_resize_processed_transform_data.mat
-        │                 │
-        │                 │
-        │                 └── labelled_regions/
-        │                       ├── {*channel}_roitable.csv
-        │                       └── parsed_data /
-        │                             └── parsed_csv_merge.csv
-        │
-        └── output_files/ (for generate output fig)
+Example ccf data folder structure in (:class:`~neuralib.atlas.ccf.core.AbstractCCFDir()`)
 
 
 
-See the available options use `-h` option ::
+See the available options use ``-h`` option ::
 
     brender roi -h
 
 
 Probe reconstruction (probe mode)
-~~~~~~~~~
+-----------
 TODO
 
 """
