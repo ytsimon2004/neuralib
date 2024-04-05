@@ -1,9 +1,7 @@
 import functools
 import os
 
-import numpy as np
 import psutil
-from memory_profiler import profile
 
 from neuralib.util.util_verbose import fprint
 
@@ -59,6 +57,8 @@ def process_memory() -> int:
 
 
 def mem_profile():
+    """TODO compare with memory_profiler.profile decorator"""
+
     def _decorator(f):
         @functools.wraps(f)
         def _wrapper(*args, **kwargs):
@@ -70,14 +70,3 @@ def mem_profile():
         return _wrapper
 
     return _decorator
-
-
-@mem_profile()
-@profile()
-def test():
-    x = np.array([[1, 2, 3], [4, 5, 6]])
-    return x.T @ x
-
-
-if __name__ == '__main__':
-    test()

@@ -1250,9 +1250,10 @@ def _merge_area(s: str, region: dict[str, list[Area]]) -> str:
 def merge_until_level(ps: Series, level: MergeLevel) -> list[Area]:
     """
     merge the area until which `level`
-    :param ps:
-    :param level:
-    :return:
+
+    :param ps: pandas/polars series
+    :param level: level int
+    :return: list of area
     """
     if level not in list(range(NUM_MERGE_LAYER)):
         raise ValueError(f'wrong level: {level}')

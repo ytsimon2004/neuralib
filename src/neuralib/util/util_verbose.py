@@ -74,7 +74,17 @@ def printdf(df: DataFrame,
             ncols: int | None = None,
             do_fprint=False,
             **kwargs) -> str:
-    """print polars dataframe with given row numbers"""
+    """
+    print dataframe with given row numbers (polars)
+    if isinstance pandas dataframe, print all.
+
+    :param df: polars or pandas dataframe
+    :param nrows: number of rows (applicable in polars case)
+    :param ncols: number of columns
+    :param do_fprint:
+    :param kwargs:
+    :return:
+    """
 
     if isinstance(df, pl.DataFrame):
         with pl.Config() as cfg:

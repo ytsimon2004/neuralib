@@ -35,7 +35,7 @@ Load/Save
 Cooperate with PersistenceOptions
 ---------------------------------
 
->>> from neuralib.persistence.cli_presistence import PersistenceOptions
+>>> from neuralib.persistence.cli_persistence import PersistenceOptions
 >>> class ExampleHandle(PersistenceOptions[Example]):
 ...     def empty_cache(self) -> Example:
 ...         return Example(use_animal='A00', use_session='', use_date='1234') # with attribute initialization

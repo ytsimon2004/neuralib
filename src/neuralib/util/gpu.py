@@ -1,3 +1,18 @@
+"""
+Get basic GPU info table and verbose
+---------------
+
+- cuda driver (Windows)
+- metal backend support (MacOS)
+
+.. code-block:: python
+
+    from neuralib.util.gpu import setup_clogger
+    print_gpu_table()
+
+
+"""
+
 from __future__ import annotations
 
 import dataclasses
@@ -14,7 +29,8 @@ from neuralib.util.table import rich_data_frame_table
 
 __all__ = [
     'print_gpu_table',
-    'check_mps_available'
+    'check_mps_available',
+    'check_nvidia_cuda_available'
 ]
 
 
@@ -146,7 +162,3 @@ def check_nvidia_cuda_available() -> bool:
         logger.info('cuda is available in current env')
     else:
         logger.error('cuda computing in not setup properly')
-
-
-if __name__ == '__main__':
-    print_gpu_table()

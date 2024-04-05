@@ -1,44 +1,48 @@
 from __future__ import annotations
 
 import pickle
-from typing import TypedDict, Generator, overload, final
+from typing import TypedDict, Generator, overload, final, Final
 
 import attrs
 import h5py
 import numpy as np
 from typing_extensions import TypeAlias, Self, Literal
 
-from neuralib.stimpy.event import CamEvent
-from neuralib.stimpy.stimpy_core import RiglogData
 from neuralib.util.cli_args import CliArgs
+from neuralib.util.util_type import PathLike
+from neuralib.util.util_verbose import fprint
+from neuralib.util.utils import uglob
 
 __all__ = [
     'TRACK_TYPE',
+    'SVDVariables',
+
     'KeyPoint',
     'FaceMapResult',
     'KeyPointTrack',
 ]
 
-from neuralib.util.util_type import PathLike
-from neuralib.util.util_verbose import fprint
-from neuralib.util.utils import uglob
-
 TRACK_TYPE = Literal['keypoints', 'pupil']
 
 
 class PupilDict(TypedDict):
+    """
+    `Dimension parameters`:
+
+        F: number pf frames
+    """
     area: np.ndarray
-    """(N,)"""
+    """(F,)"""
     com: np.ndarray
-    """center of maze (N, 2)"""
+    """center of maze (F, 2)"""
     axdir: np.ndarray
-    """(N, 2, 2)"""
+    """(F, 2, 2)"""
     axlen: np.ndarray
-    """(N, 2)"""
+    """(F, 2)"""
     area_smooth: np.ndarray
-    """(N,)"""
+    """(F,)"""
     com_smooth: np.ndarray
-    """(N, 2)"""
+    """(F, 2)"""
 
 
 class RoiDict(TypedDict, total=False):
@@ -57,7 +61,9 @@ class RoiDict(TypedDict, total=False):
 
 
 class SVDVariables(TypedDict, total=False):
-    """http://facemap.readthedocs.io/en/stable/outputs.html#roi-and-svd-processing"""
+    """SVD output from facemap
+
+    .. seealso:: `<http://facemap.readthedocs.io/en/stable/outputs.html#roi-and-svd-processing>`_"""
     filenames: list[str]
     save_path: str
     Ly: list[int]
@@ -93,7 +99,8 @@ class SVDVariables(TypedDict, total=False):
 
 
 class KeyPointsMeta(TypedDict):
-    """https://facemap.readthedocs.io/en/stable/outputs.html#keypoints-processing"""
+    """ Keypoint meta
+    .. seealso:: `<https://facemap.readthedocs.io/en/stable/outputs.html#keypoints-processing>`_"""
     batch_size: int
     image_size: tuple[list[int], ...]
     bbox: tuple[int, ...]
@@ -111,62 +118,89 @@ KeyPoint: TypeAlias = str
 
 @final
 class FaceMapResult:
-    __slots__ = ('svd', 'meta', 'data', 'rig',
-                 '_track_type', '_with_keypoints')
+    """facemap result container
+
+    `Dimension parameters`:
+        F = number of video frames
+        K = number of keypoints
+    """
+    __slots__ = ('svd', 'meta', 'data', 'frame_time',
+                 'track_type', 'with_keypoints')
 
     def __init__(
             self,
-            rig: RiglogData,
             svd: SVDVariables,
             meta: KeyPointsMeta | None,
             data: h5py.Group | None,
-            track_type: 'TRACK_TYPE',
+            track_type: TRACK_TYPE,
+            frame_time: np.ndarray,
             with_keypoints: bool,
     ):
         """
 
-        :param rig: Stimpy .riglog (for time sync)
         :param svd: SVD processing outputs
         :param meta: Optional for Keypoints processing (result)
         :param data: Optional for Keypoints processing (config)
+        :param track_type: {'keypoints', 'pupil'}
+        :param frame_time: video frame time ``(F, )``
+        :param with_keypoints: if has keypoint tracking result
         """
-        self.rig = rig
         self.svd = svd
-        self.meta = meta
-        self.data = data
+        self.meta: Final[KeyPointsMeta | None] = meta
+        self.data: Final[h5py.Group | None] = data
 
-        self._track_type = track_type
-        self._with_keypoints = with_keypoints
+        self.frame_time: Final[np.ndarray] = frame_time
+        self.track_type: Final[TRACK_TYPE] = track_type
+        self.with_keypoints: Final[bool] = with_keypoints
 
     @classmethod
     def load(cls, directory: PathLike,
-             rig: RiglogData,
-             track_type: 'TRACK_TYPE',
-             with_keypoints: bool) -> Self:
+             track_type: TRACK_TYPE,
+             frame_time: np.ndarray) -> Self:
+        """
+        Load the facecam result from its output directory
+
+        :param directory: directory contains the possible facemap output files (*.npy, *.pkl, and *.h5)
+        :param track_type: {'keypoints', 'pupil'}
+        :param frame_time: video frame time ``(N, )``
+        :return: :class:`FaceMapResult`
+        """
         #
         svd_path = uglob(directory, '*.npy')
         svd = np.load(svd_path, allow_pickle=True).item()
 
         #
-        if with_keypoints:
+        try:
             meta_path = uglob(directory, '*.pkl')
-            with open(meta_path, 'rb') as f:
-                meta = pickle.load(f)
-            #
-            data_path = uglob(directory, '*.h5')
-            data = h5py.File(data_path)['Facemap']
-        else:
+        except FileNotFoundError:
             meta = None
             data = None
+            with_keypoints = False
+        else:
+            with open(meta_path, 'rb') as f:
+                meta = pickle.load(f)
 
-        return FaceMapResult(rig, svd, meta, data, track_type, with_keypoints)
+            data_path = uglob(directory, '*.h5')
+            data = h5py.File(data_path)['Facemap']
+
+            with_keypoints = True
+
+        return FaceMapResult(svd, meta, data, track_type, frame_time, with_keypoints)
 
     @classmethod
     def launch_facemap_gui(cls, directory: PathLike,
                            with_keypoints: bool,
-                           env_name: str = 'rscvp') -> None:
-        """GUI view via cli.
-        ** Note that launching the GUI required the same source root video path"""
+                           env_name: str = 'neuralib') -> None:
+        """
+        GUI view via cli.
+
+        ** Note that launching the GUI required the same source root video path
+
+        :param directory: directory contains the possible facemap output files (*.npy, *.pkl, and *.h5)
+        :param with_keypoints: if has keypoint tracking result
+        :param env_name: conda env name
+        :return:
+        """
         import subprocess
 
         svd_path = uglob(directory, '*.npy')
@@ -181,21 +215,19 @@ class FaceMapResult:
         fprint(f'{cmds=}')
         subprocess.check_call(cmds)
 
-    @property
-    def with_keypoints(self) -> bool:
-        return self._with_keypoints
-
     # ============== #
     # Pupil Tracking #
     # ============== #
 
     def get_pupil_tracking(self) -> PupilDict:
+        """pupil tracking result"""
         ret = self.svd['pupil']
         if len(ret) == 1:
             return ret[0]
         raise NotImplementedError('')
 
     def get_eye_blink(self) -> np.ndarray:
+        """eye blinking array (F, )"""
         ret = self.svd['blink']
         if len(ret) == 1:
             return ret[0]
@@ -206,25 +238,9 @@ class FaceMapResult:
     # ============== #
 
     @property
-    def camera_event(self) -> CamEvent:
-        if self._track_type == 'keypoints':
-            return self.rig.camera_event['facecam']
-        elif self._track_type == 'pupil':
-            return self.rig.camera_event['eyecam']
-        else:
-            raise ValueError('')
-
-    @property
-    def fps(self) -> float:
-        return self.camera_event.fps
-
-    @property
-    def time(self) -> np.ndarray:
-        return self.camera_event.time
-
-    @property
     def n_frames(self) -> int:
-        return len(self.time)
+        """number of facemap tracked video frames"""
+        return len(self.frame_time)
 
     # ========= #
     # Keypoints #
@@ -232,9 +248,11 @@ class FaceMapResult:
 
     @property
     def keypoints(self) -> list[KeyPoint]:
+        """list of keypoint name"""
         return list(self.data.keys())
 
     def __getitem__(self, keypoint: KeyPoint) -> KeyPointTrack:
+        """get a specific keypoint tracking result"""
         if keypoint not in self.keypoints:
             raise KeyError(f'{keypoint} invalid')
 
@@ -245,7 +263,7 @@ class FaceMapResult:
         return KeyPointTrack(keypoint, x, y, llh)
 
     def __iter__(self) -> Generator[KeyPointTrack, None, None]:
-        """for all keypoints"""
+        """iterate all keypoints"""
         for kp in self.keypoints:
             yield self[kp]
 
@@ -260,6 +278,7 @@ class FaceMapResult:
         pass
 
     def get(self, keypoint):
+        """get a single or multiple keypoint(s)"""
         if isinstance(keypoint, str):
             return self[keypoint]
         elif isinstance(keypoint, list):
@@ -268,7 +287,12 @@ class FaceMapResult:
             raise TypeError('')
 
     def as_array(self, keypoint: list[KeyPoint] | KeyPoint | None = None) -> np.ndarray:
-        """(nF, nK)"""
+        """
+        get keypoint(s) result as an 2D array
+
+        :param keypoint: keypoint
+        :return: (F, K)
+        """
         if keypoint is not None:
             kps = self.get(keypoint)
         else:
@@ -291,10 +315,16 @@ class FaceMapResult:
 
 @attrs.define
 class KeyPointTrack:
+    """single keypoint tracked result"""
+
     name: KeyPoint
+    """name of keypoint"""
     x: np.ndarray
+    """x loc (F,)"""
     y: np.ndarray
+    """y loc (F,)"""
     likelihood: np.ndarray
+    """tracking likelihood (F,)"""
 
     def with_outlier_filter(
             self,
@@ -309,6 +339,7 @@ class KeyPointTrack:
         :param baseline_window: window size for baseline estimation
         :param max_spike: maximum spike size
         :param max_diff: maximum difference between baseline and filtered signal
+        :return: :class:`KeyPointTrack`
 
         """
         from facemap.utils import filter_outliers
@@ -322,8 +353,8 @@ class KeyPointTrack:
         return attrs.evolve(self, x=_x, y=_y)
 
     def to_zscore(self) -> Self:
+        """x, y z-scoring"""
         from scipy.stats import zscore
         _x = zscore(self.x)
         _y = zscore(self.y)
         return attrs.evolve(self, x=_x, y=_y)
-

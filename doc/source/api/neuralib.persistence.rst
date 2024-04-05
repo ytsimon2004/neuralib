@@ -9,5 +9,4 @@ neuralib.persistence
     :caption: Modules:
     
     neuralib.persistence.persistence
-    neuralib.persistence.verbose
-
+     neuralib.persistence.cli_persistence

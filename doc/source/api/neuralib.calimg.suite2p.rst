@@ -9,5 +9,5 @@ neuralib.calimg.suite2p
     :caption: Modules:
     
     neuralib.calimg.suite2p.core
-    neuralib.calimg.suite2p.signal
+    neuralib.calimg.suite2p.signals
 
