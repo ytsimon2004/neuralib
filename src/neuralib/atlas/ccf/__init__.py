@@ -9,7 +9,7 @@ Atlas CCF
 This module provide analysis pipeline for the data acquired from allenccf mouse brain registration tool
 specifically for the ROIs distribution across the whole brain
 
-.. seealso::`<https://github.com/cortex-lab/allenCCF>_`
+.. seealso:: `<https://github.com/cortex-lab/allenCCF>`_
 
 
 Data Folder structure should follow::
