@@ -72,7 +72,8 @@ def fprint(*msgs,
 def printdf(df: DataFrame,
             nrows: int | None = None,
             ncols: int | None = None,
-            do_fprint=False,
+            tbl_width_chars: int = 500,
+            do_fprint: bool = False,
             **kwargs) -> str:
     """
     print dataframe with given row numbers (polars)
@@ -81,13 +82,14 @@ def printdf(df: DataFrame,
     :param df: polars or pandas dataframe
     :param nrows: number of rows (applicable in polars case)
     :param ncols: number of columns
+    :param tbl_width_chars: table width for showing
     :param do_fprint:
     :param kwargs:
     :return:
     """
 
     if isinstance(df, pl.DataFrame):
-        with pl.Config() as cfg:
+        with pl.Config(tbl_width_chars=tbl_width_chars) as cfg:
             rows = df.shape[0] if nrows is None else nrows
             cols = df.shape[1] if ncols is None else ncols
             cfg.set_tbl_rows(rows)

@@ -1217,9 +1217,10 @@ DEFAULT_FAMILY_DICT: dict[str, AllenFamilyType] = dict(
 
 def merge_area(ps: Series, region: dict[str, list[Area]]) -> list[str]:
     """
+    merge the area name series to another level based on the ``region`` dict
 
-    :param ps: regions str
-    :param region: `MERGE_REGION_LV*`
+    :param ps: pandas/polars series with area name
+    :param region: ``MERGE_REGION_LV*``
     :return:
     """
     ret = []
@@ -1251,7 +1252,7 @@ def merge_until_level(ps: Series, level: MergeLevel) -> list[Area]:
     """
     merge the area until which `level`
 
-    :param ps: pandas/polars series
+    :param ps: pandas/polars series with area name
     :param level: level int
     :return: list of area
     """

@@ -10,7 +10,14 @@ from neuralib.util.util_type import PathLike
 def plot_sunburst_acronym(source: str = 'allen_mouse_10um',
                           check_latest: bool = True,
                           output: PathLike | None = None):
-    """plot allen brain structure tree interactive plot"""
+    """
+    plot allen brain structure tree interactive plot
+
+    :param source: allen source name
+    :param check_latest: if check the brainglobe api latest version
+    :param output: figure output path, otherwise, render interactively
+    :return:
+    """
     file = BrainGlobeAtlas(source, check_latest=check_latest).root_dir / 'structures.csv'
     df = pl.read_csv(file)
 

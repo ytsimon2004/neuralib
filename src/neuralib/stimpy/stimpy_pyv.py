@@ -147,7 +147,7 @@ class StimlogPyVStim(StimlogBase):
 
         return interp1d(
             fliploc,
-            self.riglog_data.screen_event.frame_time,
+            self.riglog_data.screen_event.time,
             fill_value="extrapolate"
         )(np.arange(len(indicator_flag)))
 

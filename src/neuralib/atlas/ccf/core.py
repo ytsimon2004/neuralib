@@ -63,16 +63,14 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
             │           ├── ANIMAL_001_g*_s*_resize_processed.tif
             │           └── transformations/
             │                 ├── ANIMAL_001_g*_s*_resize_processed_transformed.tif
-            │                 │
             │                 ├── ANIMAL_001_g*_s*_resize_processed_transform_data.mat
-            │                 │
-            │                 │
             │                 └── labelled_regions/
             │                       ├── {*channel}_roitable.csv
             │                       └── parsed_data /
             │                             └── parsed_csv_merge.csv
             │
             └── output_files/ (for generate output fig)
+
     """
     def __new__(cls, root: PathLike,
                 auto_mkdir: bool = True,

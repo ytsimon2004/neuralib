@@ -328,8 +328,7 @@ class RoiClassifier:
         :param top_area: select top ranks area based on channel-based normalized percentage
         :param source: specify source, if not then produce all source
         :param add_other: the rest of regions (after top selection), classified as `other` (i.e., pie chart)
-        :param supply_overlap: modify/add value in `n_cell` and `percent` df column in gfp/rfp channels based on
-            `overlap`channel (In this case, need to have another roitable ccf output for overlap channel)
+        :param supply_overlap: add overlap roi counts into other channel(s)
         :param hemisphere: filter the output data with selected hemisphere {'ipsi', 'contra', 'both'}
         :param area: filter the output data with selected area
         :return: :class:`RoiClassifiedNormTable`

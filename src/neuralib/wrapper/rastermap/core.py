@@ -5,6 +5,7 @@ from typing import TypedDict
 
 import attrs
 import numpy as np
+from typing_extensions import Self
 
 from neuralib.util.util_verbose import fprint
 
@@ -15,6 +16,7 @@ __all__ = ['UserCluster',
 
 class UserCluster(TypedDict, total=False):
     """GUI selected clusters"""
+
     ids: np.ndarray
     """neuronal ids"""
     slice: slice
@@ -26,8 +28,9 @@ class UserCluster(TypedDict, total=False):
 
 class RasterOptions(TypedDict, total=False):
     """Run Rastermap model options"""
+
     n_clusters: int
-    """number of clusters to compute"""
+    """number of clusters to compute. TODO check how affect the result"""
     n_PCs: int
     """number of PCs to use"""
     time_lag_window: float
@@ -50,21 +53,43 @@ class RasterOptions(TypedDict, total=False):
 
 @attrs.define
 class RasterMapResult:
+    """Container for storing the rastermap result,
+    For both GUI load and customized plotting purpose
+
+    `Dimension parameters`:
+
+        N = number of neurons
+
+        T = number of image pulse
+
+        C = number of clusters = N / binsize
+
+    """
+
     filename: str
+    """neural activity filename (N, T)"""
     save_path: str
+    """filename for the rastermap result save"""
     isort: np.ndarray
-    """(N',)"""
+    """(N,)"""
     embedding: np.ndarray
-    """(N',1)"""
+    """(N,1)"""
     ops: RasterOptions
-
+    """`RasterOptions`"""
     user_clusters: list[UserCluster] = attrs.field(default=attrs.Factory(list))
+    """list of clusters `UserCluster`"""
 
-    # customized
     super_neurons: np.ndarray | None = attrs.field(default=None)
+    """super neuron activity (C, T)"""
 
     @classmethod
-    def load(cls, path: Path) -> 'RasterMapResult':
+    def load(cls, path: Path) -> Self:
+        """
+        Load the results from rastermap output
+
+        :param path: file path of the rastermap output
+        :return: :class:`RasterMapResult`
+        """
         dat = np.load(path, allow_pickle=True).item()
         fprint(f'LOAD ->{path}', vtype='io')
 

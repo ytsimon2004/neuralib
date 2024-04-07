@@ -23,6 +23,7 @@ __all__ = ['AllenReferenceWrapper']
 
 
 class StructureTreeDict(TypedDict):
+    """allen structure tree dict"""
     acronym: str
     graph_id: int
     graph_order: int
@@ -34,12 +35,18 @@ class StructureTreeDict(TypedDict):
 
 
 class AllenReferenceWrapper:
+    """Class for load the data in allen"""
+
     REFERENCE_SPACE_KEY: ClassVar[str] = 'ccf_2017'
     STRUCTURE_GRAPH_ID: ClassVar[int] = 1
 
     def __init__(self,
                  resolution: int = 10,
                  output: PathLike | None = None):
+        """
+        :param resolution: resolution in um
+        :param output: output directory for downloading cache. By default, save in ``CCF_CACHE_DIRECTORY``
+        """
 
         if output is None:
             output = CCF_CACHE_DIRECTORY
@@ -59,10 +66,25 @@ class AllenReferenceWrapper:
     @classmethod
     def load_structure_tree(cls, version: Literal['2017', 'old'] = '2017') -> pl.DataFrame:
         """
+        Load structure tree dataframe
 
-        :param filepath: csv structure tree file
-        :param version
-        :return:
+        :param version: {'2017', 'old'}
+        :return: structure tree dataframe
+
+        ::
+
+            ┌───────────┬──────────┬───────────────────────────────┬─────────┬──────────┬─────────────┬───────────────┬────────┬─────────────────────┬───────┬──────────┬─────────────┬───────────────────┬───────────────────┬─────────────────────────┬──────────────────────────────┬────────┬───────────┬──────────────────────┬──────────────┬───────────────────────────────┐
+            │ id        ┆ atlas_id ┆ name                          ┆ acronym ┆ st_level ┆ ontology_id ┆ hemisphere_id ┆ weight ┆ parent_structure_id ┆ depth ┆ graph_id ┆ graph_order ┆ structure_id_path ┆ color_hex_triplet ┆ neuro_name_structure_id ┆ neuro_name_structure_id_path ┆ failed ┆ sphinx_id ┆ structure_name_facet ┆ failed_facet ┆ safe_name                     │
+            │ ---       ┆ ---      ┆ ---                           ┆ ---     ┆ ---      ┆ ---         ┆ ---           ┆ ---    ┆ ---                 ┆ ---   ┆ ---      ┆ ---         ┆ ---               ┆ ---               ┆ ---                     ┆ ---                          ┆ ---    ┆ ---       ┆ ---                  ┆ ---          ┆ ---                           │
+            │ i64       ┆ f64      ┆ str                           ┆ str     ┆ str      ┆ i64         ┆ i64           ┆ i64    ┆ f64                 ┆ i64   ┆ i64      ┆ i64         ┆ list[i64]         ┆ str               ┆ str                     ┆ str                          ┆ str    ┆ i64       ┆ i64                  ┆ i64          ┆ str                           │
+            ╞═══════════╪══════════╪═══════════════════════════════╪═════════╪══════════╪═════════════╪═══════════════╪════════╪═════════════════════╪═══════╪══════════╪═════════════╪═══════════════════╪═══════════════════╪═════════════════════════╪══════════════════════════════╪════════╪═══════════╪══════════════════════╪══════════════╪═══════════════════════════════╡
+            │ 997       ┆ -1.0     ┆ root                          ┆ root    ┆ null     ┆ 1           ┆ 3             ┆ 8690   ┆ -1.0                ┆ 0     ┆ 1        ┆ 0           ┆ [997]             ┆ FFFFFF            ┆ null                    ┆ null                         ┆ f      ┆ 1         ┆ 385153371            ┆ 734881840    ┆ root                          │
+            │ 8         ┆ 0.0      ┆ Basic cell groups and regions ┆ grey    ┆ null     ┆ 1           ┆ 3             ┆ 8690   ┆ 997.0               ┆ 1     ┆ 1        ┆ 1           ┆ [997, 8]          ┆ BFDAE3            ┆ null                    ┆ null                         ┆ f      ┆ 2         ┆ 2244697386           ┆ 734881840    ┆ Basic cell groups and regions │
+            │ …         ┆ …        ┆ …                             ┆ …       ┆ …        ┆ …           ┆ …             ┆ …      ┆ …                   ┆ …     ┆ …        ┆ …           ┆ …                 ┆ …                 ┆ …                       ┆ …                            ┆ …      ┆ …         ┆ …                    ┆ …            ┆ …                             │
+            │ 65        ┆ 715.0    ┆ parafloccular sulcus          ┆ pfs     ┆ null     ┆ 1           ┆ 3             ┆ 8690   ┆ 1040.0              ┆ 3     ┆ 1        ┆ 1324        ┆ [997, 1024, … 65] ┆ AAAAAA            ┆ null                    ┆ null                         ┆ f      ┆ 1325      ┆ 771629690            ┆ 734881840    ┆ parafloccular sulcus          │
+            │ 624       ┆ 926.0    ┆ Interpeduncular fossa         ┆ IPF     ┆ null     ┆ 1           ┆ 3             ┆ 8690   ┆ 1024.0              ┆ 2     ┆ 1        ┆ 1325        ┆ [997, 1024, 624]  ┆ AAAAAA            ┆ null                    ┆ null                         ┆ f      ┆ 1326      ┆ 1476705011           ┆ 734881840    ┆ Interpeduncular fossa         │
+            │ 304325711 ┆ -2.0     ┆ retina                        ┆ retina  ┆ null     ┆ 1           ┆ 3             ┆ 8690   ┆ 997.0               ┆ 1     ┆ 1        ┆ 1326        ┆ [997, 304325711]  ┆ 7F2E7E            ┆ null                    ┆ null                         ┆ f      ┆ 1327      ┆ 3295290839           ┆ 734881840    ┆ retina                        │
+            └───────────┴──────────┴───────────────────────────────┴─────────┴──────────┴─────────────┴───────────────┴────────┴─────────────────────┴───────┴──────────┴─────────────┴───────────────────┴───────────────────┴─────────────────────────┴──────────────────────────────┴────────┴───────────┴──────────────────────┴──────────────┴───────────────────────────────┘
 
         """
         if version == '2017':
@@ -79,8 +101,7 @@ class AllenReferenceWrapper:
 
         ret = (pl.read_csv(filepath)
                .with_columns(pl.col('parent_structure_id').fill_null(-1))
-               .with_columns(pl.col('structure_id_path')
-                             .map_elements(lambda it: tuple(map(int, it[1:-1].split('/'))))))
+               .with_columns(pl.col('structure_id_path').map_elements(lambda it: tuple(map(int, it[1:-1].split('/'))))))
         #
         if '2017' in Path(filepath).name:
             ret = ret.with_columns(pl.col('atlas_id').fill_null(-2))
@@ -120,11 +141,12 @@ class AllenReferenceWrapper:
                         plane_type: PLANE_TYPE,
                         resolution: int = 10) -> AbstractSliceView:
         """
+        Load the slice view
 
-        :param source:
-        :param plane_type:
-        :param resolution: in um
-        :return:
+        :param source: ``ALLEN_SOURCE_TYPE``
+        :param plane_type: ``PLANE_TYPE``
+        :param resolution: resolution in um
+        :return: :class:`~neuralib.atlas.view.AbstractSliceView()`
         """
 
         if source in ('npy', 'nrrd'):

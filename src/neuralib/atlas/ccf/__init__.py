@@ -7,6 +7,7 @@ Atlas CCF
 
 
 This module provide analysis pipeline for the data acquired from allenccf mouse brain registration tool
+
 specifically for the ROIs distribution across the whole brain
 
 .. seealso:: `<https://github.com/cortex-lab/allenCCF>`_
@@ -28,10 +29,7 @@ Data Folder structure should follow::
         │           ├── ANIMAL_001_g*_s*_resize_processed.tif
         │           └── transformations/
         │                 ├── ANIMAL_001_g*_s*_resize_processed_transformed.tif
-        │                 │
         │                 ├── ANIMAL_001_g*_s*_resize_processed_transform_data.mat
-        │                 │
-        │                 │
         │                 └── labelled_regions/
         │                       ├── {*channel}_roitable.csv
         │                       └── parsed_data /
@@ -161,7 +159,34 @@ output::
 
 Do the ROI subregions query
 -----------------
-TODO doc
+
+Example for query the ROIs in visual cortex
+
+.. code-block:: python
+
+    from neuralib.atlas.ccf.query import RoiAreaQuery
+
+    # use the classifier constructed above
+    df = classifier.parsed_df
+    result = RoiAreaQuery.by(df, 'VIS).get_subregion_result
+    print(result.data)
+
+
+output::
+
+    ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬────────┐
+    │ source  ┆ VISam   ┆ VISp    ┆ VISpm   ┆ VISl    ┆ VISal   ┆ VISpor  ┆ VISli   ┆ VISpl   ┆ VISC   │
+    │ ---     ┆ ---     ┆ ---     ┆ ---     ┆ ---     ┆ ---     ┆ ---     ┆ ---     ┆ ---     ┆ ---    │
+    │ str     ┆ f64     ┆ f64     ┆ f64     ┆ f64     ┆ f64     ┆ f64     ┆ f64     ┆ f64     ┆ f64    │
+    ╞═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪════════╡
+    │ aRSC    ┆ 25.4669 ┆ 34.0318 ┆ 23.0979 ┆ 6.42369 ┆ 6.37813 ┆ 1.77676 ┆ 2.27790 ┆ 0.0     ┆ 0.5466 │
+    │         ┆ 7       ┆ 91      ┆ 5       ┆         ┆ 2       ┆ 5       ┆ 4       ┆         ┆ 97     │
+    │ pRSC    ┆ 15.1445 ┆ 36.1079 ┆ 29.5568 ┆ 10.7129 ┆ 3.04431 ┆ 2.38921 ┆ 1.92678 ┆ 1.07899 ┆ 0.0385 │
+    │         ┆ 09      ┆         ┆ 4       ┆ 09      ┆ 6       ┆         ┆ 2       ┆ 8       ┆ 36     │
+    │ overlap ┆ 48.5294 ┆ 8.82352 ┆ 31.25   ┆ 4.04411 ┆ 3.30882 ┆ 2.57352 ┆ 1.10294 ┆ 0.0     ┆ 0.3676 │
+    │         ┆ 12      ┆ 9       ┆         ┆ 8       ┆ 4       ┆ 9       ┆ 1       ┆         ┆ 47     │
+    └─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴────────┘
+
 
 
 """

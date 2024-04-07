@@ -1,3 +1,18 @@
+"""
+Default Path for Cache
+====================
+
+.. code-block:: python
+
+    CACHE_DIRECTORY = Path.home() / '.cache'
+    NEUROLIB_CACHE_DIRECTORY = CACHE_DIRECTORY / 'neuralib'
+
+    # ATLAS
+    ATLAS_CACHE_DIRECTORY = NEUROLIB_CACHE_DIRECTORY / 'atlas'
+    CCF_CACHE_DIRECTORY = ATLAS_CACHE_DIRECTORY / 'ccf_2017'
+    IBL_CACHE_DIRECTORY = ATLAS_CACHE_DIRECTORY / 'ibl'
+
+"""
 from pathlib import Path
 
 __all__ = [
