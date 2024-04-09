@@ -14,6 +14,7 @@ author = 'Yu-Ting Wei'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.viewcode',
               'nbsphinx']
 
 templates_path = ['_templates']
