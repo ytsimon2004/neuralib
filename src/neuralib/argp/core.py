@@ -252,6 +252,12 @@ class Argument(object):
                     elif callable(type_args[0]):
                         kwargs['type'] = type_args[0]
 
+            elif kwargs.get('action', None) in ['append', 'extend']:
+                coll_attr_type = get_origin(attr_type)
+                if coll_attr_type == list:
+                    kwargs['type'] = get_args(attr_type)[0]
+                else:
+                    raise RuntimeError(f"cannot infer type. {self.attr} missing keyword type.")
             elif callable(attr_type):
                 kwargs['type'] = attr_type
 
