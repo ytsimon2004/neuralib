@@ -11,10 +11,23 @@ from polars import ColumnNotFoundError
 from neuralib.stimpy.baselog import STIMPY_SOURCE_VERSION
 from neuralib.util.util_verbose import fprint
 
-
 __all__ = ['AbstractStimProtocol']
 
+
 class AbstractStimProtocol(metaclass=abc.ABCMeta):
+    """ABC class for the stimpy protocol file (.prot)
+
+    `Dimension parameters`:
+
+        N = numbers of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = Number of Stim Type
+
+        C = Numbers of Cycle
+    """
+
     name: str
     """protocol name. related to filename"""
 
@@ -22,7 +35,7 @@ class AbstractStimProtocol(metaclass=abc.ABCMeta):
     """protocol options"""
 
     visual_stimuli_dataframe: pl.DataFrame
-    """visual stimuli"""
+    """visual stimuli dataframe. row number: S"""
 
     version: STIMPY_SOURCE_VERSION
     """date of major changes"""
@@ -41,19 +54,19 @@ class AbstractStimProtocol(metaclass=abc.ABCMeta):
 
     @property
     def n_stimuli(self) -> int:
-        """number of stimuli (rows)"""
+        """number of stimuli (S)"""
         return self.visual_stimuli_dataframe.shape[0]
 
     @property
     def stim_params(self) -> tuple[str, ...]:
         return tuple(self.visual_stimuli_dataframe.columns)
 
-    @property
-    def visual_stimuli(self) -> list[GenericStim]:  # TODO check
-        if self._visual_stimuli is None:
-            from rscvp.ztimpy.stim.stimulus import VisualStimulus
-            self._visual_stimuli = VisualStimulus.from_protocol(self)
-        return self._visual_stimuli
+    # @property
+    # def visual_stimuli(self) -> list[GenericStim]:  # TODO check
+    #     if self._visual_stimuli is None:
+    #         from rscvp.ztimpy.stim.stimulus import VisualStimulus
+    #         self._visual_stimuli = VisualStimulus.from_protocol(self)
+    #     return self._visual_stimuli
 
     @overload
     def __getitem__(self, item: int) -> pl.DataFrame:
@@ -68,16 +81,15 @@ class AbstractStimProtocol(metaclass=abc.ABCMeta):
     def __getitem__(self, item: str | int) -> np.ndarray | pl.DataFrame:
         """Get protocol value of parameter *item*
 
-        :param item: parameter name
+        :param item: parameter name. either the row number(int) or field name (str)
         :return: protocol value
-        :raises TypeError: *item* not a `str` or `int`
+        :raises TypeError: `item` not a `str` or `int`
         """
         if isinstance(item, str):
             try:
                 return self.visual_stimuli_dataframe.get_column(item).to_numpy()
             except ColumnNotFoundError as e:
-                fprint(f'INVALID: {item}, select from {tuple(self.visual_stimuli_dataframe.columns)}',
-                       vtype='error')
+                fprint(f'INVALID: {item}, select from {tuple(self.visual_stimuli_dataframe.columns)}', vtype='error')
                 raise e
 
         elif isinstance(item, int):
@@ -91,51 +103,56 @@ class AbstractStimProtocol(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def load(cls, file: Path | str) -> 'AbstractStimProtocol':
+    def load(cls, file: Path | str) -> AbstractStimProtocol:
         """Load *.prot file
+
         :param file: file path
-        :param as_string: string type content
         """
         pass
 
     @property
     @abc.abstractmethod
-    def shuffle(self) -> bool:
+    def is_shuffle(self) -> bool:
+        """if shuffle stimulation"""
         pass
 
     @property
     @abc.abstractmethod
     def background(self) -> float:
+        """background for non-stimulation epoch.
+        Note the default value need to check in user-specific stimpy version
+        """
         pass
 
     @property
     @abc.abstractmethod
     def start_blank_duration(self) -> int:
-        """blank duration of protocol beginning"""
+        """blank duration before starting the visual stimulation epoch (in sec)"""
         pass
 
     @property
     @abc.abstractmethod
     def blank_duration(self) -> int:
-        """blank duration between stimulus"""
+        """blank duration between each visual stimulus (in sec)"""
         pass
 
     @property
     @abc.abstractmethod
     def trial_blank_duration(self) -> int:
-        """blank duration between trials"""
+        """blank duration between trials (in sec)
+        TODO check stimpy source code"""
         pass
 
     @property
     @abc.abstractmethod
     def end_blank_duration(self) -> int:
-        """blank duration of protocol ending"""
+        """blank duration after the visual stimulation epoch"""
         pass
 
     @property
     @abc.abstractmethod
     def trial_duration(self) -> int:
-        """trial duration."""
+        """trial duration"""
         pass
 
     @property
@@ -155,7 +172,7 @@ class AbstractStimProtocol(metaclass=abc.ABCMeta):
 
     @property
     def n_trials(self) -> int:
-        """trial repeat times"""
+        """(T,)"""
         return self.options['nTrials']
 
     def to_dict(self) -> dict[str, Any]:

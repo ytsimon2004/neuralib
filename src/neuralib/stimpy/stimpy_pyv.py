@@ -223,21 +223,21 @@ class StimTimeProfile(AbstractStimTimeProfile):
 
     @property
     def n_trials(self) -> int:
-        """nTR"""
+        """N"""
         return self.unique_stimuli_set.shape[0]
 
     @property
     def i_stim(self) -> np.ndarray:
-        """(TR, ) value: stim type index"""
+        """(N, ) value: stim type index"""
         return self.unique_stimuli_set.get_column('i_stims').to_numpy()
 
     @property
     def i_trial(self) -> np.ndarray:
-        """(TR, ). value: trial"""
+        """(N, ). value: trial"""
         return self.unique_stimuli_set.get_column('i_trials').to_numpy()
 
     def get_time_interval(self) -> np.ndarray:
-        """(TR, 2) with (start, end)"""
+        """(N, 2) with (start, end)"""
         ustims = self.stim.v_stim * (1 - self.stim.v_blank)
         utrials = self.stim.v_trial * (1 - self.stim.v_blank)
 
@@ -309,7 +309,7 @@ class PyVProtocol(AbstractStimProtocol):
         return PyVProtocol(file.name, options, pl.DataFrame(visual_stimuli), version)
 
     @property
-    def shuffle(self) -> bool:
+    def is_shuffle(self) -> bool:
         """TODO"""
         return False
 
