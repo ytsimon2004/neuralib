@@ -11,6 +11,8 @@ __all__ = [
 
 @attrs.define
 class RigEvent:
+    """container for riglog event type/value"""
+
     name: str
     """event name"""
     data: np.ndarray
@@ -30,11 +32,11 @@ class RigEvent:
 
     @property
     def start_time(self) -> float:
-        return self.time[0]
+        return cast(float, self.time[0])
 
     @property
     def end_time(self) -> float:
-        return self.time[-1]
+        return cast(float, self.time[-1])
 
     @property
     def value_index(self) -> np.ndarray:
@@ -53,6 +55,7 @@ class RigEvent:
 
 @attrs.frozen
 class CamEvent(RigEvent):
+    """container for riglog camera event type/value"""
 
     def __len__(self):
         """n_pulses"""
@@ -60,12 +63,12 @@ class CamEvent(RigEvent):
 
     @property
     def n_pulses(self) -> int:
+        """number of camera pulse"""
         return len(self)
 
     @property
     def fps(self) -> float:
+        """approximate median fps in hz"""
         ret = np.median(1 / np.diff(self.time))
         return cast(float, ret)
 
-    def _check_acquisition_stability(self):
-        pass

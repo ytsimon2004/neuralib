@@ -3,14 +3,14 @@ from __future__ import annotations
 import abc
 import re
 from pathlib import Path
-from typing import Any, get_args, Final, Literal
+from typing import Any, get_args, Final, Literal, final
 
 import numpy as np
 import polars as pl
 from scipy.interpolate import interp1d
 from typing_extensions import Self
 
-from neuralib.stimpy.baselog import CAMERA_TYPE
+from neuralib.stimpy.baselog import CAMERA_TYPE, Baselog
 from neuralib.stimpy.stimpy_core import RiglogData
 from neuralib.stimpy.stimpy_pyv import PyVlog
 from neuralib.util.util_verbose import fprint
@@ -28,6 +28,8 @@ CAMERA_VERSION = Literal['labcam', 'pycam']
 
 
 class AbstractCamlog(metaclass=abc.ABCMeta):
+    """ABC for the camera logging information"""
+
     root: Path
     """tif root path"""
     frame_id: np.ndarray
@@ -62,6 +64,13 @@ class AbstractCamlog(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def load(cls, root: Path | str,
              suffix: str = '.camlog') -> Self:
+        """
+        load/parse the camera log file
+
+        :param root: directory with camera log file
+        :param suffix: file suffix
+        :return: :class:`AbstractCamlog`
+        """
         pass
 
     @classmethod
@@ -86,6 +95,7 @@ class AbstractCamlog(metaclass=abc.ABCMeta):
 # LabCams #
 # ======= #
 
+@final
 class LabCamlog(AbstractCamlog):
 
     @classmethod
@@ -128,25 +138,26 @@ class LabCamlog(AbstractCamlog):
         if re.match(event_pattern, content):
             cls.time_info.append(content)
 
-    def get_camera_time(self, riglog: PyVlog, cam_name: CAMERA_TYPE = '1P_cam') -> np.ndarray:
+    def get_camera_time(self, log: Baselog,
+                        cam_name: CAMERA_TYPE = '1P_cam') -> np.ndarray:
         """Interpolate cameralog frames to those recorded by pyvstim.
 
-        :param riglog:
+        :param log: :class:`~neuralib.stimpy.baselog.Baselog`
         :param cam_name: camera name
-        :return: camera time in sec
+        :return: 1D camera time array in sec
         """
         if cam_name not in get_args(CAMERA_TYPE):
             raise ValueError(f'{cam_name} unknown')
 
-        cam_pulses = len(riglog.camera_event[cam_name])
+        cam_pulses = len(log.camera_event[cam_name])
 
         if cam_pulses != self.frame_id[-1]:
             fprint(f'Loss frame between riglog[{cam_pulses}] vs camlog[{self.frame_id[-1]}]',
                    vtype='warning')
 
         return interp1d(
-            riglog.camera_event[cam_name].value,
-            riglog.camera_event[cam_name].time,
+            log.camera_event[cam_name].value,
+            log.camera_event[cam_name].time,
             fill_value='extrapolate'
         )(self.frame_id)
 
@@ -155,8 +166,11 @@ class LabCamlog(AbstractCamlog):
 # PyCams #
 # ====== #
 
+@final
 class PyCamlog(AbstractCamlog):
-    """Pycams log, 2023 AP dev"""
+    """Pycams log, 2023 AP dev
+    TODO not test yet
+    """
 
     @classmethod
     def load(cls, root: Path | str, suffix: str = '.log') -> Self:
