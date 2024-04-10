@@ -193,6 +193,9 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
         camera: dict[CAMERA_TYPE, int]
 
         def __init__(self, rig: R):
+            """
+            :param rig:``Baselog``
+            """
             self.rig = rig
 
             if rig.version == 'stimpy-git':
