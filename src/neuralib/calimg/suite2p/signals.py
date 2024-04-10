@@ -11,6 +11,8 @@ __all__ = [
     'get_neuron_signal',
     'normalize_signal',
     'normalize_signal_factor',
+    #
+    'DFFSignal',
     'dff_signal',
     'calc_signal_baseline',
     #
@@ -32,14 +34,14 @@ def get_neuron_signal(s2p: Suite2PResult,
 
     :param s2p: suite 2p result
     :param n: neuron index or index array
-    :param signal_type: signal type
+    :param signal_type: signal type. :data:`~neuralib.calimg.suite2p.core.SIGNAL_TYPE` {'df_f', 'spks'}
     :param normalize: do normalize
     :param dff: do dff_signal
-    :param correct_neuropil: whether correct_neuropil
-    :param method
+    :param correct_neuropil: do the neuropil correction
+    :param method: baseline calculation method {'maximin', 'constant', 'constant_prctile'}
     :return:
-        s1: signal
-        s2: baseline signal
+        signal
+        baseline signal
     """
     f = s2p.F[n]
     fneu = s2p.FNeu[n]
@@ -103,6 +105,8 @@ def normalize_signal_factor(s: np.ndarray, axis: int = -1) -> tuple[np.ndarray, 
 # ============ #
 
 class DFFSignal(NamedTuple):
+    """Container for dF/F signal processing"""
+
     s2p: Suite2PResult
     """Suite2PResult"""
     f: np.ndarray
@@ -125,6 +129,7 @@ class DFFSignal(NamedTuple):
     def baseline_fluctuation(self) -> np.ndarray:
         """get the fluctuation of the fneu signal
         Perhaps not fully corrected and physiological reason
+
         ** used to get the baseline std (i.e., trial reliability metric)
         """
         fneu_corr = 0.3 * self.fneu
@@ -132,17 +137,18 @@ class DFFSignal(NamedTuple):
         return 100 * ((fneu_corr - fneu_bas) / fneu_bas)
 
     def oasis_dcnv(self) -> np.ndarray:
+        """spike deconvolution"""
         f = self.dff.astype(np.float32)  # (T,)
         v = w = l = s = np.zeros_like(f, dtype=np.float32)
         t = np.zeros_like(f, dtype=np.int64)
-        oasis_trace(f, v, w, t, l, self.s2p.indicator_tau, self.s2p.fs)
+        _oasis_trace(f, v, w, t, l, self.s2p.indicator_tau, self.s2p.fs)
         return s
 
 
 def dff_signal(f: np.ndarray,
                fneu: np.ndarray,
                s2p: Suite2PResult,
-               correct_neuropil=True,
+               correct_neuropil: bool = True,
                method: BASELINE_METHOD = 'maximin') -> DFFSignal:
     """
     df_f normalization, referred by suite2p, return df_f activity
@@ -170,11 +176,10 @@ def calc_signal_baseline(signal: np.ndarray,
     """
     f0 calculation
 
-    ..seealso::
-        suite2p.extraction.dcnv.preprocess
+    .. seealso:: source code from suite2p: ``suite2p.extraction.dcnv.preprocess``
 
-    :param signal:
-    :param s2p:
+    :param signal: signal activity. i.e., fcorr
+    :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
     :param method: BASELINE_METHOD
     :return:
         f0 baseline for the df/f calculation
@@ -216,13 +221,13 @@ def _maximin_filter(signal: np.ndarray, kernel: float, size: int) -> np.ndarray:
     return baseline
 
 
-def oasis_trace(fcorr: np.ndarray,
-                v: np.ndarray,
-                w: np.ndarray,
-                t: np.ndarray,
-                l: np.ndarray,
-                tau: float,
-                fs: float) -> np.ndarray:
+def _oasis_trace(fcorr: np.ndarray,
+                 v: np.ndarray,
+                 w: np.ndarray,
+                 t: np.ndarray,
+                 l: np.ndarray,
+                 tau: float,
+                 fs: float) -> np.ndarray:
     """
     spike deconvolution on a single neuron
 
@@ -271,9 +276,9 @@ def oasis_trace(fcorr: np.ndarray,
     return ret
 
 
-def oasis(fcorr: np.ndarray,
-          tau: float,
-          fs: float) -> np.ndarray:
+def _oasis(fcorr: np.ndarray,
+           tau: float,
+           fs: float) -> np.ndarray:
     """
     computes non-negative deconvolution. no sparsity constraints
     Adpated from suite2p
@@ -296,7 +301,7 @@ def oasis(fcorr: np.ndarray,
         w = np.zeros((n_neurons, n_frames), dtype=np.float32)
         l = np.zeros((n_neurons, n_frames), dtype=np.float32)
         t = np.zeros((n_neurons, n_frames), dtype=np.int64)
-        ret[n] = oasis_trace(fcorr[n], v[n], w[n], t[n], l[n], tau, fs)
+        ret[n] = _oasis_trace(fcorr[n], v[n], w[n], t[n], l[n], tau, fs)
 
     return ret
 
@@ -312,11 +317,12 @@ def sync_s2p_rigevent(image_time: np.ndarray,
     Check if the registered frame number is consistent in .riglog,
     then do the alignment to make the shape the same
 
-    *assume both recordings are sync
-    *assume sequential scanning pattern. i.e., 0, 1, 2, 3 ETL order
+    * ASSUME both recordings are sync
+
+    * ASSUME sequential scanning pattern. i.e., 0, 1, 2, 3 ETL order
 
     :param image_time: riglog image event
-    :param s2p:
+    :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
     :param plane: number of optical plane
     :return: image_time: with same len as s2p results
     """

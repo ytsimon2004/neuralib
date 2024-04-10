@@ -1,9 +1,9 @@
 import argparse
 
+from neuralib.bokeh_model import BokehServer
 from .view_all import AllView
 from .view_animal import AnimalView
 from .view_figure import AnimalFigureView
-from neuralib.bokeh_model import BokehServer
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--animal', metavar='NAME', default=None)

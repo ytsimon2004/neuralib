@@ -18,32 +18,32 @@ __all__ = ['CellAtlas']
 class CellAtlas:
     dataframe: pl.DataFrame
     """
-    Cell atlas csv information extracted from:
-    https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010739#sec047
+    Example::
     
-    ┌────────────────────────────────┬────────────────┬───────────┐
-    │ Brain region                   ┆ Volumes [mm^3] ┆ n_neurons │
-    │ ---                            ┆ ---            ┆ ---       │
-    │ str                            ┆ f64            ┆ i64       │
-    ╞════════════════════════════════╪════════════════╪═══════════╡
-    │ Abducens nucleus               ┆ 0.015281       ┆ 1324      │
-    │ Accessory facial motor nucleus ┆ 0.013453       ┆ 497       │
-    │ Accessory olfactory bulb       ┆ 0.6880625      ┆ 189608    │
-    │ …                              ┆ …              ┆ …         │
-    │ Zona incerta                   ┆ 2.157641       ┆ 136765    │
-    │ posteromedial visual area      ┆ 1.2225625      ┆ 197643    │
-    └────────────────────────────────┴────────────────┴───────────┘
+        ┌────────────────────────────────┬────────────────┬───────────┐
+        │ Brain region                   ┆ Volumes [mm^3] ┆ n_neurons │
+        │ ---                            ┆ ---            ┆ ---       │
+        │ str                            ┆ f64            ┆ i64       │
+        ╞════════════════════════════════╪════════════════╪═══════════╡
+        │ Abducens nucleus               ┆ 0.015281       ┆ 1324      │
+        │ Accessory facial motor nucleus ┆ 0.013453       ┆ 497       │
+        │ Accessory olfactory bulb       ┆ 0.6880625      ┆ 189608    │
+        │ …                              ┆ …              ┆ …         │
+        │ Zona incerta                   ┆ 2.157641       ┆ 136765    │
+        │ posteromedial visual area      ┆ 1.2225625      ┆ 197643    │
+        └────────────────────────────────┴────────────────┴───────────┘
     """
 
     @classmethod
     def load_from_csv(cls,
                       file: Path | None = None,
-                      only_neuron: bool = True,
-                      ignore_detail_info: bool = True) -> 'CellAtlas':
+                      ignore_cell_types_info: bool = True,
+                      ignore_detail_info: bool = True) -> CellAtlas:
         """
+        Load/Download the csv file
 
-        :param file:
-        :param only_neuron: only select neuron and volume foreach areas
+        :param file: filepath. If None, download from source paper
+        :param ignore_cell_types_info: ignore cell types information, only select neuron and volume foreach areas
         :param ignore_detail_info: ignore information in brain subregion
         :return:
         """
@@ -59,7 +59,7 @@ class CellAtlas:
 
         df = pl.read_csv(file)
 
-        if only_neuron:
+        if ignore_cell_types_info:
             df = df.select('Brain region', 'Neuron [mm^-3]', 'Volumes [mm^3]')
 
         # total neurons
@@ -76,7 +76,8 @@ class CellAtlas:
         return CellAtlas(df.sort('Brain region'))
 
     @classmethod
-    def _request(cls, output) -> pl.DataFrame:
+    def _request(cls, output: Path) -> pl.DataFrame:
+        """download from paper source"""
         import requests
 
         url = 'https://journals.plos.org/ploscompbiol/article/file?type=supplementary&id=10.1371/' \
@@ -94,33 +95,39 @@ class CellAtlas:
 
     @property
     def brain_regions(self) -> list[str]:
+        """list of brain regions"""
         return self.dataframe['Brain region'].unique().to_list()
 
     @classmethod
     def load_sync_allen_structure_tree(cls, force_save: bool = True) -> pl.DataFrame:
         """
         TODO `ProS` not found
-        Based on cellatlas dataframe, create a sync used `acronym` header in allen struct_tree )Sorted by name
+        Based on cellatlas dataframe, create a sync used `acronym` header in allen struct_tree (sorted by name)
 
         **fields**
-        name: `Brain region` found in cellatlas
-        n_neurons: `n_neurons` from cellatlas dataframe
-        acronym: `acronym` found in the structure_tree csv
+
+        ``name``: `Brain region` found in cellatlas
+
+        ``n_neurons``: `n_neurons` from cellatlas dataframe
+
+        ``acronym``: `acronym` found in the structure_tree csv
 
         :param force_save: create sync file every time in root directory
-        :return:
-        ┌────────────────────────────────┬────────────────┬───────────┬─────────┐
-        │ name                           ┆ Volumes [mm^3] ┆ n_neurons ┆ acronym │
-        │ ---                            ┆ ---            ┆ ---       ┆ ---     │
-        │ str                            ┆ f64            ┆ i64       ┆ str     │
-        ╞════════════════════════════════╪════════════════╪═══════════╪═════════╡
-        │ Abducens nucleus               ┆ 0.015281       ┆ 1324      ┆ VI      │
-        │ Agranular insular area         ┆ 4.901734       ┆ 242362    ┆ AI      │
-        │ …                              ┆ …              ┆ …         ┆ …       │
-        │ Visual areas                   ┆ 12.957203      ┆ 1297194   ┆ VIS     │
-        │ Zona incerta                   ┆ 2.157641       ┆ 136765    ┆ ZI      │
-        │ posteromedial visual area      ┆ 1.2225625      ┆ 197643    ┆ VISpm   │
-        └────────────────────────────────┴────────────────┴───────────┴─────────┘
+        :return: sync_dataframe
+            example::
+
+                ┌────────────────────────────────┬────────────────┬───────────┬─────────┐
+                │ name                           ┆ Volumes [mm^3] ┆ n_neurons ┆ acronym │
+                │ ---                            ┆ ---            ┆ ---       ┆ ---     │
+                │ str                            ┆ f64            ┆ i64       ┆ str     │
+                ╞════════════════════════════════╪════════════════╪═══════════╪═════════╡
+                │ Abducens nucleus               ┆ 0.015281       ┆ 1324      ┆ VI      │
+                │ Agranular insular area         ┆ 4.901734       ┆ 242362    ┆ AI      │
+                │ …                              ┆ …              ┆ …         ┆ …       │
+                │ Visual areas                   ┆ 12.957203      ┆ 1297194   ┆ VIS     │
+                │ Zona incerta                   ┆ 2.157641       ┆ 136765    ┆ ZI      │
+                │ posteromedial visual area      ┆ 1.2225625      ┆ 197643    ┆ VISpm   │
+                └────────────────────────────────┴────────────────┴───────────┴─────────┘
         """
         out = ATLAS_CACHE_DIRECTORY / 'cellatlas_allen_sync.csv'
 

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, final
 
 import attrs
 import numpy as np
+from numpy.typing import NDArray
 
 from neuralib.util.util_type import PathLike
 from neuralib.util.util_verbose import fprint
@@ -13,15 +14,19 @@ from neuralib.util.util_verbose import fprint
 __all__ = [
     'SIGNAL_TYPE',
     'CALCIUM_TYPE',
-    'Suite2PResult',
+    'Suite2pGUIOptions',
+    'Suite2pRoiStat',
+    'Suite2PResult'
 ]
 
 SIGNAL_TYPE = Literal["df_f", "spks"]
 CALCIUM_TYPE = Literal['baseline', 'transient']
-BASELINE_METHOD = Literal['maximin', 'constant', 'constant_prctile']
 
 
 class Suite2pGUIOptions(TypedDict, total=False):
+    """ Suite2p GUI setting.
+
+    .. seealso:: `<https://suite2p.readthedocs.io/en/latest/settings.html>`_"""
     look_one_level_down: float
     fast_disk: str
     delete_bin: bool
@@ -151,6 +156,10 @@ class Suite2pGUIOptions(TypedDict, total=False):
 
 
 class Suite2pRoiStat(TypedDict, total=False):
+    """Suite2p GUI imaging.
+
+    .. seealso:: `<https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields>`_
+    """
     ypix: np.ndarray
     xpix: np.ndarray
     lam: np.ndarray
@@ -176,33 +185,45 @@ class Suite2pRoiStat(TypedDict, total=False):
 # Suite2P Result #
 # ============== #
 
+@final
 @attrs.frozen
 class Suite2PResult:
+    """suite2p result container
+
+    `Dimension parameters`:
+
+        N: number of neurons
+
+        F: number pf frames
+    """
     directory: Path
-    """s2p src path"""
+    """directory contain all the s2p output files"""
 
     F: np.ndarray
-    """2d transient activity array with shape: (ROI, n_frames)"""
+    """transient activity 2D array ``(N, F)``"""
 
     FNeu: np.ndarray
-    """2d neuropil activity array with shape: (ROI, n_frames)"""
+    """neuropil activity 2D array ``(N, F)``"""
 
     spks: np.ndarray
-    """2d deconvolved activity array with shape: (ROI, n_frames)"""
+    """deconvolved activity 2D array ``(N, F)``"""
 
-    stat: list[Suite2pRoiStat]  # np.ndarray, typing for infer purpose
-    """GUI imaging after registration, i.e., x,ypixel ...: np.ndarray with shape: (ROI,)"""
+    stat: NDArray[Suite2pRoiStat]
+    """GUI imaging after registration, i.e., x, ypixel ...: np.ndarray with shape: ``(N, )``"""
 
     ops: Suite2pGUIOptions
-    """option set while running with suite2p"""
+    """GUI options"""
 
     iscell: np.ndarray
-    """cell probability for each ROI, shape:(ROI, 2)"""
+    """cell probability for each ROI ``(N, 2)``"""
 
     redcell: np.ndarray | None
-    """red cell probability for each ROI, shape:(ROI, 2)"""
+    """red cell probability 2D array ``(N, 2)``"""
 
-    runtime_frate_check: float | None
+    redcell_threshold: float | None
+    """red cell probability threshold"""
+
+    runtime_frate_check: float | None = attrs.field(default=None)
     """If not None, check frame rate lower bound"""
 
     def __attrs_post_init__(self):
@@ -218,7 +239,13 @@ class Suite2PResult:
 
     @classmethod
     def launch_gui(cls, directory: PathLike) -> None:
-        from core.gui import gui2p
+        """
+        launch the suite2p GUI
+
+        :param directory: directory contain all the s2p output files. e.g., <SUITE2P_OUTPUT>/suite2p/plane<P>
+        :return:
+        """
+        from suite2p.gui import gui2p
 
         if not isinstance(directory, Path):
             directory = Path(directory)
@@ -229,19 +256,22 @@ class Suite2PResult:
             cls,
             directory: PathLike,
             cell_prob: bool | float = 0.5,
+            red_cell_threshold: float = 0.65,
             channel: int = 0,
             runconfig_frate: float | None = 30.0,
     ) -> Suite2PResult:
         """
-        Load Suite2p output files
+        Load suite2p result from directory
 
-        :param directory: directory contain all the s2p output files
+        :param directory: directory contain all the s2p output files.
+                e.g., <SUITE2P_OUTPUT>/suite2p/plane<P>
         :param cell_prob: cell probability,
-                    bool type: use the criteria when set during the registration
-                    float type: value in iscell[:, 1]
+                    bool type: use the binary criteria in GUI output
+                    float type: value in ``iscell[:, 1]``
+        :param red_cell_threshold: red cell threshold
         :param channel: channel (PMT) number for the functional channel.
-                    i.e., 0 if GCaMP, 1 if jRGECO...
-        :param runconfig_frate: check frame rate lower-bound to make sure the s2p runconfig
+                    i.e., 0 if GCaMP, 1 if jRGECO in scanbox setting
+        :param runconfig_frate: if not None, check frame rate lower-bound to make sure the s2p runconfig
         :return: :class:`Suite2PResult`
         """
         if not isinstance(directory, Path):
@@ -291,27 +321,34 @@ class Suite2PResult:
             iscell = iscell[x]
             if redcell is not None:
                 redcell = redcell[x]
+        else:
+            raise TypeError(f'invalid type: {type(cell_prob)}')
 
         return Suite2PResult(
             directory,
-            F, FNeu,
+            F,
+            FNeu,
             spks,
             stat,
             ops,
             iscell,
             redcell,
+            red_cell_threshold if channel == 1 else None,
             runconfig_frate
         )
 
     @property
     def has_chan2(self) -> bool:
+        """if has a second channel"""
         if self.ops['nchannels'] == 2:
             return True
         return False
 
     @property
-    def n_roi(self) -> int:
-        """number of registered roi"""
+    def n_neurons(self) -> int:
+        """number of neurons after load.
+        could be less than GUI ROI number if use higher cell_prob in
+        :meth:`~neuralib.calimg.suite2p.core.Suite2PResult.load()`"""
         return self.F.shape[0]
 
     @property
@@ -320,21 +357,21 @@ class Suite2PResult:
         return self.F.shape[1]
 
     @property
-    def n_neurons(self) -> int:
-        """number of identified neuron, cell probability is 0.5 by default"""
-        return np.count_nonzero(self.iscell[:, 0] == 1)
-
-    @property
     def cell_prob(self) -> np.ndarray:
+        """probability that the ROI is a cell based on the default classifier"""
         return self.iscell[:, 1]
 
     @property
     def n_red_neuron(self) -> int:
-        """number of identified neuron based on red cell probability"""
-        return np.count_nonzero(self.red_cell_prob >= 0.65)
+        """number of identified neuron based on red cell threshold"""
+        if self.has_chan2:
+            return np.count_nonzero(self.red_cell_prob >= self.redcell_threshold)
+        else:
+            raise RuntimeError('no channel 2')
 
     @property
     def red_cell_prob(self) -> np.ndarray | None:
+        """red cell probability"""
         if self.redcell is None:
             return None
         return self.redcell[:, 1]
@@ -361,7 +398,7 @@ class Suite2PResult:
 
     @property
     def prctile_baseline(self) -> float:
-        """8.0?"""
+        """percentile of trace to use as baseline if ops['baseline'] = constant_percentile"""
         return self.ops['prctile_baseline']
 
     @property
@@ -371,35 +408,42 @@ class Suite2PResult:
 
     @property
     def image_width(self) -> int:
+        """image width (in pixel)"""
         return self.ops['Lx']
 
     @property
     def image_height(self) -> int:
+        """image height (in pixel)"""
         return self.ops['Ly']
 
     @property
     def image_mean(self) -> np.ndarray:
+        """mean image for chan0(1st)"""
         return self.ops['meanImg'].T
 
     @property
     def image_mean_ch2(self) -> np.ndarray:
+        """mean image for chan1(2nd)"""
         return self.ops['meanImg_chan2'].T
 
     @property
     def indicator_tau(self) -> float:
+        """The timescale of the sensor (in seconds)"""
         return self.ops['tau']
 
     @property
     def rigid_x_offsets(self) -> np.ndarray:
-        """(frames, )"""
+        """x-shifts of recording at each timepoint (F, )"""
         return self.ops['xoff']
 
     @property
     def rigid_y_offsets(self) -> np.ndarray:
+        """y-shifts of recording at each timepoint (F, )"""
         return self.ops['yoff']
 
     @property
     def rigid_xy_offset(self) -> np.ndarray:
+        """peak of phase correlation between frame and reference image at each timepoint"""
         return self.ops['corrXY']
 
     @property
@@ -419,18 +463,25 @@ class Suite2PResult:
     def load_total_neuron_number(cls,
                                  directory: Path,
                                  cell_prob: float | None = 0.5) -> int:
-        """number of neuron based on iscell.npy"""
+        """
+        load number of neuron based on iscell.npy
+
+        :param directory: directory contains the iscell.npy
+        :param cell_prob: cell probability,
+                    bool type: use the binary criteria in GUI output
+                    float type: value in ``iscell[:, 1]``
+        :return:
+        """
         iscell = np.load(directory / 'iscell.npy', allow_pickle=True)
         if cell_prob is None:
             return np.count_nonzero(iscell[:, 0] == 1)
         else:
-            # NOTE that if different setting during s2p running, might cause cell number different
             return np.count_nonzero(iscell[:, 1] >= cell_prob)
 
     def get_rois_pixels(self) -> np.ndarray:
-        """(N, 2) pixel"""
-        ret = np.zeros((self.n_roi, 2))
-        for i in range(self.n_roi):
+        """ROIs pixel (N, 2)"""
+        ret = np.zeros((self.n_neurons, 2))
+        for i in range(self.n_neurons):
             x = np.mean(self.stat[i]['xpix'])
             y = np.mean(self.stat[i]['ypix'])
             ret[i] = np.array([x, y])

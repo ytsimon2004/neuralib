@@ -46,7 +46,32 @@ CHANNEL_SUFFIX = Literal['r', 'g', 'b', 'merge', 'overlap']
 
 
 class AbstractCCFDir(metaclass=abc.ABCMeta):
+    """
+    ::
 
+        ANIMAL_001/ (root)
+            ├── raw/ (optional)
+            ├── zproj/
+            │    └── ANIMAL_001_g*_s*_{channel}.tif
+            ├── roi/
+            │    └── ANIMAL_001_g*_s*_{channel}.roi
+            ├── roi_cpose/
+            │    └── ANIMAL_001_g*_s*_{channel}.roi
+            ├── resize/ (src for the allenccf)
+            │    ├── ANIMAL_001_g*_s*_resize.tif
+            │    └── processed/
+            │           ├── ANIMAL_001_g*_s*_resize_processed.tif
+            │           └── transformations/
+            │                 ├── ANIMAL_001_g*_s*_resize_processed_transformed.tif
+            │                 ├── ANIMAL_001_g*_s*_resize_processed_transform_data.mat
+            │                 └── labelled_regions/
+            │                       ├── {*channel}_roitable.csv
+            │                       └── parsed_data /
+            │                             └── parsed_csv_merge.csv
+            │
+            └── output_files/ (for generate output fig)
+
+    """
     def __new__(cls, root: PathLike,
                 auto_mkdir: bool = True,
                 with_overlap_sources: bool = True):
@@ -59,6 +84,11 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
     def __init__(self, root: PathLike,
                  auto_mkdir: bool = True,
                  with_overlap_sources: bool = True):
+        """
+        :param root:
+        :param auto_mkdir:
+        :param with_overlap_sources:
+        """
         self.root: Final[Path] = root
 
         if auto_mkdir:
@@ -340,7 +370,14 @@ def load_transform_matrix(filepath: PathLike,
     except ValueError:
         name = default_name
 
-    return CCFTransMatrix(name, mat, plane_type, resolution=resolution)
+    return CCFTransMatrix(name,
+                          MatMatrix(
+                              mat.allen_location,
+                              mat.transform,
+                              mat.transform_points
+                          ),
+                          plane_type,
+                          resolution=resolution)
 
 
 @attrs.frozen

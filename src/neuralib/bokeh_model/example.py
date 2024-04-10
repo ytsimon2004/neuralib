@@ -61,5 +61,6 @@ class Top(View):
         self.run_timeout(1000, self.update)
 
 
-VIEW = Top()
-BokehServer().start(VIEW)
+if __name__ == '__main__':
+    VIEW = Top()
+    BokehServer().start(VIEW)

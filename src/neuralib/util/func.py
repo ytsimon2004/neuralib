@@ -1,3 +1,11 @@
+"""
+Dynamic function generator
+==========================
+
+:author:
+    Ta-Shun Su
+
+"""
 import inspect
 import textwrap
 from typing import Union, Type, Callable, TypeVar, Any
@@ -147,12 +155,12 @@ def create_fn(name: str,
     func = textwrap.indent(f'def {name}{sign}:\n' + textwrap.indent(body, prefix='  '), '  ')
 
     local_params = ', '.join(locals.keys())
-    code = f'def __hpcec_dynamic_generate_function__({local_params}):\n{func}\n  return {name}'
+    code = f'def __neuralib_dynamic_generate_function__({local_params}):\n{func}\n  return {name}'
 
     # print(code)
     namespace = {}
     exec(code, globals, namespace)
-    return namespace['__hpcec_dynamic_generate_function__'](**locals)
+    return namespace['__neuralib_dynamic_generate_function__'](**locals)
 
 
 def get_func_default(f: Callable, arg: str) -> Any:

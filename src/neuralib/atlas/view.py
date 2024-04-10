@@ -12,14 +12,14 @@ from matplotlib.transforms import CompositeGenericTransform
 from typing_extensions import Self
 
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA, ALLEN_SOURCE_TYPE
-from neuralib.plot import plot_figure
 from neuralib.imglib.factory import ImageProcFactory
-
+from neuralib.plot import plot_figure
 
 __all__ = [
     'AbstractSliceView',
     'SlicePlane'
 ]
+
 
 class AbstractSliceView(metaclass=abc.ABCMeta):
     source_type: Final[ALLEN_SOURCE_TYPE]

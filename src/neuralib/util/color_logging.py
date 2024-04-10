@@ -1,3 +1,29 @@
+"""
+Setup a color logger
+=============
+
+Example:
+---------
+
+.. code-block:: python
+
+    from neuralib.util.color_logging import setup_clogger
+
+    logger = setup_clogger()
+
+    logger.debug("a debug message")
+    logger.info("an info message")
+    logger.warning("a warning message")
+    logger.error("an error message")
+    logger.critical("a critical message")
+
+    # custom logging
+    LOGGING_IO_LEVEL = 11
+    LOGGING_IO_NAME = 'IO'
+
+    logger.log(LOGGING_IO_LEVEL, 'io information message')
+
+"""
 from __future__ import annotations
 
 import logging
@@ -15,6 +41,7 @@ LOGGING_IO_NAME = 'IO'
 
 
 def setup_logger() -> logging.Logger:
+    """basic built-in logger"""
     _format = "%(asctime)s %(levelname)s %(message)s"
     logging.basicConfig(format=_format, level=logging.INFO)
     return logging.getLogger()
@@ -65,17 +92,3 @@ def setup_clogger(level: int | str = 10,
     return logger
 
 
-def example():
-    """Create and use a logger."""
-    logger = setup_clogger()
-
-    logger.debug("a debug message")
-    logger.info("an info message")
-    logger.warning("a warning message")
-    logger.error("an error message")
-    logger.critical("a critical message")
-    logger.log(LOGGING_IO_LEVEL, 'io information message')
-
-
-if __name__ == '__main__':
-    example()

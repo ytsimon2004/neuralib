@@ -22,9 +22,12 @@ class MouseBrainRoiNormHandler:
     def __init__(self, norm_type: ROIS_NORM_TYPE | None = None):
         """
         :param norm_type: which kind of normalization for the roi labeling
-            channel: normalize to fraction of rois for a specific color fluorescence channel
-            volume: normalize to the volume size per region (cellatlas-based) # TODO validate with allenSDK source
-            cell: normalize to the total cell counts per region (cellatlas-based)
+
+            *``channel``: normalize to fraction of rois for a specific color fluorescence channel
+
+            *``volume``: normalize to the volume size per region (cellatlas-based) # TODO validate with allenSDK source
+
+            *``cell``: normalize to the total cell counts per region (cellatlas-based)
         """
         if norm_type is not None and norm_type not in get_args(ROIS_NORM_TYPE):
             raise ValueError('')
@@ -73,7 +76,7 @@ class MouseBrainRoiNormHandler:
         :param df: input dataframe has abs cell counts per region
         :param area_col: brain region acronym for querying
         :param expand_cols: columns with abs cell counts need to be expanded
-        :return:
+        :return: expanded dataframe
         """
         if self.norm_type in ('cell', 'volume'):
             ret = self._compute_cellatlas_expand_field(df, area_col, expand_cols)
@@ -110,9 +113,9 @@ def handle_failure_norm(df: pl.DataFrame, *,
     warning verbose or drop if
     cellatlas cannot find the n_neurons OR volume in the given acronym,
 
-   :param df:
-   :param expr: condition for determine if it's failure
-   :param drop_not_found: whether drop the region that can not be found
+    :param df:
+    :param expr: condition for determine if it's failure
+    :param drop_not_found: whether drop the region that can not be found
     """
     if expr is None:
         expr = pl.col('name').is_null()
@@ -136,6 +139,13 @@ def handle_failure_norm(df: pl.DataFrame, *,
 
 
 def foreach_norm_method(include_abs_count: bool = True, **kwargs) -> Iterable[MouseBrainRoiNormHandler]:
+    """
+    foreach normalization method
+
+    :param include_abs_count: if iterator include abs cell counts
+    :param kwargs: pass to ``MouseBrainRoiNormHandler``
+    :return:
+    """
     methods = []
     if include_abs_count:
         methods = [None]

@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from pathlib import Path
+from typing import Literal, Union
 
-import polars as pl
 import pandas as pd
+import polars as pl
 from colorama import Fore, Style
 
 from neuralib.util.util_type import DataFrame
 
 __all__ = ['fprint',
-           'printdf']
+           'printdf',
+           'print_load',
+           'print_save']
+
+_PREV_LOAD_FILE = None
+_PREV_SAVE_FILE = None
 
 
 def fprint(*msgs,
@@ -66,12 +72,24 @@ def fprint(*msgs,
 def printdf(df: DataFrame,
             nrows: int | None = None,
             ncols: int | None = None,
-            do_fprint=False,
+            tbl_width_chars: int = 500,
+            do_fprint: bool = False,
             **kwargs) -> str:
-    """print polars dataframe with given row numbers"""
+    """
+    print dataframe with given row numbers (polars)
+    if isinstance pandas dataframe, print all.
+
+    :param df: polars or pandas dataframe
+    :param nrows: number of rows (applicable in polars case)
+    :param ncols: number of columns
+    :param tbl_width_chars: table width for showing
+    :param do_fprint:
+    :param kwargs:
+    :return:
+    """
 
     if isinstance(df, pl.DataFrame):
-        with pl.Config() as cfg:
+        with pl.Config(tbl_width_chars=tbl_width_chars) as cfg:
             rows = df.shape[0] if nrows is None else nrows
             cols = df.shape[1] if ncols is None else ncols
             cfg.set_tbl_rows(rows)
@@ -91,3 +109,67 @@ def printdf(df: DataFrame,
 
     else:
         raise TypeError('')
+
+
+def print_load(file: Union[str, Path], verb='LOAD') -> Path:
+    """print message for loading file.
+
+    If *file* is not existed, '!' will add after *verb*.
+    File load message doesn't print twice and more if it shows continuously, so it is okay
+    that wrap a loading method and call :func:`print_load` on target file.
+
+    use flag "load".
+
+    :param file: file path
+    :param verb: default 'LOAD'
+    :param color: verb color
+    :return: *file*
+    """
+    global _PREV_LOAD_FILE
+
+    file = Path(file)
+
+    if _PREV_LOAD_FILE != file:
+        if len(verb) < 4:
+            verb += ' ' * (4 - len(verb))
+
+        not_exist = '!' if not file.exists() else ' '
+
+        from tqdm import tqdm
+        with tqdm.external_write_mode():
+            fprint(f'{verb}{not_exist}->{file}', vtype='io')
+
+    _PREV_LOAD_FILE = file
+    return file
+
+
+def print_save(file: Union[str, Path], verb='SAVE') -> Path:
+    """print message for saving file.
+
+    If *file* is not existed, '+' will add after *verb*.
+    File save message doesn't print twice and more if it shows continuously, so it is okay
+    that wrap a saving method and call :func:`print_load` on target file.
+
+    use flag "save".
+
+    :param file: file path
+    :param verb: default 'SAVE'
+    :param color: verb color
+    :return: *file*
+    """
+    global _PREV_SAVE_FILE
+
+    file = Path(file)
+
+    if _PREV_SAVE_FILE != file:
+        if len(verb) < 4:
+            verb += ' ' * (4 - len(verb))
+
+        not_exist = '+' if not file.exists() else ' '
+
+        from tqdm import tqdm
+        with tqdm.external_write_mode():
+            fprint(f'{verb}{not_exist}->{file}', vtype='io')
+
+    _PREV_SAVE_FILE = file
+    return file

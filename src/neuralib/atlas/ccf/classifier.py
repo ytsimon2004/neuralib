@@ -23,7 +23,10 @@ __all__ = [
     'RoiClassifier',
     'RoiClassifiedNormTable',
     #
-    'supply_overlap_dataframe'
+    'supply_overlap_dataframe',
+    #
+    '_concat_channel',
+    'parse_csv'
 ]
 
 Logger = setup_clogger(caller_name=Path(__file__).name)
@@ -111,6 +114,23 @@ class RoiClassifier:
 
     @property
     def parsed_df(self) -> pl.DataFrame:
+        """dataframe after parsing
+
+        Example::
+
+            ┌───────────────────────────────────┬─────────┬─────────────┬─────────────┬─────────────┬─────────┬─────────┬────────┬───────────────────────────┬──────────────┬────────┬────────────┬────────────┬────────────┬────────────┬────────────┬───────────┐
+            │ name                              ┆ acronym ┆ AP_location ┆ DV_location ┆ ML_location ┆ avIndex ┆ channel ┆ source ┆ abbr                      ┆ acronym_abbr ┆ hemi.  ┆ merge_ac_0 ┆ merge_ac_1 ┆ merge_ac_2 ┆ merge_ac_3 ┆ merge_ac_4 ┆ family    │
+            │ ---                               ┆ ---     ┆ ---         ┆ ---         ┆ ---         ┆ ---     ┆ ---     ┆ ---    ┆ ---                       ┆ ---          ┆ ---    ┆ ---        ┆ ---        ┆ ---        ┆ ---        ┆ ---        ┆ ---       │
+            │ str                               ┆ str     ┆ f64         ┆ f64         ┆ f64         ┆ i64     ┆ str     ┆ str    ┆ str                       ┆ str          ┆ str    ┆ str        ┆ str        ┆ str        ┆ str        ┆ str        ┆ str       │
+            ╞═══════════════════════════════════╪═════════╪═════════════╪═════════════╪═════════════╪═════════╪═════════╪════════╪═══════════════════════════╪══════════════╪════════╪════════════╪════════════╪════════════╪════════════╪════════════╪═══════════╡
+            │ Ectorhinal area/Layer 5           ┆ ECT5    ┆ -3.03       ┆ 4.34        ┆ -4.5        ┆ 377     ┆ gfp     ┆ aRSC   ┆ Ectorhinal area           ┆ ECT          ┆ contra ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ISOCORTEX │
+            │ Perirhinal area layer 6a          ┆ PERI6a  ┆ -3.03       ┆ 4.42        ┆ -4.37       ┆ 372     ┆ gfp     ┆ aRSC   ┆ Perirhinal area           ┆ PERI         ┆ contra ┆ PERI       ┆ PERI       ┆ PERI       ┆ PERI       ┆ PERI       ┆ ISOCORTEX │
+            │ …                                 ┆ …       ┆ …           ┆ …           ┆ …           ┆ …       ┆ …       ┆ …      ┆ …                         ┆ …            ┆ …      ┆ …          ┆ …          ┆ …          ┆ …          ┆ …          ┆ …         │
+            │ Ventral auditory area layer 6a    ┆ AUDv6a  ┆ -2.91       ┆ 3.52        ┆ 4.46        ┆ 156     ┆ rfp     ┆ pRSC   ┆ Ventral auditory area     ┆ AUDv         ┆ ipsi   ┆ AUD        ┆ AUD        ┆ AUD        ┆ AUD        ┆ AUDv       ┆ ISOCORTEX │
+            │ Ectorhinal area/Layer 6a          ┆ ECT6a   ┆ -2.91       ┆ 4.14        ┆ 4.47        ┆ 378     ┆ rfp     ┆ pRSC   ┆ Ectorhinal area           ┆ ECT          ┆ ipsi   ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ISOCORTEX │
+            │ Temporal association areas layer… ┆ TEa5    ┆ -2.91       ┆ 4.02        ┆ 4.55        ┆ 365     ┆ rfp     ┆ pRSC   ┆ Temporal association area ┆ TEa          ┆ ipsi   ┆ TEa        ┆ TEa        ┆ TEa        ┆ TEa        ┆ TEa        ┆ ISOCORTEX │
+            └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┴─────────┴────────┴───────────────────────────┴──────────────┴────────┴────────────┴────────────┴────────────┴────────────┴────────────┴───────────┘
+        """
         if self._parse_df is None:
             df = self._cache_parsed_dataframe()
 
@@ -130,6 +150,7 @@ class RoiClassifier:
     # ============== #
 
     def _cache_parsed_dataframe(self, force_save: bool = False) -> pl.DataFrame:
+        """concat & parse & add fields and cache a parsed dataframe"""
         file = self.ccf_dir.parse_csv
 
         if not file.exists() or force_save:
@@ -137,12 +158,13 @@ class RoiClassifier:
 
             ac = df['acronym']
 
+            # add merge level cols
             df = df.with_columns(
                 pl.Series(name=f'merge_ac_{level}', values=merge_until_level(ac, level))
                 for level in range(NUM_MERGE_LAYER)
             )
 
-            # family
+            # add family col
             def categorize_family(row) -> str:
                 for name, family in DEFAULT_FAMILY_DICT.items():
                     if row in family:
@@ -179,9 +201,11 @@ class RoiClassifier:
     # ===== #
     # Utils #
     # ===== #
+
     # noinspection PyTypeChecker
     @property
     def classified_column(self) -> CLASSIFIED_COL:
+        """ """
         if self.merge_level is None:
             return 'acronym_abbr'
 
@@ -194,27 +218,34 @@ class RoiClassifier:
 
     @property
     def channels(self) -> list[Channel]:
+        """list of fluorescence channels
+        (sorted based on :class:`~neuralib.atlas.ccf.classifier.UserInjectionConfig.fluor_repr`)"""
         chan_list = self.parsed_df['channel'].unique()
         return sorted(chan_list, key=lambda it: self._fluor_order.index(it))
 
     @property
     def n_channels(self) -> int:
+        """number of fluorescence channels"""
         return len(self.channels)
 
     @property
     def sources(self) -> list[Source]:
+        """list of unique sources"""
         return list(self.parsed_df['source'].unique().sort())
 
     @property
     def n_sources(self) -> int:
+        """number of source name"""
         return len(self.sources)
 
     @property
     def areas(self) -> list[Area]:
+        """list of area in the given ``classified_column``"""
         return list(self.parsed_df[self.classified_column].unique())
 
     @property
     def n_total_rois(self) -> int:
+        """number of total rois"""
         return self.parsed_df.shape[0]
 
     @property
@@ -238,25 +269,32 @@ class RoiClassifier:
 
     def get_percent_sorted_df(self, hemisphere: HEMISPHERE_TYPE = 'both') -> pl.DataFrame:
         """
-        :return
-        * hemi: optional col. if hemisphere == `both`, then sum together
-        ┌─────────┬────────────┬────────┬────────┬───────────┐
-        │ source  ┆ merge_ac_2 ┆ *hemi. ┆ n_rois ┆ percent   │
-        │ ---     ┆ ---        ┆ ---    ┆ ---    ┆ ---       │
-        │ str     ┆ str        ┆ str    ┆ u32    ┆ f64       │
-        ╞═════════╪════════════╪════════╪════════╪═══════════╡
-        │ pRSC    ┆ VIS        ┆ ipsi   ┆ 5701   ┆ 22.761209 │
-        │ aRSC    ┆ MO         ┆ ipsi   ┆ 2277   ┆ 21.360225 │
-        │ overlap ┆ MO         ┆ ipsi   ┆ 571    ┆ 17.799252 │
-        │ aRSC    ┆ ACA        ┆ ipsi   ┆ 1729   ┆ 16.219512 │
-        │ overlap ┆ SUB        ┆ ipsi   ┆ 494    ┆ 15.399002 │
-        │ …       ┆ …          ┆ …      ┆ …      ┆ …         │
-        │ pRSC    ┆ MED        ┆ contra ┆ 1      ┆ 0.003992  │
-        │ pRSC    ┆ PPN        ┆ contra ┆ 1      ┆ 0.003992  │
-        │ pRSC    ┆ APr        ┆ ipsi   ┆ 1      ┆ 0.003992  │
-        │ pRSC    ┆ BMA        ┆ contra ┆ 1      ┆ 0.003992  │
-        │ pRSC    ┆ P5         ┆ contra ┆ 1      ┆ 0.003992  │
-        └─────────┴────────────┴────────┴────────┴───────────┘
+        Get percentage-sorted dataframe
+
+        :param hemisphere: which hemisphere {'ipsi', 'contra', 'both'}
+        :return: dataframe
+
+        *hemi: optional col. if hemisphere is`both`, then sum together
+
+        Example of merge level equal to 2::
+
+            ┌─────────┬────────────┬────────┬────────┬───────────┐
+            │ source  ┆ merge_ac_2 ┆ *hemi. ┆ n_rois ┆ percent   │
+            │ ---     ┆ ---        ┆ ---    ┆ ---    ┆ ---       │
+            │ str     ┆ str        ┆ str    ┆ u32    ┆ f64       │
+            ╞═════════╪════════════╪════════╪════════╪═══════════╡
+            │ pRSC    ┆ VIS        ┆ ipsi   ┆ 5701   ┆ 22.761209 │
+            │ aRSC    ┆ MO         ┆ ipsi   ┆ 2277   ┆ 21.360225 │
+            │ overlap ┆ MO         ┆ ipsi   ┆ 571    ┆ 17.799252 │
+            │ aRSC    ┆ ACA        ┆ ipsi   ┆ 1729   ┆ 16.219512 │
+            │ overlap ┆ SUB        ┆ ipsi   ┆ 494    ┆ 15.399002 │
+            │ …       ┆ …          ┆ …      ┆ …      ┆ …         │
+            │ pRSC    ┆ MED        ┆ contra ┆ 1      ┆ 0.003992  │
+            │ pRSC    ┆ PPN        ┆ contra ┆ 1      ┆ 0.003992  │
+            │ pRSC    ┆ APr        ┆ ipsi   ┆ 1      ┆ 0.003992  │
+            │ pRSC    ┆ BMA        ┆ contra ┆ 1      ┆ 0.003992  │
+            │ pRSC    ┆ P5         ┆ contra ┆ 1      ┆ 0.003992  │
+            └─────────┴────────────┴────────┴────────┴───────────┘
         """
 
         if hemisphere in ('contra', 'ipsi'):
@@ -286,15 +324,14 @@ class RoiClassifier:
         """
         processed data for plotting / visualization
 
-        :param norm: class:: `BrainMapNormHandler`
+        :param norm: :class:`BrainMapNormHandler`
         :param top_area: select top ranks area based on channel-based normalized percentage
         :param source: specify source, if not then produce all source
         :param add_other: the rest of regions (after top selection), classified as `other` (i.e., pie chart)
-        :param supply_overlap: modify/add value in `n_cell` and `percent` df column in gfp/rfp channels based on
-            `overlap`channel (In this case, need to have another roitable ccf output for overlap channel)
-        :param hemisphere: {'ipsi', 'contra', 'both'}
-        :param area
-        :return:
+        :param supply_overlap: add overlap roi counts into other channel(s)
+        :param hemisphere: filter the output data with selected hemisphere {'ipsi', 'contra', 'both'}
+        :param area: filter the output data with selected area
+        :return: :class:`RoiClassifiedNormTable`
         """
         if supply_overlap and source != 'overlap':
             supply_df = supply_overlap_dataframe(self.parsed_df)
@@ -371,8 +408,7 @@ class RoiClassifier:
         ref_df = df[:top_area]
         _region = ref_df[self.classified_column].unique()
 
-        return df.filter(pl.col(self.classified_column)
-                         .is_in(_region))
+        return df.filter(pl.col(self.classified_column).is_in(_region))
 
 
 # ================ #
@@ -384,37 +420,41 @@ class RoiClassifiedNormTable:
     source_classifier: RoiClassifier
 
     norm_type: ROIS_NORM_TYPE | None = attrs.field(
-        validator=attrs.validators.optional(
-            attrs.validators.in_(get_args(ROIS_NORM_TYPE)))
+        validator=attrs.validators.optional(attrs.validators.in_(get_args(ROIS_NORM_TYPE)))
     )
 
-    hemisphere: HEMISPHERE_TYPE
+    hemisphere: HEMISPHERE_TYPE = attrs.field(validator=attrs.validators.in_(get_args(HEMISPHERE_TYPE)))
 
     data: pl.DataFrame
     """processed data after ROIClassifier
 
-    * Optional col: hemi. , only existed  
-    * {norm_type, ...}_norm
-    ┌─────────┬────────────┬────────┬───────────┬───┬───────────┬───────────┬─────────────────┬────────┐
-    │ channel ┆ merge_ac_2 ┆ n_rois ┆ percent   ┆ … ┆ Volumes   ┆ n_neurons ┆ *volume_norm_n_r┆ animal │
-    │ ---     ┆ ---        ┆ ---    ┆ ---       ┆   ┆ [mm^3]    ┆ ---       ┆ ois             ┆ ---    │
-    │ str     ┆ str        ┆ i64    ┆ f64       ┆   ┆ ---       ┆ i64       ┆ ---             ┆ str    │
-    │         ┆            ┆        ┆           ┆   ┆ f64       ┆           ┆ f64             ┆        │
-    ╞═════════╪════════════╪════════╪═══════════╪═══╪═══════════╪═══════════╪═════════════════╪════════╡
-    │ overlap ┆ ACA        ┆ 423    ┆ 30.344333 ┆ … ┆ 5.222484  ┆ 337372    ┆ 80.995934       ┆ YW051  │
-    │ gfp     ┆ MO         ┆ 3352   ┆ 24.545987 ┆ … ┆ 22.248234 ┆ 985411    ┆ 150.663641      ┆ YW051  │
-    │ rfp     ┆ ACA        ┆ 1383   ┆ 23.791502 ┆ … ┆ 5.222484  ┆ 337372    ┆ 264.816494      ┆ YW051  │
-    │ gfp     ┆ ACA        ┆ 3130   ┆ 22.920328 ┆ … ┆ 5.222484  ┆ 337372    ┆ 599.331616      ┆ YW051  │
-    │ …       ┆ …          ┆ …      ┆ …         ┆ … ┆ …         ┆ …         ┆ …               ┆ …      │
-    │ overlap ┆ SS         ┆ 1      ┆ 0.071736  ┆ … ┆ 37.177937 ┆ 2384622   ┆ 0.026898        ┆ YW051  │
-    │ overlap ┆ ECT        ┆ 1      ┆ 0.071736  ┆ … ┆ 3.457703  ┆ 387378    ┆ 0.289209        ┆ YW051  │
-    │ overlap ┆ TEa        ┆ 1      ┆ 0.071736  ┆ … ┆ 3.860953  ┆ 386396    ┆ 0.259003        ┆ YW051  │
-    │ rfp     ┆ TT         ┆ 1      ┆ 0.017203  ┆ … ┆ 1.734078  ┆ 124596    ┆ 0.576675        ┆ YW051  │
-    └─────────┴────────────┴────────┴───────────┴───┴───────────┴───────────┴─────────────────┴────────┘
+    * Optional col: hemi. , only existed if init with either ``hemisphere`` is 'ipsi' or 'contra' 
+    
+    * <ROIS_NORM_TYPE>_norm depending on ``norm_type``
+    
+    Example of data with volume normalization method::
+    
+        ┌─────────┬────────────┬────────┬───────────┬───┬───────────┬───────────┬─────────────────┬────────┐
+        │ channel ┆ merge_ac_2 ┆ n_rois ┆ percent   ┆ … ┆ Volumes   ┆ n_neurons ┆ *volume_norm_n_r┆ animal │
+        │ ---     ┆ ---        ┆ ---    ┆ ---       ┆   ┆ [mm^3]    ┆ ---       ┆ ois             ┆ ---    │
+        │ str     ┆ str        ┆ i64    ┆ f64       ┆   ┆ ---       ┆ i64       ┆ ---             ┆ str    │
+        │         ┆            ┆        ┆           ┆   ┆ f64       ┆           ┆ f64             ┆        │
+        ╞═════════╪════════════╪════════╪═══════════╪═══╪═══════════╪═══════════╪═════════════════╪════════╡
+        │ overlap ┆ ACA        ┆ 423    ┆ 30.344333 ┆ … ┆ 5.222484  ┆ 337372    ┆ 80.995934       ┆ YW051  │
+        │ gfp     ┆ MO         ┆ 3352   ┆ 24.545987 ┆ … ┆ 22.248234 ┆ 985411    ┆ 150.663641      ┆ YW051  │
+        │ rfp     ┆ ACA        ┆ 1383   ┆ 23.791502 ┆ … ┆ 5.222484  ┆ 337372    ┆ 264.816494      ┆ YW051  │
+        │ gfp     ┆ ACA        ┆ 3130   ┆ 22.920328 ┆ … ┆ 5.222484  ┆ 337372    ┆ 599.331616      ┆ YW051  │
+        │ …       ┆ …          ┆ …      ┆ …         ┆ … ┆ …         ┆ …         ┆ …               ┆ …      │
+        │ overlap ┆ SS         ┆ 1      ┆ 0.071736  ┆ … ┆ 37.177937 ┆ 2384622   ┆ 0.026898        ┆ YW051  │
+        │ overlap ┆ ECT        ┆ 1      ┆ 0.071736  ┆ … ┆ 3.457703  ┆ 387378    ┆ 0.289209        ┆ YW051  │
+        │ overlap ┆ TEa        ┆ 1      ┆ 0.071736  ┆ … ┆ 3.860953  ┆ 386396    ┆ 0.259003        ┆ YW051  │
+        │ rfp     ┆ TT         ┆ 1      ┆ 0.017203  ┆ … ┆ 1.734078  ┆ 124596    ┆ 0.576675        ┆ YW051  │
+        └─────────┴────────────┴────────┴───────────┴───┴───────────┴───────────┴─────────────────┴────────┘
     """
 
     @property
     def value_col(self) -> str:
+        """column name for the value"""
         if self.norm_type in ('cell', 'volume'):
             return f'{self.norm_type}_norm_n_rois'
         elif self.norm_type == 'channel':
@@ -424,9 +464,16 @@ class RoiClassifiedNormTable:
 
     @property
     def classified_column(self) -> CLASSIFIED_COL:
+        """classified column based on the ``RoiClassifier``"""
         return self.source_classifier.classified_column
 
     def with_areas(self, areas: Area | list[Area]) -> Self:
+        """
+        filter the data with selected area
+
+        :param areas: area or list of area
+        :return: :class:`RoiClassifiedNormTable`
+        """
         if isinstance(areas, str):
             areas = [areas]
 
@@ -438,38 +485,50 @@ class RoiClassifiedNormTable:
         return attrs.evolve(self, data=_data)
 
     def with_hemisphere(self, hemi: HEMISPHERE_TYPE) -> Self:
+        """
+        filter the data with selected hemisphere
+
+        :param hemi: {'ipsi', 'contra'}
+        :return: :class:`RoiClassifiedNormTable`
+        """
         if hemi not in ('ipsi', 'contra'):
             raise ValueError('')
 
-        return attrs.evolve(self, data=self.data.filter(pl.col('hemi.') == hemi))
+        return attrs.evolve(self,
+                            hemisphere=hemi,
+                            data=self.data.filter(pl.col('hemi.') == hemi))
 
     def get_bias_value_dataframe(self,
                                  yunit: str = 'percent',
                                  to_index=True,
                                  verbose=True) -> pl.DataFrame:
         """
-        dataframe with *bias value using either
+        Dataframe with `bias value` using either
+
         1. simple subtraction using either *percent* or *n_rois* in `self.data` (bias_value)
+
         2. index calculation (bias index)
 
-        ┌────────────┬────────────┐
-        │ merge_ac_1 ┆ bias_value*│
-        │ ---        ┆ ---        │
-        │ str        ┆ f64        │
-        ╞════════════╪════════════╡
-        │ MO         ┆ -18.591053 │
-        │ SS         ┆ -5.362179  │
-        │ …          ┆ …          │
-        │ CP         ┆ 3.897736   │
-        │ VIS        ┆ 12.899966  │
-        └────────────┴────────────┘
-
         :param yunit:
-        :param to_index: to bias index (1og2 (P_areaA / P_areaB)). refer to Chen et al., 2022. biorxiv
-                    otherwise, do simple subtraction
-                    NOTE that index is currently calculate based on `channel-normalization` value (percent col)
-        :param verbose
-        :return:
+        :param to_index: to bias index (1og2 (P_areaA / P_areaB)). refer to Chen et al., 2022. biorxiv.
+            otherwise, do simple subtraction
+            NOTE that index is currently calculate based on `channel-normalization` value (percent col)
+        :param verbose: do print for output
+        :return: DataFrame
+
+        Example::
+
+            ┌────────────┬────────────┐
+            │ merge_ac_1 ┆ bias_value*│
+            │ ---        ┆ ---        │
+            │ str        ┆ f64        │
+            ╞════════════╪════════════╡
+            │ MO         ┆ -18.591053 │
+            │ SS         ┆ -5.362179  │
+            │ …          ┆ …          │
+            │ CP         ┆ 3.897736   │
+            │ VIS        ┆ 12.899966  │
+            └────────────┴────────────┘
         """
         bias_col = 'bias_value'
 
@@ -504,7 +563,8 @@ class RoiClassifiedNormTable:
 
         :param yunit: {'percent', 'n_rois'}
         :return:
-            key: x & counts
+            key: `x` & `counts`
+
             value: (area, channel) & neuronal counts or percentage
         """
         if yunit == 'n_rois':
@@ -525,18 +585,22 @@ class RoiClassifiedNormTable:
 
     def to_winner_dataframe(self) -> pl.DataFrame:
         """
-        ┌────────────┬─────────┬──────┬──────┬───────┬────────┐
-        │ merge_ac_1 ┆ overlap ┆ pRSC ┆ aRSC ┆ total ┆ winner │
-        │ ---        ┆ ---     ┆ ---  ┆ ---  ┆ ---   ┆ ---    │
-        │ str        ┆ i64     ┆ i64  ┆ i64  ┆ i64   ┆ str    │
-        ╞════════════╪═════════╪══════╪══════╪═══════╪════════╡
-        │ ACA        ┆ 1000    ┆ 1048 ┆ 2865 ┆ 4913  ┆ gfp    │
-        │ RSP        ┆ 327     ┆ 1086 ┆ 1345 ┆ 2758  ┆ gfp    │
-        │ …          ┆ …       ┆ …    ┆ …    ┆ …     ┆ …      │
-        │ CB         ┆ 0       ┆ 0    ┆ 1    ┆ 1     ┆ gfp    │
-        │ CUN        ┆ 0       ┆ 0    ┆ 1    ┆ 1     ┆ gfp    │
-        └────────────┴─────────┴──────┴──────┴───────┴────────┘
-        :return:
+        for ternary plot in plotly module
+
+        :return: dataframe
+        ::
+
+            ┌────────────┬─────────┬──────┬──────┬───────┬────────┐
+            │ merge_ac_1 ┆ overlap ┆ pRSC ┆ aRSC ┆ total ┆ winner │
+            │ ---        ┆ ---     ┆ ---  ┆ ---  ┆ ---   ┆ ---    │
+            │ str        ┆ i64     ┆ i64  ┆ i64  ┆ i64   ┆ str    │
+            ╞════════════╪═════════╪══════╪══════╪═══════╪════════╡
+            │ ACA        ┆ 1000    ┆ 1048 ┆ 2865 ┆ 4913  ┆ gfp    │
+            │ RSP        ┆ 327     ┆ 1086 ┆ 1345 ┆ 2758  ┆ gfp    │
+            │ …          ┆ …       ┆ …    ┆ …    ┆ …     ┆ …      │
+            │ CB         ┆ 0       ┆ 0    ┆ 1    ┆ 1     ┆ gfp    │
+            │ CUN        ┆ 0       ┆ 0    ┆ 1    ┆ 1     ┆ gfp    │
+            └────────────┴─────────┴──────┴──────┴───────┴────────┘
         """
         df = (self.data
               .pivot(values='n_rois', columns='source', index=self.classified_column, aggregate_function='first')
@@ -565,16 +629,16 @@ class RoiClassifiedNormTable:
 # ======================================== #
 
 
-def concat_channel(ccf_dir: CCFBaseDir,
-                   fluor_repr: FluorReprType,
-                   plane: PLANE_TYPE) -> pl.DataFrame:
+def _concat_channel(ccf_dir: CCFBaseDir,
+                    fluor_repr: FluorReprType,
+                    plane: PLANE_TYPE) -> pl.DataFrame:
     """
     Find the csv data from `labelled_roi_folder`, if multiple files are found, concat to single df.
     `channel` & `source` columns are added to the dataframe
 
-    :param ccf_dir:
-    :param fluor_repr:
-    :param plane:
+    :param ccf_dir: :class:`~neuralib.atlas.ccf.core.CCFBaseDir()`
+    :param fluor_repr: ``FluorReprType``
+    :param plane: ``PLANE_TYPE`` {'coronal', 'sagittal', 'transverse'}
     :return:
     """
     f = list(ccf_dir.labelled_roi_folder.glob('*.csv'))
@@ -637,25 +701,26 @@ def _multiple_concat_proc(f: list[Path],
 # Raw CSV Parsing Functions #
 # ========================= #
 
-def parse_csv(reg: CCFBaseDir | None,
+def parse_csv(ccf_dir: CCFBaseDir | None,
               fluor_repr: FluorReprType, *,
               plane: PLANE_TYPE = 'coronal',
               df: pl.DataFrame | None = None,
               invert_hemi: bool = False) -> pl.DataFrame:
     """
     Narrow down the info in the ccf roi output
+
     columns `abbr`, `acronym_abbr` and `hemi` are added to the df
 
-    :param reg: if None, directly give df arg
-    :param fluor_repr:
-    :param plane:
-    :param df:
-    :param invert_hemi
-    :return:
+    :param ccf_dir: if None, directly give ``df`` arg
+    :param fluor_repr: ``FluorReprType``
+    :param plane: ``PLANE_TYPE`` {'coronal', 'sagittal', 'transverse'}
+    :param df: if None, give ``ccf_dir`` arg
+    :param invert_hemi: if True, then ML_location >= 0 is ipsilateral site. otherwise, is contralateral site
+    :return: DataFrame
     """
 
     if df is None:
-        df = concat_channel(reg, fluor_repr, plane)
+        df = _concat_channel(ccf_dir, fluor_repr, plane)
 
     # pick up acronym with capital
     df = df.filter(pl.col('acronym').str.contains(r'[A-Z]+'))
@@ -683,9 +748,14 @@ def parse_csv(reg: CCFBaseDir | None,
     return df
 
 
+# TODO might be user-specific, be more generalized
 def supply_overlap_dataframe(df: pl.DataFrame) -> pl.DataFrame:
     """Supply overlap counting in the parsed dataframe.
+
     ** Only used if excluding the overlap cell while counting the rfp and gfp channel
+
+
+    :param df: dataframe contain `source` column with `overlap` literal in the cell
     """
     ori = df
     dat_s1 = df.filter(pl.col('source') == 'overlap').with_columns(pl.lit('aRSC').alias('source'))

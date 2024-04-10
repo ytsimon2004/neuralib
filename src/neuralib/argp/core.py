@@ -1,133 +1,3 @@
-"""
-Annotation-based argparse
-=========================
-
-This module provide a way to integrate python `argparse` module into class attribute
-and annotation type, that allow options have type information, and allow parser combination
-easily.
-
-class Argument and function argument
-------------------------------------
-
-A simple option class that contains several options carried by their attributes.
-
->>> class ExampleOptions:
-...     ANIMAL: str = argument('--ANIMAL')
-...     EXP_DATE: str = argument('--EXP_DATE')
-...     OUTPUT_DIR: str = argument()
-
-In `ExampleOptions`, `ANIMAL` is an attribute with type annotation `str`. it has
-a class variable :class:`Argument` (:func:`argument`'s return) which contains the
-arguments of :meth:`argparse.ArgumentParser.add_argument`. For now, we have an optional
-argument `--ANIMAL` which accept one argument. `EXP_DATE` is another optional argument
-`--EXP_DATE`. `OUTPUT_DIR` is a potional argument because it doesn't have dashed options.
-
->>> opt = parse_args(ExampleOptions())
-... print(opt.animal)
-
-After class declared, you can use :func:`parse_args` to parse cli arguments. This
-function will create an :class:`argparse.ArgumentParser` and find out all argument
-attributes. Then set the attributes from parsed result.
-
-Commandline usage
-~~~~~~~~~~~~~~~~~
-
-In bash, you can call this option class ::
-
-    python -m module.path --ANIMAL name --EXP_DATE date output
-
-:func:`print_help` does the similar things but print the help document to the stdout.
-
->>> print_help(opt)
-
-Or use `-h` options ::
-
-    python -m module.path -h
-
-Annotation type infering
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-In general, you can think :func:`argument` just a delegate funcion that passes the arguments
-to the :meth:`argparse.ArgumentParser.add_argument`. However, this function will try to
-infer missing arguments based on the annotation type when creating the :class:`argparse.ArgumentParser`.
-For now, this module is not powerful to handle all possible case. there are support type
-(Please see :meth:`Argument.complete_kwargs` for detailed):
-
-1. `bool`: infer parameter `action` to `store_true`, `default` to `False`.
-2. `Literal[...]` : infer parameter `choices`.
-3. `Optional[T]`: infer parameter `type` to `T` if it is callable. If it is `Literal`, apply 2.
-4. `callable(T)` : infer parameter `type` to `T`
-5. parameter `dest` always use attribute name.
-
-Additionally, :class:`Argument` also provide a parameter `group` to reduce the complexity of
-create subgrouping parser.
-
-Option class compose
-~~~~~~~~~~~~~~~~~~~~
-
-Option class can be composed by inherition. Child option class can also change the value from parent's
-argument. As well as disable it (by replacing a value)
-
->>> class MoreOptions(ExampleOptions):
-...     # additional optional option
-...     verbose: bool = argument('-v', '--verbose')
-...     # change default value
-...     ANIMAL: str = as_argument(ExampleOptions.animal).with_options(default='YW00')
-...     # and disable an option
-...     OUTPUT_DIR: str = 'output' # just replace with a value
-
-Change options name is more complicate, because you might want to add more name, remove some name,
-or rename some name. :meth:`Argument.with_options` allow you to do that:
-
->>> class ChangeExample(ExampleOptions):
-...     # replace option name: --animal
-...     ANIMAL: str = as_argument(ExampleOptions.animal).with_options('--animal')
-...     # add more option name: -A, --ANIMAL
-...     ANIMAL: str = as_argument(ExampleOptions.animal).with_options(..., '-A')
-...     # rename option: --animal
-...     ANIMAL: str = as_argument(ExampleOptions.animal).with_options({
-...         '--ANIMAL': '--animal'
-...     })
-
-Utility function for option class
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-`ExampleOptions` doesn't declated neither `__str__` nor `__repr__`, so it is not convenient to debug.
-funciont :func:`as_dict` provide a way to take argument attribute's value into a dictionary.
-
->>> as_dict(opt)
-{'ANIMAL': ..., 'EXP_DATE': ..., 'OUTPUT_DIR': ...}
-
-Option class is not restricted into only one use case. It works like a normal class.
-
-class AbstractParser
---------------------
-
-This class provide a main like class that has more control on :class:`argparse.ArgumentParser`
-creation.
-
->>> class ExampleParser(AbstractParser, ExampleOptions):
-...     DESCRIPTION = 'Example parser'
-...     def run(self):
-...         ...
->>> if __name__ == '__main__':
-...     ExampleParser().main()
-
-Subcommands
------------
-
-This module isn't fully support sub-command feature, but only provide a simple way for specific case:
-
->>> parse_command_args(
-...     description='top level parser',
-...     parsers=dict(ep=ExampleParser)
-... )
-
-In bash::
-
-    python -m module.path ep --ANIMAL name --EXP_DATE date output
-
-"""
 import argparse
 import sys
 from typing import (
@@ -166,15 +36,20 @@ Actions = Literal[
     'count',
     'help',
     'version',
-        #
+    #
     'boolean'
 ]
 
 
 class AbstractParser:
     USAGE: str = None
+    """parser usage."""
+
     DESCRIPTION: str = None
+    """parser description."""
+
     EPILOG: str = None
+    """parser epilog. Could be override as a method if its content is dynamic-generated."""
 
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
@@ -183,9 +58,9 @@ class AbstractParser:
 
     @classmethod
     def new_parser(cls, **kwargs) -> argparse.ArgumentParser:
-        """create an :class:`argparse.ArgumentParser`.
+        """create an ``argparse.ArgumentParser``.
 
-        class variable: USAGE, DESCRIPTION and EPILOG are used when creation.
+        class variable: ``USAGE``, ``DESCRIPTION`` and ``EPILOG`` are used when creation.
 
         >>> class A(AbstractParser):
         ...     @classmethod
@@ -193,24 +68,24 @@ class AbstractParser:
         ...         return super().new_parser(**kwargs)
 
         :param kwargs: keyword parameters to ArgumentParser
-        :return:
+        :return: an ArgumentParser.
         """
         return new_parser(cls, **kwargs)
 
-    def main(self, args: Union[list[str], tuple[list[str], list[str]]] = None,
-             *,
+    def main(self, args: Union[list[str], tuple[list[str], list[str]]] = None, *,
              exit_on_error=True):
         """parsing the commandline input *args* and set the argument attributes,
-        then call :meth:`call`.
+        then call :meth:`.run()`.
 
-        * Example
-        # if overwrite with the argument default, use `args`
+        **Example**
+
+        if overwrite with the argument default, use *args*
+
         >>> AbstractParser().main((['--source=allen_mouse_25um', '--region=VISal,VISam,...'], []))
 
         :param args: commandline arguments, or a tuple of (prepend, append) arguments
-        :param exit_on_error: exit when commandline parsed fail. Otherwise, raise a RuntimeError.
+        :param exit_on_error: exit when commandline parsed fail. Otherwise, raise a ``RuntimeError``.
         """
-        #
         if args is not None:
             if isinstance(args, list):
                 pass
@@ -239,15 +114,24 @@ class AbstractParser:
         pass
 
     def post_parsing(self):
-        """called when all argument attributes are set but before :meth:`run`.
-        It is used for checking arguments before doing things.
+        """called when all argument attributes are set but before :meth:`.run()`.
+
+        It is used for a common operation for a common option class,
+        for example, checking arguments before doing things.
         """
         pass
 
 
 class Argument(object):
     """Descriptor (https://docs.python.org/3/glossary.html#term-descriptor).
-    Carried the arguments pass to :meth:`argparse.ArgumentParser.add_argument`.
+    Carried the arguments pass to ``argparse.ArgumentParser.add_argument``.
+
+    **Creation**
+
+    Use :func:`~neuralib.argp.core.argument()`.
+
+    >>> class Example:
+    ...     a: str = argument('-a')
 
     """
 
@@ -322,7 +206,7 @@ class Argument(object):
             pass
 
     def add_argument(self, ap: argparse.ArgumentParser, instance):
-        """Add this into :class:`argparse.ArgumentParser`.
+        """Add this into `argparse.ArgumentParser`.
 
         :param ap:
         :param instance:
@@ -394,15 +278,15 @@ class Argument(object):
 
         option flags update rule:
 
-        1. `()` : do not update options
-        2. `('-a', '-b')` : replace options
-        3. `(..., '-c')` : append options
-        4. `({'-a': '-A'})` : rename options
-        4. `({'-a': '-A'}, ...)` : rename options, keep options if not in the dict.
+        1. ``()`` : do not update options
+        2. ``('-a', '-b')`` : replace options
+        3. ``(..., '-c')`` : append options
+        4. ``({'-a': '-A'})`` : rename options
+        4. ``({'-a': '-A'}, ...)`` : rename options, keep options if not in the dict.
 
         general form:
 
-        `() | (dict?, ...?, *str)`
+        ``() | (dict?, ...?, *str)``
 
         :param options: change option flags
         :param kwargs: change keyword parameters, use `...` to unset parameter
@@ -483,7 +367,7 @@ def argument(*options: str, **kwargs):
     ...     list_value: list[str] = argument('-l', metavar='VALUE', nargs=2, action='append')
 
 
-    Please see :meth:`argparse.ArgumentParser.add_argument` for detailed.
+    :param kwargs: Please see ``argparse.ArgumentParser.add_argument`` for detailed.
     """
     if not all([it.startswith('-') for it in options]):
         raise RuntimeError(f'options should startswith "-". {options}')
@@ -491,7 +375,7 @@ def argument(*options: str, **kwargs):
 
 
 def as_argument(a) -> Argument:
-    """cast argument attribute as an :class:`Argument` for type checking framework/IDE."""
+    """cast argument attribute as an :class:`~neuralib.argp.core.Argument` for type checking framework/IDE."""
     if isinstance(a, Argument):
         return a
     raise TypeError
@@ -520,7 +404,7 @@ def foreach_arguments(instance: Union[T, type[T]]) -> Iterable[Argument]:
 
 
 def new_parser(instance: Union[T, type[T]], reset=False, **kwargs) -> argparse.ArgumentParser:
-    """Create :class:`argparse.ArgumentParser` for instance.
+    """Create ``ArgumentParser`` for instance.
 
     :param instance:
     :param reset: reset argument attributes. do nothing if *instance* isn't an instance.
@@ -559,11 +443,11 @@ def new_command_parser(parsers: dict[str, Union[AbstractParser, type[AbstractPar
                        usage: str = None,
                        description: str = None,
                        reset=False) -> argparse.ArgumentParser:
-    """Create :class:`argparse.ArgumentParser` for :class:`AbstractParser` s.
+    """Create ``ArgumentParser`` for :class:`~neuralib.argp.core.AbstractParser` s.
 
-    :param parsers: dict of command to AbstractParser.
-    :param usage:
-    :param description:
+    :param parsers: dict of command to :class:`~neuralib.argp.core.AbstractParser`.
+    :param usage: parser usage
+    :param description: parser description
     :param reset: reset argument attributes. do nothing if *parsers*'s value isn't an instance.
     :return:
     """
@@ -579,11 +463,11 @@ def new_command_parser(parsers: dict[str, Union[AbstractParser, type[AbstractPar
 
 
 def set_options(instance: T, result: argparse.Namespace) -> T:
-    """set argument attributes from :class:`argparse.Namespace` .
+    """set argument attributes from ``argparse.Namespace`` .
 
     :param instance:
     :param result:
-    :return:
+    :return: *instance* itself.
     """
     for arg in foreach_arguments(instance):
         try:
@@ -600,7 +484,7 @@ def parse_args(instance: T, args: list[str] = None) -> T:
     """parsing the commandline input *args* and set the argument attributes.
 
     :param instance:
-    :param args: commandline input
+    :param args: commandline inputs
     :return:
     """
     return set_options(instance, new_parser(instance, reset=True).parse_args(args))
@@ -611,15 +495,15 @@ def parse_command_args(parsers: dict[str, Union[AbstractParser, type[AbstractPar
                        usage: str = None,
                        description: str = None,
                        run_main=True) -> Optional[AbstractParser]:
-    """Create :class:`argparse.ArgumentParser` for :class:`AbstractParser` s.
-    Then parsing the commandline input *args* and setting up correspond :class:`AbstractParser`.
+    """Create ``argparse.ArgumentParser`` for :class:`~neuralib.argp.core.AbstractParser` s.
+    Then parsing the commandline input *args* and setting up correspond :class:`~neuralib.argp.core.AbstractParser`.
 
-    :param parsers: dict of command to AbstractParser.
-    :param args:
-    :param usage:
-    :param description:
-    :param run_main: run :meth:`AbstractParser.run`
-    :return:
+    :param parsers: dict of command to :class:`~neuralib.argp.core.AbstractParser`.
+    :param args: commandline inputs
+    :param usage: parser usage
+    :param description: parser description.
+    :param run_main: run :meth:`~neuralib.argp.core.AbstractParser.run()`
+    :return: used :class:`~neuralib.argp.core.AbstractParser`
     """
     ap = new_command_parser(parsers, usage, description, reset=True)
     res = ap.parse_args(args)

@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from typing import Literal
@@ -29,7 +28,10 @@ IBL_BG_TYPE = Literal['image', 'boundary']
 
 
 class IBLAtlasPlotWrapper(AllenAtlas):
-    """Wrapper for iblatlas.atlas.AllenAtlas and plotting functions"""
+    """Wrapper for iblatlas plotting usage
+
+    .. seealso:: `<https://int-brain-lab.github.io/iblenv/atlas_examples.html>`_
+    """
     regions: BrainRegions
 
     def __init__(self, res_um: int = 10,
@@ -37,6 +39,14 @@ class IBLAtlasPlotWrapper(AllenAtlas):
                  mock: bool = False,
                  source_path: PathLike | None = None,
                  alpha: float = 1.0):
+        """
+
+        :param res_um: The Atlas resolution in micrometres; one of 10, 25 or 50um
+        :param scaling: Scale factor along ml, ap, dv for squeeze and stretch (default: [1, 1, 1])
+        :param mock: For testing purposes, return atlas object with image comprising zeros
+        :param source_path: The location of the image volume. By default, use ``IBL_CACHE_DIRECTORY``
+        :param alpha:
+        """
 
         if source_path is None:
             source_path = IBL_CACHE_DIRECTORY
@@ -46,6 +56,7 @@ class IBLAtlasPlotWrapper(AllenAtlas):
         self._alpha = alpha
 
     def get_acronym_list(self, mapping: IBL_MAPPING_TYPE) -> list[str]:
+        """get acronym list"""
         # noinspection PyUnresolvedReferences
         return list(self.regions.acronym[self.regions.mappings[mapping]])
 
@@ -70,9 +81,11 @@ class IBLAtlasPlotWrapper(AllenAtlas):
             **kwargs
     ) -> tuple[plt.Figure, Axes] | tuple[plt.Figure, Axes, plt.colorbar]:
         """
-        Plot the slice view
-        See detail in iblatlas.plots.plot_scalar_on_slice
-        See examples: https://int-brain-lab.github.io/iblenv/notebooks_external/atlas_plotting_scalar_on_slice.html
+        Plot the slice view.
+
+        See detail in ``iblatlas.plots.plot_scalar_on_slice``
+
+        .. seealso:: `<https://int-brain-lab.github.io/iblenv/notebooks_external/atlas_plotting_scalar_on_slice.html>`_
 
         :param regions:
         :param values:
@@ -132,6 +145,7 @@ class IBLAtlasPlotWrapper(AllenAtlas):
             ax: Axes | None = None,
     ) -> tuple[plt.Figure, Axes] | tuple[plt.Figure, Axes, plt.colorbar]:
         """
+        plot_points_on_slice
 
         :param xyz:
         :param values:
