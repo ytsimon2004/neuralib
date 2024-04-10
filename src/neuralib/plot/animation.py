@@ -5,8 +5,8 @@ from matplotlib import pyplot as plt
 
 from neuralib.util.util_type import PathLike
 
-
 __all__ = ['plot_scatter_animation']
+
 
 def plot_scatter_animation(x: np.ndarray,
                            y: np.ndarray,
@@ -14,20 +14,18 @@ def plot_scatter_animation(x: np.ndarray,
                            step: int | None = None,
                            size: int = 10,
                            output: PathLike | None = None,
-                           **kwargs):
+                           **kwargs) -> None:
     """
-    Plot xy scatter with animation
+    Plot xy scatter animation with given time points
 
-    TODO what animation it is. from t=0~end
-
-    :param x: TODO what shape it is? is (T, X)?
-    :param y: TODO what shape it is? is (T, Y)?
-    :param t: time array in sec TODO what shape it is? is (T, )?
-    :param size: TODO scatter(s)?
-    :param step: step run TODO what unit it is?
+    :param x: x loc (T, )
+    :param y: y loc (T, )
+    :param t: time array in sec (T, )
+    :param size: size of the scatter
+    :param step: step run per datapoint
     :param output: output for animation. i.e., *.gif
-    :param kwargs: TODO FuncAnimation(**kwargs)?
-    :return: TODO None?
+    :param kwargs: FuncAnimation(**kwargs)
+    :return:
     """
     from matplotlib.animation import FuncAnimation
 

@@ -8,10 +8,13 @@ import numpy as np
 from neuralib.plot import plot_figure
 from neuralib.util.util_type import PathLike
 
+__all__ = [
+    'plot_task_gantt',
+    'draw_circular_annotation',
+    'generate_dots',
+    'draw_random_dots'
+]
 
-# TODO __all__
-
-# ================= #
 
 class GanttDict(TypedDict, total=False):
     task: str
@@ -20,14 +23,14 @@ class GanttDict(TypedDict, total=False):
     resource: str
 
 
-def plot_gantt(jobs: list[GanttDict]):  # TODO renamed as plot_task_gantt
+def plot_task_gantt(jobs: list[GanttDict]):
     """
     plot gantt
     * Example
 
     >>> x = [GanttDict(task='task1', start='2023-09-01', finish='2023-11-30'),
     ...      GanttDict(task='task2', start='2024-01-01', finish='2024-09-30')]
-    >>> plot_gantt(x)
+    >>> plot_task_gantt(x)
 
     :param jobs:
     :return:

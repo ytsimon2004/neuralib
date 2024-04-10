@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 
 import numpy as np
+from bokeh.palettes import Category20c
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colorbar import ColorbarBase
@@ -21,7 +22,7 @@ class ColorMapper:  # TODO named as DiscreteColorMapper
 
     **Example of a `Dict` palette**
 
-        >>> cmapper = ColorMapper(Category20c, 20) # TODO import Category20c
+        >>> cmapper = ColorMapper(Category20c, 20)
         >>> x = ['1', '2', '3']
         >>> color_list = [cmapper[i] for i in x]
 
