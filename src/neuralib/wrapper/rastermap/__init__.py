@@ -179,6 +179,9 @@ Example of Wfield imaging dataset pipeline
     from rastermap import Rastermap
     from scipy.stats import zscore
 
+    from neuralib.plot import plot_figure, ax_merge
+    from neuralib.util.util_type import PathLike
+
 
     @dataclasses.dataclass
     class BaseRasterMapInputWField:

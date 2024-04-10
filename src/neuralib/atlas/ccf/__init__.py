@@ -68,7 +68,7 @@ Do the following procedure
 1. concat roi from different channels
 2. add column(fields) for user-specific manner. e.g., 'channel', 'source', ...
 3. converge to hierarchical level / family based on allen brain region tree (Wang et al 2020).
-   see :meth:`~neuralib.atlas.map.merge_until_level()` in ``neuralib.atlas.map.py``
+   see :meth:`~neuralib.atlas.map.merge_until_level()` in `neuralib.atlas.map.py <https://github.com/ytsimon2004/neuralib/blob/main/src/neuralib/atlas/map.py>`_
 
 
 .. code-block:: python

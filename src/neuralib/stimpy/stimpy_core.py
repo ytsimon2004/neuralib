@@ -310,7 +310,7 @@ class Stimlog(StimlogBase):
         return StimPattern(t, dire, sf, tf, contrast, dur)
 
     def get_time_profile(self):
-        raise NotImplementedError
+        raise NotImplementedError('')
 
 
 # ================= #
@@ -499,7 +499,7 @@ class StimpyProtocol(AbstractStimProtocol):
         return self.options['controller']
 
     @property
-    def shuffle(self) -> bool:
+    def is_shuffle(self) -> bool:
         """Is stimulus ordering shuffled"""
         return self.options['shuffle'] == 'True'
 

@@ -10,6 +10,8 @@ from neuralib.atlas.util import get_margin_merge_level
 
 __all__ = ['RoiAreaQuery', 'SubregionResult']
 
+from neuralib.util.util_verbose import fprint
+
 
 @final
 class RoiAreaQuery:
@@ -18,11 +20,23 @@ class RoiAreaQuery:
     def __init__(self,
                  parsed_df: pl.DataFrame,
                  area: Area,
-                 source_order: tuple[Source, ...] | None = None):
+                 source_order: tuple[Source, ...] | None = None,
+                 force_set_show_col_level: int | None = None):
         """
         :param parsed_df: parsed dataframe from ccf pipeline
         :param area: area name
         :param source_order: order of the unique sources
+        :param force_set_show_col_level: force set show col to which level.
+            use case: if a low level area name is classified and show in high level (i.e., TH).
+            Then directly specify the level number instead of auto inferred by hierarchical_query()
+
+            **Please use carefully**
+
+            Note that it results in subregions mixed in different level
+
+            for example, if one level contain both HIP and HPF, it will quantify and calculate the percentage together,
+            however, they are not in the same level for actual allen tree level. it's due to the raw data issue
+            (Rois are not classified correctly initially in allenCCF pipeline)
         """
 
         self.parsed_df: Final[pl.DataFrame] = parsed_df
@@ -34,7 +48,9 @@ class RoiAreaQuery:
             self.source_order = source_order
 
         self._query_col = get_margin_merge_level(self.parsed_df, self.area, 'lowest')
-        self._show_col: str | None = None  # infer after query
+
+        # infer after query if not force set
+        self._show_col: str | None = None if force_set_show_col_level is None else f'merge_ac_{force_set_show_col_level}'
         self.query_result: Final[pl.DataFrame] = self._hierarchical_query()
 
     def __repr__(self):
@@ -45,18 +61,30 @@ class RoiAreaQuery:
 
     @classmethod
     def by(cls, df: pl.DataFrame,
-           area: Area,
-           source_order: tuple[Source, ...] | None = None) -> Self:
+           area: Area, *,
+           source_order: tuple[Source, ...] | None = None,
+           force_set_show_col_level: int | None = None) -> Self:
         """
         Query which area
 
         :param df: ccf parsed dataframe
         :param area: area name
         :param source_order: order of the unique sources
+        :param force_set_show_col_level: force set show col to which level.
+            use case: if a low level area name is classified and show in high level (i.e., TH).
+            Then directly specify the level number instead of auto inferred by hierarchical_query()
+
+            **Please use carefully**
+
+            Note that it results in subregions mixed in different level
+
+            for example, if one level contain both HIP and HPF, it will quantify and calculate the percentage together,
+            however, they are not in the same level for actual allen tree level. it's due to the raw data issue
+            (Rois are not classified correctly initially in allenCCF pipeline)
         :return:
         """
 
-        return RoiAreaQuery(df, area, source_order)
+        return RoiAreaQuery(df, area, source_order=source_order, force_set_show_col_level=force_set_show_col_level)
 
     @property
     def query_col(self) -> str:
@@ -76,6 +104,7 @@ class RoiAreaQuery:
             self._show_col = f'merge_ac_{highest_lv + 1}'
 
             if self._show_col not in self.parsed_df.columns:
+                fprint(f'{self._show_col} exceed level, force show *acronym*', vtype='warning')
                 self._show_col = 'acronym'
 
         return self.parsed_df.filter(pl.col(self.query_col) == self.area)

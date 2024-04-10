@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 from pathlib import Path
-from typing import Literal, TypeVar, Generic
+from typing import Literal, TypeVar, Generic, cast
 
 import numpy as np
 import polars as pl
@@ -10,6 +10,7 @@ import polars as pl
 from neuralib.stimpy.event import RigEvent, CamEvent
 from neuralib.stimpy.session import Session, SessionInfo
 from neuralib.stimpy.stimulus import StimPattern
+from neuralib.util.util_type import PathLike
 
 __all__ = [
     'STIMPY_SOURCE_VERSION',
@@ -20,8 +21,6 @@ __all__ = [
     'StimlogBase',
     'AbstractStimTimeProfile'
 ]
-
-from neuralib.util.util_type import PathLike
 
 STIMPY_SOURCE_VERSION = Literal['pyvstim', 'stimpy-bit', 'stimpy-git', 'debug']
 LOG_SUFFIX = Literal['.log', '.riglog']
@@ -38,14 +37,13 @@ P = TypeVar('P', bound='AbstractStimProtocol')  # protocol file
 # =========== #
 
 class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
-    """Parent ABC class for different stimpy/pyvstim log files. i.e., .log, .riglog"""
+    """ABC class for different stimpy/pyvstim log files. i.e., .log, .riglog"""
 
     def __init__(self,
                  root_path: PathLike,
                  log_suffix: LOG_SUFFIX,
                  diode_offset: bool = True):
         """
-
         :param root_path: log file path or log directory
         :param log_suffix: log file suffix
         :param diode_offset: whether do the diode offset
@@ -111,6 +109,11 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_prot_file(self) -> P:
+        """
+        get protocol (TypeVar ``P``)
+
+        :return: :class:`~neuralib.stimpy.baseprot.AbstractStimProtocol()`
+        """
         pass
 
     # ============ #
@@ -118,9 +121,7 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
     # ============ #
 
     def _event(self, code: int) -> np.ndarray:
-        """
-        :return shape(sample, 2) with time and value
-        """
+        """shape(sample, 2) with time and value"""
         x = self.dat[:, 0] == code
         t = self.dat[x, 2].copy() / 1000  # s
         v = self.dat[x, 3].copy()
@@ -128,34 +129,42 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
 
     @property
     def exp_start_time(self) -> float:
+        """experimental start time (in sec)"""
         return self.dat[0, 2].copy() / 1000
 
     @property
     def exp_end_time(self) -> float:
+        """experimental end time (in sec)"""
         return self.dat[-1, 2].copy() / 1000
 
     @property
     def total_duration(self) -> float:
-        return self.dat[-1, 2] / 1000
+        """experimental duration (in sec)"""
+        return self.exp_end_time - self.exp_start_time
 
     @property
     def screen_event(self) -> RigEvent:
+        """screen rig event. i.e., diode pulse"""
         return RigEvent('screen', self._event(0))
 
     @property
     def imaging_event(self) -> RigEvent:
+        """imaging rig event. i.e., 2photon pulse"""
         return RigEvent('imaging', self._event(1))
 
     @property
     def position_event(self) -> RigEvent:
+        """position rig event. i.e., encoder pulse"""
         return RigEvent('position', self._event(2))
 
     @property
     def lick_event(self) -> RigEvent:
+        """lick rig event. i.e., lick meter pulse"""
         return RigEvent('lick', self._event(3))
 
     @property
     def reward_event(self) -> RigEvent:
+        """reward rig event. i.e., reward given pulse from lick meter"""
         if self.version == 'stimpy-git':
             return RigEvent('reward', self._event(5))
         else:
@@ -163,22 +172,30 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
 
     @property
     def lap_event(self) -> RigEvent:
+        """lap rig event. i.e., optic sensing for the reflective taps"""
         if self.version == 'stimpy-git':
             return RigEvent('lap', self._event(6))
         else:
             return RigEvent('lap', self._event(5))
 
-    def act_event(self) -> np.ndarray:
-        pass
+    @property
+    def act_event(self) -> RigEvent:
+        """todo"""
+        raise NotImplementedError('')
 
-    def opto_event(self) -> np.ndarray:
-        pass
+    @property
+    def opto_event(self) -> RigEvent:
+        """todo"""
+        raise NotImplementedError('')
 
     class CameraEvent:
-
+        """camera event"""
         camera: dict[CAMERA_TYPE, int]
 
         def __init__(self, rig: R):
+            """
+            :param rig:``Baselog``
+            """
             self.rig = rig
 
             if rig.version == 'stimpy-git':
@@ -196,19 +213,25 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
 
         def __getitem__(self, item: CAMERA_TYPE) -> CamEvent:
             if item not in self.camera:
-                raise ValueError('cam id not found')
+                raise KeyError('cam id not found')
             return CamEvent(item, self.rig._event(self.camera[item]))
 
     @property
     def camera_event(self) -> CameraEvent:
+        """camera event. including {'facecam', 'eyecam', '1P_cam'} implemented by __getitem__()"""
         return self.CameraEvent(self)
 
     @property
     def stim_prot_file(self) -> Path:
+        """protocol file path"""
         return self.riglog_file.with_suffix('.prot')
 
     @abc.abstractmethod
     def stimlog_data(self) -> S:
+        """get stimlog (TypeVar ``S``)
+
+        :return: :class:`~neuralib.stimpy.baselog.StimlogBase()`
+        """
         pass
 
 
@@ -217,20 +240,23 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
 # =========== #
 
 class StimlogBase(Generic[R], metaclass=abc.ABCMeta):
-    """used for adapted for old (bitbucket master branch) and new (github dev) stimpy
+    """ABC for stimulation logging. i.e., .stimlog
 
-    ** Shape info:
-       TR = Numbers of Trial
-       ST = Number of Stim Type
-       C = Numbers of Cycle
+    `Dimension parameters`:
+
+        N = numbers of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = Number of Stim Type
+
     """
 
     def __init__(self,
                  riglog: R,
                  file_path: PathLike | None):
         """
-
-        :param riglog:
+        :param riglog: :class:`Baselog`
         :param file_path: filepath of stimlog. could be None if shared log (pyvstim case)
         """
         self.riglog_data = riglog
@@ -245,45 +271,50 @@ class StimlogBase(Generic[R], metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def exp_start_time(self) -> float:
+        """experimental start time (in sec, synced to riglog time with diode offset)"""
         pass
 
     @property
     @abc.abstractmethod
     def exp_end_time(self) -> float:
+        """experimental end time (in sec, synced to riglog time with diode offset)"""
         pass
 
     @property
     def stim_start_time(self) -> float:
-        return self.stimulus_segment[0, 0]
+        """the first stimulation start time (in sec, synced to riglog time with diode offset)"""
+        return cast(float, self.stimulus_segment[0, 0])
 
     @property
     def stim_end_time(self) -> float:
-        return self.stimulus_segment[-1, 1]
+        """the last stimulation end time (in sec, synced to riglog time with diode offset)"""
+        return cast(float, self.stimulus_segment[-1, 1])
 
     @property
     @abc.abstractmethod
     def stimulus_segment(self) -> np.ndarray:
-        """(N, 2)"""
+        """stimulation time segment (on-off) in sec (N, 2)"""
         pass
 
     @abc.abstractmethod
     def session_trials(self) -> dict[Session, SessionInfo]:
+        """get the session:SessionInfo dictionary (experimental and user-specific)"""
         pass
 
     @property
     @abc.abstractmethod
     def time_offset(self) -> float:
-        """
-        align stimlog time to riglog
-        """
+        """time (in sec) to sync stimlog time to riglog"""
         pass
 
     @abc.abstractmethod
     def get_stim_pattern(self) -> StimPattern:
+        """get pattern foreach stimulation"""
         pass
 
     @abc.abstractmethod
     def get_time_profile(self) -> AbstractStimTimeProfile:
+        """get time profile"""
         pass
 
 
@@ -292,23 +323,39 @@ class StimlogBase(Generic[R], metaclass=abc.ABCMeta):
 # ================= #
 
 class AbstractStimTimeProfile(Generic[S], metaclass=abc.ABCMeta):
+    """
+    ABC for stimulation time profile
+
+    `Dimension parameters`:
+
+        N = numbers of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = Number of Stim Type
+
+        C = Numbers of Cycle
+
+    """
     stim: S
 
     @property
     @abc.abstractmethod
     def unique_stimuli_set(self) -> pl.DataFrame:
         """
-        rows: ST * TR;
-        col: 2 in i_stim (index of stim type), and i_trials (repetitive trials in the given stim type)"""
+        rows: number equal to N
+
+        fields: i_stim (index of stim type); i_trials (repetitive trials in the given stim type)
+        """
         pass
 
     @property
     @abc.abstractmethod
     def n_trials(self) -> int:
-        """nTR"""
+        """T"""
         pass
 
     @abc.abstractmethod
     def get_time_interval(self) -> np.ndarray:
-        """(TR, 2) with (start, end)"""
+        """(N, 2) with (start, end). suppose the same as :attr:`neuralib.stimpy.baselog.StimlogBase.stimulus_segment`"""
         pass
