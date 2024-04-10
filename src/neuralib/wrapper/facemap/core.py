@@ -194,14 +194,17 @@ class FaceMapResult:
         """
         GUI view via cli.
 
-        ** Note that launching the GUI required the same source root video path
+        **Note that calling this method will overwrite `filenames`` field in *proc.npy**
 
-        :param directory: directory contains the possible facemap output files (*.npy, *.pkl, and *.h5)
+        :param directory: directory contains the possible facemap output files (*.npy, *.pkl, and *.h5),
+            and also the raw video file
         :param with_keypoints: if has keypoint tracking result
-        :param env_name: conda env name
+        :param env_name: conda env name that installed the facemap package
         :return:
         """
         import subprocess
+
+        cls._modify_video_filenames_field(directory)
 
         svd_path = uglob(directory, '*.npy')
 
@@ -214,6 +217,17 @@ class FaceMapResult:
 
         fprint(f'{cmds=}')
         subprocess.check_call(cmds)
+
+    @classmethod
+    def _modify_video_filenames_field(cls, directory: PathLike):
+        """brute force rewrite ``filenames`` field in raw file"""
+        svd_path = uglob(directory, '*.npy')
+        video_path = uglob(directory, '*.avi')
+
+        dat = np.load(svd_path, allow_pickle=True).item()
+        dat['filenames'] = [[str(video_path)]]
+        np.save(svd_path, dat, allow_pickle=True)
+        fprint(f'overwrite filenames field to {str(video_path)}', vtype='warning')
 
     # ============== #
     # Pupil Tracking #

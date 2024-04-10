@@ -13,7 +13,7 @@
 
 ## Usage
 
-### See to doc [Doc](https://neuralib.readthedocs.io/en/latest/index.html)
+## See to [Doc](https://neuralib.readthedocs.io/en/latest/index.html)
 
 ### argp
 
