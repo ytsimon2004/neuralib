@@ -2,6 +2,7 @@
 # neuralib
 
 [![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ytsimon2004/neuralib)
 
 - Utility tools for system neuroscience research, including Open Source Wrapper or Parser
 

@@ -10,11 +10,11 @@ import polars as pl
 from scipy.interpolate import interp1d
 from typing_extensions import Self
 
-from neuralib.stimpy.baselog import CAMERA_TYPE, Baselog
-from neuralib.stimpy.stimpy_core import RiglogData
-from neuralib.stimpy.stimpy_pyv import PyVlog
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import uglob
+from .baselog import CAMERA_TYPE, Baselog
+from .stimpy_core import RiglogData
+from .stimpy_pyv import PyVlog
 
 __all__ = [
     'CAMERA_VERSION',

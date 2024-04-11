@@ -9,14 +9,14 @@ import polars as pl
 from typing_extensions import Self
 
 from neuralib.plot.figure import plot_figure
-from neuralib.stimpy.baselog import Baselog, LOG_SUFFIX, StimlogBase
-from neuralib.stimpy.baseprot import AbstractStimProtocol
-from neuralib.stimpy.session import Session, SessionInfo, get_protocol_sessions
-from neuralib.stimpy.stimulus import StimPattern
-from neuralib.stimpy.util import unfold_stimuli_condition, try_casting_number
 from neuralib.util.util_type import PathLike
-from neuralib.util.util_verbose import fprint, printdf
+from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import deprecated
+from .baselog import Baselog, LOG_SUFFIX, StimlogBase
+from .baseprot import AbstractStimProtocol
+from .session import Session, SessionInfo, get_protocol_sessions
+from .stimulus import StimPattern
+from .util import unfold_stimuli_condition, try_casting_number
 
 __all__ = ['RiglogData',
            'StimpyProtocol']
@@ -24,6 +24,10 @@ __all__ = ['RiglogData',
 
 @final
 class RiglogData(Baselog):
+    """class for handle the riglog file for stimpy **bitbucket/github** version
+    (mainly tested in the commits derived from master branch)
+    """
+
     def __init__(self,
                  root_path: PathLike,
                  log_suffix: LOG_SUFFIX = '.riglog',
@@ -101,30 +105,67 @@ class RiglogData(Baselog):
 
 @final
 class Stimlog(StimlogBase):
+    """class for handle the stimlog file for stimpy **bitbucket** version
+    (mainly tested in the commits derived from master branch)
+
+    `Dimension parameters`:
+
+        N = numbers of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = number of Stim Type
+
+        V = number of acquisition sample pulse (Visual parameters)
+
+        M = number of statemachine pulse
+    """
     # vstim: start from code 10 in .stimlog
     v_present_time: np.ndarray
+    """(P,)"""
     v_stim: np.ndarray
+    """(P,)"""
     v_trial: np.ndarray
+    """(P,)"""
     v_photo: np.ndarray
+    """(P,)"""
     v_contrast: np.ndarray
+    """(P,)"""
     v_ori: np.ndarray
+    """(P,)"""
     v_sf: np.ndarray
+    """(P,)"""
     v_phase: np.ndarray
+    """(P,)"""
     v_stim_idx: np.ndarray
+    """(P,)"""
 
     # state machine: start from code 20 in .stimlog
     s_on_v: np.ndarray
+    """(M,)"""
     s_present_time: np.ndarray
+    """(M,)"""
     s_cycle: np.ndarray
+    """(M,)"""
     s_new_state: np.ndarray
+    """(M,)"""
     s_old_state: np.ndarray
+    """(M,)"""
     s_state_elapsed: np.ndarray
+    """(M,)"""
     s_trial_type: np.ndarray
+    """(M,)"""
 
     def __init__(self, riglog: RiglogData,
                  file_path: PathLike,
                  diode_offset: bool = True,
                  sequential_offset: bool = True):
+        """
+        :param riglog: `RiglogData`
+        :param file_path: stimlog filepath
+        :param diode_offset: if do the diode offset to sync the time to riglog
+        :param sequential_offset: do the sequential offset throughout the recording.
+        """
 
         super().__init__(riglog, file_path)
         self.diode_offset = diode_offset
@@ -287,8 +328,6 @@ class Stimlog(StimlogBase):
         return self._cache_time_offset
 
     def session_trials(self) -> dict[Session, SessionInfo]:
-        """get session dict"""
-
         return {
             prot.name: prot
             for prot in get_protocol_sessions(self)
@@ -425,28 +464,23 @@ def _plot_time_alignment_diode(riglog_screen: np.ndarray,
 # ======== #
 
 class StimpyProtocol(AbstractStimProtocol):
-    """Stimpy protocol file."""
+    """
+    class for handle the protocol file for stimpy **bitbucket/github** version
+    (mainly tested in the commits derived from master branch)
 
-    def __repr__(self):
-        ret = list()
+    `Dimension parameters`:
 
-        ret.append('# general parameters')
-        for k, v in self.options.items():
-            ret.append(f'{k} = {v}')
-        ret.append('# stimulus conditions')
-        ret.append('\t'.join(self.stim_params))
+        N = numbers of visual stimulation (on-off pairs) = (T * S)
 
-        ret.append(printdf(self.visual_stimuli_dataframe))
+        T = number of trials
 
-        return '\n'.join(ret)
+        S = number of Stim Type
+
+        C = number of Cycle
+    """
 
     @classmethod
     def load(cls, file: PathLike) -> Self:
-        """Load *.prot file.
-
-        :param file:
-        :return:
-        """
         file = Path(file)
         options = {}
         version = 'stimpy-bit'
@@ -471,10 +505,11 @@ class StimpyProtocol(AbstractStimProtocol):
 
                 elif state == 1:
                     parts = re.split(' +', line, maxsplit=len(header))
+                    print(f'{parts=}')
                     rows = unfold_stimuli_condition(parts)
 
                     if len(rows) != 1:
-                        version = 'stimpy-git'  # github stimpy
+                        version = 'stimpy-git'  # determine
 
                     for r in rows:
                         for i, it in enumerate(r):  # for each col
@@ -499,7 +534,6 @@ class StimpyProtocol(AbstractStimProtocol):
 
     @property
     def is_shuffle(self) -> bool:
-        """Is stimulus ordering shuffled"""
         return self.options['shuffle'] == 'True'
 
     @property
@@ -546,6 +580,9 @@ class StimpyProtocol(AbstractStimProtocol):
         return self.options['mask']
 
     class EvoledParameter(dict[str, Any]):
+        """handle the ``evolveParams`` header in the protocol file
+        only available in **stimpy-bit** version
+        """
 
         def __init__(self, keys: list[str], data: np.ndarray):
             self.__keys = keys
@@ -610,7 +647,7 @@ class StimpyProtocol(AbstractStimProtocol):
 
         :return:
         """
-        if self.version == '2022':
+        if self.version == 'stimpy-git':
             raise DeprecationWarning('new stimpy has no evolveParams header')
 
         data = np.array([eval(it) for it in self['evolveParams']])  # cast back to dict

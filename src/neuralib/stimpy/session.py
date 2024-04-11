@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import NamedTuple, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from neuralib.stimpy.baselog import StimlogBase
+    from .baselog import StimlogBase
 
 import numpy as np
 from typing_extensions import TypeAlias
@@ -39,7 +39,7 @@ Session: TypeAlias = str
 
 
 def get_protocol_name(filename: Path | 'StimlogBase') -> ProtocolAlias:
-    from neuralib.stimpy.baselog import StimlogBase
+    from .baselog import StimlogBase
     if isinstance(filename, StimlogBase):
         filename = filename.stimlog_file
 
@@ -82,7 +82,7 @@ def _get_protocol_sessions_vol(stim: 'StimlogBase') -> list[SessionInfo]:
 
 def _get_protocol_sessions_ldl(stim: 'StimlogBase') -> list[SessionInfo]:
     # diode signal is no longer reliable, use .prot file value instead
-    from neuralib.stimpy.stimpy_core import StimpyProtocol
+    from .stimpy_core import StimpyProtocol
     prot = StimpyProtocol.load(stim.stimlog_file.with_suffix('.prot'))
 
     t0 = stim.riglog_data.exp_start_time

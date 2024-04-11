@@ -8,8 +8,8 @@ import numpy as np
 import polars as pl
 from polars import ColumnNotFoundError
 
-from neuralib.stimpy.baselog import STIMPY_SOURCE_VERSION
-from neuralib.util.util_verbose import fprint
+from neuralib.stimpy import STIMPY_SOURCE_VERSION
+from neuralib.util.util_verbose import fprint, printdf
 
 __all__ = ['AbstractStimProtocol']
 
@@ -39,6 +39,19 @@ class AbstractStimProtocol(metaclass=abc.ABCMeta):
 
     version: STIMPY_SOURCE_VERSION
     """date of major changes"""
+
+    def __repr__(self):
+        ret = list()
+
+        ret.append('# general parameters')
+        for k, v in self.options.items():
+            ret.append(f'{k} = {v}')
+        ret.append('# stimulus conditions')
+        ret.append('\t'.join(self.stim_params))
+
+        ret.append(printdf(self.visual_stimuli_dataframe, do_print=False))
+
+        return '\n'.join(ret)
 
     def __init__(self, name: str,
                  options: dict[str, Any],

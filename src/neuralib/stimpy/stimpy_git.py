@@ -6,13 +6,13 @@ from typing import Any, Callable, final
 import numpy as np
 import polars as pl
 
-from neuralib.stimpy.baselog import StimlogBase
-from neuralib.stimpy.session import Session, SessionInfo, get_protocol_sessions
-from neuralib.stimpy.stimpy_core import RiglogData, StimpyProtocol
-from neuralib.stimpy.stimulus import StimPattern
 from neuralib.util.util_type import PathLike
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import deprecated
+from .baselog import StimlogBase
+from .session import Session, SessionInfo, get_protocol_sessions
+from .stimpy_core import RiglogData, StimpyProtocol
+from .stimulus import StimPattern
 
 __all__ = ['StimlogGit']
 
@@ -20,7 +20,21 @@ __all__ = ['StimlogGit']
 # TODO code 0 options need to be extended
 @final
 class StimlogGit(StimlogBase):
-    """for new updated 2210xx~ stimpy"""
+    """class for handle the stimlog file for stimpy **github** version
+    (mainly tested in the commits derived from master branch)
+
+    `Dimension parameters`:
+
+        N = number of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = number of Stim Type
+
+        V = number of acquisition sample pulse (Visual parameters)
+
+        I = number of photo indicator pulse
+    """
 
     log_name: str | None
     code_version: str | None
@@ -52,17 +66,17 @@ class StimlogGit(StimlogBase):
     v_sf: np.ndarray  # (V,)
     v_tf: np.ndarray  # (V,)
     v_opto: np.ndarray  # (V,) int
-    v_pattern: np.ndarray  # type: str
+    v_pattern: np.ndarray
 
     # PhotoIndicator
-    p_time: np.ndarray  # (P,)
-    p_state: np.ndarray  # (P,) bool
-    p_size: np.ndarray  # (P,)
-    p_pos: np.ndarray  # (P, 2)
-    p_units: np.ndarray  # (P,)  str
-    p_mode: np.ndarray  # (P,)  int
-    p_frames: np.ndarray  # (P,)  int
-    p_enabled: np.ndarray  # (P,)  bool
+    p_time: np.ndarray  # (I,)
+    p_state: np.ndarray  # (I,) bool
+    p_size: np.ndarray  # (I,)
+    p_pos: np.ndarray  # (I, 2)
+    p_units: np.ndarray  # (I,)  str
+    p_mode: np.ndarray  # (I,)  int
+    p_frames: np.ndarray  # (I,)  int
+    p_enabled: np.ndarray  # (I,)  bool
 
     def __init__(self, riglog: RiglogData,
                  file_path: PathLike,

@@ -10,21 +10,22 @@ import numpy as np
 import polars as pl
 from scipy.interpolate import interp1d
 
-from neuralib.stimpy.baselog import Baselog, LOG_SUFFIX, StimlogBase, AbstractStimTimeProfile
-from neuralib.stimpy.baseprot import AbstractStimProtocol
-from neuralib.stimpy.session import Session, SessionInfo
-from neuralib.stimpy.stimulus import StimPattern
-from neuralib.stimpy.util import try_casting_number, unfold_stimuli_condition
 from neuralib.util.util_type import PathLike
 from neuralib.util.util_verbose import fprint
+from .baselog import Baselog, LOG_SUFFIX, StimlogBase, AbstractStimTimeProfile
+from .baseprot import AbstractStimProtocol
+from .session import Session, SessionInfo
+from .stimulus import StimPattern
+from .util import try_casting_number, unfold_stimuli_condition
 
 __all__ = ['PyVlog',
            'StimlogPyVStim',
            'PyVProtocol']
 
 
+@final
 class PyVlog(Baselog):
-    """PyVStim log parsing"""
+    """class for handle the log file (rig event specific) for pyvstim version (vb lab legacy)"""
 
     def __init__(self,
                  root_path: PathLike,
@@ -90,30 +91,44 @@ class PyVlog(Baselog):
 
 @final
 class StimlogPyVStim(StimlogBase):
+    """class for handle the log file (stim event specific) for pyvstim version (vb lab legacy)
+
+    `Dimension parameters`:
+
+        N = number of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = number of Stim Type
+
+        P = number of acquisition sample pulse
+
+    """
+
     v_present_time: np.ndarray
-    """(T,) in ms"""
+    """(P,) in ms"""
     v_stim: np.ndarray
-    """(T,), stim type index. value from 1 to S"""
+    """(P,), stim type index. value from 1 to S"""
     v_trial: np.ndarray
-    """(T,) number of trial. value from 1 to R. *last is 1, reset?"""
+    """(P,) number of trial. value from 1 to R. *last is 1, reset?"""
     v_frame: np.ndarray
-    """(T,), value 0, 1, 2... TBD"""
+    """(P,), value 0, 1, 2... TBD"""
     v_blank: np.ndarray
-    """(T,). whether is background only. 0: stim display, 1: no stim"""
+    """(P,). whether is background only. 0: stim display, 1: no stim"""
     v_contrast: np.ndarray
-    """(T, ) background contrast, 0 to 1?"""
+    """(P, ) background contrast, 0 to 1?"""
     v_pos_x: np.ndarray
-    """(T, ) display pos x"""
+    """(P, ) display pos x"""
     v_pos_y: np.ndarray
-    """(T, ) display pos y"""
+    """(P, ) display pos y"""
     v_ap_x: np.ndarray
-    """(T, ) stim center x"""
+    """(P, ) stim center x"""
     v_ap_y: np.ndarray
-    """(T, ) stim center y"""
+    """(P, ) stim center y"""
     v_indicator_flag: np.ndarray
-    """(T,). photo-indicator, for stim-onset. 1: stim display, 0: no stim"""
+    """(P,). photo-indicator, for stim-onset. 1: stim display, 0: no stim"""
     v_duino_time: np.ndarray
-    """(T,). extrapolate duinotime from screen indicator. sync arduino time in sec"""
+    """(P,). extrapolate duinotime from screen indicator. sync arduino time in sec"""
 
     def __init__(self, riglog: 'PyVlog'):
         super().__init__(riglog, file_path=None)
@@ -140,7 +155,7 @@ class StimlogPyVStim(StimlogBase):
         self.v_duino_time = self._get_stim_duino_time(self.riglog_data.dat[code, -1].T)
 
     def _get_stim_duino_time(self, indicator_flag: np.ndarray) -> np.ndarray:
-        """extrapolate duinotime from screen indicator. sync arduino time in (T,) sec"""
+        """extrapolate duinotime from screen indicator. sync arduino time in (P,) sec"""
         fliploc = np.where(
             np.diff(np.hstack([0, indicator_flag, 0])) != 0
         )[0]
@@ -200,7 +215,6 @@ class StimlogPyVStim(StimlogBase):
 @final
 @attrs.frozen(repr=False, str=False)
 class StimTimeProfile(AbstractStimTimeProfile):
-    """aggregate per stimulus"""
     stim: StimlogPyVStim
 
     def __repr__(self):
@@ -223,7 +237,6 @@ class StimTimeProfile(AbstractStimTimeProfile):
 
     @property
     def n_trials(self) -> int:
-        """N"""
         return self.unique_stimuli_set.shape[0]
 
     @property
@@ -237,7 +250,6 @@ class StimTimeProfile(AbstractStimTimeProfile):
         return self.unique_stimuli_set.get_column('i_trials').to_numpy()
 
     def get_time_interval(self) -> np.ndarray:
-        """(N, 2) with (start, end)"""
         ustims = self.stim.v_stim * (1 - self.stim.v_blank)
         utrials = self.stim.v_trial * (1 - self.stim.v_blank)
 
@@ -254,6 +266,19 @@ class StimTimeProfile(AbstractStimTimeProfile):
 # ======== #
 
 class PyVProtocol(AbstractStimProtocol):
+    """
+    class for handle the protocol file for pyvstim version (vb lab legacy)
+
+    `Dimension parameters`:
+
+        N = number of visual stimulation (on-off pairs) = (T * S)
+
+        T = number of trials
+
+        S = number of Stim Type
+
+        C = number of Cycle
+    """
 
     @classmethod
     def load(cls, file: Path | str, *,
@@ -371,12 +396,20 @@ class PyVProtocol(AbstractStimProtocol):
 
 @dataclasses.dataclass
 class ProtExpression:
+    """
+    `Dimension parameters`:
+
+        B = number of block
+
+        C = number of Cycle
+    """
+
     expr: list[str]
     """expression"""
     n_cycles: list[int]
-    """number of cycle. len:"""
+    """number of cycle. length number = B?, value equal to C"""
     n_blocks: int | None
-    """number of prot value row (block)"""
+    """number of prot value row (block) B"""
 
     def __post_init__(self):
         if (len(self.n_cycles) == 2 * self.n_blocks) and self._check_ncycles_foreach_block():

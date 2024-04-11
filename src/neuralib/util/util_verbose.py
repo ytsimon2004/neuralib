@@ -73,8 +73,7 @@ def printdf(df: DataFrame,
             nrows: int | None = None,
             ncols: int | None = None,
             tbl_width_chars: int = 500,
-            do_fprint: bool = False,
-            **kwargs) -> str:
+            do_print: bool = True) -> str:
     """
     print dataframe with given row numbers (polars)
     if isinstance pandas dataframe, print all.
@@ -83,8 +82,7 @@ def printdf(df: DataFrame,
     :param nrows: number of rows (applicable in polars case)
     :param ncols: number of columns
     :param tbl_width_chars: table width for showing
-    :param do_fprint:
-    :param kwargs:
+    :param do_print: do print otherwise, only return the str
     :return:
     """
 
@@ -95,9 +93,7 @@ def printdf(df: DataFrame,
             cfg.set_tbl_rows(rows)
             cfg.set_tbl_cols(cols)
 
-            if do_fprint:
-                fprint(df, **kwargs)
-            else:
+            if do_print:
                 print(df)
 
             return df.__repr__()

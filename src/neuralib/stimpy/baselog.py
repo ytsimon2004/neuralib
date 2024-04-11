@@ -7,10 +7,10 @@ from typing import Literal, TypeVar, Generic, cast
 import numpy as np
 import polars as pl
 
-from neuralib.stimpy.event import RigEvent, CamEvent
-from neuralib.stimpy.session import Session, SessionInfo
-from neuralib.stimpy.stimulus import StimPattern
 from neuralib.util.util_type import PathLike
+from .event import RigEvent, CamEvent
+from .session import Session, SessionInfo
+from .stimulus import StimPattern
 
 __all__ = [
     'STIMPY_SOURCE_VERSION',
@@ -240,15 +240,17 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
 # =========== #
 
 class StimlogBase(Generic[R], metaclass=abc.ABCMeta):
-    """ABC for stimulation logging. i.e., .stimlog
+    """ABC for stimulation logging. i.e., .log or .stimlog
 
     `Dimension parameters`:
 
-        N = numbers of visual stimulation (on-off pairs) = (T * S)
+        N = number of visual stimulation (on-off pairs) = (T * S)
 
         T = number of trials
 
-        S = Number of Stim Type
+        S = number of Stim Type
+
+        P = number of acquisition sample pulse
 
     """
 
@@ -328,13 +330,13 @@ class AbstractStimTimeProfile(Generic[S], metaclass=abc.ABCMeta):
 
     `Dimension parameters`:
 
-        N = numbers of visual stimulation (on-off pairs) = (T * S)
+        N = number of visual stimulation (on-off pairs) = (T * S)
 
         T = number of trials
 
-        S = Number of Stim Type
+        S = number of Stim Type
 
-        C = Numbers of Cycle
+        C = number of Cycle
 
     """
     stim: S
