@@ -104,6 +104,37 @@ class TypeAnnotationTest(unittest.TestCase):
         opt = parse_args(Opt(), ['-a', 'C'])
         self.assertEqual(opt.a, 'C')
 
+    def test_list_type_extend(self):
+        class Opt:
+            a: list[str] = argument(metavar='...', nargs='*', action='extend')
+
+        opt = parse_args(Opt(), [])
+        self.assertListEqual(opt.a, [])
+
+        opt = parse_args(Opt(), ['12', '34'])
+        self.assertListEqual(opt.a, ['12', '34'])
+
+    def test_list_type_append(self):
+        class Opt:
+            a: list[str] = argument('-a', action='append')
+
+        opt = parse_args(Opt(), [])
+        # self.assertListEqual(opt.a, [])
+        self.assertIsNone(opt.a) # should it be a []
+
+        opt = parse_args(Opt(), ['-a=1'])
+        self.assertListEqual(opt.a, ['1'])
+
+        opt = parse_args(Opt(), ['-a=1', '-a=2'])
+        self.assertListEqual(opt.a, ['1', '2'])
+
+    def test_list_type_infer(self):
+        class Opt:
+            a: list[int] = argument(metavar='...', nargs='*', action='extend')
+
+        opt = parse_args(Opt(), ['12', '34'])
+        self.assertListEqual(opt.a, [12, 34])
+
 
 class WithDefaultTest(unittest.TestCase):
     def test_bool(self):
