@@ -7,7 +7,7 @@ import numpy as np
 import polars as pl
 
 from neuralib.stimpy.baselog import StimlogBase
-from neuralib.stimpy.session import Session, SessionInfo
+from neuralib.stimpy.session import Session, SessionInfo, get_protocol_sessions
 from neuralib.stimpy.stimpy_core import RiglogData, StimpyProtocol
 from neuralib.stimpy.stimulus import StimPattern
 from neuralib.util.util_type import PathLike
@@ -382,7 +382,6 @@ class StimlogGit(StimlogBase):
         return ret
 
     def session_trials(self) -> dict[Session, SessionInfo]:
-        from .protocol import get_protocol_sessions
         return {
             prot.name: prot
             for prot in get_protocol_sessions(self)

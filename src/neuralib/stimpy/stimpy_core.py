@@ -11,7 +11,7 @@ from typing_extensions import Self
 from neuralib.plot.figure import plot_figure
 from neuralib.stimpy.baselog import Baselog, LOG_SUFFIX, StimlogBase
 from neuralib.stimpy.baseprot import AbstractStimProtocol
-from neuralib.stimpy.session import Session, SessionInfo
+from neuralib.stimpy.session import Session, SessionInfo, get_protocol_sessions
 from neuralib.stimpy.stimulus import StimPattern
 from neuralib.stimpy.util import unfold_stimuli_condition, try_casting_number
 from neuralib.util.util_type import PathLike
@@ -289,7 +289,6 @@ class Stimlog(StimlogBase):
     def session_trials(self) -> dict[Session, SessionInfo]:
         """get session dict"""
 
-        from neuralib.stimpy.protocol import get_protocol_sessions
         return {
             prot.name: prot
             for prot in get_protocol_sessions(self)

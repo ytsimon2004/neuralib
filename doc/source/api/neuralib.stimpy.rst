@@ -13,7 +13,6 @@ neuralib.stimpy
     neuralib.stimpy.camlog
     neuralib.stimpy.event
     neuralib.stimpy.preference
-    neuralib.stimpy.protocol
     neuralib.stimpy.session
     neuralib.stimpy.stimpy_core
     neuralib.stimpy.stimpy_git

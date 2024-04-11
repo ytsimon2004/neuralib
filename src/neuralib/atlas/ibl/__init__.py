@@ -8,9 +8,9 @@ See detail in ``iblatlas.plots.plot_scalar_on_slice``
 
 .. seealso:: `<https://int-brain-lab.github.io/iblenv/notebooks_external/atlas_plotting_scalar_on_slice.html>`_
 
-------------------
 
 Example of plot the allen map with given areas
+------------------------------------------------
 
 .. code-block:: python
 
@@ -25,7 +25,7 @@ Example of plot the allen map with given areas
 
 
 Example of plot the automerged subregions
-------------------
+------------------------------------------------
 
 .. code-block:: python
 
@@ -36,7 +36,7 @@ Example of plot the automerged subregions
 
 
 Example of plot the sagittal subregions
-------------------
+------------------------------------------------
 
 
 .. code-block:: python
@@ -50,7 +50,7 @@ Example of plot the sagittal subregions
 
 
 Example of plot the transverse view
-------------------
+------------------------------------------------
 
 .. code-block:: python
 

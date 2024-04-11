@@ -7,7 +7,6 @@ neuralib.atlas.ibl
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
-    
-    neuralib.atlas.ibl.example
+
     neuralib.atlas.ibl.plot
 
