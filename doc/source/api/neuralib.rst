@@ -23,8 +23,6 @@ neuralib package
     neuralib.plot
     neuralib.scanner
     neuralib.segmentation
-    neuralib.cellpose
-    neuralib.stardist
     neuralib.stimpy
     neuralib.tools
     neuralib.tools.pkl_parq_view

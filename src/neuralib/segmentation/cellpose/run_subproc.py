@@ -11,6 +11,8 @@ from neuralib.util.cli_args import CliArgs
 from neuralib.util.gpu import check_mps_available
 from neuralib.util.util_verbose import fprint
 
+__all__ = ['CellPoseSubprocOption']
+
 
 class CellPoseSubprocOption(AbstractCellPoseOption):
     DESCRIPTION = 'Run cellpose as a CLI subprocess. Detail refer to Cellpose.cli'

@@ -66,7 +66,7 @@ Example of plot the transverse view
 
 
 Example of plot the Top view (dorsal cortex)
-------------------
+-----------------------------------------------
 
 .. code-block:: python
 

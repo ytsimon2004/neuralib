@@ -9,4 +9,5 @@ neuralib.segmentation
     :caption: Modules:
     
     neuralib.segmentation.base
-
+    neuralib.segmentation.cellpose
+    neuralib.segmentation.stardist

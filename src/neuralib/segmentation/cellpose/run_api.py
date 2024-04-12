@@ -4,6 +4,8 @@ from cellpose import denoise
 
 from .core import AbstractCellPoseOption, CellPoseEvalResult
 
+__all__ = ['CellPoseEvalResult']
+
 
 class CellPoseAPIOption(AbstractCellPoseOption):
     DESCRIPTION = 'run cell pose for directly call the api'

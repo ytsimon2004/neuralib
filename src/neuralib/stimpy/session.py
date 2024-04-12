@@ -1,6 +1,6 @@
 """
 User-specific experimental session
-========================
+====================================
 
 - Aim to know the time information about of a specific session in a given protocol
 
