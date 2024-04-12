@@ -118,9 +118,3 @@ class LSMConfocalScanner(AbstractConfocalScanner):
             for c in range(self.lsmfile.shape[1]):
                 img = self.get_image(c, depth=None)
                 ax.imshow(img, cmap=ZEISS_LSM_CHANNELS_ORDER[c], alpha=0.8, vmax=0.3)
-
-
-if __name__ == '__main__':
-    p = '/Users/simon/code/Analysis/histology/YW043_3_2_st.lsm'
-    lsm = LSMConfocalScanner.load(p)
-    lsm.plot_merge_channel()

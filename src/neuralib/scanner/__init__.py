@@ -88,11 +88,6 @@ CZI format
     # zproj imshow
     lsm.imshow()
 
-
-
-
-
-
 """
 from .core import *
 from .czi import *
