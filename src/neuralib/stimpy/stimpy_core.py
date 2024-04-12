@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, final
+from typing import Any, final, Iterable
 
 import numpy as np
 import polars as pl
@@ -482,40 +482,48 @@ class StimpyProtocol(AbstractStimProtocol):
     @classmethod
     def load(cls, file: PathLike) -> Self:
         file = Path(file)
+        with file.open() as f:
+            return cls._load(file.name, f)
+
+    @classmethod
+    def loads(cls, content: str, name: str = '<string>') -> Self:
+        """load string"""
+        return cls._load(name, content.split('\n'))
+
+    @classmethod
+    def _load(cls, name: str, content: Iterable[str]) -> Self:
         options = {}
         version = 'stimpy-bit'
 
         state = 0
-        with file.open() as f:
-            for line in f:
-                line = line.strip()
+        for line in content:
+            line = line.strip()
 
-                if len(line) == 0 or line.startswith('#'):
-                    continue
+            if len(line) == 0 or line.startswith('#'):
+                continue
 
-                # change state to 1 if # stimulus conditions
-                if state == 0 and line.startswith('n '):
-                    header = re.split(' +', line)  # extract header
-                    data = [[] for _ in range(len(header))]
-                    state = 1
+            # change state to 1 if # stimulus conditions
+            if state == 0 and line.startswith('n '):
+                header = re.split(' +', line)  # extract header
+                data = [[] for _ in range(len(header))]
+                state = 1
 
-                elif state == 0:
-                    idx = line.index('=')
-                    options[line[:idx].strip()] = try_casting_number(line[idx + 1:].strip())
+            elif state == 0:
+                idx = line.index('=')
+                options[line[:idx].strip()] = try_casting_number(line[idx + 1:].strip())
 
-                elif state == 1:
-                    parts = re.split(' +', line, maxsplit=len(header))
-                    print(f'{parts=}')
-                    rows = unfold_stimuli_condition(parts)
+            elif state == 1:
+                parts = re.split(' +', line, maxsplit=len(header))
+                rows = unfold_stimuli_condition(parts)
 
-                    if len(rows) != 1:
-                        version = 'stimpy-git'  # determine
+                if len(rows) != 1:
+                    version = 'stimpy-git'  # determine
 
-                    for r in rows:
-                        for i, it in enumerate(r):  # for each col
-                            data[i].append(it)
-                else:
-                    raise RuntimeError('illegal state')
+                for r in rows:
+                    for i, it in enumerate(r):  # for each col
+                        data[i].append(it)
+            else:
+                raise RuntimeError('illegal state')
 
         assert len(header) == len(data)
 
@@ -525,7 +533,7 @@ class StimpyProtocol(AbstractStimProtocol):
         }
 
         # noinspection PyTypeChecker
-        return StimpyProtocol(file.name, options, pl.DataFrame(visual_stimuli), version)
+        return StimpyProtocol(name, options, pl.DataFrame(visual_stimuli), version)
 
     @property
     def controller(self) -> str:
