@@ -5,6 +5,7 @@ vedo
 iblatlas
 
 # scanner
+xmltodict
 aicspylibczi
 roifile==2022.3.18
 
