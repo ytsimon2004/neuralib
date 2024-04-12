@@ -188,6 +188,8 @@ class Argument(object):
 
     def __get__(self, instance, owner=None):
         if instance is None:
+            if owner is not None:  # ad-hoc for the document building
+                self.__doc__ = self.help
             return self
         try:
             return instance.__dict__[f'__{self.attr}']

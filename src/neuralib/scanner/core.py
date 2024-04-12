@@ -9,6 +9,7 @@ from tifffile import tifffile
 from typing_extensions import TypeAlias
 
 from neuralib.util.util_type import PathLike
+from neuralib.util.util_verbose import fprint
 
 __all__ = [
     #
@@ -22,8 +23,6 @@ __all__ = [
     'AbstractConfocalScanner',
     'parse_tif_meta'
 ]
-
-from neuralib.util.util_verbose import fprint
 
 ZEISS_CZI_CHANNELS_ORDER = ['Greens', 'Blues', 'Reds']
 ZEISS_LSM_CHANNELS_ORDER = ['Blues', 'Reds', 'Greens']
