@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, final
+from typing import Any, final, Iterable, TypedDict
 
 import numpy as np
 import polars as pl
@@ -103,6 +103,15 @@ class RiglogData(Baselog):
         return self.__prot_cache
 
 
+class StimConfig(TypedDict, total=False):
+    codes: dict[str, int]
+    """<EVENT_TYPES>:<NUMBER>"""
+    commit_hash: str
+    """git commit hash"""
+    fields: tuple[str, ...]
+    """column repr for the logging"""
+
+
 @final
 class Stimlog(StimlogBase):
     """class for handle the stimlog file for stimpy **bitbucket** version
@@ -120,29 +129,33 @@ class Stimlog(StimlogBase):
 
         M = number of statemachine pulse
     """
+    code_version: str
+    log_info: dict[int, str] = {}
+    log_header: dict[int, list[str]] = {}
+
     # vstim: start from code 10 in .stimlog
     v_present_time: np.ndarray
-    """(P,)"""
+    """time in sec (P,)"""
     v_stim: np.ndarray
-    """(P,)"""
+    """visual stim_index(P,)"""
     v_trial: np.ndarray
-    """(P,)"""
+    """trial index(P,)"""
     v_photo: np.ndarray
-    """(P,)"""
+    """photo diode on-off(P,)"""
     v_contrast: np.ndarray
-    """(P,)"""
+    """stimulus contrast (P,)"""
     v_ori: np.ndarray
-    """(P,)"""
+    """direction (P,)"""
     v_sf: np.ndarray
-    """(P,)"""
+    """spatial frequency (P,)"""
     v_phase: np.ndarray
-    """(P,)"""
-    v_stim_idx: np.ndarray
-    """(P,)"""
+    """phase in time domain (P,)"""
+    v_frame_idx: np.ndarray
+    """frame index (P,)"""
 
     # state machine: start from code 20 in .stimlog
     s_on_v: np.ndarray
-    """(M,)"""
+    """statemachine sync time on v, use for time sync if diode signal not reliable (M,)"""
     s_present_time: np.ndarray
     """(M,)"""
     s_cycle: np.ndarray
@@ -196,9 +209,14 @@ class Stimlog(StimlogBase):
 
         with self.stimlog_file.open() as _f:
             for number, line in enumerate(_f):
-                line = line.strip()  # remove the space at the beginning and the end of the string
-                if len(line) == 0 or line.startswith('#'):
+                line = line.strip()
+                if len(line) == 0:
                     continue
+
+                if line.startswith('#'):
+                    self._reset_comment_info(line)
+                    continue
+
                 part = line.split(',')
 
                 try:
@@ -253,7 +271,7 @@ class Stimlog(StimlogBase):
         self.v_ori = np.array(v_ori)
         self.v_sf = np.array(v_sf)
         self.v_phase = np.array(v_phase)
-        self.v_stim_idx = np.array(v_stim_idx)
+        self.v_frame_idx = np.array(v_stim_idx)
 
         self.s_on_v = np.array(s_on_v)
         self.s_present_time = np.array(s_present_time)
@@ -262,6 +280,28 @@ class Stimlog(StimlogBase):
         self.s_old_state = np.array(s_old_state)
         self.s_state_elapsed = np.array(s_state_elapsed)
         self.s_trial_type = np.array(s_trial_type)
+
+    def _reset_comment_info(self, line: str):
+        if 'CODES' in line:
+            heading, content = line.split(': ')
+            iter_codes = content.split(',')
+            for pair in iter_codes:
+                code, num = pair.split('=')
+                code = code.strip()
+                value = int(num.strip())
+                self.log_info[value] = code
+
+        elif 'VLOG HEADER' in line:
+            heading, content = line.split(':')
+            self.log_header[10] = content.split(', ')
+
+        elif 'STATE HEADER' in line:
+            heading, content = line.split(': ')
+            self.log_header[20] = content.split(',')
+
+        elif 'Commit' in line:
+            heading, content = line.split(': ')
+            self.code_version = content.strip()
 
     @property
     def exp_start_time(self) -> float:
@@ -283,7 +323,7 @@ class Stimlog(StimlogBase):
 
     @property
     def stim_start_time(self) -> float:
-        v_start = np.nonzero(self.v_stim_idx == 1)[0][0]
+        v_start = np.nonzero(self.v_frame_idx == 1)[0][0]
         tstart = self.v_present_time[v_start]
 
         if isinstance(self.time_offset, float):
@@ -293,7 +333,7 @@ class Stimlog(StimlogBase):
 
     @property
     def stim_end_time(self) -> float:
-        v_end = np.nonzero(np.diff(self.v_stim_idx) < 0)[0][-1] + 1
+        v_end = np.nonzero(np.diff(self.v_frame_idx) < 0)[0][-1] + 1
         tend = self.v_present_time[v_end]
 
         if isinstance(self.time_offset, float):
@@ -304,9 +344,9 @@ class Stimlog(StimlogBase):
     @property
     def stimulus_segment(self) -> np.ndarray:
         """sti_period"""
-        v_start = self.v_stim_idx == 1
+        v_start = self.v_frame_idx == 1
         t1 = self.v_present_time[v_start]
-        t2 = self.v_present_time[np.nonzero(np.diff(self.v_stim_idx) < 0)[0] + 1]
+        t2 = self.v_present_time[np.nonzero(np.diff(self.v_frame_idx) < 0)[0] + 1]
 
         if isinstance(self.time_offset, float):
             offset = self.time_offset
@@ -327,6 +367,11 @@ class Stimlog(StimlogBase):
                                                         return_sequential=self._do_sequential_diode_offset)
         return self._cache_time_offset
 
+    @property
+    def time_offset_statemachine(self) -> np.ndarray:
+        """time offset approach using statemachine"""
+        return self.s_present_time - self.s_on_v
+
     def session_trials(self) -> dict[Session, SessionInfo]:
         return {
             prot.name: prot
@@ -335,7 +380,7 @@ class Stimlog(StimlogBase):
 
     def get_stim_pattern(self) -> StimPattern:
         prot = StimpyProtocol.load(self.stimlog_file.with_suffix('.prot'))
-        v_start = self.v_stim_idx == 1
+        v_start = self.v_frame_idx == 1
         t = self.stimulus_segment
         dire = self.v_ori[v_start]
         sf = self.v_sf[v_start]
@@ -425,7 +470,7 @@ def _check_if_diode_pulse(rig: RiglogData) -> float:
     stimlog = rig.stimlog_data()
     if not isinstance(stimlog, Stimlog):
         raise TypeError('')
-    stimlog_vstart = stimlog.v_present_time[(stimlog.v_stim_idx == 1)]
+    stimlog_vstart = stimlog.v_present_time[(stimlog.v_frame_idx == 1)]
 
     try:
         # noinspection PyTypeChecker
@@ -439,7 +484,7 @@ def _diode_offset_sequential(rig: RiglogData, debug_plot: bool = False) -> np.nd
     if not isinstance(stimlog, Stimlog):
         raise TypeError('')
 
-    stimlog_vstart = stimlog.v_present_time[(stimlog.v_stim_idx == 1)]
+    stimlog_vstart = stimlog.v_present_time[(stimlog.v_frame_idx == 1)]
     riglog_vstart = rig.screen_event.time[0::2]
 
     if len(riglog_vstart) != len(stimlog_vstart):
@@ -482,40 +527,48 @@ class StimpyProtocol(AbstractStimProtocol):
     @classmethod
     def load(cls, file: PathLike) -> Self:
         file = Path(file)
+        with file.open() as f:
+            return cls._load(file.name, f)
+
+    @classmethod
+    def loads(cls, content: str, name: str = '<string>') -> Self:
+        """load string"""
+        return cls._load(name, content.split('\n'))
+
+    @classmethod
+    def _load(cls, name: str, content: Iterable[str]) -> Self:
         options = {}
         version = 'stimpy-bit'
 
         state = 0
-        with file.open() as f:
-            for line in f:
-                line = line.strip()
+        for line in content:
+            line = line.strip()
 
-                if len(line) == 0 or line.startswith('#'):
-                    continue
+            if len(line) == 0 or line.startswith('#'):
+                continue
 
-                # change state to 1 if # stimulus conditions
-                if state == 0 and line.startswith('n '):
-                    header = re.split(' +', line)  # extract header
-                    data = [[] for _ in range(len(header))]
-                    state = 1
+            # change state to 1 if # stimulus conditions
+            if state == 0 and line.startswith('n '):
+                header = re.split(' +', line)  # extract header
+                data = [[] for _ in range(len(header))]
+                state = 1
 
-                elif state == 0:
-                    idx = line.index('=')
-                    options[line[:idx].strip()] = try_casting_number(line[idx + 1:].strip())
+            elif state == 0:
+                idx = line.index('=')
+                options[line[:idx].strip()] = try_casting_number(line[idx + 1:].strip())
 
-                elif state == 1:
-                    parts = re.split(' +', line, maxsplit=len(header))
-                    print(f'{parts=}')
-                    rows = unfold_stimuli_condition(parts)
+            elif state == 1:
+                parts = re.split(' +', line, maxsplit=len(header))
+                rows = unfold_stimuli_condition(parts)
 
-                    if len(rows) != 1:
-                        version = 'stimpy-git'  # determine
+                if len(rows) != 1:
+                    version = 'stimpy-git'  # determine
 
-                    for r in rows:
-                        for i, it in enumerate(r):  # for each col
-                            data[i].append(it)
-                else:
-                    raise RuntimeError('illegal state')
+                for r in rows:
+                    for i, it in enumerate(r):  # for each col
+                        data[i].append(it)
+            else:
+                raise RuntimeError('illegal state')
 
         assert len(header) == len(data)
 
@@ -525,7 +578,7 @@ class StimpyProtocol(AbstractStimProtocol):
         }
 
         # noinspection PyTypeChecker
-        return StimpyProtocol(file.name, options, pl.DataFrame(visual_stimuli), version)
+        return StimpyProtocol(name, options, pl.DataFrame(visual_stimuli), version)
 
     @property
     def controller(self) -> str:

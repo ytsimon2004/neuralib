@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 from pathlib import Path
-from typing import Literal, TypeVar, Generic, cast
+from typing import Literal, TypeVar, Generic, cast, TypedDict
 
 import numpy as np
 import polars as pl
@@ -36,8 +36,23 @@ P = TypeVar('P', bound='AbstractStimProtocol')  # protocol file
 # Baselog ABC #
 # =========== #
 
+class RigConfig(TypedDict, total=False):
+    source_version: STIMPY_SOURCE_VERSION
+    """stimpy source version {'pyvstim', 'stimpy-bit', 'stimpy-git'}"""
+    version: float
+    """acquisition flag. i.e., 0.3"""
+    commit_hash: str
+    """git commit hash"""
+    codes: dict[str, int]
+    """<EVENT_TYPES>:<NUMBER>"""
+    fields: tuple[str, ...]
+    """column repr for the logging"""
+
+
 class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
     """ABC class for different stimpy/pyvstim log files. i.e., .log, .riglog"""
+
+    log_config: RigConfig
 
     def __init__(self,
                  root_path: PathLike,
@@ -57,7 +72,9 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
         else:
             self.riglog_file = root_path
 
-        self.version: STIMPY_SOURCE_VERSION = self._check_source_version()
+        self.log_config = self._get_log_config()
+        self.version = self.log_config['source_version']
+
         self.dat = self._cache_asarray(self.riglog_file)
 
         #
@@ -86,21 +103,46 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
         else:
             raise FileNotFoundError(f'more than one riglog files under {root}')
 
-    def _check_source_version(self) -> STIMPY_SOURCE_VERSION:
-        """infer from first line"""
+    # noinspection PyTypedDict
+    def _get_log_config(self) -> RigConfig:
+        """get config dict and source version for different logs from the # headers"""
+        ret = RigConfig()
         with open(self.riglog_file) as f:
             for line in f:
                 if '#' in line:
                     if 'RIG VERSION' in line:
-                        return 'stimpy-bit'
-                    elif 'Version' in line:
-                        return 'pyvstim'
-                    elif 'RIG GIT COMMIT HASH' in line:
-                        return 'stimpy-git'
-                    else:
-                        raise RuntimeError('')
+                        ret['version'] = float(line.split(': ')[-1])
 
-            raise RuntimeError('')
+                    elif 'RIG GIT COMMIT HASH' in line:
+                        ret['commit_hash'] = line.split(': ')[-1].strip()
+
+                    elif 'CODES' in line:
+                        codes = {}
+                        content = line.replace('# CODES: ', '').strip()
+                        iter_codes = content.split(',')
+                        for pair in iter_codes:
+                            code, num = pair.split('=')
+                            code = code.strip()
+                            value = int(num.strip())
+                            codes[code.lower()] = value
+
+                        ret['codes'] = codes
+
+                    elif 'RIG CSV' in line:
+                        content = line.replace('# RIG CSV: ', '').strip()
+                        ret['fields'] = tuple(content.split(','))
+
+        # infer
+        if 'opto' not in ret['codes']:
+            ret['source_version'] = 'stimpy-bit'
+
+        if 'version' not in ret:
+            ret['source_version'] = 'stimpy-git'
+
+        if 'opto' in ret['codes'] and ret['codes']['opto'] == 15:
+            ret['source_version'] = 'pyvstim'
+
+        return ret
 
     @classmethod
     @abc.abstractmethod

@@ -15,6 +15,7 @@ from neuralib.util.util_verbose import fprint
 
 __all__ = ['CPOSE_MODEL',
            'AbstractSegmentationOption',
+           'AbstractCellPoseOption',
            'CellPoseEvalResult']
 
 

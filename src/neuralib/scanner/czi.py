@@ -4,16 +4,20 @@ import dataclasses
 from functools import cached_property
 from pathlib import Path
 from typing import final, NamedTuple, Literal, Any
+from xml.etree.ElementTree import tostring
 
 import aicspylibczi
+import attrs
 import matplotlib.pyplot as plt
 import numpy as np
+import xmltodict
 from matplotlib.axes import Axes
-from neuralib.util.utils import joinn
-from neuralib.scanner import AbstractSliceScanner, SceneIdx, DimCode, ZEISS_CZI_CHANNELS_ORDER, ZPROJ_TYPE
-from neuralib.util.util_type import PathLike
 
-__all__ = ['CziSliceScanner']
+from neuralib.scanner import AbstractConfocalScanner, SceneIdx, DimCode, ZEISS_CZI_CHANNELS_ORDER, ZPROJ_TYPE
+from neuralib.util.util_type import PathLike
+from neuralib.util.utils import joinn
+
+__all__ = ['CziConfocalScanner']
 
 
 class ImageFileInfo(NamedTuple):
@@ -38,18 +42,22 @@ class ImageFileInfo(NamedTuple):
             return self.channel
 
 
+# TODO sep plot func from the class
 @final
-@dataclasses.dataclass
-class CziSliceScanner(AbstractSliceScanner):
-    czi: aicspylibczi.CziFile
+@attrs.define
+class CziConfocalScanner(AbstractConfocalScanner):
+    """czi confocal image data"""
+
+    czifile: aicspylibczi.CziFile
+    """`aicspylibczi.CziFile`"""
     filepath: Path
     meta: dict[str, Any]
     n_scenes: int = dataclasses.field(init=False, default=1)
     consistent_scan_configs: bool = dataclasses.field(init=False)
     """whether same configs (i.e., X, Y, C ...) in different scenes"""
 
-    def __post_init__(self):
-        czi_shape = self.czi.get_dims_shape()
+    def __attrs_post_init__(self):
+        czi_shape = self.czifile.get_dims_shape()
         s1 = czi_shape[0]['S'][1]
 
         if len(czi_shape) == 1 and s1 == 1:
@@ -64,17 +72,14 @@ class CziSliceScanner(AbstractSliceScanner):
             self.consistent_scan_configs = False
 
     @classmethod
-    def load(cls, file: PathLike) -> CziSliceScanner:
-        return CziSliceScanner(
-            aicspylibczi.CziFile(file),
+    def load(cls, file: PathLike) -> CziConfocalScanner:
+        czi_file = aicspylibczi.CziFile(file)
+        xml = tostring(czi_file.meta, encoding='utf-8').decode('utf-8')
+        return CziConfocalScanner(
+            czi_file,
             Path(file),
-            cls.get_meta(file)
+            xmltodict.parse(xml)
         )
-
-    @classmethod
-    def get_meta(cls, filepath: PathLike) -> dict[str, Any]:
-        from czifile import CziFile  # somehow aicspylibczi meta is not working in v3.1.2
-        return CziFile(filepath).metadata(raw=False)
 
     @cached_property
     def tile_info(self) -> dict[str, Any]:
@@ -83,15 +88,16 @@ class CziSliceScanner(AbstractSliceScanner):
 
     @property
     def tile_ncols(self) -> int:
+        """how many tiles for each column"""
         return self.tile_info['Columns']
 
     @property
     def tile_nrows(self) -> int:
+        """how many tiles for each row"""
         return self.tile_info['Rows']
 
     def get_dim_code(self) -> DimCode:
-        """i.e., HSTCZMYX"""
-        return DimCode(self.czi.dims)
+        return DimCode(self.czifile.dims)
 
     @property
     def width(self) -> dict[SceneIdx, int]:
@@ -103,6 +109,7 @@ class CziSliceScanner(AbstractSliceScanner):
 
     @property
     def n_phases(self) -> dict[SceneIdx, int]:
+        """how many scanning face"""
         return {s: self._get_configs('H')[s] for s in range(self.n_scenes)}
 
     @property
@@ -129,10 +136,10 @@ class CziSliceScanner(AbstractSliceScanner):
             raise ValueError(f'unknown code: {code}')
 
         if self.consistent_scan_configs:
-            size = self.czi.size
+            size = self.czifile.size
             return [size[dims.index(code)]] * self.n_scenes
         else:
-            size = [it[code] for it in self.czi.get_dims_shape()]
+            size = [it[code] for it in self.czifile.get_dims_shape()]
             return [it[1] for it in size]
 
     def get_image(self,
@@ -149,15 +156,14 @@ class CziSliceScanner(AbstractSliceScanner):
         :param depth: z stacks index, if None, use all stacks
         :param zproj_type: which z projection type, refer to fiji
         :param norm: normalization, for visualization
-        :return:
-            (Y, X)
+        :return: (Y, X)
         """
 
         kwargs = {}
         if self.is_mosaic:
-            fn = self.czi.read_mosaic  # tiles
+            fn = self.czifile.read_mosaic  # tiles
         else:
-            fn = self.czi.read_image
+            fn = self.czifile.read_image
             # TODO prob better way, seems S kw only available in non-mosaic image
             scene = 0 if scene is None else scene
             kwargs.update({'S': scene})
@@ -180,7 +186,7 @@ class CziSliceScanner(AbstractSliceScanner):
 
     def get_coordinates(self) -> list[tuple[int, int]]:
         """(P, 2) with xy coordinates"""
-        return [(it.x, it.y) for it in self.czi.get_all_scene_bounding_boxes().values()]
+        return [(it.x, it.y) for it in self.czifile.get_all_scene_bounding_boxes().values()]
 
     def imshow(self,
                scene: SceneIdx | None = None,
@@ -246,7 +252,7 @@ class CziSliceScanner(AbstractSliceScanner):
 
         if self.is_mosaic:
             # HSTCZMYX
-            images = self.czi.read_image()[0]  # (1, 1, 1, 3, 10, 112, 512, 512)
+            images = self.czifile.read_image()[0]  # (1, 1, 1, 3, 10, 112, 512, 512)
             images = np.squeeze(images)  # (3, 10, 112, 512, 512)
 
             if combine_channels:
@@ -302,7 +308,7 @@ def main():
 
     opt = ap.parse_args()
 
-    czi = CziSliceScanner.load(opt.file)
+    czi = CziConfocalScanner.load(opt.file)
     if opt.export:
         czi.foreach_tif_output(output=opt.output)
     else:

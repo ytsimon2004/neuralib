@@ -10,7 +10,7 @@ import tifffile
 from neuralib.plot import plot_figure
 from neuralib.plot.colormap import insert_colorbar
 from neuralib.scanner import (
-    AbstractSliceScanner,
+    AbstractConfocalScanner,
     parse_tif_meta,
     SceneIdx,
     DimCode,
@@ -19,28 +19,30 @@ from neuralib.scanner import (
 )
 from neuralib.util.util_type import PathLike
 
-__all__ = ['LSMSliceScanner']
+__all__ = ['LSMConfocalScanner']
 
 
 # TODO multiple scenes not impl.
+# TODO sep plot func from the class
 @final
 @dataclasses.dataclass
-class LSMSliceScanner(AbstractSliceScanner):
+class LSMConfocalScanner(AbstractConfocalScanner):
+    """lsm confocal image data"""
     lsmfile: np.ndarray
-    """(Z, C, Y, X)"""
+    """lsm image array"""
     meta: dict[str, Any]
 
     @classmethod
     def load(cls, filepath: PathLike):
         lsm = tifffile.imread(filepath)
-        return LSMSliceScanner(lsm, cls.get_meta(filepath))
+        return LSMConfocalScanner(lsm, cls.get_meta(filepath))
 
     @classmethod
     def get_meta(cls, filepath: PathLike) -> dict[str, Any]:
         return parse_tif_meta(Path(filepath), is_lsm=True)
 
     def get_dim_code(self) -> DimCode:
-        return DimCode('XCYX')
+        return DimCode('ZCYX')
 
     @property
     def width(self) -> dict[SceneIdx, int]:
@@ -62,9 +64,17 @@ class LSMSliceScanner(AbstractSliceScanner):
                   depth: int | slice | np.ndarray | None = None,
                   zproj_type: ZPROJ_TYPE = 'max',
                   norm: bool = True) -> np.ndarray:
+        """
+
+        :param channel:
+        :param depth:
+        :param zproj_type:
+        :param norm:
+        :return:
+        """
 
         if depth is None:
-            depth = np.arange(self.n_zstacks)
+            depth = np.arange(self.lsmfile.shape[0])
 
         img = self.lsmfile[depth, channel, :, :]
 
@@ -76,12 +86,22 @@ class LSMSliceScanner(AbstractSliceScanner):
 
         return img
 
-    def plot(self, channel: int,
-             depth: int | slice | np.ndarray | None = None,
-             add_scale_bar: bool = True,
-             zproj_type: ZPROJ_TYPE = 'max',
-             norm: bool = True,
-             output: PathLike | None = None):
+    def imshow(self, channel: int,
+               depth: int | slice | np.ndarray | None = None,
+               add_scale_bar: bool = True,
+               zproj_type: ZPROJ_TYPE = 'max',
+               norm: bool = True,
+               output: PathLike | None = None):
+        """
+
+        :param channel:
+        :param depth:
+        :param add_scale_bar:
+        :param zproj_type:
+        :param norm:
+        :param output:
+        :return:
+        """
 
         img = self.get_image(channel, depth, zproj_type, norm)
 
@@ -95,12 +115,6 @@ class LSMSliceScanner(AbstractSliceScanner):
 
     def plot_merge_channel(self):
         with plot_figure(None) as ax:
-            for c in range(self.n_channels):
+            for c in range(self.lsmfile.shape[1]):
                 img = self.get_image(c, depth=None)
                 ax.imshow(img, cmap=ZEISS_LSM_CHANNELS_ORDER[c], alpha=0.8, vmax=0.3)
-
-
-if __name__ == '__main__':
-    p = '/Users/simon/code/Analysis/histology/YW043_3_2_st.lsm'
-    lsm = LSMSliceScanner.load(p)
-    lsm.plot_merge_channel()
