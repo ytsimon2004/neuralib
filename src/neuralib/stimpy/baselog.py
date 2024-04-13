@@ -32,27 +32,27 @@ S = TypeVar('S', bound='StimlogBase')  # Stimlog-Like
 P = TypeVar('P', bound='AbstractStimProtocol')  # protocol file
 
 
-class LogConfig(TypedDict, total=False):
-    source_version: STIMPY_SOURCE_VERSION
-    """ """
-    version: float
-    """ """
-    commit_hash: str
-    """ """
-    codes: dict[str, int]
-    """ """
-    fields: tuple[str, ...]
-    """ """
-
-
 # =========== #
 # Baselog ABC #
 # =========== #
 
+class RigConfig(TypedDict, total=False):
+    source_version: STIMPY_SOURCE_VERSION
+    """stimpy source version {'pyvstim', 'stimpy-bit', 'stimpy-git'}"""
+    version: float
+    """acquisition flag. i.e., 0.3"""
+    commit_hash: str
+    """git commit hash"""
+    codes: dict[str, int]
+    """<EVENT_TYPES>:<NUMBER>"""
+    fields: tuple[str, ...]
+    """column repr for the logging"""
+
+
 class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
     """ABC class for different stimpy/pyvstim log files. i.e., .log, .riglog"""
 
-    log_config: LogConfig
+    log_config: RigConfig
 
     def __init__(self,
                  root_path: PathLike,
@@ -103,9 +103,10 @@ class Baselog(Generic[S, P], metaclass=abc.ABCMeta):
         else:
             raise FileNotFoundError(f'more than one riglog files under {root}')
 
-    def _get_log_config(self) -> LogConfig:
+    # noinspection PyTypedDict
+    def _get_log_config(self) -> RigConfig:
         """get config dict and source version for different logs from the # headers"""
-        ret = LogConfig()
+        ret = RigConfig()
         with open(self.riglog_file) as f:
             for line in f:
                 if '#' in line:
