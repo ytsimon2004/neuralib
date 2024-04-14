@@ -35,7 +35,7 @@ Plot brain regions with ROIs label
 
 Example of reconstruct ROIs in the Somatosensory Cortex for ipsilateral hemisphere(assume right hemisphere)::
 
-    brender roi -F <CSV_FILE> -R SS --roi-region SS -H right
+    brender roi -F <CSV_FILE>
 
 
 |brender roi|
@@ -126,9 +126,10 @@ See the available options use ``-h`` option ::
 
 
 
-.. |brender area| image:: ../_static/brender_area.jpg
-.. |brender roi| image:: ../_static/brender_roi.jpg
-.. |brender probe| image:: ../_static/brender_probe.jpg
+
+.. |brender area| image:: ../_static/brender_area.png
+.. |brender roi| image:: ../_static/brender_roi.png
+.. |brender probe| image:: ../_static/brender_probe.png
 
 
 """
