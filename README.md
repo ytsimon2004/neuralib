@@ -98,12 +98,7 @@
 
 ### `brender`
 
-- brainrender view
-- Example:
-  ~~~
-  brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
-  ~~~
-- see `-h` for detail
+- see examples in [api](https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html)
 
 ### `ppv`
 
