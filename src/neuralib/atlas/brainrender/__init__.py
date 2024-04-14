@@ -10,13 +10,16 @@ See detail in the https://brainglobe.info/documentation/brainrender/index.html.
 The wrapper provide three main usage cases, and can be run as command line once the package installed
 
 Region reconstruction (area mode)
------------
+---------------------------------------
 
 Plot brain regions
 
 Example of reconstruct the Visual Cortex ::
 
-    brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
+    brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
+
+
+|brender area|
 
 
 See the available options use `-h` option ::
@@ -26,13 +29,17 @@ See the available options use `-h` option ::
 
 
 ROI reconstruction (roi mode)
------------
+---------------------------------------
 
 Plot brain regions with ROIs label
 
 Example of reconstruct ROIs in the Somatosensory Cortex for ipsilateral hemisphere(assume right hemisphere)::
 
     brender roi -F <CSV_FILE> -R SS --roi-region SS -H right
+
+
+|brender roi|
+
 
 
 CSV FILE example (auto transformed coordinates space from allen to brainrender)::
@@ -71,8 +78,17 @@ See the available options use ``-h`` option ::
 
 
 Probe reconstruction (probe mode)
------------
+---------------------------------------
 TODO
+
+
+
+
+
+
+
+.. |brender area| image:: ../_static/brender_area.jpg
+.. |brender roi| image:: ../_static/brender_roi.jpg
 
 """
 
