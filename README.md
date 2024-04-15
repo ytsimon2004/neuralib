@@ -8,7 +8,7 @@
 
 ## Installation
 
-- `pip install neura-library==0.0.0` in your conda env with Python >= 3.9
+- `pip install neura-library` in your conda env with Python >= 3.9
 - According to purpose, install the optional package [requirements-optional.txt](requirements-optional.txt)
 
 ## Usage

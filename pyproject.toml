@@ -1,10 +1,11 @@
 [project]
 name = "neura-library"
-version = "0.0.1"
+version = "0.0.0"
 requires-python = ">=3.9"
 description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
 authors = [
-    { name = "Yu-Ting Wei", email = "ytsimon2004@gmail.com" }
+    { name = "Yu-Ting Wei", email = "ytsimon2004@gmail.com" },
+    { name = "Ta-Shun Su", email = "antoniost29@gmail.com" }
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
@@ -19,11 +20,14 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+dynamic = ['dependencies']
+
 [project.urls]
 Homepage = "https://github.com/ytsimon2004/neuralib"
 Documentation = "https://neuralib.readthedocs.io/en/latest/index.html"
 Repository = "https://github.com/ytsimon2004/neuralib"
 Issues = "https://github.com/ytsimon2004/neuralib/issues"
+
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
