@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 from io import BytesIO
 from pathlib import Path
+from pprint import pprint
 from typing import ClassVar, TypedDict, Literal
 
 import allensdk.core.structure_tree
@@ -19,7 +20,8 @@ from neuralib.util.util_type import PathLike, DataFrame
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import uglob
 
-__all__ = ['AllenReferenceWrapper']
+__all__ = ['AllenReferenceWrapper',
+           'create_allen_structure_dict']
 
 
 class StructureTreeDict(TypedDict):
@@ -250,3 +252,24 @@ class AllenReferenceWrapper:
             df = df.to_pandas()
 
         return df
+
+
+# ==================== #
+
+def create_allen_structure_dict(verbose=False) -> dict[str, str]:
+    """
+    Get the acronym/name pairing from structure_tree.csv
+
+    :return: key: acronym; value: full name
+    """
+    tree = AllenReferenceWrapper.load_structure_tree()
+    tree = tree.select('name', 'acronym').sort('name')
+
+    ret = {
+        acry: name
+        for name, acry in tree.iter_rows()
+    }
+    if verbose:
+        pprint(ret)
+
+    return ret

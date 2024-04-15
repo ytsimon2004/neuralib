@@ -29,3 +29,10 @@ bokeh>=3.3.0
 # GPUs
 torch
 tensorflow
+
+# profile
+memory_profiler
+psutil
+
+#jit
+numba
