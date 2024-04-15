@@ -13,8 +13,7 @@ on:
     #    branches:
     #    - main
     tags:
-      #       - v*
-      - v0.0.0
+      - v*
 
   workflow_dispatch:
 
