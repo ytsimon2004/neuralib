@@ -8,8 +8,7 @@
 
 ## Installation
 
-- Before pip release, clone the repo
-- Run `pip install .` in the base directory, if develop mode, run `pip install -e .`
+- `pip install neura-library==0.0.0` in your conda env with Python >= 3.9
 - According to purpose, install the optional package [requirements-optional.txt](requirements-optional.txt)
 
 ## Usage
