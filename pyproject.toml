@@ -1,5 +1,5 @@
 [project]
-name = "neuralib"
+name = "neura-lib"
 version = "0.0.0"
 requires-python = ">=3.9"
 description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
@@ -21,7 +21,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/ytsimon2004/neuralib"
-#Documentation = "https://github.com/ytsimon2004/neuralib/wiki"
+Documentation = "https://neuralib.readthedocs.io/en/latest/index.html"
 Repository = "https://github.com/ytsimon2004/neuralib"
 Issues = "https://github.com/ytsimon2004/neuralib/issues"
 
