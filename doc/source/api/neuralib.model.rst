@@ -8,5 +8,5 @@ neuralib.model
     :maxdepth: 1
     :caption: Modules:
     
-
+    neuralib.model.bayes_decoding
 
