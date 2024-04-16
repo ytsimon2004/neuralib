@@ -13,7 +13,8 @@ def download_with_tqdm(url: str) -> requests.Response:
     Use in large file downloading,
 
     :param url: download URL
-    :return: :class:`Response`
+    :return: A `requests.Response` object from the requests library. See the `requests`
+             documentation at https://requests.readthedocs.io/ for more details.
     """
     resp = requests.get(url, stream=True)
     resp.raise_for_status()
@@ -36,7 +37,7 @@ def tqdm_joblib(tqdm_obj: tqdm) -> ContextManager[tqdm]:
 
         from joblib import Parallel, delayed
 
-        func = ... # Callable[*args, Any], arg include foreach `n`
+        func = ... # Callable[*args, Any], arg include foreach *n*
 
         with tqdm_joblib(tqdm(desc="lower bound", unit='neuron', ncols=80)) as _:
             Parallel(n_jobs=self.parallel_jobs, backend='multiprocessing', verbose=True)(

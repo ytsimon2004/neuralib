@@ -17,12 +17,8 @@ __all__ = [
     'SBXInfo',
     'sbx_to_json',
     #
-    'SBXScreenShot'
+    'screenshot_to_tiff'
 ]
-
-from neuralib.util.util_verbose import fprint
-
-# TODO ALSO CHECK the `res/rig/sbx/rig1/scanbox_config.m`
 
 T = TypeVar('T')  # matstruct
 A = TypeVar('A')  # sbx attr
@@ -63,7 +59,7 @@ class SBXInfo(Generic[T, A]):
         """info.config.magnification, used for `CalibrationInfo` idx"""
         return self.config.magnification - 1
 
-    def print_as_dict(self):
+    def print_asdict(self) -> None:
         from dataclasses import asdict
         pprint(asdict(self))
 
@@ -81,7 +77,7 @@ class SBXInfo(Generic[T, A]):
     # =============================== #
 
     @classmethod
-    def load(cls, root: Path | str) -> SBXInfo:
+    def load(cls, root: PathLike) -> SBXInfo:
         info = loadmat(root, squeeze_me=True, struct_as_record=False)['info']
 
         try:
@@ -245,11 +241,20 @@ class SBXInfo(Generic[T, A]):
 
     @property
     def fov_distance(self) -> tuple[float, float]:
-        """(X, Y) in um"""
-        if not self._validate_fov_distance():
-            fprint('check the runconfig for ScanBox during recording', vtype='error')
+        """(X, Y) in um.
 
-        return 892, 667
+        Note this value might be hardware dependent. value return is internal usage for the lab
+        """
+        lines = self.get_config_info(self.config).lines
+
+        if self.objective == 'Nikon 16x/0.8w/WD3.0':
+            obj = 16
+        else:
+            raise NotImplementedError('')
+
+        zoom = float(self.get_config_info(self.config).magnification_list[self.magidx])
+
+        return _get_default_scanbox_fov_dimension(lines, obj, zoom)
 
     def _validate_fov_distance(self) -> bool:
         """due to this is the info only seen in GUI"""
@@ -259,30 +264,49 @@ class SBXInfo(Generic[T, A]):
         return all([obj_type, n_line, mag])
 
 
-def load_scanbox_config(root: Path) -> dict:
-    """load for Rig-specific default setting config of the scanbox `scanbox_config.m`
-    Note that the actual value could be changed via scanbox GUI"""
-    ret = {}
-    with root.open() as f:
-        for line in f:
-            line = line.strip().replace(' ', '')
-            if line.startswith('sbconfig'):
-                kidx = line.find('.')
-                vidx = line.find('=')
+def _get_default_scanbox_fov_dimension(lines: int,
+                                       obj_type: int,
+                                       zoom: float) -> tuple[float, float]:
+    """
+    Hardware/settings dependent fov size according to recording configuration
 
-                try:
-                    eidx = line.index(';')
-                    ret[line[kidx + 1:vidx]] = line[vidx + 1:eidx]
-                except ValueError:
-                    ret[line[kidx + 1:vidx]] = 'NOT IMPLEMENT'  # TODO matlab line change and `switch/case`
-                    pass
+    :param lines: number of lines for the scanning fov
+    :param obj_type: objective magnification. i.e., 16X
+    :param zoom: zoom setting during acquisition
+    :return: (X, Y) in um
+    """
+    # ~ 30hz
+    if lines == 528 and obj_type == 16:
+        if zoom == 1:
+            return 1396, 1056
+        elif zoom == 1.2:
+            return 1284, 978
+        elif zoom == 1.4:
+            return 1023, 765
+        elif zoom == 1.7:
+            return 892, 667
+        elif zoom == 2.0:
+            return 716, 531
+        elif zoom == 2.4:
+            return 632, 463
+        else:
+            raise NotImplementedError('check scanbox GUI directly')
 
-    return ret
+    else:
+        raise NotImplementedError('check scanbox GUI directly')
 
 
 def sbx_to_json(matfile: Path | str,
-                output: Path | None = None):
-    """save .mat file to json"""
+                output: Path | None = None,
+                verbose: bool = True) -> None:
+    """
+    save .mat scanbox output file as json file
+
+    :param matfile: .mat filepath
+    :param output: output filepath, if None, create a json file in the same directory
+    :param verbose: pprint as dict
+    :return:
+    """
     if isinstance(matfile, str):
         matfile = Path(matfile)
 
@@ -291,7 +315,10 @@ def sbx_to_json(matfile: Path | str,
         output = matfile.with_name('sbx').with_suffix('.json')
 
     dy = dataclasses.asdict(mat)
-    pprint(dy)
+
+    if verbose:
+        pprint(dy)
+
     with open(output, "w") as outfile:
         json.dump(dy, outfile, sort_keys=True, indent=4, cls=JsonEncodeHandler)
 
