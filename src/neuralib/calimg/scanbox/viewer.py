@@ -10,22 +10,47 @@ from neuralib.argp import int_tuple_type
 from neuralib.calimg.scanbox.core import SBXInfo
 from neuralib.util.util_type import PathLike
 
+__all__ = ['SBXViewer']
+
+from neuralib.util.utils import uglob
+
 
 class SBXViewer:
+    """wrapper for sbxreader
+
+    `Dimension parameters`:
+
+        F = number of frames
+
+        P = number of optical planes
+
+        C = number of PMT channels
+
+        W = FOV width
+
+        H = FOV height
+
     """
-    wrapper for sbxreader.
-    note to check meta & sbxinfo consistency
-    """
+
     info: SBXInfo
+    """:class:`~neuralib.calimg.scanbox.core.SBXInfo`"""
+
     sbx_map: sbxreader.sbx_memmap
     """(F, P, C, W, H)"""
 
-    def __init__(self, file: PathLike):
-        if Path(file).suffix != '.sbx':
-            raise ValueError('')
+    def __init__(self, directory: PathLike):
+        """
+        :param directory: scanbox file (.sbx). In the same directory should contain the corresponding .mat file
+        """
 
-        self.info = SBXInfo.load(file.with_suffix('.mat'))
-        self.sbx_map = sbxreader.sbx_memmap(file)
+        if not Path(directory).is_dir():
+            raise NotADirectoryError(f'{directory}')
+
+        sbx = uglob(directory, '*.sbx')
+        self.sbx_map = sbxreader.sbx_memmap(sbx)
+
+        info = uglob(directory, '*.mat')
+        self.info = SBXInfo.load(info)
 
     @property
     def meta(self) -> dict[str, Any]:
@@ -68,22 +93,18 @@ class SBXViewer:
     def n_frames(self) -> int:
         return int(self.info.config.frames / self.n_planes)
 
-    def display(self, frames: slice | np.ndarray | None,
-                plane: int,
-                channel: int):
-        # from rscvp.util.imglib.viewer import ImageSequencesViewer # TODO fix
-
-        if frames is None:
-            frames = np.arange(0, self.n_frames)
-
-        data = self.sbx_map[frames, plane, channel, :, :]
-        data = np.asarray(data)
-        ImageSequencesViewer.load(data).main()
-
     def to_tiff(self, frames: slice | np.ndarray | None,
                 plane: int,
                 channel: int,
                 output: PathLike):
+        """
+
+        :param frames:
+        :param plane:
+        :param channel:
+        :param output:
+        :return:
+        """
         import tifffile
 
         if frames is None:
@@ -106,13 +127,10 @@ def main():
 
     opt = ap.parse_args()
 
-    sbx = SBXViewer(opt.directory)
+    viewer = SBXViewer(opt.directory)
     frames = np.arange(*opt.frames).astype(int) if opt.frames is not None else None
 
-    if opt.output is not None:
-        sbx.to_tiff(frames, opt.plane, opt.channel, opt.output)
-    else:
-        sbx.display(frames, opt.plane, opt.channel)
+    viewer.to_tiff(frames, opt.plane, opt.channel, opt.output)
 
 
 if __name__ == '__main__':

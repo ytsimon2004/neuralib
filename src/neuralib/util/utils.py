@@ -21,7 +21,15 @@ def uglob(d: PathLike,
           pattern: str,
           sort: bool = True,
           is_dir: bool = False) -> Path:
-    """Unique glob"""
+    """
+    Unique glob
+
+    :param d: directory
+    :param pattern: pattern string
+    :param sort: if sort
+    :param is_dir: only return if is a directory
+    :return: unique path
+    """
     if not isinstance(d, Path):
         d = Path(d)
 
