@@ -6,17 +6,27 @@ import numpy as np
 __all__ = [
     'Allocator',
     'default_allocator',
+    'empty_allocator',
     'inplace_allocator',
     'memmap_allocator',
 ]
 
 
 class Allocator(Protocol):
-    def __call__(self, shape: Union[tuple[int, ...], np.ndarray], dtype: np.dtype = None) -> np.ndarray:
+    def __call__(self, shape: Union[tuple[int, ...], np.ndarray], dtype: Union[type, str, np.dtype] = None) -> np.ndarray:
         pass
 
 
 def default_allocator() -> Allocator:
+    def allocator(shape: Union[tuple[int, ...], np.ndarray], dtype: np.dtype = None):
+        if isinstance(shape, np.ndarray):
+            return np.zeros_like(shape, dtype)
+        return np.zeros(shape, dtype)
+
+    return allocator
+
+
+def empty_allocator() -> Allocator:
     def allocator(shape: Union[tuple[int, ...], np.ndarray], dtype: np.dtype = None):
         if isinstance(shape, np.ndarray):
             return np.empty_like(shape, dtype)
