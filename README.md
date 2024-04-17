@@ -7,7 +7,7 @@
 [![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ytsimon2004/neuralib)
 
-- Utility tools for system neuroscience research, including Open Source Wrapper or Parser
+- Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
 ## Installation
 

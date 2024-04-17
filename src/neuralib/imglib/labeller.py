@@ -72,10 +72,6 @@ from neuralib.util.util_verbose import fprint
 
 __all__ = ['SequenceLabeller']
 
-logging.basicConfig(
-    level=logging.DEBUG
-)
-
 Logger = logging.getLogger()
 
 
