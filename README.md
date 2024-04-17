@@ -99,10 +99,4 @@
 
 - see examples in [api](https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html)
 
-### `ppv`
 
-- python pickle/parquet file viewer
-  ~~~
-  ppv <FILE>
-  ~~~
-- see `-h` for detail

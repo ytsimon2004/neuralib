@@ -36,3 +36,6 @@ psutil
 
 #jit
 numba
+
+# image io
+pdf2image

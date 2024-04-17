@@ -9,5 +9,6 @@ neuralib.imglib
     :caption: Modules:
     
     neuralib.imglib.factory
+    neuralib.imglib.labeller
     neuralib.imglib.util
 

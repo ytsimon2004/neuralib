@@ -21,6 +21,7 @@ neuralib.util
     neuralib.util.tqdm
     neuralib.util.util_type
     neuralib.util.util_verbose
+    neuralib.util.util_cv2
     neuralib.util.utils
     neuralib.util.version
 

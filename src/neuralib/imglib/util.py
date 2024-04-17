@@ -9,7 +9,7 @@ from neuralib.util.util_type import PathLike
 __all__ = [
     #
     'read_avi',
-    'pdf_as_image',
+    'read_pdf',
     #
     'tif_to_gif',
     'normalize_sequences',
@@ -19,7 +19,12 @@ __all__ = [
 
 def read_avi(avi_file: PathLike,
              grey_scale: bool = True) -> np.ndarray:
-    """simple read for avi file, and collect as image array (F, W, H, *3). *optional"""
+    """simple read for avi file, and collect as image array
+
+    :param avi_file: avi filepath
+    :param grey_scale: convert to grayscale
+    :return: (F, W, H, <3>) sequences array
+    """
     cap = cv2.VideoCapture(str(avi_file))
     if not cap.isOpened():
         raise RuntimeError(f'error opening avi: {avi_file}')
@@ -37,10 +42,24 @@ def read_avi(avi_file: PathLike,
     return np.array(ret)
 
 
-def pdf_as_image(file: PathLike,
-                 single_image: bool = True,
-                 poppler_path: str | None = None,
-                 **kwargs) -> np.ndarray:
+def read_pdf(file: PathLike,
+             single_image: bool = True,
+             poppler_path: str | None = None,
+             **kwargs) -> np.ndarray:
+    """
+    Read pdf as an image array
+
+    :param file:
+    :param single_image:
+    :param poppler_path: if poppler not installed in a system level. Specify the path.
+        for example: ``Release-23.08.0-0\poppler-23.08.0\Library\bin``
+
+        .. seealso::
+
+            `<https://stackoverflow.com/questions/53481088/poppler-in-path-for-pdf2image>`_
+    :param kwargs: pass through `convert_from_path`
+    :return: image array
+    """
     from pdf2image import convert_from_path
     from pdf2image.exceptions import PDFInfoNotInstalledError
 
@@ -49,13 +68,13 @@ def pdf_as_image(file: PathLike,
             conv = convert_from_path(file, **kwargs)[0]
         except PDFInfoNotInstalledError:
             if poppler_path is None:
-                # https://stackoverflow.com/questions/53481088/poppler-in-path-for-pdf2image
-                poppler_path = r'C:\Users\yu-ting\Downloads\Release-23.08.0-0\poppler-23.08.0\Library\bin'
+                raise RuntimeError('download poppler first. or using apt-get / brew depending on OS')
+
             conv = convert_from_path(file, poppler_path=poppler_path, **kwargs)[0]
     else:
-        raise NotImplementedError('')
+        raise NotImplementedError('multi-pages pdf not currently support')
 
-    return np.array(conv)
+    return cv2.cvtColor(np.array(conv), cv2.COLOR_BGR2RGB)
 
 
 def tif_to_gif(image_file: PathLike,
@@ -78,10 +97,10 @@ def normalize_sequences(frames: list[np.ndarray],
 
     :param frames: list of image array
     :param handle_invalid: handle Nan and negative value
-    :param gamma_correction:
-    :param gamma_value
-    :param to_8bit
-    :return:
+    :param gamma_correction: to the gamma correction
+    :param gamma_value: gamma correction value
+    :param to_8bit: to 8bit images
+    :return: list of normalized image array
     """
     if handle_invalid:
         frames = handle_invalid_value(frames)

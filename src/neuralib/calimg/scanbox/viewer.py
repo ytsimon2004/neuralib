@@ -8,11 +8,11 @@ import sbxreader
 
 from neuralib.argp import int_tuple_type
 from neuralib.calimg.scanbox.core import SBXInfo
+from neuralib.imglib.labeller import SequenceLabeller
 from neuralib.util.util_type import PathLike
+from neuralib.util.utils import uglob
 
 __all__ = ['SBXViewer']
-
-from neuralib.util.utils import uglob
 
 
 class SBXViewer:
@@ -91,18 +91,44 @@ class SBXViewer:
 
     @property
     def n_frames(self) -> int:
+        """number of frames/images"""
         return int(self.info.config.frames / self.n_planes)
 
-    def to_tiff(self, frames: slice | np.ndarray | None,
+    def play(self,
+             frames: slice | np.ndarray | None,
+             plane: int,
+             channel: int):
+        """
+        Play the selected frames using customized CV2 player.
+
+        See :class:`~neuralib.imglib.labeller.SequenceLabeller`
+
+        :param frames: selected frames. If None, play all sequences
+        :param plane: number of optical planes
+        :param channel: number of PMT channel
+        :return:
+        """
+
+        if frames is None:
+            frames = np.arange(0, self.n_frames)
+
+        data = self.sbx_map[frames, plane, channel, :, :]
+        data = np.asarray(data)
+
+        SequenceLabeller.load_sequences(data).main()
+
+    def to_tiff(self,
+                frames: slice | np.ndarray | None,
                 plane: int,
                 channel: int,
                 output: PathLike):
         """
+        Convert the selected frames to tiff file
 
-        :param frames:
-        :param plane:
-        :param channel:
-        :param output:
+        :param frames: selected frames. If None, convert all sequences
+        :param plane: number of optical planes
+        :param channel: number of PMT channel
+        :param output: output filename
         :return:
         """
         import tifffile
@@ -115,7 +141,8 @@ class SBXViewer:
 
 def main():
     import argparse
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description='view or save the sbx file, If specify the output using -O, save as tiff'
+                                             'otherwise, play.')
 
     ap.add_argument('-D', '--dir', type=Path, required=True, help='directory containing .sbx/.mat scanbox output',
                     dest='directory')
@@ -130,7 +157,11 @@ def main():
     viewer = SBXViewer(opt.directory)
     frames = np.arange(*opt.frames).astype(int) if opt.frames is not None else None
 
-    viewer.to_tiff(frames, opt.plane, opt.channel, opt.output)
+    #
+    if opt.output is None:
+        viewer.play(frames, opt.plane, opt.channel)
+    else:
+        viewer.to_tiff(frames, opt.plane, opt.channel, opt.output)
 
 
 if __name__ == '__main__':
