@@ -87,7 +87,7 @@ def plot_figure(output: Path | None,
                 try:
                     plt.savefig(output, dpi=dpi if dpi is not None else None)
                     break
-                except OSError as e:  # fucking bkrunch annoying
+                except OSError as e:
                     print(e)
                     input('press to continue')
 
