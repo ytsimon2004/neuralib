@@ -16,7 +16,7 @@ Example of load the pupil area
     directory = ...  # directory with output *proc.npy
     frame_time = ...  # video time
     fmap = FaceMapResult.load(directory, track_type='pupil', frame_time=frame_time)
-    area = fmap.get_pupil_tracking()['area']
+    area = fmap.get_pupil_tracking()['area_smooth']
 
 
 

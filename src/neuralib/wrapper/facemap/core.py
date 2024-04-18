@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import pickle
-from typing import TypedDict, Generator, overload, final, Final
+from typing import TypedDict, Generator, overload, final, Final, Literal
 
 import attrs
 import h5py
 import numpy as np
-from typing_extensions import TypeAlias, Self, Literal
+from typing_extensions import TypeAlias, Self
 
 from neuralib.util.cli_args import CliArgs
 from neuralib.util.util_type import PathLike
@@ -121,8 +121,11 @@ class FaceMapResult:
     """facemap result container
 
     `Dimension parameters`:
+
         F = number of video frames
+
         K = number of keypoints
+
     """
     __slots__ = ('svd', 'meta', 'data', 'frame_time',
                  'track_type', 'with_keypoints')
@@ -137,12 +140,11 @@ class FaceMapResult:
             with_keypoints: bool,
     ):
         """
-
         :param svd: SVD processing outputs
         :param meta: Optional for Keypoints processing (result)
         :param data: Optional for Keypoints processing (config)
         :param track_type: {'keypoints', 'pupil'}
-        :param frame_time: video frame time ``(F, )``
+        :param frame_time: video frame time (F, )
         :param with_keypoints: if has keypoint tracking result
         """
         self.svd = svd
@@ -156,22 +158,25 @@ class FaceMapResult:
     @classmethod
     def load(cls, directory: PathLike,
              track_type: TRACK_TYPE,
-             frame_time: np.ndarray) -> Self:
+             frame_time: np.ndarray | None,
+             *,
+             file_pattern: str = '') -> Self:
         """
         Load the facecam result from its output directory
 
-        :param directory: directory contains the possible facemap output files (*.npy, *.pkl, and *.h5)
+        :param directory: directory contains the possible facemap output files (`*.npy`, `*.pkl`, and `*.h5`)
         :param track_type: {'keypoints', 'pupil'}
-        :param frame_time: video frame time ``(N, )``
+        :param frame_time: video frame time (N, )
+        :param file_pattern: string prefix pattern to glob the facemap output file
         :return: :class:`FaceMapResult`
         """
         #
-        svd_path = uglob(directory, '*.npy')
+        svd_path = uglob(directory, f'{file_pattern}*.npy')
         svd = np.load(svd_path, allow_pickle=True).item()
 
         #
         try:
-            meta_path = uglob(directory, '*.pkl')
+            meta_path = uglob(directory, f'{file_pattern}*.pkl')
         except FileNotFoundError:
             meta = None
             data = None
@@ -180,7 +185,7 @@ class FaceMapResult:
             with open(meta_path, 'rb') as f:
                 meta = pickle.load(f)
 
-            data_path = uglob(directory, '*.h5')
+            data_path = uglob(directory, f'{file_pattern}*.h5')
             data = h5py.File(data_path)['Facemap']
 
             with_keypoints = True
@@ -190,23 +195,25 @@ class FaceMapResult:
     @classmethod
     def launch_facemap_gui(cls, directory: PathLike,
                            with_keypoints: bool,
+                           *,
+                           file_pattern: str = '',
                            env_name: str = 'neuralib') -> None:
         """
         GUI view via cli.
 
-        **Note that calling this method will overwrite `filenames`` field in *proc.npy**
+        **Note that calling this method will overwrite `filenames` field in *proc.npy**
 
-        :param directory: directory contains the possible facemap output files (*.npy, *.pkl, and *.h5),
+        :param directory: directory contains the possible facemap output files (`*.npy`, `*.pkl`, and `*.h5`),
             and also the raw video file
         :param with_keypoints: if has keypoint tracking result
+        :param file_pattern: string prefix pattern to glob the facemap output file and raw avi file
         :param env_name: conda env name that installed the facemap package
-        :return:
         """
         import subprocess
 
         cls._modify_video_filenames_field(directory)
 
-        svd_path = uglob(directory, '*.npy')
+        svd_path = uglob(directory, f'{file_pattern}*.npy')
 
         cmds = ['conda', 'run', '-n', f'{env_name}', 'python', '-m', 'facemap']
         cmds.extend(CliArgs('--proc_npy', str(svd_path)).as_command())
@@ -219,10 +226,12 @@ class FaceMapResult:
         subprocess.check_call(cmds)
 
     @classmethod
-    def _modify_video_filenames_field(cls, directory: PathLike):
+    def _modify_video_filenames_field(cls,
+                                      directory: PathLike, *,
+                                      file_pattern: str = ''):
         """brute force rewrite ``filenames`` field in raw file"""
-        svd_path = uglob(directory, '*.npy')
-        video_path = uglob(directory, '*.avi')
+        svd_path = uglob(directory, f'{file_pattern}*.npy')
+        video_path = uglob(directory, f'{file_pattern}*.avi')
 
         dat = np.load(svd_path, allow_pickle=True).item()
         dat['filenames'] = [[str(video_path)]]
@@ -268,7 +277,7 @@ class FaceMapResult:
     def __getitem__(self, keypoint: KeyPoint) -> KeyPointTrack:
         """get a specific keypoint tracking result"""
         if keypoint not in self.keypoints:
-            raise KeyError(f'{keypoint} invalid')
+            raise KeyError(f'{keypoint} invalid, please select from {self.keypoints}')
 
         x = np.array(self.data[keypoint]['x'])
         y = np.array(self.data[keypoint]['y'])
@@ -300,12 +309,19 @@ class FaceMapResult:
         else:
             raise TypeError('')
 
-    def as_array(self, keypoint: list[KeyPoint] | KeyPoint | None = None) -> np.ndarray:
+    def as_array(self,
+                 keypoint: list[KeyPoint] | KeyPoint | None = None,
+                 with_outlier_filter: bool = True,
+                 to_zscore: bool = True,
+                 **kwargs) -> np.ndarray:
         """
-        get keypoint(s) result as an 2D array
+        get keypoint(s) result as an 2D array with shape (K, F, 2). 3rd dim indicates the xy
 
         :param keypoint: keypoint
-        :return: (F, K)
+        :param with_outlier_filter:
+        :param to_zscore:
+        :param kwargs: pass through :meth:`~KeyPointTrack.with_outlier_filter()`
+        :return: (K, F, 2)
         """
         if keypoint is not None:
             kps = self.get(keypoint)
@@ -318,9 +334,16 @@ class FaceMapResult:
 
         ret = []
         for kp in kps:  # type: KeyPointTrack
-            ret.append(kp.with_outlier_filter().to_zscore().x)
 
-        return np.array(ret).T
+            if with_outlier_filter:
+                kp = kp.with_outlier_filter(**kwargs)
+
+            if to_zscore:
+                kp = kp.to_zscore()
+
+            ret.append(np.vstack([kp.x, kp.y]).T)
+
+        return np.array(ret)
 
 
 # ================= #
@@ -339,6 +362,11 @@ class KeyPointTrack:
     """y loc (F,)"""
     likelihood: np.ndarray
     """tracking likelihood (F,)"""
+
+    @property
+    def mean_xy(self) -> np.ndarray:
+        """mean x y loc"""
+        return (self.x + self.y) / 2
 
     def with_outlier_filter(
             self,
