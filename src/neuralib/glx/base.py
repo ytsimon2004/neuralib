@@ -59,13 +59,17 @@ class EphysRecording(metaclass=abc.ABCMeta):
 class ProcessedEphysRecording(EphysRecording):
     def __init__(self, time: np.ndarray,
                  channels: np.ndarray,
-                 data: np.ndarray):
+                 data: np.ndarray,
+                 meta: dict[str, str] = None):
         if time.ndim != 1 or channels.ndim != 1 or data.shape != (len(channels), len(time)):
             raise ValueError()
 
         self.__t = time.astype(float)
         self.__c = channels.astype(int)
         self.__d = data
+        self.__m = {}
+        if meta is not None:
+            self.__m.update(meta)
 
     @property
     def data_path(self) -> Optional[Path]:
@@ -95,8 +99,16 @@ class ProcessedEphysRecording(EphysRecording):
     def t(self) -> np.ndarray:
         return self.__t
 
+    @property
+    def dtype(self) -> np.dtype:
+        return self.__d.dtype
+
     def __getitem__(self, item):
         return self.__d[item]
+
+    @property
+    def meta(self) -> dict[str, str]:
+        return self.__m
 
     def fma(self, a: float, b: float = 0, *, allocator: Allocator = default_allocator()) -> Self:
         d = allocator(self.__d.shape, float)
