@@ -10,5 +10,6 @@ neuralib.imglib
     
     neuralib.imglib.factory
     neuralib.imglib.labeller
-    neuralib.imglib.util
+    neuralib.imglib.io
+    neuralib.imglib.norm
 

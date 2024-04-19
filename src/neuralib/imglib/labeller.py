@@ -183,7 +183,7 @@ class SequenceLabeller:
         for f in tqdm(files, unit='file', ncols=80):
 
             if file_suffix == '.pdf':
-                from neuralib.imglib.util import read_pdf
+                from neuralib.imglib.io import read_pdf
                 img = read_pdf(f, dpi=200)
                 seqs.append(img)
             else:
