@@ -9,5 +9,3 @@ neuralib.wrapper.facemap
     :caption: Modules:
     
     neuralib.wrapper.facemap.core
-    neuralib.wrapper.facemap.util
-

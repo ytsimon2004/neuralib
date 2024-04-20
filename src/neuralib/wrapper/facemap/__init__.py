@@ -14,9 +14,8 @@ Example of load the pupil area
     from neuralib.wrapper.facemap import *
 
     directory = ...  # directory with output *proc.npy
-    frame_time = ...  # video time
-    fmap = FaceMapResult.load(directory, track_type='pupil', frame_time=frame_time)
-    area = fmap.get_pupil_tracking()['area_smooth']
+    fmap = FaceMapResult.load(directory, track_type='pupil')
+    area = fmap.get_pupil_area()
 
 
 
@@ -42,4 +41,3 @@ TODO
 
 """
 from .core import *
-from .util import *

@@ -16,7 +16,7 @@ from neuralib.util.utils import uglob
 __all__ = [
     'TRACK_TYPE',
     'SVDVariables',
-
+    #
     'KeyPoint',
     'FaceMapResult',
     'KeyPointTrack',
@@ -136,7 +136,6 @@ class FaceMapResult:
             meta: KeyPointsMeta | None,
             data: h5py.Group | None,
             track_type: TRACK_TYPE,
-            frame_time: np.ndarray,
             with_keypoints: bool,
     ):
         """
@@ -151,14 +150,12 @@ class FaceMapResult:
         self.meta: Final[KeyPointsMeta | None] = meta
         self.data: Final[h5py.Group | None] = data
 
-        self.frame_time: Final[np.ndarray] = frame_time
         self.track_type: Final[TRACK_TYPE] = track_type
         self.with_keypoints: Final[bool] = with_keypoints
 
     @classmethod
     def load(cls, directory: PathLike,
              track_type: TRACK_TYPE,
-             frame_time: np.ndarray | None,
              *,
              file_pattern: str = '') -> Self:
         """
@@ -166,7 +163,6 @@ class FaceMapResult:
 
         :param directory: directory contains the possible facemap output files (`*.npy`, `*.pkl`, and `*.h5`)
         :param track_type: {'keypoints', 'pupil'}
-        :param frame_time: video frame time (N, )
         :param file_pattern: string prefix pattern to glob the facemap output file
         :return: :class:`FaceMapResult`
         """
@@ -190,7 +186,7 @@ class FaceMapResult:
 
             with_keypoints = True
 
-        return FaceMapResult(svd, meta, data, track_type, frame_time, with_keypoints)
+        return FaceMapResult(svd, meta, data, track_type, with_keypoints)
 
     @classmethod
     def launch_facemap_gui(cls, directory: PathLike,
@@ -249,21 +245,15 @@ class FaceMapResult:
             return ret[0]
         raise NotImplementedError('')
 
+    def get_pupil_area(self) -> np.ndarray:
+        return self.get_pupil_tracking()['area_smooth']
+
     def get_eye_blink(self) -> np.ndarray:
         """eye blinking array (F, )"""
         ret = self.svd['blink']
         if len(ret) == 1:
             return ret[0]
         raise NotImplementedError('')
-
-    # ============== #
-    # Frames / Times #
-    # ============== #
-
-    @property
-    def n_frames(self) -> int:
-        """number of facemap tracked video frames"""
-        return len(self.frame_time)
 
     # ========= #
     # Keypoints #
