@@ -122,16 +122,18 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def key_from_value(it: dict[KT, VT], value: VT) -> KT:
-    """Get dict key from dict value"""
-    kk = []
-    for k, v in it.items():
-        if (isinstance(v, (str, int)) and v == value) or (isinstance(v, (list, tuple)) and value in v):
-            kk.append(k)
+def key_from_value(d: dict[KT, VT], value: VT) -> KT:
+    """Get dict key from dict value, supporting str, int, list, and tuple types for values."""
+    matching_keys = []
+    for key, val in d.items():
+        if isinstance(val, (str, int)) and val == value:
+            matching_keys.append(key)
+        elif isinstance(val, (list, tuple)) and value in val:
+            matching_keys.append(key)
 
-    if len(kk) == 0:
-        raise KeyError(f'{value} not in the dict')
-    if len(kk) == 1:
-        return kk[0]
-    else:
-        raise RuntimeError(f'multiple key found by the value: {kk}: {value}')
+    if not matching_keys:
+        raise KeyError(f'Value {value} not found in the dictionary')
+    if len(matching_keys) > 1:
+        raise RuntimeError(f'Multiple keys found for the value {value}: {matching_keys}')
+
+    return matching_keys[0]
