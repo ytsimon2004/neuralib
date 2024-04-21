@@ -939,8 +939,6 @@ class TestRiglogParser(unittest.TestCase):
         assert_array_equal(event.time, t)
 
 
-func = lambda it: ', '.join(map(str, it))
-
 
 class TestStimlogParser(unittest.TestCase):
     STIM_CONTENT = """

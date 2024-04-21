@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import polars as pl
 from polars.testing import assert_frame_equal
 
@@ -10,7 +11,9 @@ from neuralib.stimpy.protocol_parser import (
     UnassignedVariableError,
     UndefinedVariableError,
     VariableAlreadyDeclaredError,
-    eval_assignments, eval_dataframe, generate_extended_dataframe
+    eval_assignments,
+    eval_dataframe,
+    generate_extended_dataframe
 )
 
 
@@ -125,3 +128,36 @@ n   img   g   dur len   xc  yc   c   width   height   mask
 
         print(result)
         assert_frame_equal(df, result)
+
+
+class TestExtendedProtocol(unittest.TestCase):
+
+    def test_variable_i(self):
+        dataframe_string = """\
+n      dur     xc   yc   c    sf    tf   ori      width  height pattern
+1-12  3       0    0    1    0.04  1    {i}*30   200    200    sqr
+13-24  3       0    0    1    0.08  1    {i}*30   200    200    sqr
+"""
+
+        df = eval_dataframe(dataframe_string)
+        df = generate_extended_dataframe(df)
+        print(df)
+
+        n_rows = df.shape[0]
+        expected_result = pl.DataFrame(
+            {
+                'n': pl.Series(np.arange(1, df.shape[0] + 1)),
+                'dur': pl.Series(np.full(n_rows, 3)),
+                'xc': pl.Series(np.full(n_rows, 0)),
+                'yc': pl.Series(np.full(n_rows, 0)),
+                'c': pl.Series(np.full(n_rows, 1)),
+                'sf': pl.Series([0.04] * 12 + [0.08] * 12),
+                'tf': pl.Series(np.full(n_rows, 1)),
+                'ori': pl.Series(np.arange(30, (n_rows + 1) * 30, 30)),
+                'width': pl.Series(np.full(n_rows, 200)),
+                'height': pl.Series(np.full(n_rows, 200)),
+                'pattern': pl.Series(np.full(n_rows, 'sqr')),
+            }
+        )
+
+        assert_frame_equal(df, expected_result)

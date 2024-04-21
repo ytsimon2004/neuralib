@@ -7,7 +7,20 @@ from typing import Any
 import polars as pl
 
 from neuralib.stimpy.math_eval import evaluate_string
-from neuralib.util.util_verbose import fprint
+
+__all__ = [
+    'EmptyProtocolError',
+    'UnassignedVariableError',
+    'UndefinedVariableError',
+    'VariableAlreadyDeclaredError',
+    #
+    'remove_comments_and_strip',
+    'lines_to_variables_dict',
+    'eval_assignments',
+    'eval_dataframe',
+    'process_dataframe',
+    'generate_extended_dataframe',
+]
 
 
 class ProtocolError(ValueError):
@@ -142,7 +155,6 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
        2. Orders the 'n' column.
     """
     ret = generate_extended_dataframe(dataframe)
-    fprint(ret)
     return ret
 
 
