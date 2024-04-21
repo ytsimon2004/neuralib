@@ -132,7 +132,7 @@ class FaceMapResult:
 
     def __init__(
             self,
-            svd: SVDVariables,
+            svd: SVDVariables | None,
             meta: KeyPointsMeta | None,
             data: h5py.Group | None,
             track_type: TRACK_TYPE,
@@ -143,10 +143,9 @@ class FaceMapResult:
         :param meta: Optional for Keypoints processing (result)
         :param data: Optional for Keypoints processing (config)
         :param track_type: {'keypoints', 'pupil'}
-        :param frame_time: video frame time (F, )
         :param with_keypoints: if has keypoint tracking result
         """
-        self.svd = svd
+        self.svd: Final[SVDVariables | None] = svd
         self.meta: Final[KeyPointsMeta | None] = meta
         self.data: Final[h5py.Group | None] = data
 
@@ -167,8 +166,12 @@ class FaceMapResult:
         :return: :class:`FaceMapResult`
         """
         #
-        svd_path = uglob(directory, f'{file_pattern}*.npy')
-        svd = np.load(svd_path, allow_pickle=True).item()
+        try:
+            svd_path = uglob(directory, f'{file_pattern}*.npy')
+        except FileNotFoundError:
+            svd = None
+        else:
+            svd = np.load(svd_path, allow_pickle=True).item()
 
         #
         try:
@@ -186,7 +189,16 @@ class FaceMapResult:
 
             with_keypoints = True
 
+        cls._verify_data_content(directory, track_type, svd, data)
+
         return FaceMapResult(svd, meta, data, track_type, with_keypoints)
+
+    @classmethod
+    def _verify_data_content(cls, directory, track_type, svd, data):
+        if track_type == 'keypoints' and data is None:
+            raise RuntimeError(f'.h5 data file not found in the {directory}')
+        elif track_type == 'pupil' and svd is None:
+            raise RuntimeError(f'.npy svd file not found in the {directory}')
 
     @classmethod
     def launch_facemap_gui(cls, directory: PathLike,
