@@ -113,10 +113,10 @@ def push_first(toks):
     EXPR_STACK.append(toks[0])
 
 
-def evaluate_string(s, **p):
+def evaluate_string(s: str, **p) -> str:
     """
 
-    :param s:
+    :param s: evaluate string
     :param p:
     :return:
     """

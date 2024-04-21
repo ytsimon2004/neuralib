@@ -135,25 +135,26 @@ class TestExtendedProtocol(unittest.TestCase):
     def test_variable_i(self):
         dataframe_string = """\
 n      dur     xc   yc   c    sf    tf   ori      width  height pattern
-1-12  3       0    0    1    0.04  1    {i}*30   200    200    sqr
-13-24  3       0    0    1    0.08  1    {i}*30   200    200    sqr
+0-11  3       0    0    1    0.04  1    {i}*30   200    200    sqr
+12-23  3       0    0    1    0.08  1    {i}*30   200    200    sqr
 """
 
         df = eval_dataframe(dataframe_string)
+        print(df)
         df = generate_extended_dataframe(df)
         print(df)
 
         n_rows = df.shape[0]
         expected_result = pl.DataFrame(
             {
-                'n': pl.Series(np.arange(1, df.shape[0] + 1)),
+                'n': pl.Series(np.arange(n_rows)),
                 'dur': pl.Series(np.full(n_rows, 3)),
                 'xc': pl.Series(np.full(n_rows, 0)),
                 'yc': pl.Series(np.full(n_rows, 0)),
                 'c': pl.Series(np.full(n_rows, 1)),
                 'sf': pl.Series([0.04] * 12 + [0.08] * 12),
                 'tf': pl.Series(np.full(n_rows, 1)),
-                'ori': pl.Series(np.arange(30, (n_rows + 1) * 30, 30)),
+                'ori': pl.Series(np.arange(0, n_rows * 30, 30)),
                 'width': pl.Series(np.full(n_rows, 200)),
                 'height': pl.Series(np.full(n_rows, 200)),
                 'pattern': pl.Series(np.full(n_rows, 'sqr')),

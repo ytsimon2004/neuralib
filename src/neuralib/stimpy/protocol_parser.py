@@ -18,7 +18,6 @@ __all__ = [
     'lines_to_variables_dict',
     'eval_assignments',
     'eval_dataframe',
-    'process_dataframe',
     'generate_extended_dataframe',
 ]
 
@@ -125,7 +124,8 @@ def eval_assignments(variables_dict: dict[str, str], *,
         str_val = variables_dict[key]
 
         if key in dataframe_var:
-            typed_val = process_dataframe(eval_dataframe(str_val))
+            dataframe = eval_dataframe(str_val)
+            typed_val = generate_extended_dataframe(dataframe)
         else:
             try:
                 typed_val = eval(str_val)
@@ -150,25 +150,35 @@ def eval_dataframe(dataframe_string: str) -> pl.DataFrame:
     return pl.read_csv(io.StringIO(dataframe_string), has_header=True, separator=';', use_pyarrow=True)
 
 
-def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
-    """1. Eventually generates extra lines from {i} one-liner magic in 'n' column.
-       2. Orders the 'n' column.
-    """
-    ret = generate_extended_dataframe(dataframe)
-    return ret
-
-
 def generate_extended_dataframe(df: pl.DataFrame) -> pl.DataFrame:
     """Undoes the magic n-i one-liner commands and generates needed extra lines. i=0 on line of declaration.
-    Example:
-            n        dur     xc  yc      c   width   height       func     sf      ori
-            0           1     0   1.0   10     10  10+10*sin({t})    sin    0.01    30
-            1-2         2     0   0     1.0    50       50         sin    0.01    60*{i}
-        becomes
-            n        dur     xc  yc      c   width   height       func     sf      ori
-            0           1     0   1.0   10     10  10+10*sin({t})    sin    0.01    30
-            1           2     0   0     1.0    50       50         sin    0.01    60*0
-            2           2     0   0     1.0    50       50         sin    0.01    60*1
+
+    Example Raw::
+
+        ┌───────┬─────┬─────┬─────┬───┬────────┬───────┬────────┬─────────┐
+        │ n     ┆ dur ┆ xc  ┆ yc  ┆ … ┆ ori    ┆ width ┆ height ┆ pattern │
+        │ ---   ┆ --- ┆ --- ┆ --- ┆   ┆ ---    ┆ ---   ┆ ---    ┆ ---     │
+        │ str   ┆ i64 ┆ i64 ┆ i64 ┆   ┆ str    ┆ i64   ┆ i64    ┆ str     │
+        ╞═══════╪═════╪═════╪═════╪═══╪════════╪═══════╪════════╪═════════╡
+        │ 0-11  ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ {i}*30 ┆ 200   ┆ 200    ┆ sqr     │
+        │ 12-23 ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ {i}*30 ┆ 200   ┆ 200    ┆ sqr     │
+        └───────┴─────┴─────┴─────┴───┴────────┴───────┴────────┴─────────┘
+
+    Example Extended::
+
+
+        ┌─────┬─────┬─────┬─────┬───┬─────┬───────┬────────┬─────────┐
+        │ n   ┆ dur ┆ xc  ┆ yc  ┆ … ┆ ori ┆ width ┆ height ┆ pattern │
+        │ --- ┆ --- ┆ --- ┆ --- ┆   ┆ --- ┆ ---   ┆ ---    ┆ ---     │
+        │ i64 ┆ i64 ┆ i64 ┆ i64 ┆   ┆ i64 ┆ i64   ┆ i64    ┆ str     │
+        ╞═════╪═════╪═════╪═════╪═══╪═════╪═══════╪════════╪═════════╡
+        │ 0   ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ 0   ┆ 200   ┆ 200    ┆ sqr     │
+        │ 1   ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ 30  ┆ 200   ┆ 200    ┆ sqr     │
+        │ 2   ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ 60  ┆ 200   ┆ 200    ┆ sqr     │
+        │ …   ┆ …   ┆ …   ┆ …   ┆ … ┆ …   ┆ …     ┆ …      ┆ …       │
+        │ 22  ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ 660 ┆ 200   ┆ 200    ┆ sqr     │
+        │ 23  ┆ 3   ┆ 0   ┆ 0   ┆ … ┆ 690 ┆ 200   ┆ 200    ┆ sqr     │
+        └─────┴─────┴─────┴─────┴───┴─────┴───────┴────────┴─────────┘
     """
 
     if 'n' not in df.columns or df.schema['n'].is_integer():
