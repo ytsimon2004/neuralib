@@ -40,3 +40,6 @@ numba
 # image io
 pdf2image
 imageio
+
+#stimpy
+pyparsing
