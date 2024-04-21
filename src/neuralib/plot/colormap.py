@@ -56,15 +56,14 @@ class ColorMapper:  # TODO named as DiscreteColorMapper
             return color
 
 
-def get_customized_cmap(name: str, value: tuple[float, float], numbers: int) -> list[np.ndarray]:
+def get_customized_cmap(name: str, value: tuple[float, float], numbers: int) -> np.ndarray:
     """
-    generate gradient list of cmap
+    Generate gradient color map array
 
     :param name: name of cmap
     :param value: value range, could be 0-1
     :param numbers: number of color (N)
-    :return:
-        list of RGBA. N * (4,)
+    :return: (N, 4) RGBA
     """
     cmap = plt.get_cmap(name)
     return cmap(np.linspace(*value, numbers))

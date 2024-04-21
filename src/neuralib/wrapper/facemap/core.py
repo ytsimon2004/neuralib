@@ -365,7 +365,7 @@ class KeyPointTrack:
             max_spike: int = 25,
             max_diff: int = 25
     ) -> Self:
-        """x,y with outlier filter
+        """x,y with outlier filter (remove jump and do the interpolation)
 
         :param filter_window: window size for median filter
         :param baseline_window: window size for baseline estimation

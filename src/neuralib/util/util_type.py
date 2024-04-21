@@ -12,6 +12,7 @@ from numpy.typing import NDArray
 
 __all__ = [
     'ArrayLike',
+    'ArrayLikeStr',
     'NDArrayInt',
     'NDArrayFloat',
     'NDArrayBool',
@@ -27,6 +28,8 @@ __all__ = [
 
 T = TypeVar('T')
 ArrayLike = Union[np.ndarray, list[T], tuple[T, ...]]
+
+ArrayLikeStr = Union[NDArray[np.str_], list[str], tuple[str, ...]]
 
 NDArrayInt = NDArray[np.int_]
 NDArrayFloat = NDArray[np.float_]
