@@ -5,8 +5,6 @@ from typing import Optional, Union, Callable
 import numpy as np
 from typing_extensions import Self
 
-from .allocator import *
-
 __all__ = ['EphysRecording', 'ProcessedEphysRecording']
 
 
@@ -62,7 +60,7 @@ class ProcessedEphysRecording(EphysRecording):
                  data: np.ndarray,
                  meta: dict[str, str] = None):
         if time.ndim != 1 or channels.ndim != 1 or data.shape != (len(channels), len(time)):
-            raise ValueError()
+            raise ValueError(f'{time.ndim=}, {channels.ndim=}, {data.shape=}')
 
         self.__t = time.astype(float)
         self.__c = channels.astype(int)
@@ -106,24 +104,26 @@ class ProcessedEphysRecording(EphysRecording):
     def __getitem__(self, item):
         return self.__d[item]
 
+    def __setitem__(self, key, value):
+        self.__d[key] = value
+
+    @property
+    def __array_interface__(self):
+        return self.__d.__array_interface__
+
+    def __array__(self):
+        return self.__d
+
     @property
     def meta(self) -> dict[str, str]:
         return self.__m
 
-    def fma(self, a: float, b: float = 0, *, allocator: Allocator = default_allocator()) -> Self:
-        d = allocator(self.__d.shape, float)
-        np.multiply(self.__d, a, out=d)
-        np.add(d, b, out=d)
-        return ProcessedEphysRecording(self.__t, self.__c, d)
+    def fma(self, a: float, b: float = 0) -> Self:
+        return ProcessedEphysRecording(self.__t, self.__c, self.__d * a + b)
 
-    def as_voltage(self, *, allocator: Allocator = default_allocator()) -> Self:
-        return self.fma(0.195, allocator=allocator)
-
-    def with_time_range(self, t: tuple[float, float], *, allocator: Allocator = default_allocator()) -> Self:
+    def with_time_range(self, t: tuple[float, float]) -> Self:
         x = np.nonzero(np.logical_and(t[0] <= self.__t, self.__t <= t[1]))[0]
-        d = allocator((self.total_channels, len(x)), self.__d.dtype)
-        d[:, :] = self.__d[:, x]
-        return ProcessedEphysRecording(self.__t[x], self.__c, d)
+        return ProcessedEphysRecording(self.__t[x], self.__c, self.__d[:, x])
 
     def with_time(self, t: Union[float, np.ndarray, Callable[[np.ndarray], np.ndarray]]) -> Self:
         if isinstance(t, (int, float, np.number)):
@@ -138,8 +138,5 @@ class ProcessedEphysRecording(EphysRecording):
 
         return ProcessedEphysRecording(t, self.__c, self.__d)
 
-    def with_channel(self, channel: np.ndarray, *, allocator: Allocator = default_allocator()) -> Self:
-        c = self.__c[channel]
-        d = allocator((len(c), self.total_samples), self.__d.dtype)
-        d[:, :] = self.__d[channel, :]
-        return ProcessedEphysRecording(self.__t, c, d)
+    def with_channel(self, channel: np.ndarray) -> Self:
+        return ProcessedEphysRecording(self.__t, self.__c[channel], self.__d[channel, :])

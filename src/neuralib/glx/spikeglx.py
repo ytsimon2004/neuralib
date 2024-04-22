@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Union, NamedTuple, Literal, overload
+from typing import Union, NamedTuple, Literal, overload, Final
 
 import numpy as np
 from typing_extensions import Self
@@ -51,6 +51,7 @@ class GlxMeta:
 
 
 class GlxRecording(EphysRecording, GlxMeta):
+    VOLTAGE_FACTOR: Final[float] = 0.195  # mV/1
 
     def __init__(self, path: Union[str, Path]):
         EphysRecording.__init__(self)

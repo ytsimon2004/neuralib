@@ -1,7 +1,7 @@
 import contextlib
 import functools
 from collections.abc import Callable
-from typing import Union, Literal, Iterator
+from typing import Union, Literal, Iterator, TypeVar
 
 import numpy as np
 
@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-@persistence_class(name='per')
+@persistence_class(name='ephys')
 class ProcessedEphysRecordingMeta:
     filename: str = field(validator=True, filename=True)
     process: str = field(validator=True, filename=True)
@@ -47,7 +47,10 @@ class ProcessedEphysRecordingMeta:
         return np.arange(self.total_samples) / self.sample_rate + self.time_start
 
 
-def save(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta, data: ProcessedEphysRecording):
+Handler = TypeVar('Handler', bound=PersistenceHandler[ProcessedEphysRecordingMeta])
+
+
+def save(handler: Handler, meta: ProcessedEphysRecordingMeta, data: ProcessedEphysRecording):
     meta.channel_list = data.channel_list
     meta.time_start = data.time_start
     meta.total_samples = data.total_samples
@@ -62,19 +65,19 @@ def save(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta, data: P
         mmap[:] = data[:]
 
 
-def load(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta) -> ProcessedEphysRecording:
+def load(handler: Handler, meta: ProcessedEphysRecordingMeta) -> ProcessedEphysRecording:
     meta_path = handler.filepath(meta)
     if not (data_path := meta_path.with_suffix('.bin')).exists():
         raise FileNotFoundError(data_path)
 
-    shape = (meta.total_channels, meta.total_channels)
+    shape = (meta.total_channels, meta.total_samples)
     mmap = np.memmap(data_path, shape=shape, dtype=meta.dtype, mode='r', offset=0, order='F')
 
-    return ProcessedEphysRecording(meta.time, meta.channel_list, mmap)
+    return ProcessedEphysRecording(meta.time, meta.channel_list, mmap, meta=meta.meta)
 
 
 @contextlib.contextmanager
-def open(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta) -> Iterator[np.memmap]:
+def open(handler: Handler, meta: ProcessedEphysRecordingMeta) -> Iterator[np.memmap]:
     meta_path = handler.filepath(meta)
 
     data_path = meta_path.with_suffix('.bin')
@@ -109,7 +112,7 @@ def clone(dst: Union[str, ProcessedEphysRecordingMeta], src: ProcessedEphysRecor
     return dst
 
 
-def per_channel(handler: PersistenceHandler,
+def per_channel(handler: Handler,
                 process: str,
                 func: Callable[[int, np.ndarray], np.ndarray],
                 meta: ProcessedEphysRecordingMeta, *,
@@ -129,7 +132,7 @@ def per_channel(handler: PersistenceHandler,
     return ret
 
 
-def global_car(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta, *,
+def global_car(handler: Handler, meta: ProcessedEphysRecordingMeta, *,
                method: Literal['mean', 'median'] = 'median',
                chunk: int = 128) -> ProcessedEphysRecordingMeta:
     if method == 'mean':
@@ -150,7 +153,7 @@ def global_car(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta, *
     return ret
 
 
-def local_car(handler: PersistenceHandler, meta: ProcessedEphysRecordingMeta, *,
+def local_car(handler: Handler, meta: ProcessedEphysRecordingMeta, *,
               method: Literal['mean', 'median'] = 'median',
               radius: Union[float, tuple[float, float]] = (30, 100),
               chunk: int = 128) -> ProcessedEphysRecordingMeta:
