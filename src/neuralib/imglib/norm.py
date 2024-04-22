@@ -4,7 +4,8 @@ import numpy as np
 
 __all__ = [
     'normalize_sequences',
-    'handle_invalid_value'
+    'handle_invalid_value',
+    'get_percentile_value'
 ]
 
 
@@ -47,3 +48,17 @@ def handle_invalid_value(frames: list[np.ndarray] | np.ndarray) -> list[np.ndarr
     frames = [np.nan_to_num(frame, nan=0, posinf=0, neginf=0) for frame in frames]
     frames = [np.clip(frame, 0, None) for frame in frames]
     return frames
+
+
+def get_percentile_value(im: np.ndarray,
+                         perc_interval: tuple[float, float] = (10, 100)) -> tuple[float, float]:
+    """Get the central distribution boundary value for
+    imaging enhancement by changing the scaling of array.
+
+    :param im: image array
+    :param perc_interval: percentile
+    :return: lower_bound and upper_bound based on value distribution
+    """
+    im = im.flatten()
+    lb, up = perc_interval
+    return np.percentile(im, lb), np.percentile(im, up)

@@ -1,11 +1,13 @@
 """
-Suite2p Result Parser
-=================
+Suite2p Result Parser & Utils
+===============================
 
 :author:
     Yu-Ting Wei
 
-This module provide the usage for 2-photons calcium imaging after suite2p registration/segmentation.
+This module provide the container for suite2p registration/segmentation 2P results.
+
+Also include utilities for signal processing and basic plotting
 
 .. code-block:: python
 
@@ -13,14 +15,14 @@ This module provide the usage for 2-photons calcium imaging after suite2p regist
     s2p = Suite2PResult.load(s2p_dir, cell_prob=0.0, channel=0)
 
 See available attributes/properties/methods
------------------
+--------------------------------------------
 .. code-block:: python
 
     print(dir(s2p))
 
 
 See the option config for running the GUI
-----------
+---------------------------------------------
 
 .. code-block:: python
 
@@ -29,4 +31,5 @@ See the option config for running the GUI
 
 """
 from .core import *
+from .plot import *
 from .signals import *
