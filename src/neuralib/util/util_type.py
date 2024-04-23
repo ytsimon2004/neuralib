@@ -48,5 +48,6 @@ AxesArrayLike = Union[np.ndarray, list[Axes]]
 # ============ #
 
 def is_iterable(val: Any) -> bool:
+    """check value is iterable"""
     from collections.abc import Iterable
     return isinstance(val, Iterable) and not isinstance(val, str)

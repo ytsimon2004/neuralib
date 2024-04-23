@@ -17,26 +17,26 @@ __all__ = ['uglob',
            'key_from_value']
 
 
-def uglob(d: PathLike,
+def uglob(directory: PathLike,
           pattern: str,
           sort: bool = True,
           is_dir: bool = False) -> Path:
     """
-    Unique glob
+    Unique glob the pattern in a directory
 
-    :param d: directory
+    :param directory: directory
     :param pattern: pattern string
     :param sort: if sort
     :param is_dir: only return if is a directory
     :return: unique path
     """
-    if not isinstance(d, Path):
-        d = Path(d)
+    if not isinstance(directory, Path):
+        directory = Path(directory)
 
-    if not d.is_dir():
-        raise ValueError(f'{d} is not a directory')
+    if not directory.is_dir():
+        raise ValueError(f'{directory} is not a directory')
 
-    f = list(d.glob(pattern))
+    f = list(directory.glob(pattern))
 
     if is_dir:
         f = [ff for ff in f if ff.is_dir()]
@@ -45,11 +45,11 @@ def uglob(d: PathLike,
         f.sort()
 
     if len(f) == 0:
-        raise FileNotFoundError(f'{d} not have pattern: {pattern}')
+        raise FileNotFoundError(f'{directory} not have pattern: {pattern}')
     elif len(f) == 1:
         return f[0]
     else:
-        raise RuntimeError(f'multiple files were found in {d} in pattern {pattern} >>> {f}')
+        raise RuntimeError(f'multiple files were found in {directory} in pattern {pattern} >>> {f}')
 
 
 def glob_re(pattern: str, strings: list[str]) -> list[str]:
@@ -122,18 +122,19 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def key_from_value(d: dict[KT, VT], value: VT) -> KT:
-    """Get dict key from dict value, supporting str, int, list, and tuple types for values."""
+def key_from_value(d: dict[KT, VT], value: VT) -> KT | list[KT]:
+    """Get dict key from dict value, supporting str, int, float, list, and tuple types for values."""
     matching_keys = []
     for key, val in d.items():
-        if isinstance(val, (str, int)) and val == value:
-            matching_keys.append(key)
-        elif isinstance(val, (list, tuple)) and value in val:
-            matching_keys.append(key)
+        if not isinstance(val, (str, int, float, list, tuple)):
+            raise RuntimeError(f'value type: {type(val)} not support')
+        else:
+            if isinstance(val, (str, int, float)) and val == value:
+                matching_keys.append(key)
+            elif isinstance(val, (list, tuple)) and value in val:
+                matching_keys.append(key)
 
     if not matching_keys:
         raise KeyError(f'Value {value} not found in the dictionary')
-    if len(matching_keys) > 1:
-        raise RuntimeError(f'Multiple keys found for the value {value}: {matching_keys}')
-
-    return matching_keys[0]
+    else:
+        return matching_keys[0] if len(matching_keys) == 1 else matching_keys
