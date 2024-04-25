@@ -340,6 +340,25 @@ class StimlogBase(Generic[R], metaclass=abc.ABCMeta):
         """stimulation time segment (on-off) in sec (N, 2)"""
         pass
 
+    def stim_square_pulse_event(self, sampling_rate: float = 30.) -> RigEvent:
+        """
+        Get the stimulation on-off square pulse 0,1 consecutive event
+
+        :param sampling_rate: sampling rate for the time domain interpolation
+        :return: Stimulus rig event
+        """
+        start_time = self.exp_start_time
+        end_time = self.exp_end_time
+        seg = self.stimulus_segment
+
+        t = np.arange(start_time, end_time, 1 / sampling_rate)
+        ret = np.zeros_like(t)
+        for (on, off) in seg:
+            mask = np.logical_and(on < t, t < off)
+            ret[mask] = 1
+
+        return RigEvent('visual_stim', np.vstack((t, ret)).T)
+
     @abc.abstractmethod
     def session_trials(self) -> dict[Session, SessionInfo]:
         """get the session:SessionInfo dictionary (experimental and user-specific)"""

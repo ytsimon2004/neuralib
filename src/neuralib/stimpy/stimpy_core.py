@@ -343,7 +343,6 @@ class Stimlog(StimlogBase):
 
     @property
     def stimulus_segment(self) -> np.ndarray:
-        """sti_period"""
         v_start = self.v_frame_idx == 1
         t1 = self.v_present_time[v_start]
         t2 = self.v_present_time[np.nonzero(np.diff(self.v_frame_idx) < 0)[0] + 1]
