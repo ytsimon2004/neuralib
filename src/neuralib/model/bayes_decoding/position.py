@@ -39,7 +39,7 @@ def place_bayes(fr: np.ndarray,
     term2 = np.exp(term2)  # (X,)
 
     if np.any(term2 < overflow):
-        raise RuntimeError(f'OVERFLOW: {term2=}')  # TODO neuron number exceed ~1k, might problematic
+        raise RuntimeError(f'OVERFLOW: {term2=}')
 
     outer_multiply = np.vectorize(np.multiply.outer, signature='(t),(s)->(t,s)')
     # outer_multiply((N, T), (N, X)) = (N, T, X)
