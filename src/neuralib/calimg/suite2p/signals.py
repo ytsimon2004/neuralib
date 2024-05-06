@@ -30,29 +30,25 @@ def get_neuron_signal(s2p: Suite2PResult,
                       correct_neuropil: bool = True,
                       method: BASELINE_METHOD = 'maximin') -> tuple[np.ndarray, np.ndarray]:
     """
-    select which signal type that used for analysis, can be either {df_f} and {spks}
+    Select neuronal signals for analysis. For single cell (F,) OR multiple cells (N, F)
 
     :param s2p: suite 2p result
     :param n: neuron index or index array
     :param signal_type: signal type. :data:`~neuralib.calimg.suite2p.core.SIGNAL_TYPE` {'df_f', 'spks'}
-    :param normalize: do normalize
-    :param dff: do dff_signal
+    :param normalize: 01 normalization for each neuron
+    :param dff: normalize to the baseline fluorescence changed (dF/F)
     :param correct_neuropil: do the neuropil correction
     :param method: baseline calculation method {'maximin', 'constant', 'constant_prctile'}
-    :return:
-        signal
-        baseline signal
+    :return: tuple with (signal, baseline signal)
     """
     f = s2p.F[n]
     fneu = s2p.FNeu[n]
-    # TODO consider to use vb method to calculate baseline
+
     if signal_type == 'df_f':
 
         if dff:
             s1 = dff_signal(f, fneu, s2p, correct_neuropil, method).dff
-            # back to normal amplitude, since minus .7 itself (dff_signal)
-            # s2 = dff_signal(fneu, fneu, s2p, correct_neuropil, method) / 0.3
-            s2 = np.full_like(s1, 0)
+            s2 = np.full_like(s1, 0, dtype=int)
             if normalize:
                 o, f = normalize_signal_factor(s1)
                 s1 = (s1 - o) / f
@@ -72,7 +68,7 @@ def get_neuron_signal(s2p: Suite2PResult,
 
     elif signal_type == 'spks':
         s1 = s2p.spks[n]
-        s2 = np.full_like(s1, 0, dtype=np.double)  # TODO decovlved from df_f s2?
+        s2 = np.full_like(s1, 0, dtype=int)
 
         if normalize:
             s1 = normalize_signal(s1)
@@ -105,20 +101,30 @@ def normalize_signal_factor(s: np.ndarray, axis: int = -1) -> tuple[np.ndarray, 
 # ============ #
 
 class DFFSignal(NamedTuple):
-    """Container for dF/F signal processing"""
+    """Container for dF/F signal processing.
+
+    `Dimension parameters`:
+
+        N = number of neurons
+
+        F = number of frame
+
+    For single cell (F,) OR multiple cells (N, F)
+
+    """
 
     s2p: Suite2PResult
     """Suite2PResult"""
     f: np.ndarray
-    """fluorescence"""
+    """fluorescence. (F,) | (N, F)"""
     fneu: np.ndarray
-    """neuropil"""
+    """neuropil. (F,) | (N, F)"""
     fcorr: np.ndarray
-    """f used for dff calculation, could be either corrected by fneu"""
+    """f used for dff calculation, could be either corrected by fneu. (F,) | (N, F)"""
     f0: np.ndarray
-    """f0"""
+    """f0. (F,) | (N, F)"""
     dff: np.ndarray
-    """ dff after f0 normalization"""
+    """dff after f0 normalization. (F,) | (N, F)"""
 
     @property
     def dff_baseline(self) -> np.ndarray:
@@ -127,10 +133,10 @@ class DFFSignal(NamedTuple):
 
     @property
     def baseline_fluctuation(self) -> np.ndarray:
-        """get the fluctuation of the fneu signal
-        Perhaps not fully corrected and physiological reason
+        """get the fluctuation of the fneu signal (F,) | (N, F).
 
-        ** used to get the baseline std (i.e., trial reliability metric)
+        Perhaps not fully corrected with physiological reason.
+        **used to get the baseline std (i.e., trial reliability metric)**
         """
         fneu_corr = 0.3 * self.fneu
         fneu_bas = calc_signal_baseline(fneu_corr, self.s2p, method='maximin')
@@ -151,9 +157,9 @@ def dff_signal(f: np.ndarray,
                correct_neuropil: bool = True,
                method: BASELINE_METHOD = 'maximin') -> DFFSignal:
     """
-    df_f normalization, referred by suite2p, return df_f activity
+    df_f signal normalization container
 
-    :param f: neuron signal
+    :param f: neuron signal (F)
     :param fneu: neuropil signal
     :param s2p: Suite2PResult
     :param correct_neuropil: whether do the subtraction using neuropil
@@ -280,10 +286,10 @@ def _oasis(fcorr: np.ndarray,
            tau: float,
            fs: float) -> np.ndarray:
     """
-    computes non-negative deconvolution. no sparsity constraints
-    Adpated from suite2p
+    Computes non-negative deconvolution. no sparsity constraints
 
-    ..seealso::
+    .. seealso::
+
         suite2p.extraction.dcnv.preprocess
 
     :param fcorr: neuropil-subtracted, baseline-subtracted fluorescence, aka, fcorr - f0. (N, F)
