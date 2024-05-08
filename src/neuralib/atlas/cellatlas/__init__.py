@@ -7,7 +7,7 @@ cell atlas about cell types and volume information for each brain area
 .. seealso:: `<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010739#sec047>`_
 
 Example of loading the dataframe
----------------
+----------------------------------
 
 .. code-block:: python
 
@@ -32,7 +32,7 @@ output::
 
 
 Example of loading the sync dataframe between cellatlas/allen brain acronym
----------------
+------------------------------------------------------------------------------
 
 .. code-block:: python
 

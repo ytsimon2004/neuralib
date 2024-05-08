@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from pprint import pprint
 from typing import Literal, NamedTuple, Iterable
 
 import numpy as np
 import pandas as pd
 import polars as pl
 
+from neuralib.atlas.data import load_structure_tree
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.type import Source, HEMISPHERE_TYPE
 from neuralib.util.util_type import DataFrame
@@ -20,6 +22,7 @@ __all__ = [
     'iter_source_coordinates',
     'get_margin_merge_level',
     'roi_points_converter',
+    'create_allen_structure_dict'
 ]
 
 # allen CCF 10um volume coordinates, refer to allenCCF/Browsing Functions/allenCCFbregma.m
@@ -67,7 +70,7 @@ def iter_source_coordinates(
     :param to_brainrender: convert the coordinates to brain render
     :param to_um
     :param ret_order: whether specify the source generator order
-    :return :class:`SourceCoordinates`
+    :return: :class:`SourceCoordinates`
     """
     df = pl.read_csv(file)
     #
@@ -106,7 +109,7 @@ def get_margin_merge_level(df: pl.DataFrame,
     :param df: parsed csv
     :param areas: an area or a list of areas
     :param margin: get the either lowest of highest merge level for a given area
-    :return col name if parsed csv
+    :return: col name if parsed csv
     """
     if not isinstance(areas, (tuple, list)):
         areas = [areas]
@@ -170,3 +173,22 @@ def roi_points_converter(dat: DataFrame | np.ndarray,
         points += bregma  # roi relative to bregma
 
     return points
+
+
+def create_allen_structure_dict(verbose=False) -> dict[str, str]:
+    """
+    Get the acronym/name pairing from structure_tree.csv
+
+    :return: key: acronym; value: full name
+    """
+    tree = load_structure_tree()
+    tree = tree.select('name', 'acronym').sort('name')
+
+    ret = {
+        acry: name
+        for name, acry in tree.iter_rows()
+    }
+    if verbose:
+        pprint(ret)
+
+    return ret

@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import polars as pl
 
-from neuralib.atlas.allen import AllenReferenceWrapper
+from neuralib.atlas.data import load_structure_tree
 from neuralib.util.io import ATLAS_CACHE_DIRECTORY
 from neuralib.util.util_verbose import fprint
 
@@ -134,9 +134,7 @@ class CellAtlas:
         if not out.exists() or force_save:
             ctlas = cls.load_from_csv()
 
-            allen = (AllenReferenceWrapper.load_structure_tree()
-                     .select('name', 'acronym')
-                     .sort('name'))
+            allen = load_structure_tree().select('name', 'acronym').sort('name')
 
             df = (
                 ctlas.dataframe

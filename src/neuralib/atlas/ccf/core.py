@@ -10,9 +10,8 @@ import polars as pl
 from scipy.io import loadmat
 from scipy.io.matlab import MatlabOpaque
 
-from neuralib.atlas.allen import AllenReferenceWrapper
 from neuralib.atlas.util import PLANE_TYPE
-from neuralib.atlas.view import SlicePlane
+from neuralib.atlas.view import SlicePlane, load_slice_view
 from neuralib.util.util_type import PathLike
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import uglob, joinn
@@ -396,8 +395,7 @@ class CCFTransMatrix:
         return self.matrix.angle_xy
 
     def get_slice_plane(self) -> SlicePlane:
-        ret = (AllenReferenceWrapper
-               .load_slice_view('template', self.plane_type, self.resolution)
+        ret = (load_slice_view('ccf_template', self.plane_type, allen_annotation_res=self.resolution)
                .plane_at(self.slice_index))
 
         if np.any([a != 0 for a in self.matrix.angle_xy]):

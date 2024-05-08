@@ -7,8 +7,8 @@ neuralib.atlas
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
-    
-    neuralib.atlas.allen
+
+    neuralib.atlas.data
     neuralib.atlas.map
     neuralib.atlas.plot
     neuralib.atlas.type

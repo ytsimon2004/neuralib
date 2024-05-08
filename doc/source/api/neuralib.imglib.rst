@@ -12,4 +12,7 @@ neuralib.imglib
     neuralib.imglib.labeller
     neuralib.imglib.io
     neuralib.imglib.norm
+    neuralib.imglib.color
+    neuralib.imglib.transform
+
 
