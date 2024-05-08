@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-from io import BytesIO
 from pathlib import Path
 from pprint import pprint
 from typing import ClassVar, TypedDict, Literal
@@ -12,7 +11,8 @@ import pandas as pd
 import polars as pl
 from allensdk.core.reference_space_cache import ReferenceSpaceCache
 
-from neuralib.atlas.util import PLANE_TYPE, ALLEN_SOURCE_TYPE
+from neuralib.atlas.data import DATA_SOURCE_TYPE
+from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import AbstractSliceView
 from neuralib.util.io import CCF_CACHE_DIRECTORY
 from neuralib.util.tqdm import download_with_tqdm
@@ -23,6 +23,8 @@ from neuralib.util.utils import uglob
 __all__ = ['AllenReferenceWrapper',
            'create_allen_structure_dict']
 
+
+# TODO change script name to structure....
 
 class StructureTreeDict(TypedDict):
     """allen structure tree dict"""
@@ -133,13 +135,9 @@ class AllenReferenceWrapper:
     def get_structures_by_name(self, name: list[str]) -> list[StructureTreeDict]:
         return self.structure_tree().get_structures_by_name(name)
 
-    # ========== #
-    # Annotation #
-    # ========== #
-
     @classmethod
     def load_slice_view(cls,
-                        source: ALLEN_SOURCE_TYPE,
+                        source: DATA_SOURCE_TYPE,
                         plane_type: PLANE_TYPE,
                         resolution: int = 10) -> AbstractSliceView:
         """
@@ -150,6 +148,9 @@ class AllenReferenceWrapper:
         :param resolution: resolution in um
         :return: :class:`~neuralib.atlas.view.AbstractSliceView()`
         """
+
+        if not CCF_CACHE_DIRECTORY.exists():
+            CCF_CACHE_DIRECTORY.mkdir(exist_ok=True)
 
         if source in ('npy', 'nrrd'):
             pattern = f'annotation*{resolution}*.{source}'
@@ -177,61 +178,6 @@ class AllenReferenceWrapper:
             raise ValueError('')
 
         return AbstractSliceView(source, plane_type, resolution, data)
-
-    @classmethod
-    def _request_allen_src(cls, src_type: ALLEN_SOURCE_TYPE,
-                           resolution: int,
-                           dest: PathLike) -> Path:
-        """
-
-        :param src_type: ALLEN_SOURCE_TYPE = Literal['npy', 'nrrd', 'template']
-                * nrrd: source directly from Alleninstitute
-                    Seealso: https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/
-                * annotation / template: adapted version from cortex-lab
-                    Seealso: https://github.com/cortex-lab/allenCCF
-        :param resolution:
-        :param dest:
-        :return:
-        """
-
-        if src_type == 'nrrd':
-            from allensdk.api.queries.mouse_connectivity_api import MouseConnectivityApi
-            mcapi = MouseConnectivityApi()
-            version = MouseConnectivityApi.CCF_VERSION_DEFAULT
-            filename = f'annotation_{resolution}.nrrd'
-            mcapi.download_annotation_volume(version, resolution, dest / filename)
-            out = Path(dest) / filename
-            fprint(f'DOWNLOAD! {filename} in {dest}', vtype='io')
-
-        elif src_type in ('annotation', 'template'):
-
-            if src_type == 'annotation':
-                url = 'https://figshare.com/ndownloader/files/44925493'
-                filename = 'annotation_volume_10um_by_index.npy'
-            elif src_type == 'template':
-                url = 'https://figshare.com/ndownloader/files/44925496'
-                filename = 'template_volume_10um.npy'
-            else:
-                raise ValueError('')
-
-            out = Path(dest) / filename
-            fprint(f'DOWNLOADING... {filename} from {url}', vtype='io')
-
-            resp = download_with_tqdm(url)
-            if resp.status_code == 200:
-                fprint(f'DOWNLOAD! {filename} in {dest}', vtype='io')
-
-                with BytesIO(resp.content) as f:
-
-                    data = np.load(f, allow_pickle=True)
-                np.save(out, data)
-
-            else:
-                raise RuntimeError('download allen src FAIL!')
-        else:
-            raise ValueError('')
-
-        return out
 
     # ====== #
     # Others #

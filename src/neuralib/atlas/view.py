@@ -11,7 +11,8 @@ from matplotlib.image import AxesImage
 from matplotlib.transforms import CompositeGenericTransform
 from typing_extensions import Self
 
-from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA, ALLEN_SOURCE_TYPE
+from neuralib.atlas.data import DATA_SOURCE_TYPE
+from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
 from neuralib.plot import plot_figure
 
@@ -22,7 +23,7 @@ __all__ = [
 
 
 class AbstractSliceView(metaclass=abc.ABCMeta):
-    source_type: Final[ALLEN_SOURCE_TYPE]
+    source_type: Final[DATA_SOURCE_TYPE]
     plane_type: Final[PLANE_TYPE]
     resolution: Final[int]
     """um/pixel"""
@@ -34,7 +35,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
 
     reference_verbose: str = ''
 
-    def __new__(cls, source_type: ALLEN_SOURCE_TYPE,
+    def __new__(cls, source_type: DATA_SOURCE_TYPE,
                 plane: PLANE_TYPE,
                 resolution: int,
                 reference: np.ndarray):
@@ -47,7 +48,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         else:
             raise ValueError('')
 
-    def __init__(self, source_type: ALLEN_SOURCE_TYPE,
+    def __init__(self, source_type: DATA_SOURCE_TYPE,
                  plane: PLANE_TYPE,
                  resolution: int,
                  reference: np.ndarray):

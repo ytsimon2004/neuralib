@@ -1,4 +1,5 @@
 import contextlib
+from io import BytesIO
 from typing import ContextManager
 
 import requests
@@ -8,23 +9,27 @@ __all__ = ['download_with_tqdm',
            'tqdm_joblib']
 
 
-def download_with_tqdm(url: str) -> requests.Response:
+def download_with_tqdm(url: str) -> BytesIO:
     """download url with tqdm bar
     Use in large file downloading,
 
     :param url: download URL
-    :return: A `requests.Response` object from the requests library. See the `requests`
-             documentation at https://requests.readthedocs.io/ for more details.
+    :return: BytesIO
     """
     resp = requests.get(url, stream=True)
     resp.raise_for_status()
     file_size = int(resp.headers.get('content-length', 0))
     progress_bar = tqdm(total=file_size, unit='iB', unit_scale=True)
+    content_stream = BytesIO()
 
     for data in resp.iter_content(chunk_size=1024):
+        content_stream.write(data)
         progress_bar.update(len(data))
 
-    return resp
+    progress_bar.close()
+    content_stream.seek(0)
+
+    return content_stream
 
 
 @contextlib.contextmanager

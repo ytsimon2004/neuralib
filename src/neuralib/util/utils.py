@@ -33,8 +33,11 @@ def uglob(directory: PathLike,
     if not isinstance(directory, Path):
         directory = Path(directory)
 
+    if not directory.exists():
+        raise FileNotFoundError(f'{directory} not exit')
+
     if not directory.is_dir():
-        raise ValueError(f'{directory} is not a directory')
+        raise NotADirectoryError(f'{directory} is not a directory')
 
     f = list(directory.glob(pattern))
 
