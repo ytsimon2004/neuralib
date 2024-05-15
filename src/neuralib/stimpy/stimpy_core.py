@@ -11,7 +11,6 @@ from typing_extensions import Self
 from neuralib.plot.figure import plot_figure
 from neuralib.util.util_type import PathLike
 from neuralib.util.util_verbose import fprint
-from neuralib.util.utils import deprecated
 from .baselog import Baselog, LOG_SUFFIX, StimlogBase
 from .baseprot import AbstractStimProtocol
 from .session import Session, SessionInfo, get_protocol_sessions
@@ -57,28 +56,29 @@ class RiglogData(Baselog):
 
         return np.load(output)
 
-    @deprecated(reason='caller rare')
-    def session_handler(self, session: str | tuple[str, ...]) -> tuple[float, float]:
-        """trigger `select_time_range` for specific time range"""
-        strial = self.stimlog_data().session_trials()
+    def with_sessions(self, session: Session | tuple[Session, ...]) -> Self:
+        """
+        Truncate the instance `dat` with the given session(s)
+
+        :param session: session name(s)
+        :return:
+        """
+        dy = self.stimlog_data().session_trials()
+
         if isinstance(session, str):
-            t0, t1 = strial[session].time
+            t0, t1 = dy[session].time
         elif isinstance(session, tuple):
-            t_all = [strial[s].time for s in session]
+            t_all = np.array([dy[s].time for s in session])
             t0, t1 = np.min(t_all), np.max(t_all)
             fprint(f'get trange from multiple sessions, {session}: t0:{t0}, t1:{t1}')
         else:
-            raise TypeError(f'{type(session)}')
+            raise TypeError('')
 
-        self.select_time_range(t0, t1)
-
-        return t0, t1
-
-    def select_time_range(self, t0: float, t1: float):
-        """overwrite the `instance attr: data` to given time range"""
         t = self.dat[:, 2] / 1000
         mask = np.logical_and(t0 < t, t < t1)
         self.dat = self.dat[mask]
+
+        return self
 
     @property
     def stimlog_file(self) -> Path:
@@ -452,10 +452,11 @@ def diode_time_offset(rig: RiglogData,
     #
     avg_t = float(np.mean(t))
     std_t = float(np.std(t))
+
     if not (0 <= avg_t <= 1):
         fprint(f'{avg_t} too large, might not be properly calculated, check...', vtype='warning')
 
-    fprint(f'avg: {avg_t}, std: {std_t}')
+    fprint(f'DIODE OFFSET avg: {avg_t}s, std: {std_t}s')
 
     if return_sequential:
         return t
