@@ -21,7 +21,7 @@ __all__ = [
     'BrainReconstructor',
 ]
 
-ROI_COLORS = ['purple', 'gold', 'grey']
+ROI_COLORS = ['magenta', 'gold', 'grey']
 DEFAULT_REGION_COLORS = ['lightblue', 'pink', 'turquoise']
 CAMERA_ANGLE_TYPE = Literal['sagittal', 'sagittal2', 'frontal', 'top', 'top_side', 'three_quarters']
 SHADER_STYLE_TYPE = Literal['metallic', 'cartoon', 'plastic', 'shiny', 'glossy']
