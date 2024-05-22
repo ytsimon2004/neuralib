@@ -56,9 +56,14 @@ class IBLAtlasPlotWrapper(AllenAtlas):
         self._alpha = alpha
 
     def get_acronym_list(self, mapping: IBL_MAPPING_TYPE) -> list[str]:
-        """get acronym list"""
+        """get acronym list from different mapping type
+
+        :param mapping: `IBL_MAPPING_TYPE`
+        """
+        idx = np.unique(self.regions.mappings[mapping])
         # noinspection PyUnresolvedReferences
-        return list(self.regions.acronym[self.regions.mappings[mapping]])
+        return self.regions.acronym[idx]
+        # return list(self.regions.acronym[self.regions.mappings[mapping]])
 
     def plot_scalar_on_slice(
             self,
@@ -117,6 +122,10 @@ class IBLAtlasPlotWrapper(AllenAtlas):
 
         if auto_merge:
             regions = np.unique(self.regions.acronym2acronym(regions, mapping=mapping))
+
+            if any([r not in self.get_acronym_list(mapping) for r in regions]):
+                raise RuntimeError('auto merging error')
+
             values = np.arange(regions.size)
 
         if verbose:
