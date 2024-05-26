@@ -497,8 +497,7 @@ def load_stimlog(file: PathLike, string_key: bool = True) -> dict[str | int, pl.
         log = load_stimlog(file, string_key=False)  # get dataframe using code int
         print(log[1])
 
-
-    :param file:
+    :param file: file path for the .stimlog
     :param string_key: show key as str type, otherwise, int type
     :return: Code:DataFrame dictionary
     """
