@@ -135,6 +135,13 @@ class SqlpTableTest(unittest.TestCase):
             Person('Alice', 18),
         ], results)
 
+    def test_pull_foreign(self):
+        from neuralib.sqlp.util import pull_foreign
+        results = pull_foreign(Account, Person('Alice', 18)).fetchall()
+        self.assertListEqual([
+            Account('V', 'Alice', 1000),
+            Account('M', 'Alice', 200),
+        ], results)
 
 class SqlTableOtherTest(unittest.TestCase):
     def assert_sql_state_equal(self, a: str, b: str):
