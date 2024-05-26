@@ -5,8 +5,6 @@ neuralib package
     :maxdepth: 1
     :caption: Modules:
 
-    neuralib.argp
-    neuralib.atlas
     neuralib.atlas.brainrender
     neuralib.atlas.ccf
     neuralib.atlas.cellatlas
@@ -19,7 +17,6 @@ neuralib package
     neuralib.calimg.suite2p
     neuralib.imglib
     neuralib.model
-    neuralib.persistence
     neuralib.plot
     neuralib.scanner
     neuralib.segmentation
@@ -32,3 +29,15 @@ neuralib package
     neuralib.wrapper.deeplabcut
     neuralib.wrapper.facemap
     neuralib.wrapper.rastermap
+
+Utilities Modules
+-----------------
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Modules:
+
+    neuralib.argp
+    neuralib.persistence
+    neuralib.sqlp

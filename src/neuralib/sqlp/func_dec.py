@@ -20,7 +20,6 @@ def as_func_expr(f=None, *, func=expr.SqlFuncOper):
 
         for n, p in s.parameters.items():
             if p.kind == inspect.Parameter.VAR_POSITIONAL:
-                assert len(para) == 0
                 para.append('*' + n)
                 n_none = -1
                 break
@@ -33,8 +32,7 @@ def as_func_expr(f=None, *, func=expr.SqlFuncOper):
                 raise RuntimeError()
 
         if n_none == -1:
-            assert len(para) == 1
-            args = para[0]
+            args = ', '.join(para)
             code = [f'return SqlFuncOper("{func_name}", {args})']
         elif n_none == 0:
             args = ', '.join(para)

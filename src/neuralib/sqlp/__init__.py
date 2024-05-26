@@ -5,6 +5,7 @@ SQL statement builder
 :author:
     Ta-Shun Su
 
+This module provide a Python functions to build a SQL (sqlite3) statement.
 """
 from . import util
 from .cli import Database
