@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any, Callable, final
 
 import numpy as np
@@ -14,7 +15,8 @@ from .session import Session, SessionInfo, get_protocol_sessions
 from .stimpy_core import RiglogData, StimpyProtocol
 from .stimulus import StimPattern
 
-__all__ = ['StimlogGit']
+__all__ = ['StimlogGit',
+           'load_stimlog']
 
 
 # TODO code 0 options need to be extended
@@ -181,9 +183,8 @@ class StimlogGit(StimlogBase):
                 log_data.setdefault(code, []).append((time, *value))
 
         elif self.log_info[code] == 'StateMachine':
-            # [<States.SHOW_STIM: 2>, <States.SHOW_BLANK: 1>]
             value = eval(message.replace('<', '("').replace(':', '",').replace('>', ')'))
-            # [("States.SHOW_STIM", 2), ("States.SHOW_BLANK", 1)]
+            value = list(map(str, value))
             if len(self.log_header[code]) != len(value):
                 print(f'log category {code} size mismatched at line {line} : {message}')
             else:
@@ -232,17 +233,20 @@ class StimlogGit(StimlogBase):
 
     def get_visual_presentation_dataframe(self) -> pl.DataFrame:
         """
-        ┌────────────┬──────────┬──────────┬─────┬───┬──────┬─────┬──────┬─────────┐
-        │ time       ┆ duration ┆ contrast ┆ ori ┆ … ┆ sf   ┆ tf  ┆ opto ┆ pattern │
-        │ ---        ┆ ---      ┆ ---      ┆ --- ┆   ┆ ---  ┆ --- ┆ ---  ┆ ---     │
-        │ f64        ┆ i64      ┆ i64      ┆ i64 ┆   ┆ f64  ┆ i64 ┆ i64  ┆ str     │
-        ╞════════════╪══════════╪══════════╪═════╪═══╪══════╪═════╪══════╪═════════╡
-        │ 18.990026  ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 10  ┆ 0    ┆ square  │
-        │ 21.000029  ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 10  ┆ 0    ┆ square  │
-        │ …          ┆ …        ┆ …        ┆ …   ┆ … ┆ …    ┆ …   ┆ …    ┆ …       │
-        │ 619.054972 ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 50  ┆ 0    ┆ square  │
-        │ 619.084972 ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 50  ┆ 0    ┆ square  │
-        └────────────┴──────────┴──────────┴─────┴───┴──────┴─────┴──────┴─────────┘
+        Visual presentation dataframe::
+
+            ┌────────────┬──────────┬──────────┬─────┬───┬──────┬─────┬──────┬─────────┐
+            │ time       ┆ duration ┆ contrast ┆ ori ┆ … ┆ sf   ┆ tf  ┆ opto ┆ pattern │
+            │ ---        ┆ ---      ┆ ---      ┆ --- ┆   ┆ ---  ┆ --- ┆ ---  ┆ ---     │
+            │ f64        ┆ i64      ┆ i64      ┆ i64 ┆   ┆ f64  ┆ i64 ┆ i64  ┆ str     │
+            ╞════════════╪══════════╪══════════╪═════╪═══╪══════╪═════╪══════╪═════════╡
+            │ 18.990026  ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 10  ┆ 0    ┆ square  │
+            │ 21.000029  ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 10  ┆ 0    ┆ square  │
+            │ …          ┆ …        ┆ …        ┆ …   ┆ … ┆ …    ┆ …   ┆ …    ┆ …       │
+            │ 619.054972 ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 50  ┆ 0    ┆ square  │
+            │ 619.084972 ┆ 10       ┆ 1        ┆ 0   ┆ … ┆ 0.04 ┆ 50  ┆ 0    ┆ square  │
+            └────────────┴──────────┴──────────┴─────┴───┴──────┴─────┴──────┴─────────┘
+
         :return:
         """
         df = pl.DataFrame().with_columns(
@@ -265,17 +269,20 @@ class StimlogGit(StimlogBase):
 
     def get_photo_indicator_dataframe(self) -> pl.DataFrame:
         """
-        ┌────────────┬───────┬──────┬────────────┬───────┬──────┬────────┬────────┐
-        │ time       ┆ state ┆ size ┆ pos        ┆ units ┆ mode ┆ frames ┆ enable │
-        │ ---        ┆ ---   ┆ ---  ┆ ---        ┆ ---   ┆ ---  ┆ ---    ┆ ---    │
-        │ f64        ┆ bool  ┆ i64  ┆ list[i64]  ┆ str   ┆ i64  ┆ i64    ┆ bool   │
-        ╞════════════╪═══════╪══════╪════════════╪═══════╪══════╪════════╪════════╡
-        │ 18.990026  ┆ false ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
-        │ 21.000029  ┆ true  ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
-        │ …          ┆ …     ┆ …    ┆ …          ┆ …     ┆ …    ┆ …      ┆ …      │
-        │ 607.094955 ┆ false ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
-        │ 609.104958 ┆ true  ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
-        └────────────┴───────┴──────┴────────────┴───────┴──────┴────────┴────────┘
+        PhotoDiode dataframe::
+
+            ┌────────────┬───────┬──────┬────────────┬───────┬──────┬────────┬────────┐
+            │ time       ┆ state ┆ size ┆ pos        ┆ units ┆ mode ┆ frames ┆ enable │
+            │ ---        ┆ ---   ┆ ---  ┆ ---        ┆ ---   ┆ ---  ┆ ---    ┆ ---    │
+            │ f64        ┆ bool  ┆ i64  ┆ list[i64]  ┆ str   ┆ i64  ┆ i64    ┆ bool   │
+            ╞════════════╪═══════╪══════╪════════════╪═══════╪══════╪════════╪════════╡
+            │ 18.990026  ┆ false ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
+            │ 21.000029  ┆ true  ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
+            │ …          ┆ …     ┆ …    ┆ …          ┆ …     ┆ …    ┆ …      ┆ …      │
+            │ 607.094955 ┆ false ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
+            │ 609.104958 ┆ true  ┆ 60   ┆ [740, 370] ┆ pix   ┆ 0    ┆ 20     ┆ true   │
+            └────────────┴───────┴──────┴────────────┴───────┴──────┴────────┴────────┘
+
         :return:
         """
         df = pl.DataFrame().with_columns(
@@ -292,17 +299,20 @@ class StimlogGit(StimlogBase):
 
     def get_state_machine_dataframe(self) -> pl.DataFrame:
         """
-        ┌────────────┬───────────────────────────┬───────────────────────────┐
-        │ time       ┆ state                     ┆ prev_state                │
-        │ ---        ┆ ---                       ┆ ---                       │
-        │ f64        ┆ object                    ┆ object                    │
-        ╞════════════╪═══════════════════════════╪═══════════════════════════╡
-        │ 18.990026  ┆ ('States.SHOW_BLANK', 1)  ┆ ('States.STIM_SELECT', 0) │
-        │ 20.990029  ┆ ('States.SHOW_STIM', 2)   ┆ ('States.SHOW_BLANK', 1)  │
-        │ …          ┆ …                         ┆ …                         │
-        │ 609.094958 ┆ ('States.SHOW_STIM', 2)   ┆ ('States.SHOW_BLANK', 1)  │
-        │ 619.094972 ┆ ('States.STIM_SELECT', 0) ┆ ('States.SHOW_STIM', 2)   │
-        └────────────┴───────────────────────────┴───────────────────────────┘
+        State Machine dataframe::
+
+            ┌────────────┬───────────────────────────┬───────────────────────────┐
+            │ time       ┆ state                     ┆ prev_state                │
+            │ ---        ┆ ---                       ┆ ---                       │
+            │ f64        ┆ str                       ┆ str                       │
+            ╞════════════╪═══════════════════════════╪═══════════════════════════╡
+            │ 18.990026  ┆ ('States.SHOW_BLANK', 1)  ┆ ('States.STIM_SELECT', 0) │
+            │ 20.990029  ┆ ('States.SHOW_STIM', 2)   ┆ ('States.SHOW_BLANK', 1)  │
+            │ …          ┆ …                         ┆ …                         │
+            │ 609.094958 ┆ ('States.SHOW_STIM', 2)   ┆ ('States.SHOW_BLANK', 1)  │
+            │ 619.094972 ┆ ('States.STIM_SELECT', 0) ┆ ('States.SHOW_STIM', 2)   │
+            └────────────┴───────────────────────────┴───────────────────────────┘
+
         :return:
         """
         df = pl.DataFrame().with_columns(
@@ -314,17 +324,20 @@ class StimlogGit(StimlogBase):
 
     def get_log_dict_dataframe(self) -> pl.DataFrame:
         """
-        ┌────────────┬──────────┬──────────┬──────────────┬────────────┐
-        │ time       ┆ block_nr ┆ trial_nr ┆ condition_nr ┆ trial_type │
-        │ ---        ┆ ---      ┆ ---      ┆ ---          ┆ ---        │
-        │ f64        ┆ i64      ┆ i64      ┆ i64          ┆ i64        │
-        ╞════════════╪══════════╪══════════╪══════════════╪════════════╡
-        │ 18.990026  ┆ 0        ┆ 0        ┆ 0            ┆ 1          │
-        │ 30.990043  ┆ 1        ┆ 0        ┆ 0            ┆ 1          │
-        │ …          ┆ …        ┆ …        ┆ …            ┆ …          │
-        │ 595.083939 ┆ 48       ┆ 0        ┆ 0            ┆ 1          │
-        │ 607.094955 ┆ 49       ┆ 0        ┆ 0            ┆ 1          │
-        └────────────┴──────────┴──────────┴──────────────┴────────────┘
+        Log Dict DataFrame::
+
+            ┌────────────┬──────────┬──────────┬──────────────┬────────────┐
+            │ time       ┆ block_nr ┆ trial_nr ┆ condition_nr ┆ trial_type │
+            │ ---        ┆ ---      ┆ ---      ┆ ---          ┆ ---        │
+            │ f64        ┆ i64      ┆ i64      ┆ i64          ┆ i64        │
+            ╞════════════╪══════════╪══════════╪══════════════╪════════════╡
+            │ 18.990026  ┆ 0        ┆ 0        ┆ 0            ┆ 1          │
+            │ 30.990043  ┆ 1        ┆ 0        ┆ 0            ┆ 1          │
+            │ …          ┆ …        ┆ …        ┆ …            ┆ …          │
+            │ 595.083939 ┆ 48       ┆ 0        ┆ 0            ┆ 1          │
+            │ 607.094955 ┆ 49       ┆ 0        ┆ 0            ┆ 1          │
+            └────────────┴──────────┴──────────┴──────────────┴────────────┘
+
         :return:
         """
         df = pl.DataFrame().with_columns(
@@ -468,3 +481,77 @@ def _time_offset(rig: RiglogData,
     fprint(f'offset_std: {round(offset_t_std, 3)}')
 
     return offset_t_avg, offset_t_std
+
+
+def load_stimlog(file: PathLike, string_key: bool = True) -> dict[str | int, pl.DataFrame]:
+    """
+    Load directly the stimlog file (without riglog time offset), and parse data as polars dataframes
+
+    .. code-block:: python
+
+        file = ...
+
+        log = load_stimlog(file, string_key=True)  # get dataframe using keyname
+        print(log['PhotoIndicator'])
+
+        log = load_stimlog(file, string_key=False)  # get dataframe using code int
+        print(log[1])
+
+
+    :param file:
+    :param string_key: show key as str type, otherwise, int type
+    :return: Code:DataFrame dictionary
+    """
+
+    log_info = {}
+    log_header = {}
+    log_data = {}
+
+    with Path(file).open() as f:
+        for line, content in enumerate(f):
+            content = content.strip()
+
+            #
+            m = re.match(r'#+ (.+?)\s*:\s*(.+)', content)
+            if m:
+                info_name = m.group(1)
+                info_value = m.group(2)
+                try:
+                    code = int(info_name)
+                except ValueError:
+                    continue
+                else:
+                    name, header = info_value.split(' ', maxsplit=1)
+                    header = eval(header)
+                    log_info[code] = name
+                    log_header[code] = header
+
+            elif content.startswith('#'):
+                print(f'ignore header line at {line + 1} : {content}')
+                continue
+
+            else:  # data
+                code, time, message = content.split(' ', maxsplit=2)
+                code = int(code)
+                time = float(time)
+
+                if log_info[code] == 'StateMachine':
+                    value = eval(message.replace('<', '("').replace(':', '",').replace('>', ')'))
+                    value = list(map(str, value))
+                    if len(log_header[code]) != len(value):
+                        print(f'log category {code} size mismatched at line {line} : {message}')
+                    else:
+                        log_data.setdefault(code, []).append((time, *value))
+
+                else:
+                    value = eval(message)
+                    if len(log_header[code]) != len(value):
+                        print(f'log category {code} size mismatched at line {line} : {message}')
+                    else:
+                        log_data.setdefault(code, []).append((time, *value))
+
+        return {
+            (log_info[code] if string_key else code):
+                pl.DataFrame(log_data[code], schema=['time'] + log_header[code], strict=False)
+            for code in log_data
+        }

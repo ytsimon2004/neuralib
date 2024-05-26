@@ -111,15 +111,16 @@ class PreferenceDict(TypedDict, total=False):
     _controllers_folder_read_flag: bool
 
 
-def load_preferences(file: PathLike) -> PreferenceDict:
+def load_preferences(file: PathLike, check_suffix: bool = True) -> PreferenceDict:
     """
     Get stimpy output(parsed) preference file as dict
 
-    :param file: filepath for the .pref
+    :param file: filepath for the .pref or .prefs
+    :param check_suffix: if check the file suffix
     :return: :class:`PreferenceDict`
     """
-    if Path(file).suffix != '.pref':
-        raise ValueError('invalid file type')
+    if check_suffix and Path(file).suffix not in ('.pref', '.prefs'):
+        raise ValueError(f'invalid file type: {Path(file).suffix}')
 
     with open(file, "r") as file:
         return json.load(file)

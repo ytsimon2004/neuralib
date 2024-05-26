@@ -156,7 +156,6 @@ def _hist_line_plot(ax,
     """
 
     if ptype == 'mean':
-
         a, edg = np.histogram(x, weights=y, bins=bins)
         n = np.histogram(x, bins)[0]  # (B, )
 
