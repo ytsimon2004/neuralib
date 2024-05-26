@@ -33,8 +33,8 @@ class Database(metaclass=abc.ABCMeta):
 
     def open_connection(self) -> Connection:
         """
-                open a connection to the database.
-                """
+        open a connection to the database.
+        """
         if (database_file := self.database_file) is None:
             database_file = ':memory:'
         else:
@@ -68,6 +68,8 @@ class Database(metaclass=abc.ABCMeta):
         ...         self.do_something()
 
         """
+
+        # TODO rollback?
 
         def _decorator(f):
             @functools.wraps(f)

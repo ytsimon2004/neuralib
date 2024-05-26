@@ -1,14 +1,12 @@
 """
-SQLp
-====
+SQL statement builder
+=====================
 
-Incubator module
-----------------
-
-It is an incubator module.
+:author:
+    Ta-Shun Su
 
 """
-from . import util, alter
+from . import util
 from .cli import Database
 from .connection import *
 from .expr import SqlExpr

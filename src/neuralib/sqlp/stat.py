@@ -184,6 +184,18 @@ class SqlWhereStat(SqlStat[T], Generic[T]):
     """statement with **WHERE** support."""
 
     def where(self, *expr: SqlExpr | Any | None) -> Self:
+        """
+        ``WHERE`` clause: https://www.sqlite.org/lang_select.html#whereclause
+
+        >>> select_from(A).where( # doctest: SKIP
+        ...     A.a == 1, A.b == 2
+        ... ).build()
+        SELECT * FROM A
+        WHERE (A.a = 1) AND (A.b = 2)
+
+        :param expr:
+        :return:
+        """
         expr = [it for it in expr if it is not None]
         if len(expr):
             from .func_stat import and_
@@ -251,15 +263,12 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
 
     def limit(self, *args: int) -> Self:
         """
-        limit the results.
+        ``LIMIT``: https://www.sqlite.org/lang_select.html#limitoffset
 
-        ```SQL
-        LIMIT :n
-        -- or
-        LIMIT :row_count OFFSET :offset
-        ```
-
-        :param n:
+        >>> select_from(A).limit(10).build() # doctest: SKIP
+        SELECT * FROM A LIMIT 10
+        >>> select_from(A).limit(10, 10).build() # doctest: SKIP
+        SELECT * FROM A LIMIT 10 OFFSET 10
 
         """
         if len(args) == 1:
@@ -274,11 +283,19 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
 
     def order_by(self, *by: int | str | SqlExpr | Any) -> Self:
         """
-        ordering results.
+        ``ORDER BY``: https://www.sqlite.org/lang_select.html#orderby
 
-        ```SQL
-        ORDER BY :by ...
-        ```
+        >>> select_from(A).order_by(A.a).build() # doctest: SKIP
+        SELECT * FROM A ORDER BY A.
+
+        **possible ordering**
+
+        >>> select_from(A).order_by( # doctest: SKIP
+        ...     asc(A.a), desc(A.b), nulls_first(A.c), asc(A.d).nulls_last(),
+        ... )
+        SELECT * FROM A ORDER BY
+        A.a ASC, A.b DESC, A.c NULLS FIRST, A.d ASC NULLS LAST
+
         """
 
         self.add('ORDER BY')
@@ -331,11 +348,12 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
     def join(self, table: type[S] | SqlSelectStat[S] | SqlAlias[S], *,
              by: Literal['left', 'right', 'inner', 'full outer', 'cross'] = None):
         """
-        join another select statement.
+        ``JOIN`` https://www.sqlite.org/lang_select.html#strange_join_names
 
-        ```SQL
-        :by JOIN :table
-        ```
+        >>> select_from(A.a, B.b).join(B).on(A.a == B.a) # doctest: SKIP
+        SELECT A.a, B.b FROM A
+        JOIN B ON A.a = B.a
+
         """
         if by is not None:
             self.add([by.upper(), 'JOIN'])
@@ -359,6 +377,9 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
         return SqlJoinStat(self)
 
     def group_by(self, *by) -> Self:
+        """
+        ``GROUP BY`` https://www.sqlite.org/lang_select.html#resultset
+        """
         if len(by) == 0:
             raise RuntimeError()
 
@@ -384,6 +405,9 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
         return self
 
     def having(self, *exprs: bool | SqlExpr) -> Self:
+        """
+        ``HAVING`` https://www.sqlite.org/lang_select.html#resultset
+        """
         if len(exprs) == 0:
             return self
 
@@ -394,15 +418,24 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
         return self
 
     def intersect(self, stat: SqlStat) -> Self:
+        """
+        ``INTERSECT`` https://www.sqlite.org/lang_select.html#compound_select_statements
+        """
         self.add('INTERSECT')
         self.add(stat._stat, *stat._para)
         stat._connection = None
         return self
 
     def __and__(self, other: SqlStat) -> Self:
+        """
+        ``INTERSECT`` https://www.sqlite.org/lang_select.html#compound_select_statements
+        """
         return self.intersect(other)
 
     def union(self, stat: SqlStat, all=False) -> Self:
+        """
+        ``UNION`` https://www.sqlite.org/lang_select.html#compound_select_statements
+        """
         self.add('UNION')
         if all:
             self.add('ALL')
@@ -411,15 +444,24 @@ class SqlSelectStat(SqlWhereStat[T], Generic[T]):
         return self
 
     def __or__(self, other: SqlStat) -> Self:
+        """
+        ``UNION`` https://www.sqlite.org/lang_select.html#compound_select_statements
+        """
         return self.union(other)
 
     def except_(self, stat: SqlStat) -> Self:
+        """
+        ``EXCEPT`` https://www.sqlite.org/lang_select.html#compound_select_statements
+        """
         self.add('EXCEPT')
         self.add(stat._stat, *stat._para)
         stat._connection = None
         return self
 
     def __sub__(self, other: SqlStat) -> Self:
+        """
+        ``EXCEPT`` https://www.sqlite.org/lang_select.html#compound_select_statements
+        """
         return self.except_(other)
 
 
@@ -540,8 +582,8 @@ class SqlInsertStat(SqlStat[T], Generic[T]):
 @overload
 def select_from(table: type[T], *, distinct: bool = False) -> SqlSelectStat[T]:
     """
-   >>> select_from(Table) # SELECT * FROM Table
-   """
+    >>> select_from(Table) # SELECT * FROM Table
+    """
     pass
 
 
@@ -549,13 +591,76 @@ def select_from(table: type[T], *, distinct: bool = False) -> SqlSelectStat[T]:
 def select_from(*field, distinct: bool = False,
                 from_table: Union[str, type, SqlAlias, SqlSelectStat] = None) -> SqlSelectStat[tuple]:
     """
-   >>> select_from('a', 'b') # SELECT a, b FROM Table
-   """
+    >>> select_from('a', 'b') # SELECT a, b FROM Table
+    """
     pass
 
 
 def select_from(*args, distinct: bool = False,
                 from_table: Union[str, type, SqlAlias, SqlSelectStat] = None) -> SqlSelectStat:
+    """
+    ``SELECT``: https://www.sqlite.org/lang_select.html
+
+    Select all fields from a table
+
+    >>> select_from(A).build() # doctest: SKIP
+    SELECT * FROM A
+    >>> select_from(A).fetchall() # doctest: SKIP
+    [A(...), A(...), ...]
+
+    Select subset of fields from A
+
+    >>> select_from(A.a, A.b).build() # doctest: SKIP
+    SELECT A.a, A.b FROM A
+    >>> select_from(A.a, A.b).fetchall() # doctest: SKIP
+    [('a', 1), ('b', 2), ...]
+
+    With a literal value
+
+    >>> select_from(A.a, 0).build() # doctest: SKIP
+    SELECT A.a, 0 FROM A
+    >>> select_from(A.a, 0).fetchall() # doctest: SKIP
+    [('a', 0), ('b', 0), ...]
+
+    With SQL functions
+
+    >>> select_from(A.a, count()).build() # doctest: SKIP
+    SELECT A.a, COUNT(*) FROM A
+
+    Use table alias
+
+    >>> a = alias(A, 'a') # doctest: SKIP
+    >>> select_from(a.a).build() # doctest: SKIP
+    SELECT a.a from A a
+
+    **join other tables
+
+    >>> select_from(A.a, B.b).join(B).on(A.c == B.c).build() # doctest: SKIP
+    SELECT A.a, B.b FROM A JOIN B ON A.c = B.c
+
+    **features supporting**
+
+    * `SELECT DISTINCT`
+    * `FROM`
+    * `WHERE`
+    * `GROUP BY`
+    * `HAVING`
+    * `WINDOW`
+    * compound-operator: `UNION [ALL]`, `INTERSECT` and `EXCEPT`
+    * `ORDER BY`
+    * `LIMIT [OFFSET]`
+
+    **features not supporting**
+
+    * `WITH [RECURSIVE]`
+    * `SELECT ALL`
+    * `VALUES`
+
+    :param args:
+    :param distinct:
+    :param from_table:
+    :return:
+    """
     pre_stat = ['SELECT']
     if distinct:
         pre_stat.append('DISTINCT')
@@ -677,6 +782,45 @@ def _select_from_fields(*args) -> tuple[type, list[Field]]:
 
 
 def insert_into(table: type[T], *, policy: UPDATE_POLICY = None, named=False) -> SqlInsertStat[T]:
+    """
+    ``INSERT``: https://www.sqlite.org/lang_insert.html
+
+    insert values
+
+    >>> insert_into(A, policy='REPLACE').build() # doctest: SKIP
+    INSERT OR REPLACE INTO A VALUES (?)
+    >>> insert_into(A, policy='REPLACE').submit([A(1), A(2)]) # doctest: SKIP
+
+    insert values with field overwrite
+
+    >>> insert_into(A, policy='REPLACE').values(a='1').build() # doctest: SKIP
+    INSERT OR REPLACE INTO A VALUES (1)
+
+    insert values from a table
+
+    >>> insert_into(A, policy='IGNORE').select_from(B).build() # doctest: SKIP
+    INSERT OR IGNORE INTO A
+    SELECT * FROM B
+
+    **features supporting**
+
+    * `INSERT [OR ...]`
+    * `VALUES`
+    * `SELECT`
+
+    **features not supporting**
+
+    * `WITH [RECURSIVE]`
+    * `REPLACE`
+    * `DEFAULT VALUES`
+    * upsert clause
+    * returning clause
+
+    :param table:
+    :param policy:
+    :param named:
+    :return:
+    """
     self = SqlInsertStat(table, named=named)
     self.add('INSERT')
     if policy is not None:
@@ -686,6 +830,32 @@ def insert_into(table: type[T], *, policy: UPDATE_POLICY = None, named=False) ->
 
 
 def update(table: type[T], *args: bool, **kwargs) -> SqlWhereStat[T]:
+    """
+    ``UPDATE``: https://www.sqlite.org/lang_update.html
+
+    >>> update(A, A.a==1).where(A.b==2).build() # doctest: SKIP
+    UPDATE A SET A.a = 1 WHERE A.b = 2
+
+     **features supporting**
+
+    * `UPDATE [OR ...]`
+    * `SET COLUMN = EXPR`
+    * `FROM`
+    * `WHERE`
+
+    **features not supporting**
+
+    * `WITH [RECURSIVE]`
+    * (qualified table name) `INDEXED BY`
+    * (qualified table name) `NOT INDEXED`
+    * `SET (COLUMNS) = EXPR`
+    * returning clause
+
+    :param table:
+    :param args:
+    :param kwargs:
+    :return:
+    """
     self = SqlWhereStat(table)
     self.add(['UPDATE', table_name(table), 'SET'])
 
@@ -705,6 +875,29 @@ def update(table: type[T], *args: bool, **kwargs) -> SqlWhereStat[T]:
 
 
 def delete_from(table: type[T]) -> SqlWhereStat[T]:
+    """
+    ``DELETE``: https://www.sqlite.org/lang_delete.html
+
+    >>> delete_from(A).where(A.b > 2).build()  # doctest: SKIP
+    DELETE FROM A WHERE A.b > 2
+
+    **features supporting**
+
+    * `DELETE FROM`
+    * `WHERE`
+    * `ORDER BY`
+    * `LIMIT [OFFSET]`
+
+    **features not supporting**
+
+    * `WITH [RECURSIVE]`
+    * (qualified table name) `INDEXED BY`
+    * (qualified table name) `NOT INDEXED`
+    * returning clause
+
+    :param table:
+    :return:
+    """
     self = SqlWhereStat(table)
     self.add(['DELETE', 'FROM', table_name(table)])
     return self
@@ -713,6 +906,49 @@ def delete_from(table: type[T]) -> SqlWhereStat[T]:
 def create_table(table: type[T], *,
                  primary_policy: CONFLICT_POLICY = None,
                  unique_policy: CONFLICT_POLICY = None) -> SqlStat[T]:
+    """
+    ``CREATE``: https://www.sqlite.org/lang_createtable.html
+
+    >>> @named_tuple_table_class # doctest: SKIP
+    ... class A(NamedTuple):
+    ...     a: int
+    >>> create_table(A) # doctest: SKIP
+    CREATE TABLE IF NOT EXISTS A (a INT NOT NULL)
+
+    **features supporting**
+
+    * `IF NOT EXISTS`
+    * column constraint `NOT NULL`
+    * column constraint `UNIQUE`
+    * column constraint `CHECK`
+    * column constraint `DEFAULT value`
+    * table constraint `PRIMARY KEY`
+    * table constraint `UNIQUE`
+    * table constraint `CHECK`
+    * table constraint `FOREIGN KEY`
+
+    **features not supporting**
+
+    * `CREATE TEMP|TEMPORARY`
+    * `CREATE TEMP`
+    * `AS SELECT`
+    * column constraint `CONSTRAINT`
+    * column constraint `PRIMARY KEY`
+    * column constraint `NOT NULL ON CONFLICT`
+    * column constraint `UNIQUE ON CONFLICT`
+    * column constraint `DEFAULT (EXPR)`
+    * column constraint `COLLATE`
+    * column constraint `REFERENCES`
+    * column constraint `[GENERATED ALWAYS] AS`
+    * table constraint `CONSTRAINT`
+    * `WITHOUT ROWID`
+    * `STRICT`
+
+    :param table:
+    :param primary_policy:
+    :param unique_policy:
+    :return:
+    """
     self = SqlStat(table)
     self.add(['CREATE', 'TABLE', 'IF NOT EXISTS', table_name(table)])
     self.add('(')

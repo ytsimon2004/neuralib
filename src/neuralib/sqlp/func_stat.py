@@ -3,10 +3,12 @@ SQL help functions.
 """
 from __future__ import annotations
 
-from typing import overload, Any, TypeVar
+from typing import overload, Any, TypeVar, TYPE_CHECKING
 
 from . import expr
-from .stat import SqlStat
+
+if TYPE_CHECKING:
+    from .stat import SqlStat
 
 __all__ = [
     'wrap', 'alias', 'cast', 'asc', 'desc', 'nulls_first', 'nulls_last', 'concat', 'and_', 'or_',
@@ -38,9 +40,10 @@ def alias(x: SqlStat[T], name: str) -> expr.SqlAlias[T]:
 
 def alias(x, name: str):
     """
-    ```SQL
-    :x AS :name
-    ```
+    ..  code-block::SQL
+
+        :x AS :name
+
     """
     if isinstance(x, type):
         return expr.SqlAlias(x, name)
@@ -49,9 +52,10 @@ def alias(x, name: str):
 
 def cast(t: type[T], x) -> T:
     """
-    ```SQL
-    CAST(:x AS :t)
-    ```
+    ..  code-block::SQL
+
+        CAST(:x AS :t)
+
     """
     return expr.SqlCastOper(t.__name__, expr.wrap(x))
 
@@ -60,9 +64,10 @@ def asc(x) -> expr.SqlExpr:
     """
     ascending ordering Used by **ORDER BY**.
 
-    ```SQL
-    :x ASC
-    ```
+    ..  code-block::SQL
+
+        :x ASC
+
 
     """
     return expr.SqlOrderOper('ASC', expr.wrap(x))
@@ -72,9 +77,10 @@ def desc(x) -> expr.SqlExpr:
     """
     descending ordering used by **ORDER BY**.
 
-    ```SQL
-    :x DESC
-    ```
+    ..  code-block::SQL
+
+        :x DESC
+
     """
     return expr.SqlOrderOper('DESC', expr.wrap(x))
 
@@ -83,9 +89,10 @@ def nulls_first(x) -> expr.SqlExpr:
     """
     order null first used by **ORDER BY**.
 
-    ```SQL
-    :x NULLS FIRST
-    ```
+    ..  code-block::SQL
+
+        :x NULLS FIRST
+
     """
     return expr.SqlOrderOper('NULLS FIRST', expr.wrap(x))
 
@@ -94,9 +101,10 @@ def nulls_last(x) -> expr.SqlExpr:
     """
     order null last used by **ORDER BY**.
 
-    ```SQL
-    :x NULLS LAST
-    ```
+    ..  code-block::SQL
+
+        :x NULLS LAST
+
     """
     return expr.SqlOrderOper('NULLS LAST', expr.wrap(x))
 
@@ -105,9 +113,10 @@ def concat(*x) -> expr.SqlExpr:
     """
     concatenate strings.
 
-    ```SQL
-    :x[0] || :x[1] || ...
-    ```
+    ..  code-block::SQL
+
+        :x[0] || :x[1] || ...
+
     """
     return expr.SqlConcatOper(expr.wrap_seq(*x))
 
@@ -116,9 +125,10 @@ def and_(*other) -> expr.SqlExpr:
     """
     "AND" SQL expressions.
 
-    ```SQL
-    other[0] AND other[1] AND ...
-    ```
+    ..  code-block::SQL
+
+        other[0] AND other[1] AND ...
+
     """
     if len(other) == 0:
         raise RuntimeError()
@@ -131,9 +141,10 @@ def or_(*other) -> expr.SqlExpr:
     """
     "OR" SQL expressions.
 
-    ```SQL
-    other[0] OR other[1] OR ...
-    ```
+    ..  code-block::SQL
+
+        other[0] OR other[1] OR ...
+
     """
     if len(other) == 0:
         raise RuntimeError()
@@ -144,9 +155,10 @@ def or_(*other) -> expr.SqlExpr:
 
 def like(x, s) -> expr.SqlExpr:
     """
-    ```SQL
-    :x LIKE :s
-    ```
+    ..  code-block::SQL
+
+        :x LIKE :s
+
 
     :param x:
     :param s:
@@ -157,9 +169,10 @@ def like(x, s) -> expr.SqlExpr:
 
 def not_like(x, s) -> expr.SqlExpr:
     """
-    ```SQL
-    :x NOT LIKE :s
-    ```
+    ..  code-block::SQL
+
+        :x NOT LIKE :s
+
 
     :param x:
     :param s:
@@ -170,9 +183,10 @@ def not_like(x, s) -> expr.SqlExpr:
 
 def glob(x, s) -> expr.SqlExpr:
     """
-    ```SQL
-    :x GLOB :s
-    ```
+    ..  code-block::SQL
+
+        :x GLOB :s
+
 
     :param x:
     :param s:
@@ -183,9 +197,10 @@ def glob(x, s) -> expr.SqlExpr:
 
 def contains(x, coll) -> expr.SqlExpr:
     """
-    ```SQL
-    :x IN :COLL
-    ```
+    ..  code-block::SQL
+
+        :x IN :COLL
+
 
     :param x:
     :param coll: a sequence or a select statement.
@@ -199,9 +214,10 @@ def contains(x, coll) -> expr.SqlExpr:
 
 def not_contains(x, coll) -> expr.SqlExpr:
     """
-    ```SQL
-    :x NOT IN :COLL
-    ```
+    ..  code-block::SQL
+
+        :x NOT IN :COLL
+
 
     :param x:
     :param coll: a sequence or a select statement.
@@ -215,9 +231,10 @@ def not_contains(x, coll) -> expr.SqlExpr:
 
 def between(x, *value) -> expr.SqlExpr:
     """
-    ```SQL
-    :x BETWEEN :value[0] AND :value[1]
-    ```
+    ..  code-block::SQL
+
+        :x BETWEEN :value[0] AND :value[1]
+
 
     :param x:
     :param value: two value, or a range, a slice.
@@ -228,9 +245,10 @@ def between(x, *value) -> expr.SqlExpr:
 
 def not_between(x, *value) -> expr.SqlExpr:
     """
-    ```SQL
-    :x NOT BETWEEN :value[0] AND :value[1]
-    ```
+    ..  code-block::SQL
+
+        :x NOT BETWEEN :value[0] AND :value[1]
+
 
     :param x:
     :param value: two value, or a range, a slice.
@@ -241,17 +259,19 @@ def not_between(x, *value) -> expr.SqlExpr:
 
 def is_null(x) -> expr.SqlExpr:
     """
-    ```SQL
-    :x IS NULL
-    ```
+    ..  code-block::SQL
+
+        :x IS NULL
+
     """
     return expr.wrap(x).is_null()
 
 
 def is_not_null(x) -> expr.SqlExpr:
     """
-    ```SQL
-    :x IS NOT NULL
-    ```
+    ..  code-block::SQL
+
+        :x IS NOT NULL
+
     """
     return expr.wrap(x).is_not_null()

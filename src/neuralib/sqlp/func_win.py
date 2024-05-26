@@ -1,5 +1,8 @@
 """
 SQL window functions.
+
+https://www.sqlite.org/windowfunctions.html
+https://www.sqlite.org/windowfunctions.html#built_in_window_functions
 """
 from __future__ import annotations
 

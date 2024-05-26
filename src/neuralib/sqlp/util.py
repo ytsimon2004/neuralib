@@ -62,6 +62,23 @@ def take(index: tuple[V], coll: Iterable[T]) -> list[tuple[V]]:
 
 
 def take(index, coll: Iterable):
+    """
+    A help function that compose itemgetter and mapping functions.
+
+    >>> @named_tuple_table_class
+    ... class A:
+    ...     a: int
+    ...     b: str
+    >>> take(0, [(0, 'a'), (1, 'b')])
+    [0, 1]
+    >>> take(A.a, [A(0, 'a'), A(1, 'b')])
+    [0, 1]
+
+
+    :param index:
+    :param coll:
+    :return:
+    """
     if isinstance(index, int):
         return list(map(operator.itemgetter(index), coll))
 
@@ -88,6 +105,22 @@ def take(index, coll: Iterable):
 
 
 def infer_eq(x: T, v: T | str, *, prepend: str = '', append: str = '') -> SqlExpr | None:
+    """
+    A help function to make a SQL ``=`` expression.
+
+    >>> infer_eq(A.a, 1) # doctest: SKIP
+    A.a = 1
+    >>> infer_eq(A.a, '!1') # doctest: SKIP
+    A.a != 1
+    >>> infer_eq(A.a, '1%') # doctest: SKIP
+    A.a LIKE '1%'
+
+    :param x:
+    :param v:
+    :param prepend:
+    :param append:
+    :return:
+    """
     if not isinstance(x, SqlField):
         raise TypeError()
 
@@ -114,6 +147,22 @@ def infer_eq(x: T, v: T | str, *, prepend: str = '', append: str = '') -> SqlExp
 
 
 def infer_cmp(x: T, v: T | str | range | slice) -> SqlExpr | None:
+    """
+    A help function to make a SQL comparison expression.
+
+    >>> infer_cmp(A.a, range(0, 10))  # doctest: SKIP
+    A.a BETWEEN 0 AND 9
+    >>> infer_cmp(A.a, slice(0, 10))  # doctest: SKIP
+    A.a BETWEEN 0 AND 10
+    >>> infer_cmp(A.a, '<10')  # doctest: SKIP
+    A.a < 10
+    >>> infer_cmp(A.a, 10)  # doctest: SKIP
+    A.a = 10
+
+    :param x:
+    :param v:
+    :return:
+    """
     if not isinstance(x, SqlField):
         raise TypeError()
 
@@ -147,6 +196,20 @@ def infer_cmp(x: T, v: T | str | range | slice) -> SqlExpr | None:
 
 
 def infer_in(x: T, v: T | str | list[str] | slice | range) -> SqlExpr | None:
+    """
+    A help function to make a SQL containing expression.
+
+    >>> infer_in(A.a, '1')  # doctest: SKIP
+    A.a == '1'
+    >>> infer_in(A.a, range(0, 10))  # doctest: SKIP
+    A.a BETWEEN 0 AND 9
+    >>> infer_in(A.a, ['a', 'b'])  # doctest: SKIP
+    A.a IN ('a', 'b')
+
+    :param x:
+    :param v:
+    :return:
+    """
     if not isinstance(x, SqlField):
         raise TypeError()
 
@@ -163,6 +226,28 @@ def infer_in(x: T, v: T | str | list[str] | slice | range) -> SqlExpr | None:
 
 
 def resolve_field_type(f_type: type) -> tuple[type, type, bool]:
+    """
+
+    SQL primary types:
+
+    * bool: BOOLEAN
+    * int: INT
+    * float: FLOAT
+    * str: TEXT
+    * bytes: BLOB
+    * datetime.date: DATETIME
+    * datetime.datetime: DATETIME
+
+    Python type mapping
+
+    * `T|None`: `resolve_field_type(T)` null-able
+    * `T|V` : supported not
+    * `Literal`: `str`
+    * `Path`: `str`
+
+    :param f_type:
+    :return: (raw_type, sql_type, not_null)
+    """
     import typing
 
     sql_type = f_type
