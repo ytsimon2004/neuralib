@@ -25,6 +25,7 @@ __all__ = [
     'cast_from_sql',
     'get_fields_from_schema',
     'map_foreign',
+    'pull_foreign',
     'rich_sql_table'
 ]
 
@@ -240,6 +241,14 @@ def get_fields_from_schema(schema: str) -> list[str]:
 
 
 def map_foreign(value: T, foreign: type[V] | Callable) -> Cursor[V]:
+    """
+    Let a table ``T`` with a foreign constraint refer to table ``V``,
+    map a ``T`` data to the ``V`` data.
+
+    :param value:
+    :param foreign: a foreign constraint
+    :return:
+    """
     from .table import table_foreign_field
     from .stat import select_from
 
@@ -247,8 +256,33 @@ def map_foreign(value: T, foreign: type[V] | Callable) -> Cursor[V]:
     if (constraint := table_foreign_field(table, foreign)) is None:
         raise RuntimeError(f'not a foreign constraint : {foreign}')
 
+    # SELECT * FROM V
+    # WHERE AND*([V.field == t.field for field in constraint])
     return select_from(constraint.foreign_table).where(*[
         getattr(constraint.foreign_table, f) == getattr(value, t)
+        for (t, f) in zip(constraint.fields, constraint.foreign_fields)
+    ]).submit()
+
+
+def pull_foreign(target: type[T], foreign: V) -> Cursor[T]:
+    """
+    Let a table ``T`` with a foreign constraint refer to table ``V``,
+    pull ``T`` data from a ``V`` data.
+
+    :param target: target table ``T``
+    :param foreign: a foreign data ``V`` referred to.
+    :return:
+    """
+    from .table import table_foreign_field
+    from .stat import select_from
+
+    if (constraint := table_foreign_field(target, type(foreign))) is None:
+        raise RuntimeError(f'not a foreign constraint')
+
+    # SELECT * FROM T
+    # WHERE AND*([T.field == v.field for field in constraint])
+    return select_from(constraint.table).where(*[
+        getattr(constraint.table, t) == getattr(foreign, f)
         for (t, f) in zip(constraint.fields, constraint.foreign_fields)
     ]).submit()
 
