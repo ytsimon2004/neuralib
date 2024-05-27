@@ -143,6 +143,7 @@ class SqlpTableTest(unittest.TestCase):
             Account('M', 'Alice', 200),
         ], results)
 
+
 class SqlTableOtherTest(unittest.TestCase):
     def assert_sql_state_equal(self, a: str, b: str):
         a = re.split(' +', a.replace('\n', ' ').strip())
@@ -209,7 +210,6 @@ class SqlTableOtherTest(unittest.TestCase):
 
             result = select_from(A).fetchone()
             self.assertEqual(result, A(Path('test.txt')))
-
 
 
 if __name__ == '__main__':
