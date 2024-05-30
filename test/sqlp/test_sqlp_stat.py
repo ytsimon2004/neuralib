@@ -10,6 +10,7 @@ from neuralib.sqlp import named_tuple_table_class, foreign, PRIMARY, check
 class Test(NamedTuple):
     a: Annotated[str, sqlp.PRIMARY]
     b: int
+    c: int
 
 
 class SqlpStatTest(unittest.TestCase):
@@ -89,6 +90,32 @@ class SqlpStatTest(unittest.TestCase):
             ref: str
 
             @foreign(Ref.name, update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        stat = sqlp.create_table(Test).build()
+        self.assert_sql_state_equal("""
+        CREATE TABLE IF NOT EXISTS Test ( 
+            name TEXT NOT NULL ,
+            ref TEXT NOT NULL , 
+            PRIMARY KEY ( name ) ,
+            FOREIGN KEY ( ref ) REFERENCES Ref ( name )
+                ON UPDATE NO ACTION ON DELETE NO ACTION
+        )
+        """, stat)
+
+    def test_create_table_foreign_primary(self):
+        @named_tuple_table_class
+        class Ref(NamedTuple):
+            name: PRIMARY[str]
+            other: str
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: PRIMARY[str]
+            ref: str
+
+            @foreign(Ref, update='NO ACTION', delete='NO ACTION')
             def _ref(self):
                 return self.ref
 
@@ -263,21 +290,21 @@ class SqlpStatTest(unittest.TestCase):
         stat = sqlp.insert_into(Test).build()
 
         self.assert_sql_state_equal("""
-        INSERT INTO Test VALUES ( ? , ? )
+        INSERT INTO Test VALUES ( ? , ? , ? )
         """, stat)
 
     def test_insert_into_or_replace(self):
         stat = sqlp.insert_into(Test, policy='REPLACE').build()
 
         self.assert_sql_state_equal("""
-        INSERT OR REPLACE INTO Test VALUES ( ? , ? )
+        INSERT OR REPLACE INTO Test VALUES ( ? , ? , ? )
         """, stat)
 
     def test_insert_into_named(self):
         stat = sqlp.insert_into(Test, named=True).build()
 
         self.assert_sql_state_equal("""
-        INSERT INTO Test VALUES ( :a , :b )
+        INSERT INTO Test VALUES ( :a , :b , :c )
         """, stat)
 
     def test_insert_into_named_overwrite(self):
@@ -286,7 +313,7 @@ class SqlpStatTest(unittest.TestCase):
         ).build()
 
         self.assert_sql_state_equal("""
-        INSERT INTO Test VALUES ( :a , MAX ( 10 , :b ) )
+        INSERT INTO Test VALUES ( :a , MAX ( 10 , :b ) , :c )
         """, stat)
 
     def test_insert_into_from_select(self):
@@ -297,27 +324,29 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.insert_into(Test).select_from(Other).build()
         self.assert_sql_state_equal("""
-        INSERT INTO Test ( a , b ) 
+        INSERT INTO Test ( a , b , c ) 
         SELECT * FROM Other
         """, stat)
 
     def test_update_key_value(self):
-        stat = sqlp.update(Test, b=1)
+        stat = sqlp.update(Test, b=1, c=2)
 
         self.assert_sql_state_equal("""
         UPDATE Test SET
-        b = ?
+        b = ? ,
+        c = ?
         """, stat.build())
-        self.assertListEqual([1], stat._para)
+        self.assertListEqual([1, 2], stat._para)
 
     def test_update_field(self):
-        stat = sqlp.update(Test, Test.b == 1)
+        stat = sqlp.update(Test, Test.b == 1, Test.c == 3)
 
         self.assert_sql_state_equal("""
         UPDATE Test SET
-        b = ?
+        b = ? ,
+        c = ?
         """, stat.build())
-        self.assertListEqual([1], stat._para)
+        self.assertListEqual([1, 3], stat._para)
 
     def test_update_field_where(self):
         stat = sqlp.update(Test, Test.b == 1).where(Test.a == '1')
@@ -342,6 +371,18 @@ class SqlpStatTest(unittest.TestCase):
             Test.b AS 'y'
         FROM Test
         """, stat.build())
+
+    def test_table_alias(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            age: int
+
+        t = sqlp.alias(Test, 't')
+
+        self.assert_sql_state_equal("""
+        SELECT t.name FROM Test t
+        """, sqlp.select_from(t.name).build())
 
     def test_over_window_func_over(self):
         stat = sqlp.select_from(

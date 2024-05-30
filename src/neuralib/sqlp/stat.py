@@ -871,10 +871,14 @@ def update(table: type[T], *args: bool, **kwargs) -> SqlWhereStat[T]:
                 raise TypeError(arg)
         else:
             raise TypeError(arg)
+        self.add(',')
 
     for term, value in kwargs.items():
         table_field(table, term)
         self.add(f'{term} = ?', value)
+        self.add(',')
+
+    self._stat.pop()
 
     return self
 
