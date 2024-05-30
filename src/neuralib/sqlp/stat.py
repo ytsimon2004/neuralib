@@ -863,7 +863,12 @@ def update(table: type[T], *args: bool, **kwargs) -> SqlWhereStat[T]:
         if isinstance(arg, SqlCompareOper) and arg.oper == '=' and isinstance(arg.left, SqlField):
             field = arg.left.field
             value = arg.right
-            self.add(f'{field.name} = ?', value)
+            if isinstance(value, SqlPlaceHolder):
+                self.add(f'{field.name} = ?', value.value)
+            elif isinstance(value, SqlLiteral):
+                self.add(f'{field.name} = {value.value}')
+            else:
+                raise TypeError(arg)
         else:
             raise TypeError(arg)
 
@@ -904,6 +909,7 @@ def delete_from(table: type[T]) -> SqlWhereStat[T]:
 
 
 def create_table(table: type[T], *,
+                 if_not_exists=True,
                  primary_policy: CONFLICT_POLICY = None,
                  unique_policy: CONFLICT_POLICY = None) -> SqlStat[T]:
     """
@@ -950,7 +956,10 @@ def create_table(table: type[T], *,
     :return:
     """
     self = SqlStat(table)
-    self.add(['CREATE', 'TABLE', 'IF NOT EXISTS', table_name(table)])
+    self.add(['CREATE', 'TABLE'])
+    if if_not_exists:
+        self.add('IF NOT EXISTS')
+    self.add(table_name(table))
     self.add('(')
 
     for i, field in enumerate(table_fields(table)):

@@ -108,6 +108,21 @@ class SqlpTableTest(unittest.TestCase):
             Account('V', 'Bob', 2000),
         ], results)
 
+    def test_update(self):
+        insert_into(Account, policy='REPLACE').submit([Account('K', 'Eve', 0)])
+        self.assertEqual(Account('K', 'Eve', 0), select_from(Account).where(Account.bank == 'K').fetchone())
+        update(Account, Account.money == 100).where(
+            Account.bank == 'K'
+        ).submit(commit=True)
+        self.assertEqual(Account('K', 'Eve', 100), select_from(Account).where(Account.bank == 'K').fetchone())
+
+    def test_delete(self):
+        insert_into(Account, policy='REPLACE').submit([Account('K', 'Eve', 0)])
+        self.assertEqual(Account('K', 'Eve', 0), select_from(Account).where(Account.bank == 'K').fetchone())
+        delete_from(Account).where(Account.bank == 'K').submit(commit=True)
+        self.assertIsNone(select_from(Account).where(Account.bank == 'K').fetchone())
+
+
     def test_foreign_field(self):
         from neuralib.sqlp.table import table_foreign_field, ForeignConstraint
         person = table_foreign_field(Account, Person)
