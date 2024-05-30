@@ -10,39 +10,54 @@ __all__ = ['generate_dot']
 
 
 @overload
-def generate_dot(db: Database) -> str:
+def generate_dot(db: Database, *,
+                 graph: dict[str, Any] = None,
+                 node: dict[str, Any] = None,
+                 edge: dict[str, Any] = None) -> str:
     pass
 
 
 @overload
-def generate_dot(db: Database, file: Union[str, Path]) -> None:
+def generate_dot(db: Database, file: Union[str, Path], *,
+                 graph: dict[str, Any] = None,
+                 node: dict[str, Any] = None,
+                 edge: dict[str, Any] = None) -> None:
     pass
 
 
 @overload
-def generate_dot(db: Database, file: IO) -> None:
+def generate_dot(db: Database, file: IO, *,
+                 graph: dict[str, Any] = None,
+                 node: dict[str, Any] = None,
+                 edge: dict[str, Any] = None) -> None:
     pass
 
 
-def generate_dot(db: Database, file=None):
+def generate_dot(db: Database, file=None, *,
+                 graph: dict[str, Any] = None,
+                 node: dict[str, Any] = None,
+                 edge: dict[str, Any] = None):
     """
 
     :param db:
     :param file: io, or an output file path which support '.puml' file and '.png' file (required ``graphivz``).
+    :param graph: graph attributes
+    :param node: node attributes
+    :param edge: edge attributes
     :return:
     """
     if file is None:
         from io import StringIO
         buf = StringIO()
-        _generate_dot(db, buf)
+        _generate_dot(db, buf, graph=graph, node=node, edge=edge)
         return buf.getvalue()
     elif isinstance(file, (str, Path)):
         file = Path(file)
-        if file.suffix in ('.pu', '.puml'):
+        if file.suffix in ('.dot',):
             with file.open() as out:
-                _generate_dot(db, out)
-        elif file.suffix == '.png':
-            _generate_dot_png(generate_dot(db), file)
+                _generate_dot(db, out, graph=graph, node=node, edge=edge)
+        elif file.suffix in ('.png', '.svg', '.ps', '.pdf', '.jpg', '.gif', '.json'):
+            _generate_dot_png(generate_dot(db, graph=graph, node=node, edge=edge), file)
         else:
             raise RuntimeError(f'unsupported filetype : {file.suffix}')
     else:
@@ -50,7 +65,7 @@ def generate_dot(db: Database, file=None):
 
 
 def _generate_dot_png(dot: str, file: Path) -> int:
-    p = subprocess.Popen(['dot', '-Tpng', '-o', str(file)], stdin=subprocess.PIPE)
+    p = subprocess.Popen(['dot', '-T', file.suffix[1:], '-o', str(file)], stdin=subprocess.PIPE)
     p.communicate(dot.encode())
     return p.wait()
 
@@ -108,7 +123,7 @@ def _generate_dot_table(db: Database, file=sys.stdout):
         ff = []
 
         for field in table.table_fields:
-            at = []
+            at = [f'<{field.name}>']
             if field.name in pf:
                 at.append('#')
             elif field.name in uf:
@@ -120,7 +135,7 @@ def _generate_dot_table(db: Database, file=sys.stdout):
                 at.append('?')
             ff.append(''.join(at))
 
-        print('label=', '"', '<name>', table.table_name, '|{', '|'.join(ff), '}"', sep='', file=file)
+        print('label=', '"', '<0>', table.table_name, '|{', '|'.join(ff), '}"', sep='', file=file)
 
         print('];', file=file)
 
@@ -128,11 +143,15 @@ def _generate_dot_table(db: Database, file=sys.stdout):
         table: Table = _table_class(table)
         for foreign in table.table_foreign_fields:
             if foreign.fields == foreign.foreign_fields:
-                print(table_name(foreign.table), ':name', '->', table_name(foreign.foreign_table), ':name', file=file)
+                print(table_name(foreign.table), ':0', '->', table_name(foreign.foreign_table), ':0', file=file)
+
+            elif len(foreign.fields) == 1:
+                print(table_name(foreign.table), ':', foreign.fields[0], '->', table_name(foreign.foreign_table), ':', foreign.foreign_fields[0], file=file)
+
             else:
                 k1 = ', '.join(foreign.fields)
                 k2 = ', '.join(foreign.foreign_fields)
 
-                print(table_name(foreign.table), ':name', '->', table_name(foreign.foreign_table), ':name', '[', file=file)
-                print('label=', '"(', k1, ') to (', k2, ')"', file=file)
+                print(table_name(foreign.table), ':0', '->', table_name(foreign.foreign_table), ':0', '[', file=file)
+                print('label=', f'"({k1}) to ({k2})"', file=file)
                 print('];', file=file)
