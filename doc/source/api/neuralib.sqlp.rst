@@ -7,7 +7,8 @@ neuralib.sqlp
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
-    
+
+    neuralib.sqlp.dot
     neuralib.sqlp.connection
     neuralib.sqlp.expr
     neuralib.sqlp.literal
