@@ -5,6 +5,7 @@ neuralib package
     :maxdepth: 1
     :caption: Modules:
 
+    neuralib.atlas
     neuralib.atlas.brainrender
     neuralib.atlas.ccf
     neuralib.atlas.cellatlas
