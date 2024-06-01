@@ -633,7 +633,7 @@ def select_from(*args, distinct: bool = False,
     >>> select_from(a.a).build() # doctest: SKIP
     SELECT a.a from A a
 
-    **join other tables
+    join other tables
 
     >>> select_from(A.a, B.b).join(B).on(A.c == B.c).build() # doctest: SKIP
     SELECT A.a, B.b FROM A JOIN B ON A.c = B.c
