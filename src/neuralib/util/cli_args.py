@@ -48,3 +48,12 @@ class CliArgs:
             return [self.flag, self.args]
         else:
             raise RuntimeError('')
+
+    @classmethod
+    def concat_command(cls, args: list[CliArgs]) -> list[str]:
+        """concat multiple ``CliArgs`` as list of subprocess command line"""
+        ret = []
+        for arg in args:
+            ret.extend(arg.as_command())
+
+        return ret

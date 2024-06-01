@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -12,17 +13,19 @@ __all__ = ['JsonEncodeHandler',
 
 
 class JsonEncodeHandler(json.JSONEncoder):
-    """extend from the JSONEncoder class and handle the conversions in a default method"""
+    """Extend from the JSONEncoder class and handle the conversions in a default method"""
 
-    def default(self, obj):
+    def default(self, obj: Any):
         if isinstance(obj, np.integer):
             return int(obj)
-        if isinstance(obj, np.floating):
+        elif isinstance(obj, np.floating):
             return float(obj)
-        if isinstance(obj, np.ndarray):
+        elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        if isinstance(obj, Path):
+        elif isinstance(obj, Path):
             return str(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
 
         return json.JSONEncoder.default(self, obj)
 

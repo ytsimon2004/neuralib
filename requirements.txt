@@ -10,7 +10,7 @@ polars>=0.20.9
 pyarrow
 tifffile==2023.4.12
 opencv-python~=4.8.0.76
-tqdm~=4.62.3
+tqdm
 requests
 rich
 typing_extensions

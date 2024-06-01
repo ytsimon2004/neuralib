@@ -63,17 +63,17 @@ Use CLI
 
 See help::
 
-    python */scanbox/viewer.py -h
+    python -m neuralib.calimg.scanbox.viewer -h
 
 
-Example playing the 100-200 Frames::
+Example playing the 100-200 frames::
 
-    python */scanbox/viewer.py -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
+    python -m neuralib.calimg.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
 
 
 Example save 100-200 Frames as tiff::
 
-    python */scanbox/viewer.py -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
+    python -m neuralib.calimg.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
 
 
 
