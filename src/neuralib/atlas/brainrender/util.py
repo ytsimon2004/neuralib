@@ -8,6 +8,7 @@ __all__ = ['get_color']
 def get_color(i, color_pattern: str | tuple[str, ...] | list[str]) -> str:
     """
     get color
+
     :param i: idx of the color pattern list
     :param color_pattern: color pattern list or single element str
     :return:
