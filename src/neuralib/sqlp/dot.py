@@ -3,8 +3,8 @@ import sys
 from pathlib import Path
 from typing import overload, IO, Any, Union
 
-from .. import Database
-from ..table import _table_class, table_name, Table
+from .cli import Database
+from .table import _table_class, table_name, Table
 
 __all__ = ['generate_dot']
 
