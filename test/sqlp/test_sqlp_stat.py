@@ -107,12 +107,12 @@ class SqlpStatTest(unittest.TestCase):
     def test_create_table_foreign_primary(self):
         @named_tuple_table_class
         class Ref(NamedTuple):
-            name: PRIMARY[str]
+            name: Annotated[str, PRIMARY]
             other: str
 
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: PRIMARY[str]
+            name: Annotated[str, PRIMARY]
             ref: str
 
             @foreign(Ref, update='NO ACTION', delete='NO ACTION')
@@ -307,13 +307,29 @@ class SqlpStatTest(unittest.TestCase):
         INSERT INTO Test VALUES ( :a , :b , :c )
         """, stat)
 
-    def test_insert_into_named_overwrite(self):
+    def test_insert_into_named_overwrite_keyword(self):
         stat = sqlp.insert_into(Test, named=True).values(
             b=sqlp.max(10, ':b')
         ).build()
 
         self.assert_sql_state_equal("""
         INSERT INTO Test VALUES ( :a , MAX ( 10 , :b ) , :c )
+        """, stat)
+
+    def test_insert_into_partial(self):
+        stat = sqlp.insert_into(Test.b).build()
+
+        self.assert_sql_state_equal("""
+        INSERT INTO Test ( b ) VALUES ( ? )
+        """, stat)
+
+    def test_insert_into_constant_value(self):
+        stat = sqlp.insert_into(Test.a, Test.b).values(
+            Test.b == 1
+        ).build()
+
+        self.assert_sql_state_equal("""
+        INSERT INTO Test ( a , b ) VALUES ( ? , 1 )
         """, stat)
 
     def test_insert_into_from_select(self):
@@ -393,7 +409,7 @@ class SqlpStatTest(unittest.TestCase):
         self.assert_sql_state_equal("""
         SELECT
             Test.a , Test.b ,
-            ROW_NUMBER () OVER ( ORDER BY Test.b )
+            ROW_NUMBER ( ) OVER ( ORDER BY Test.b )
         FROM Test
         """, stat.build())
 
@@ -407,7 +423,7 @@ class SqlpStatTest(unittest.TestCase):
         self.assert_sql_state_equal("""
         SELECT
             Test.a , Test.b ,
-            ROW_NUMBER () OVER ( PARTITION BY Test.b )
+            ROW_NUMBER ( ) OVER ( PARTITION BY Test.b )
         FROM Test
         """, stat.build())
 
@@ -425,7 +441,7 @@ class SqlpStatTest(unittest.TestCase):
         self.assert_sql_state_equal("""
         SELECT
             Test.a , Test.b ,
-            ROW_NUMBER () OVER w
+            ROW_NUMBER ( ) OVER w
         FROM Test
         WINDOW w AS ( ORDER BY Test.a RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
         """, stat.build())
@@ -444,7 +460,7 @@ class SqlpStatTest(unittest.TestCase):
         SELECT
             Test.a , Other.c
         FROM Test
-        INNER JOIN Other ON Test.b = Other.d 
+        INNER JOIN Other ON Test.b = Other.d
         """, stat.build())
 
 

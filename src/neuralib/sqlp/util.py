@@ -5,7 +5,7 @@ import operator
 import re
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeVar, Iterable, overload, TYPE_CHECKING
+from typing import TypeVar, Iterable, overload, TYPE_CHECKING, Any
 
 from neuralib.util.table import rich_table
 from .expr import SqlExpr, SqlField
@@ -278,16 +278,18 @@ def cast_to_sql(raw_type: type[T], sql_type: type[V], value: T) -> V:
         return None
     if sql_type == str:
         return str(value)
+    if raw_type == Any:
+        return value
     return value
 
 
 def cast_from_sql(raw_type: type[T], sql_type: type[V], value: V) -> T:
     if value is None:
         return None
-    if sql_type in (int, float):
+    if raw_type == Any:
         return value
-    if sql_type == bool:
-        return value != 0
+    if sql_type in (int, float, bool):
+        return value
     if raw_type == datetime.datetime and isinstance(value, str):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     if raw_type == datetime.date and isinstance(value, str):

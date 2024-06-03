@@ -122,7 +122,6 @@ class SqlpTableTest(unittest.TestCase):
         delete_from(Account).where(Account.bank == 'K').submit(commit=True)
         self.assertIsNone(select_from(Account).where(Account.bank == 'K').fetchone())
 
-
     def test_foreign_field(self):
         from neuralib.sqlp.table import table_foreign_field, ForeignConstraint
         person = table_foreign_field(Account, Person)
@@ -206,6 +205,20 @@ class SqlTableOtherTest(unittest.TestCase):
 
             result = select_from(A).fetchone()
             self.assertEqual(result, A(1, 0, '', True, False, None))
+
+    def test_table_field_bool_casting(self):
+        @named_tuple_table_class
+        class A(NamedTuple):
+            a: int
+            b: bool
+
+        with Connection(debug=True):
+            create_table(A)
+            insert_into(A).submit([A(0, False), A(1, True)])
+            self.assertEqual(A(0, False), select_from(A).where(A.a == 0).fetchone())
+            self.assertEqual(A(1, True), select_from(A).where(A.a == 1).fetchone())
+            self.assertEqual((False,), select_from(A.b).where(A.a == 0).fetchone())
+            self.assertEqual((True,), select_from(A.b).where(A.a == 1).fetchone())
 
     def test_table_field_path_casting(self):
         @named_tuple_table_class

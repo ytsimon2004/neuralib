@@ -6,7 +6,7 @@ from typing import Union, TypeVar, Optional, Any
 import polars as pl
 
 from .literal import UPDATE_POLICY
-from .stat import *
+from .stat import SqlStat
 from .table import table_name, table_field_names
 
 __all__ = ['Connection', 'get_connection_context']
@@ -188,6 +188,42 @@ class Connection:
             self._connection.commit()
         return ret
 
+    # ========= #
+    # functions #
+    # ========= #
+
+    def sqlite_compileoption_get(self, n):
+        """
+        * https://www.sqlite.org/lang_corefunc.html#sqlite_compileoption_get
+        * https://www.sqlite.org/compile.html#omitfeatures
+
+        :param n:
+        :return:
+        """
+        ret, *_ = self._connection.execute("""\
+        WITH RET(val) AS (
+            VALUES (sqlite_compileoption_get(?))
+        )
+        SELECT * FROM RET
+        """, (n,)).fetchone()
+        return ret
+
+    def sqlite_compileoption_used(self, n) -> bool:
+        """
+        * https://www.sqlite.org/lang_corefunc.html#sqlite_compileoption_used
+        * https://www.sqlite.org/compile.html#omitfeatures
+
+        :param n:
+        :return:
+        """
+        ret, *_ = self._connection.execute("""\
+        WITH RET(val) AS (
+            VALUES (sqlite_compileoption_used(?))
+        )
+        SELECT * FROM RET
+        """, (n,)).fetchone()
+        return ret > 0
+
     # ============= #
     # import/export #
     # ============= #
@@ -206,8 +242,8 @@ class Connection:
             fields = table_field_names(table)
             table = table_name(table)
 
-        cursor = self.connection.execute(f'SELECT * FROM {table}')
-        return pl.DataFrame(list(cursor), schema=fields)
+        result = self.connection.execute(f'SELECT * FROM {table}').fetchall()
+        return pl.DataFrame(result, schema=fields)
 
     def import_dataframe(self, table: Union[str, type[T]], df: pl.DataFrame, *,
                          policy: UPDATE_POLICY = 'REPLACE'):

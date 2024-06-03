@@ -8,19 +8,27 @@ covers
 """
 from __future__ import annotations
 
-from typing import overload
+from typing import overload, TYPE_CHECKING
+
+from typing_extensions import LiteralString
 
 from . import expr
 from .func_dec import as_func_expr
 
+if TYPE_CHECKING:
+    from .stat import SqlStat
+
 __all__ = [
-    'abs', 'char', 'coalesce', 'hex', 'ifnull', 'iff', 'instr', 'length', 'likelihood', 'likely', 'lower', 'ltrim', 'max',
-    'min', 'nullif', 'quote', 'random', 'randomblob', 'replace', 'round', 'rtrim', 'sign', 'substr', 'trim', 'typeof',
+    'abs', 'changes', 'char', 'coalesce', 'format',
+    'hex', 'ifnull', 'iff', 'instr', 'last_insert_rowid', 'length', 'likelihood', 'likely', 'lower', 'ltrim',
+    'max', 'min', 'nullif', 'octet_length', 'printf', 'quote', 'random', 'randomblob', 'replace', 'round', 'rtrim',
+    'sign', 'sqlite_source_id', 'sqlite_version', 'substr', 'total_changes', 'trim', 'typeof',
     'unhex', 'unicode', 'unlikely', 'upper', 'zeroblob',
     'avg', 'count', 'group_concat', 'sum',
     'acos', 'acosh', 'asin',
     'asinh', 'atan', 'atan2', 'atanh', 'ceil', 'cos', 'cosh', 'degrees', 'exp', 'floor', 'ln', 'log', 'log2', 'log10',
     'mod', 'pi', 'pow', 'radians', 'sin', 'sinh', 'sqrt', 'tan', 'tanh', 'trunc',
+    'exists'
 ]
 
 
@@ -31,7 +39,12 @@ def abs(x) -> expr.SqlExpr:
     pass
 
 
-# TODO https://www.sqlite.org/lang_corefunc.html#changes
+# noinspection PyShadowingBuiltins,PyUnusedLocal
+@as_func_expr
+def changes(x) -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#changes"""
+    pass
+
 
 # noinspection PyUnusedLocal
 @as_func_expr
@@ -47,9 +60,14 @@ def coalesce(*x) -> expr.SqlExpr:
     pass
 
 
-# TODO https://www.sqlite.org/lang_corefunc.html#concat
-# TODO https://www.sqlite.org/lang_corefunc.html#format
-# TODO https://www.sqlite.org/lang_corefunc.html#glob
+# https://www.sqlite.org/lang_corefunc.html#concat by func_stat
+# https://www.sqlite.org/lang_corefunc.html#glob by func_stat
+
+# noinspection PyShadowingBuiltins,PyUnusedLocal
+def format(fmt: LiteralString, *x) -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#format"""
+    return expr.SqlFuncOper('FORMAT', expr.SqlLiteral(repr(fmt)), *x)
+
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
@@ -92,7 +110,12 @@ def instr(x, y) -> expr.SqlExpr:
     pass
 
 
-# TODO https://www.sqlite.org/lang_corefunc.html#last_insert_rowid
+# noinspection PyUnusedLocal
+@as_func_expr
+def last_insert_rowid() -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#last_insert_rowid"""
+    pass
+
 
 # noinspection PyUnusedLocal
 @as_func_expr
@@ -101,7 +124,7 @@ def length(x) -> expr.SqlExpr:
     pass
 
 
-# TODO https://www.sqlite.org/lang_corefunc.html#like
+# https://www.sqlite.org/lang_corefunc.html#like by func_stat
 
 # noinspection PyUnusedLocal
 @as_func_expr
@@ -192,8 +215,19 @@ def nullif(x, y) -> expr.SqlExpr:
     pass
 
 
-# TODO https://www.sqlite.org/lang_corefunc.html#octet_length
-# TODO https://www.sqlite.org/lang_corefunc.html#printf
+# noinspection PyUnusedLocal
+@as_func_expr
+def octet_length(x) -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#octet_length"""
+    pass
+
+
+# noinspection PyUnusedLocal
+@as_func_expr
+def printf(fmt: LiteralString, *x) -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#printf"""
+    return expr.SqlFuncOper('PRINTF', expr.SqlLiteral(repr(fmt)), *x)
+
 
 # noinspection PyUnusedLocal
 @as_func_expr
@@ -247,8 +281,20 @@ def sign(x) -> expr.SqlExpr:
 # TODO https://www.sqlite.org/lang_corefunc.html#sqlite_compileoption_get
 # TODO https://www.sqlite.org/lang_corefunc.html#sqlite_compileoption_used
 # TODO https://www.sqlite.org/lang_corefunc.html#sqlite_offset
-# TODO https://www.sqlite.org/lang_corefunc.html#sqlite_source_id
-# TODO https://www.sqlite.org/lang_corefunc.html#sqlite_version
+
+# noinspection PyUnusedLocal
+@as_func_expr
+def sqlite_source_id() -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#sqlite_source_id"""
+    pass
+
+
+# noinspection PyUnusedLocal
+@as_func_expr
+def sqlite_version() -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#sqlite_version"""
+    pass
+
 
 # noinspection PyUnusedLocal
 @as_func_expr
@@ -257,7 +303,12 @@ def substr(x, y, z=None) -> expr.SqlExpr:
     pass
 
 
-# TODO https://www.sqlite.org/lang_corefunc.html#total_changes
+# noinspection PyUnusedLocal
+@as_func_expr
+def total_changes() -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_corefunc.html#total_changes"""
+    pass
+
 
 # noinspection PyUnusedLocal
 @as_func_expr
@@ -529,4 +580,10 @@ def tanh(x) -> expr.SqlExpr:
 @as_func_expr
 def trunc(x) -> expr.SqlExpr:
     """https://www.sqlite.org/lang_mathfunc.html#trunc"""
+    pass
+
+
+# noinspection PyUnusedLocal
+@as_func_expr(func=expr.SqlExistsOper)
+def exists(x: SqlStat) -> expr.SqlExpr:
     pass
