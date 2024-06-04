@@ -1,3 +1,9 @@
 sphinx
 nbsphinx
 furo
+
+#build
+bg_atlasapi
+napari
+plotly
+GPUtil

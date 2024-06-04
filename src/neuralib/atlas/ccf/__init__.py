@@ -113,7 +113,7 @@ output::
 
 
 Do the ROIs normalization
----------------------
+---------------------------
 
 three normalization provided (:class:`~neuralib.atlas.ccf.norm.MouseBrainRoiNormHandler`)
 
@@ -158,7 +158,7 @@ output::
 
 
 Do the ROI subregions query
------------------
+-----------------------------
 
 Example for query the ROIs in visual cortex
 
