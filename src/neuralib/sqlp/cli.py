@@ -95,6 +95,7 @@ class CliDatabase(Database, AbstractParser):
     from_file: bool = argument('-f', '--file')
     action: Literal['import', 'export'] = argument('--action', default=None)
     commit: bool = argument('--commit')
+    pretty: bool = argument('-p', '--pretty')
 
     USAGE = """\
 %(prog)s -d FILE --table [NAME]
@@ -188,8 +189,13 @@ class CliDatabase(Database, AbstractParser):
 
     def run_statement(self):
         with self.open_connection() as connection:
-            for data in connection.execute(' '.join(self.DB_STAT), commit=self.commit):
-                print(data)
+            result = connection.execute(' '.join(self.DB_STAT), commit=self.commit)
+            if self.pretty:
+                from neuralib.sqlp.stat import Cursor
+                print(Cursor(result).fetch_polars())
+            else:
+                for data in result:
+                    print(data)
 
 
 if __name__ == '__main__':

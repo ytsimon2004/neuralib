@@ -136,7 +136,7 @@ class Cursor(Generic[T]):
 
     """
 
-    def __init__(self, cursor: sqlite3.Cursor, table: Optional[type[T]]):
+    def __init__(self, cursor: sqlite3.Cursor, table: type[T] = None):
         self._cursor = cursor
         self._connection = cursor.connection
         self._table = table
@@ -1091,15 +1091,14 @@ def insert_into(*args, policy: UPDATE_POLICY = None, named=False) -> SqlInsertSt
 
     * `INSERT [OR ...]`
     * `VALUES`
+    * `DEFAULT VALUES`
     * `SELECT`
+    * upsert clause
+    * returning clause
 
     **features not supporting**
 
     * `WITH [RECURSIVE]`
-    * `REPLACE`
-    * `DEFAULT VALUES`
-    * upsert clause
-    * returning clause
 
     :param table:
     :param policy:
@@ -1166,14 +1165,14 @@ def update(table: type[T], *args: Union[bool, SqlCompareOper], **kwargs) -> SqlU
     * `SET COLUMN = EXPR`
     * `FROM`
     * `WHERE`
+    * `ON CONFLICT (COLUMNS) SET (COLUMNS) = EXPR`
+    * returning clause
 
     **features not supporting**
 
     * `WITH [RECURSIVE]`
     * (qualified table name) `INDEXED BY`
     * (qualified table name) `NOT INDEXED`
-    * `SET (COLUMNS) = EXPR`
-    * returning clause
 
     :param table:
     :param args:
@@ -1208,13 +1207,13 @@ def delete_from(table: type[T]) -> SqlDeleteStat[T]:
     * `WHERE`
     * `ORDER BY`
     * `LIMIT [OFFSET]`
+    * returning clause
 
     **features not supporting**
 
     * `WITH [RECURSIVE]`
     * (qualified table name) `INDEXED BY`
     * (qualified table name) `NOT INDEXED`
-    * returning clause
 
     :param table:
     :return:

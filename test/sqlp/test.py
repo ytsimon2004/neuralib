@@ -599,11 +599,9 @@ class CteTest(SqlTestCase):
         LIMIT 5;
         """, None)
 
-
 class CaseTest(SqlTestCase):
-    """https://www.sqlitetutorial.net/sqlite-cte/"""
+    """https://www.sqlitetutorial.net/sqlite-case/"""
 
-    @unittest.skip('not implemented yet')
     def test_literal_case(self):
         self.assertSqlExeEqual("""\
         SELECT customerid,
@@ -619,9 +617,15 @@ class CaseTest(SqlTestCase):
         ORDER BY 
             LastName,
             FirstName;
-        """, None)
+        """, sqlp.select_from(
+            Customers.CustomerId,
+            Customers.FirstName,
+            Customers.LastName,
+            (sqlp.case(Customers.Country)
+             .when('USA', 'Domestic')
+             .else_('Foreign')) @ 'CustomerGroup'
+        ).order_by(Customers.LastName, Customers.FirstName))
 
-    @unittest.skip('not implemented yet')
     def test_condition_case(self):
         self.assertSqlExeEqual("""\
         SELECT
@@ -636,8 +640,14 @@ class CaseTest(SqlTestCase):
             END category
         FROM
             tracks;
-        """, None)
-
+        """, sqlp.select_from(
+            Tracks.TrackId,
+            Tracks.Name,
+            (sqlp.case()
+             .when(Tracks.Milliseconds < 60000, 'short')
+             .when((Tracks.Milliseconds > 60000) & (Tracks.Milliseconds < 30_0000), 'medium')
+             .else_('long')) @ 'category'
+        ))
 
 if __name__ == '__main__':
     unittest.main()

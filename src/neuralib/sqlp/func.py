@@ -8,15 +8,12 @@ covers
 """
 from __future__ import annotations
 
-from typing import overload, TYPE_CHECKING
+from typing import overload
 
 from typing_extensions import LiteralString
 
 from . import expr
 from .func_dec import as_func_expr
-
-if TYPE_CHECKING:
-    from .stat import SqlStat
 
 __all__ = [
     'abs', 'changes', 'char', 'coalesce', 'format',
@@ -28,7 +25,6 @@ __all__ = [
     'acos', 'acosh', 'asin',
     'asinh', 'atan', 'atan2', 'atanh', 'ceil', 'cos', 'cosh', 'degrees', 'exp', 'floor', 'ln', 'log', 'log2', 'log10',
     'mod', 'pi', 'pow', 'radians', 'sin', 'sinh', 'sqrt', 'tan', 'tanh', 'trunc',
-    'exists'
 ]
 
 
@@ -582,8 +578,3 @@ def trunc(x) -> expr.SqlExpr:
     """https://www.sqlite.org/lang_mathfunc.html#trunc"""
     pass
 
-
-# noinspection PyUnusedLocal
-@as_func_expr(func=expr.SqlExistsOper)
-def exists(x: SqlStat) -> expr.SqlExpr:
-    pass

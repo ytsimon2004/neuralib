@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     'TRUE', 'FALSE', 'NULL', 'ROWID',
-    'literal', 'wrap', 'alias', 'cast', 'asc', 'desc', 'nulls_first', 'nulls_last', 'concat', 'and_', 'or_',
+    'literal', 'wrap', 'alias', 'cast', 'case', 'exists', 'asc', 'desc', 'nulls_first', 'nulls_last', 'concat',
+    'and_', 'or_',
     'like', 'not_like', 'glob', 'contains', 'not_contains', 'between', 'not_between', 'is_null', 'is_not_null',
     'excluded'
 ]
@@ -70,6 +71,25 @@ def cast(t: type[T], x) -> T:
     """
     return expr.SqlCastOper(t.__name__, expr.wrap(x))
 
+
+def case(x=None) -> expr.SqlCaseExpr:
+    """
+    https://www.sqlite.org/lang_expr.html#the_case_expression
+
+    .. code-block::SQL
+
+        CASE :x
+            ...
+
+    :param x:
+    :return:
+    """
+    return expr.SqlCaseExpr(None if x is None else expr.wrap(x))
+
+
+def exists(x) -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_expr.html#the_exists_operator"""
+    return expr.SqlExistsOper('EXISTS', x)
 
 def asc(x) -> expr.SqlExpr:
     """

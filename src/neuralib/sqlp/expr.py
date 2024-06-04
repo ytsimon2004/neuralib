@@ -4,7 +4,7 @@ import abc
 import contextlib
 import datetime
 from collections.abc import Sequence, Iterable
-from typing import overload, Any, TYPE_CHECKING, Literal, ContextManager, TypeVar, Generic, Union
+from typing import overload, Any, TYPE_CHECKING, Literal, ContextManager, TypeVar, Generic, Union, Optional
 
 from typing_extensions import Self
 
@@ -18,8 +18,8 @@ __all__ = [
     'wrap', 'wrap_seq',
     'SqlLiteral', 'SqlPlaceHolder', 'SqlField', 'SqlAlias', 'SqlAliasField', 'SqlSubQuery',
     'SqlOper', 'SqlOrderOper', 'SqlCastOper', 'SqlCompareOper', 'SqlUnaryOper', 'SqlBinaryOper', 'SqlFuncOper',
-    'SqlVarArgOper', 'SqlConcatOper', 'SqlExistsOper', 'SqlAggregateFunc', 'SqlWindowDef', 'SqlWindowFunc'
-
+    'SqlVarArgOper', 'SqlConcatOper', 'SqlExistsOper', 'SqlAggregateFunc', 'SqlWindowDef', 'SqlWindowFunc',
+    'SqlCaseExpr'
 ]
 
 
@@ -86,7 +86,7 @@ class SqlExpr(metaclass=abc.ABCMeta):
         pass
 
     @overload
-    def between(self, value: tuple[Any, Any] | range | slice) -> SqlCompareOper:
+    def between(self, value: Union[tuple[Any, Any], range, slice]) -> SqlCompareOper:
         pass
 
     def between(self, value, value2=None) -> SqlCompareOper:
@@ -100,7 +100,7 @@ class SqlExpr(metaclass=abc.ABCMeta):
         pass
 
     @overload
-    def not_between(self, value: tuple[Any, Any] | range | slice) -> SqlCompareOper:
+    def not_between(self, value: Union[tuple[Any, Any], range, slice]) -> SqlCompareOper:
         pass
 
     def not_between(self, value, value2=None) -> SqlCompareOper:
@@ -109,7 +109,7 @@ class SqlExpr(metaclass=abc.ABCMeta):
         else:
             return SqlCompareOper('NOT BETWEEN', self, (wrap(value), wrap(value2)))
 
-    def contains(self, value: Sequence | SqlStat) -> SqlCompareOper:
+    def contains(self, value: Union[Sequence, SqlStat]) -> SqlCompareOper:
         from .stat import SqlStat
 
         if isinstance(value, (tuple, list)):
@@ -119,7 +119,7 @@ class SqlExpr(metaclass=abc.ABCMeta):
         else:
             raise TypeError()
 
-    def not_contains(self, value: Sequence | SqlStat) -> SqlCompareOper:
+    def not_contains(self, value: Union[Sequence, SqlStat]) -> SqlCompareOper:
         from .stat import SqlStat
         if isinstance(value, (tuple, list)):
             return SqlCompareOper('NOT IN', self, tuple(value))
@@ -148,20 +148,20 @@ class SqlExpr(metaclass=abc.ABCMeta):
     # and/or operator #
     # =============== #
 
-    def __and__(self, other: str | SqlExpr) -> SqlExpr:
+    def __and__(self, other: Union[str, SqlExpr]) -> SqlExpr:
         return SqlVarArgOper('AND', [self, wrap(other)])
 
-    def __or__(self, other: str | SqlExpr) -> SqlExpr:
+    def __or__(self, other: Union[str, SqlExpr]) -> SqlExpr:
         return SqlVarArgOper('OR', [self, wrap(other)])
 
     # =============== #
     # number operator #
     # =============== #
 
-    def __lshift__(self, other: int | SqlExpr) -> SqlExpr:
+    def __lshift__(self, other: Union[int, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper('<<', self, wrap(other))
 
-    def __rshift__(self, other: int | SqlExpr) -> SqlExpr:
+    def __rshift__(self, other: Union[int, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper('>>', self, wrap(other))
 
     def __invert__(self) -> SqlExpr:
@@ -173,34 +173,34 @@ class SqlExpr(metaclass=abc.ABCMeta):
     def __neg__(self) -> SqlExpr:
         return SqlUnaryOper("-", self)
 
-    def __add__(self, other: int | float | SqlExpr) -> SqlExpr:
+    def __add__(self, other: Union[int, float, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper("+", self, wrap(other))
 
-    def __radd__(self, other: int | float) -> SqlExpr:
+    def __radd__(self, other: Union[int, float]) -> SqlExpr:
         return SqlBinaryOper("+", wrap(other), self)
 
-    def __sub__(self, other: int | float | SqlExpr) -> SqlExpr:
+    def __sub__(self, other: Union[int, float, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper("-", self, wrap(other))
 
-    def __rsub__(self, other: int | float) -> SqlExpr:
+    def __rsub__(self, other: Union[int, float]) -> SqlExpr:
         return SqlBinaryOper("-", wrap(other), self)
 
-    def __mul__(self, other: int | float | SqlExpr) -> SqlExpr:
+    def __mul__(self, other: Union[int, float, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper("*", self, wrap(other))
 
-    def __rmul__(self, other: int | float) -> SqlExpr:
+    def __rmul__(self, other: Union[int, float]) -> SqlExpr:
         return SqlBinaryOper("*", wrap(other), self)
 
-    def __truediv__(self, other: int | float | SqlExpr) -> SqlExpr:
+    def __truediv__(self, other: Union[int, float, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper("/", self, wrap(other))
 
-    def __rtruediv__(self, other: int | float) -> SqlExpr:
+    def __rtruediv__(self, other: Union[int, float]) -> SqlExpr:
         return SqlBinaryOper("/", wrap(other), self)
 
-    def __mod__(self, other: int | float | SqlExpr) -> SqlExpr:
+    def __mod__(self, other: Union[int, float, SqlExpr]) -> SqlExpr:
         return SqlBinaryOper('%', self, wrap(other))
 
-    def __rmod__(self, other: int | float) -> SqlExpr:
+    def __rmod__(self, other: Union[int, float]) -> SqlExpr:
         return SqlBinaryOper("%", wrap(other), self)
 
     # ================= #
@@ -260,7 +260,7 @@ def sql_join(stat: SqlStat, sep: str, exprs: Iterable[SqlExpr]):
         expr.__sql_stat__(stat)
 
 
-def sql_join_set(stat: SqlStat, sep: str, exprs: Iterable[bool | SqlCompareOper]):
+def sql_join_set(stat: SqlStat, sep: str, exprs: Iterable[Union[bool, SqlCompareOper]]):
     first = True
     for expr in exprs:
         if not first:
@@ -347,7 +347,7 @@ class SqlAliasField(SqlExpr):
     __slots__ = 'table', 'name', 'attr'
     __match_args__ = 'table', 'name', 'attr'
 
-    def __init__(self, table: type | SqlStat, name: str, attr: str):
+    def __init__(self, table: Union[type, SqlStat], name: str, attr: str):
         self.table = table
         self.name = name
         self.attr = attr
@@ -388,6 +388,8 @@ class SqlField(SqlExpr):
 
 
 class SqlSubQuery(SqlExpr):
+    """https://www.sqlite.org/lang_expr.html#subquery_expressions"""
+
     __slots__ = 'stat',
 
     def __init__(self, stat: SqlStat):
@@ -558,7 +560,7 @@ class SqlOrderOper(SqlOper):
 class SqlBinaryOper(SqlOper):
     __slots__ = 'oper', 'left', 'right'
 
-    def __init__(self, oper: str, left: SqlExpr, right: str | SqlExpr):
+    def __init__(self, oper: str, left: SqlExpr, right: Union[str, SqlExpr]):
         super().__init__(oper)
         self.left = left
         self.right = right
@@ -607,12 +609,12 @@ class SqlVarArgOper(SqlOper):
         else:
             raise TypeError(f'NOT {self.oper}')
 
-    def __and__(self, other: str | SqlExpr) -> SqlVarArgOper:
+    def __and__(self, other: Union[str, SqlExpr]) -> SqlVarArgOper:
         if self.oper == 'AND':
             return SqlVarArgOper('AND', [*self.args, wrap(other)])
         return SqlVarArgOper('AND', [self, wrap(other)])
 
-    def __or__(self, other: str | SqlExpr) -> SqlVarArgOper:
+    def __or__(self, other: Union[str, SqlExpr]) -> SqlVarArgOper:
         if self.oper == 'OR':
             return SqlVarArgOper('OR', [*self.args, wrap(other)])
         return SqlVarArgOper('OR', [self, wrap(other)])
@@ -655,9 +657,10 @@ class SqlFuncOper(SqlOper):
 
 
 class SqlExistsOper(SqlOper):
+    """https://www.sqlite.org/lang_expr.html#the_exists_operator"""
     __slots__ = 'oper', 'stat'
 
-    def __init__(self, oper: str, stat: SqlStat):
+    def __init__(self, oper: Literal['EXISTS', 'NOT EXISTS'], stat: SqlStat):
         super().__init__(oper)
         self.stat = stat
 
@@ -678,7 +681,7 @@ class SqlAggregateFunc(SqlFuncOper):
 
     def __init__(self, oper: str, *args):
         super().__init__(oper, *args)
-        self._where: SqlVarArgOper | None = None
+        self._where: Optional[SqlVarArgOper] = None
         self._distinct = False
 
     def __sql_stat__(self, stat: SqlStat):
@@ -701,7 +704,7 @@ class SqlAggregateFunc(SqlFuncOper):
         self._distinct = True
         return self
 
-    def where(self, *args: bool | SqlExpr) -> Self:
+    def where(self, *args: Union[bool, SqlExpr]) -> Self:
         self._where = SqlVarArgOper('AND', list(map(wrap, args)))
         return self
 
@@ -710,8 +713,8 @@ class SqlWindowDef(SqlExpr):
 
     def __init__(self, name: str = None):
         self.name = name
-        self._partition: list[SqlExpr] | None = None
-        self._order_by: list[SqlExpr] | None = None
+        self._partition: Optional[list[SqlExpr]] = None
+        self._order_by: Optional[list[SqlExpr]] = None
         self._frame_spec: SqlWindowFrame = None
 
     def __sql_stat__(self, stat: SqlStat):
@@ -829,7 +832,7 @@ class SqlWindowFunc(SqlAggregateFunc):
 
     def __init__(self, oper: str, *args):
         SqlAggregateFunc.__init__(self, oper, *args)
-        self._over: str | SqlWindowDef | None = None
+        self._over: Union[str, SqlWindowDef, None] = None
 
     def __sql_stat__(self, stat: SqlStat):
         super().__sql_stat__(stat)
@@ -853,7 +856,7 @@ class SqlWindowFunc(SqlAggregateFunc):
                 raise TypeError()
 
     @overload
-    def over(self, name: str | SqlWindowDef | SqlAlias[SqlWindowDef]) -> Self:
+    def over(self, name: Union[str, SqlWindowDef, SqlAlias[SqlWindowDef]]) -> Self:
         pass
 
     @overload
@@ -873,4 +876,62 @@ class SqlWindowFunc(SqlAggregateFunc):
         else:
             raise TypeError()
 
+        return self
+
+
+class SqlCaseExpr(SqlExpr):
+    """https://www.sqlite.org/lang_expr.html#the_case_expression"""
+
+    __slots__ = 'expr', 'cases'
+    __match_args__ = 'expr', 'cases'
+
+    def __init__(self, expr: SqlExpr = None):
+        self.expr: Optional[SqlExpr] = expr
+        self.cases: list[tuple[Optional[SqlExpr], SqlExpr]] = []
+
+    def __sql_stat__(self, stat: SqlStat):
+        stat.add('CASE')
+        if self.expr is not None:
+            self.expr.__sql_stat__(stat)
+
+        for case, then in self.cases:  # type: SqlExpr , SqlExpr
+            if case is not None:
+                stat.add('WHEN')
+                case.__sql_stat__(stat)
+                stat.add('THEN')
+            else:
+                stat.add('ELSE')
+            then.__sql_stat__(stat)
+
+        stat.add('END')
+
+    def when(self, case, then) -> Self:
+        if len(self.cases) and self.cases[-1][0] is None:
+            raise RuntimeError('when after else')
+
+        if isinstance(case, str):
+            case = SqlLiteral(repr(case))
+        else:
+            case = wrap(case)
+
+        if isinstance(then, str):
+            then = SqlLiteral(repr(then))
+        else:
+            then = wrap(then)
+
+        self.cases.append((case, then))
+        return self
+
+    def else_(self, then) -> Self:
+        if len(self.cases) == 0:
+            raise RuntimeError('else without when')
+        elif len(self.cases) and self.cases[-1][0] is None:
+            raise RuntimeError('else after else')
+
+        if isinstance(then, str):
+            then = SqlLiteral(repr(then))
+        else:
+            then = wrap(then)
+
+        self.cases.append((None, then))
         return self
