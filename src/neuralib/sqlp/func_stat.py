@@ -262,6 +262,8 @@ def not_contains(x, coll) -> expr.SqlCompareOper:
 
 def between(x, *value) -> expr.SqlCompareOper:
     """
+    https://www.sqlite.org/lang_expr.html#the_between_operator
+
     ..  code-block::SQL
 
         :x BETWEEN :value[0] AND :value[1]
@@ -276,6 +278,8 @@ def between(x, *value) -> expr.SqlCompareOper:
 
 def not_between(x, *value) -> expr.SqlCompareOper:
     """
+    https://www.sqlite.org/lang_expr.html#the_between_operator
+
     ..  code-block::SQL
 
         :x NOT BETWEEN :value[0] AND :value[1]

@@ -58,6 +58,20 @@ class SqlStat(Generic[T]):
         self._stat = None
         return ret
 
+    def __str__(self) -> str:
+        table = table_name(self.table) if self.table is not None else '...'
+        return f'{type(Self).__name__}[{table}]'
+
+    def __repr__(self) -> str:
+        ret = []
+        par = list(self._para)
+        for value in self._stat:
+            if value == '?':
+                ret.append(f'?({par.pop(0)})')
+            else:
+                ret.append(value)
+        return ' '.join(ret)
+
     def submit(self, *, commit=False) -> Cursor[T]:
         """
         build the SQL statement and execute.
@@ -69,7 +83,7 @@ class SqlStat(Generic[T]):
         if (connection := self._connection) is None:
             raise RuntimeError('Do not in a connection context')
 
-        ret = Cursor(connection.execute(self, commit=commit), self.table)
+        ret = Cursor(connection, connection.execute(self, commit=commit), self.table)
         self._connection = None
         return ret
 
@@ -136,9 +150,9 @@ class Cursor(Generic[T]):
 
     """
 
-    def __init__(self, cursor: sqlite3.Cursor, table: type[T] = None):
+    def __init__(self, connection: Connection, cursor: sqlite3.Cursor, table: type[T] = None):
+        self._connection = connection
         self._cursor = cursor
-        self._connection = cursor.connection
         self._table = table
 
         header = cursor.description
@@ -736,7 +750,7 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
         else:
             cur = connection.execute(self, parameter, commit=not self._returning)
 
-        ret = Cursor(cur, self.table)
+        ret = Cursor(connection, cur, self.table)
         self._connection = None
         return ret
 

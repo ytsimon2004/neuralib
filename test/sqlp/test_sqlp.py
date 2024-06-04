@@ -158,6 +158,54 @@ class SqlpTableTest(unittest.TestCase):
         ], results)
 
 
+class SqlUpsertTest(unittest.TestCase):
+    conn: Connection
+
+    def setUp(self):
+        self.conn = Connection(debug=True)
+        with self.conn:
+            create_table(Person).submit()
+            create_table(Bank).submit()
+            create_table(Account).submit()
+
+            insert_into(Person).submit([
+                Person('Alice', 18),
+                Person('Bob', 20),
+            ])
+
+            insert_into(Bank).submit([
+                Bank('V'),
+                Bank('M'),
+            ])
+
+            insert_into(Account).submit([
+                Account('V', 'Alice', 1000),
+                Account('V', 'Bob', 2000),
+                Account('M', 'Alice', 200),
+                Account('M', 'Bob', 100),
+            ])
+
+    def test_update_conflict_with_name(self):
+        with self.conn:
+            insert_into(Person).on_conflict(Person.name).do_update(
+                Person.age == excluded(Person).age
+            ).submit(
+                [Person('Alice', 28)]
+            )
+
+            result = select_from(Person).where(Person.name == 'Alice').fetchone()
+            self.assertEqual(result, Person('Alice', 28))
+
+    def test_update_conflict(self):
+        with self.conn:
+            insert_into(Person).on_conflict().do_nothing().submit(
+                [Person('Alice', 28)]
+            )
+
+            result = select_from(Person).where(Person.name == 'Alice').fetchone()
+            self.assertEqual(result, Person('Alice', 18))
+
+
 class SqlTableOtherTest(unittest.TestCase):
     def assert_sql_state_equal(self, a: str, b: str):
         a = re.split(' +', a.replace('\n', ' ').strip())

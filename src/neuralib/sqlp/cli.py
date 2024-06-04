@@ -9,7 +9,37 @@ import polars as pl
 from neuralib.argp import AbstractParser, argument
 from .connection import Connection
 
-__all__ = ['Database']
+__all__ = ['Database', 'transaction']
+
+
+def transaction():
+    """
+    A decorator that decorate a function as a transaction session
+    that open a connection and set to the global variable.
+
+    >>> @transaction
+    ... def example(self):
+    ...     self.do_something()
+
+    equalivent to
+
+    >>> def example(self):
+    ...     with self.open_connection():
+    ...         self.do_something()
+
+    """
+
+    # TODO rollback?
+
+    def _decorator(f):
+        @functools.wraps(f)
+        def _transaction(self: Database, *args, **kwargs):
+            with self.open_connection():
+                return f(self, *args, **kwargs)
+
+        return _transaction
+
+    return _decorator
 
 
 class Database(metaclass=abc.ABCMeta):
@@ -50,36 +80,6 @@ class Database(metaclass=abc.ABCMeta):
             setattr(cls, '__first_connect_init', False)
 
         return ret
-
-    @classmethod
-    def transaction(cls):
-        """
-        A decorator that decorate a function as a transaction session
-        that open a connection and set to the global variable.
-
-        >>> @Database.transaction
-        ... def example(self):
-        ...     self.do_something()
-
-        equalivent to
-
-        >>> def example(self):
-        ...     with self.open_connection():
-        ...         self.do_something()
-
-        """
-
-        # TODO rollback?
-
-        def _decorator(f):
-            @functools.wraps(f)
-            def _transaction(self: Database, *args, **kwargs):
-                with self.open_connection():
-                    return f(self, *args, **kwargs)
-
-            return _transaction
-
-        return _decorator
 
 
 class CliDatabase(Database, AbstractParser):
@@ -192,7 +192,7 @@ class CliDatabase(Database, AbstractParser):
             result = connection.execute(' '.join(self.DB_STAT), commit=self.commit)
             if self.pretty:
                 from neuralib.sqlp.stat import Cursor
-                print(Cursor(result).fetch_polars())
+                print(Cursor(connection, result).fetch_polars())
             else:
                 for data in result:
                     print(data)

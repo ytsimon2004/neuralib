@@ -8,7 +8,7 @@ SQL statement builder
 This module provide a Python functions to build a SQL (sqlite3) statement.
 """
 from . import util
-from .cli import Database
+from .cli import Database, transaction
 from .connection import *
 from .expr import SqlExpr
 from .func import *
