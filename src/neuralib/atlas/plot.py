@@ -6,6 +6,8 @@ from plotly import express as px
 
 from neuralib.util.util_type import PathLike
 
+__all__ = ['plot_sunburst_acronym']
+
 
 def plot_sunburst_acronym(source: str = 'allen_mouse_10um',
                           check_latest: bool = True,

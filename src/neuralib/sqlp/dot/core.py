@@ -45,6 +45,7 @@ def generate_dot(db: Database, file=None, *,
     :param node: node attributes
     :param edge: edge attributes
     :return:
+    :raise FileNotFoundError: Check if graphivz already installed and add to system PATH
     """
     if file is None:
         from io import StringIO
