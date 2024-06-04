@@ -9,11 +9,12 @@
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
-## See to [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html)
+## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html)
 
 # Installation
 
-- `pip install neura-library` in your conda env with Python >= 3.9
+- `pip install neura-library` in your conda env with Python ~= 3.9.0
+- Checkout [Release notes](https://github.com/ytsimon2004/neuralib/releases)
 - According to purpose, install the optional package [requirements-optional.txt](requirements-optional.txt)
 
 ----------------------------

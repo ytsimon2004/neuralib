@@ -147,7 +147,7 @@ def main():
     ap.add_argument('-D', '--dir', type=Path, required=True, help='directory containing .sbx/.mat scanbox output',
                     dest='directory')
     ap.add_argument('-F', '--frames', metavar='SLICE', type=int_tuple_type, default=None,
-                    help='image sequences slice type', dest='frames')
+                    help='indices of image sequences, if None, find all frames', dest='frames')
     ap.add_argument('-P', '--plane', type=int, required=True, help='which optic plane', dest='plane')
     ap.add_argument('-C', '--channel', type=int, required=True, help='which pmt channel', dest='channel')
     ap.add_argument('-O', '--output', default=None, help='tiff output, if None, display the sequence', dest='output')

@@ -29,6 +29,15 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+Installation
+-----------------------
+
+.. code-block:: console
+
+   pip install neura-library
+
+- Checkout `Release notes <https://github.com/ytsimon2004/neuralib/releases>`_
+
 
 Open-Source tools API call / data parsing
 ------------------------------------------
