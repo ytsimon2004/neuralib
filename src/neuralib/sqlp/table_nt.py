@@ -1,13 +1,14 @@
-from typing import TypeVar, Generic, Any, NamedTuple, Annotated, Optional
+import typing
 
 from .expr import SqlField
-from .literal import FOREIGN_POLICY
-from .table import Table, ForeignConstraint, Field, missing, PRIMARY, UNIQUE, CheckConstraint
+from .literal import FOREIGN_POLICY, CONFLICT_POLICY
+from .table import *
+from .table import Table, missing
 from .util import resolve_field_type, cast_from_sql, cast_to_sql
 
 __all__ = ['named_tuple_table_class']
 
-T = TypeVar('T')
+T = typing.TypeVar('T')
 
 
 def named_tuple_table_class(cls):
@@ -17,10 +18,10 @@ def named_tuple_table_class(cls):
     Declare a table
 
     >>> @named_tuple_table_class
-    ... class Example(NamedTuple):
-    ...     a: Annotated[str, PRIMARY]  # primary key
-    ...     b: Annotated[str, UNIQUE]   # unique key
-    ...     c: Optional[str]            # nullable key
+    ... class Example(typing.NamedTuple):
+    ...     a: typing.Annotated[str, PRIMARY]  # primary key
+    ...     b: typing.Annotated[str, UNIQUE]   # unique key
+    ...     c: typing.Optional[str]            # nullable key
 
     """
     ret = NamedTupleTable(cls)
@@ -28,27 +29,7 @@ def named_tuple_table_class(cls):
     return cls
 
 
-class NamedTupleField:
-    def __init__(self, field: Field, raw_type: type):
-        self.field = field
-        self.raw_type = raw_type
-
-    @property
-    def name(self) -> str:
-        return self.field.name
-
-    @property
-    def sql_type(self):
-        return self.field.f_type
-
-    def cast_to_sql(self, value):
-        return cast_to_sql(self.raw_type, self.sql_type, value)
-
-    def cast_from_sql(self, value):
-        return cast_from_sql(self.raw_type, self.sql_type, value)
-
-
-class NamedTupleTable(Table[T], Generic[T]):
+class NamedTupleTable(Table[T], typing.Generic[T]):
     """
     SQL table information for a NamedTuple class that decorated by named_tuple_table_class.
     """
@@ -60,52 +41,66 @@ class NamedTupleTable(Table[T], Generic[T]):
             raise RuntimeError(f'not a NamedTuple {table_type.__name__}')
 
         self.table_type = table_type
-        self._fields: list[NamedTupleField] = []
-        self._primary: list[str] = []
-        self._unique: list[str] = []
+        self._fields: list[Field] = []
+        self._unique: list[UniqueConstraint] = []
         self._foreign: list[ForeignConstraint] = []
-        self._check: dict[Optional[str], CheckConstraint] = {}
-
-        field_types = typing.get_type_hints(table_type, include_extras=False)
-        for i, name in enumerate(getattr(table_type, '_fields')):
-            r_type, f_type, not_null = resolve_field_type(field_types[name])
-            f_value = table_type._field_defaults.get(name, missing)
-            field = Field(table_type, name, f_type, f_value, not_null)
-            setattr(table_type, name, TableFieldDescriptor(i, field))
-            self._fields.append(NamedTupleField(field, r_type))
+        self._check: dict[typing.Optional[str], CheckConstraint] = {}
 
         field_types = typing.get_type_hints(table_type, include_extras=True)
-        for field, f_type in field_types.items():
-            if typing.get_origin(f_type) == typing.Annotated:
-                a = typing.get_args(f_type)
-                if PRIMARY in a:
-                    self._primary.append(field)
-                elif UNIQUE in a:
-                    self._unique.append(field)
+        for i, name in enumerate(getattr(table_type, '_fields')):
+            field = self.__setup_column_constraint(table_type, i, name, field_types[name])
 
+            if (constraint := field.get_unique()) is not None:
+                self._unique.append(UniqueConstraint(field.name, table_type, [field.name], constraint.conflict))
+
+        self.__setup_table_constraint(table_type)
+
+    def __setup_column_constraint(self, table_type: type[T], i: int, attr_name: str, attr_type) -> Field:
+        f_value_missing = missing
+
+        attr_annotations = []
+        if typing.get_origin(attr_type) == typing.Annotated:
+            attr_annotations = typing.get_args(attr_type)[1:]
+            if CURRENT_DATE in attr_annotations:
+                f_value_missing = CURRENT_DATE
+            elif CURRENT_TIME in attr_annotations:
+                f_value_missing = CURRENT_TIME
+            elif CURRENT_DATETIME in attr_annotations:
+                f_value_missing = CURRENT_DATETIME
+
+        r_type, f_type, not_null = resolve_field_type(attr_type)
+        f_value = table_type._field_defaults.get(attr_name, f_value_missing)
+        field = Field(table_type, attr_name, r_type, f_type, f_value, not_null, attr_annotations)
+        setattr(table_type, attr_name, TableFieldDescriptor(i, field))
+        self._fields.append(field)
+        return field
+
+    def __setup_table_constraint(self, table_type: type[T]):
         for attr in dir(table_type):
             if callable(attr_value := getattr(table_type, attr)):
-                if (foreign := getattr(attr_value, '_sql_foreign', None)) is not None:
-                    self._foreign.append(make_foreign_constrain(self, attr_value, *foreign))
-                if (check := getattr(attr_value, '_sql_check', missing)) is not missing:
-                    check = make_check_constraint(self, attr_value, check)
-                    self._check[check.field] = check
+                if (constraint := getattr(attr_value, '_sql_foreign', None)) is not None:
+                    self._foreign.append(make_foreign_constrain(self, attr_value, *constraint))
+                if (constraint := getattr(attr_value, '_sql_check', missing)) is not missing:
+                    constraint = make_check_constraint(self, attr_value, *constraint)
+                    self._check[constraint.field] = constraint
+                if (constraint := getattr(attr_value, '_sql_unique', missing)) is not missing:
+                    self._unique.append(make_unique_constraint(self, attr_value, *constraint))
 
     @property
     def table_name(self) -> str:
         return self.table_type.__name__
 
-    def table_seq(self, instance: T) -> tuple[Any, ...]:
+    def table_seq(self, instance: T) -> tuple[typing.Any, ...]:
         _args = []
         for field, arg in zip(self._fields, instance):
-            _args.append(field.cast_to_sql(arg))
+            _args.append(cast_to_sql(field.raw_type, field.sql_type, arg))
         return tuple(_args)
 
-    def table_dict(self, instance: T, *, sql_type: bool = True) -> dict[str, Any]:
+    def table_dict(self, instance: T, *, sql_type: bool = True) -> dict[str, typing.Any]:
         ret = {}
         for field, arg in zip(self._fields, instance):
             if sql_type:
-                ret[field.name] = field.cast_to_sql(arg)
+                ret[field.name] = cast_to_sql(field.raw_type, field.sql_type, arg)
             else:
                 ret[field.name] = arg
         return ret
@@ -113,19 +108,15 @@ class NamedTupleTable(Table[T], Generic[T]):
     def table_new(self, *args) -> T:
         _args = []
         for field, arg in zip(self._fields, args):
-            _args.append(field.cast_from_sql(arg))
+            _args.append(cast_from_sql(field.raw_type, field.sql_type, arg))
         return self.table_type(*_args)
 
     @property
     def table_fields(self) -> list[Field]:
-        return [it.field for it in self._fields]
+        return list(self._fields)
 
     @property
-    def table_primary_field_names(self) -> list[str]:
-        return list(self._primary)
-
-    @property
-    def table_unique_field_names(self) -> list[str]:
+    def table_unique_fields(self) -> list[UniqueConstraint]:
         return list(self._unique)
 
     @property
@@ -133,7 +124,7 @@ class NamedTupleTable(Table[T], Generic[T]):
         return list(self._foreign)
 
     @property
-    def table_check_fields(self) -> dict[Optional[str], CheckConstraint]:
+    def table_check_fields(self) -> dict[typing.Optional[str], CheckConstraint]:
         return dict(self._check)
 
 
@@ -155,7 +146,7 @@ class TableFieldDescriptor:
         return self.__field.name
 
 
-def make_foreign_constrain(table: NamedTupleTable,
+def make_foreign_constrain(table: Table,
                            prop: callable,
                            fields: list,
                            update: FOREIGN_POLICY,
@@ -171,9 +162,9 @@ def make_foreign_constrain(table: NamedTupleTable,
         foreign_table = table.table_type
         foreign_fields.extend(fields)
     elif len(fields) == 1 and isinstance(fields[0], type):
-        from .table import table_primary_field_names
+        from .table import table_primary_fields
         foreign_table = fields[0]
-        foreign_fields = table_primary_field_names(foreign_table)
+        foreign_fields = [it.name for it in table_primary_fields(foreign_table)]
     else:
         foreign_table = None
 
@@ -188,11 +179,11 @@ def make_foreign_constrain(table: NamedTupleTable,
             else:
                 raise TypeError()
 
-    self_fields = []
     ret = prop(table.table_type)
     if not isinstance(ret, tuple):
         ret = [ret]
 
+    self_fields = []
     for field in ret:
         if isinstance(field, SqlField):
             if table.table_type != field.table:
@@ -201,11 +192,27 @@ def make_foreign_constrain(table: NamedTupleTable,
         else:
             raise TypeError()
 
-    return ForeignConstraint(prop.__name__, table.table_type, self_fields, foreign_table, foreign_fields, update,
-                             delete)
+    return ForeignConstraint(prop.__name__, table.table_type, self_fields, foreign_table, foreign_fields, update, delete)
 
 
-def make_check_constraint(table: NamedTupleTable, prop: callable, field: Optional[str]) -> CheckConstraint:
+def make_check_constraint(table: Table, prop: callable, field: typing.Optional[str]) -> CheckConstraint:
     from .expr import wrap
     ret = wrap(prop(table.table_type))
-    return CheckConstraint(table.table_type, field, ret)
+    return CheckConstraint(prop.__name__, table.table_type, field, ret)
+
+
+def make_unique_constraint(table: Table, prop: callable, conflict: CONFLICT_POLICY = None) -> UniqueConstraint:
+    ret = prop(table.table_type)
+    if not isinstance(ret, tuple):
+        ret = [ret]
+
+    fields = []
+    for field in ret:
+        if isinstance(field, SqlField):
+            if table.table_type != field.table:
+                raise RuntimeError()
+            fields.append(field.name)
+        else:
+            raise TypeError()
+
+    return UniqueConstraint(prop.__name__, table.table_type, fields, conflict)

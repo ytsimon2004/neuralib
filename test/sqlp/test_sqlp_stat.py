@@ -1,9 +1,10 @@
+import datetime
 import re
 import unittest
 from typing import NamedTuple, Annotated, Optional, Union
 
 from neuralib import sqlp
-from neuralib.sqlp import named_tuple_table_class, foreign, PRIMARY, check
+from neuralib.sqlp import named_tuple_table_class, foreign, check
 
 
 @sqlp.named_tuple_table_class
@@ -27,9 +28,9 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            a TEXT NOT NULL , 
-            b INT NOT NULL 
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT NOT NULL ,
+            b INTEGER NOT NULL
         )
         """, stat)
 
@@ -41,10 +42,24 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            a TEXT NOT NULL , 
-            b INT NOT NULL ,
-            PRIMARY KEY ( a )
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT NOT NULL PRIMARY KEY ,
+            b INTEGER NOT NULL
+        )
+        """, stat)
+
+    def test_create_table_with_primary_keys(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, sqlp.PRIMARY]
+            b: Annotated[int, sqlp.PRIMARY]
+
+        stat = sqlp.create_table(Test).build()
+        self.assert_sql_state_equal("""
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT NOT NULL ,
+            b INTEGER NOT NULL ,
+            PRIMARY KEY ( a , b )
         )
         """, stat)
 
@@ -56,10 +71,42 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            a TEXT NOT NULL , 
-            b INT NOT NULL ,
-            UNIQUE ( a )
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT NOT NULL UNIQUE ,
+            b INTEGER NOT NULL
+        )
+        """, stat)
+
+    def test_create_table_with_unique_keys(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, sqlp.UNIQUE]
+            b: Annotated[str, sqlp.UNIQUE]
+
+        stat = sqlp.create_table(Test).build()
+        self.assert_sql_state_equal("""
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT NOT NULL UNIQUE ,
+            b TEXT NOT NULL UNIQUE
+        )
+        """, stat)
+
+    def test_create_table_with_unique_keys_on_table(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: str
+            b: str
+
+            @sqlp.unique()
+            def _unique_ab_pair(self):
+                return self.a, self.b
+
+        stat = sqlp.create_table(Test).build()
+        self.assert_sql_state_equal("""
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT NOT NULL ,
+            b TEXT NOT NULL ,
+            UNIQUE ( a , b )
         )
         """, stat)
 
@@ -72,21 +119,50 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            a TEXT , 
-            b INT ,
+        CREATE TABLE IF NOT EXISTS Test (
+            a TEXT ,
+            b INTEGER ,
             c FLOAT
+        )
+        """, stat)
+
+    def test_create_table_with_auto_increment(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[int, sqlp.PRIMARY(auto_increment=True)]
+
+        stat = sqlp.create_table(Test).build()
+        self.assert_sql_state_equal("""
+        CREATE TABLE IF NOT EXISTS Test (
+            a INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+        )
+        """, stat)
+
+    def test_create_table_with_default_date_time(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[datetime.date, sqlp.CURRENT_DATE]
+            b: Annotated[datetime.time, sqlp.CURRENT_TIME]
+            c: Annotated[datetime.datetime, sqlp.CURRENT_DATETIME]
+
+        stat = sqlp.create_table(Test).build()
+        self.assert_sql_state_equal("""
+        CREATE TABLE IF NOT EXISTS Test (
+            a DATETIME NOT NULL DEFAULT CURRENT_DATE ,
+            b DATETIME NOT NULL DEFAULT CURRENT_TIME ,
+            c DATETIME NOT NULL DEFAULT CURRENT_DATETIME
         )
         """, stat)
 
     def test_create_table_foreign(self):
         @named_tuple_table_class
         class Ref(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
+            other: str
 
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             ref: str
 
             @foreign(Ref.name, update='NO ACTION', delete='NO ACTION')
@@ -95,10 +171,9 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            name TEXT NOT NULL ,
-            ref TEXT NOT NULL , 
-            PRIMARY KEY ( name ) ,
+        CREATE TABLE IF NOT EXISTS Test (
+            name TEXT NOT NULL PRIMARY KEY ,
+            ref TEXT NOT NULL ,
             FOREIGN KEY ( ref ) REFERENCES Ref ( name )
                 ON UPDATE NO ACTION ON DELETE NO ACTION
         )
@@ -107,12 +182,12 @@ class SqlpStatTest(unittest.TestCase):
     def test_create_table_foreign_primary(self):
         @named_tuple_table_class
         class Ref(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             other: str
 
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             ref: str
 
             @foreign(Ref, update='NO ACTION', delete='NO ACTION')
@@ -121,10 +196,9 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            name TEXT NOT NULL ,
-            ref TEXT NOT NULL , 
-            PRIMARY KEY ( name ) ,
+        CREATE TABLE IF NOT EXISTS Test (
+            name TEXT NOT NULL PRIMARY KEY ,
+            ref TEXT NOT NULL ,
             FOREIGN KEY ( ref ) REFERENCES Ref ( name )
                 ON UPDATE NO ACTION ON DELETE NO ACTION
         )
@@ -133,7 +207,7 @@ class SqlpStatTest(unittest.TestCase):
     def test_create_table_foreign_self(self):
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             ref: str
 
             @foreign('name', update='NO ACTION', delete='NO ACTION')
@@ -142,10 +216,9 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            name TEXT NOT NULL ,
-            ref TEXT NOT NULL , 
-            PRIMARY KEY ( name ) ,
+        CREATE TABLE IF NOT EXISTS Test (
+            name TEXT NOT NULL PRIMARY KEY ,
+            ref TEXT NOT NULL ,
             FOREIGN KEY ( ref ) REFERENCES Test ( name )
                 ON UPDATE NO ACTION ON DELETE NO ACTION
         )
@@ -154,7 +227,7 @@ class SqlpStatTest(unittest.TestCase):
     def test_create_table_check_field(self):
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             age: int
 
             @check('age')
@@ -163,17 +236,16 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            name TEXT NOT NULL ,
-            age INT NOT NULL CHECK ( Test.age > 10 ) , 
-            PRIMARY KEY ( name ) 
+        CREATE TABLE IF NOT EXISTS Test (
+            name TEXT NOT NULL PRIMARY KEY ,
+            age INTEGER NOT NULL CHECK ( Test.age > 10 )
         )
         """, stat)
 
     def test_create_table_check(self):
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             age: int
 
             @check()
@@ -183,10 +255,9 @@ class SqlpStatTest(unittest.TestCase):
         stat = sqlp.create_table(Test).build()
         print(stat)
         self.assert_sql_state_equal("""
-        CREATE TABLE IF NOT EXISTS Test ( 
-            name TEXT NOT NULL ,
-            age INT NOT NULL , 
-            PRIMARY KEY ( name ) ,
+        CREATE TABLE IF NOT EXISTS Test (
+            name TEXT NOT NULL PRIMARY KEY ,
+            age INTEGER NOT NULL ,
             CHECK ( Test.age > 10 AND Test.name != '' )
         )
         """, stat)
@@ -215,7 +286,7 @@ class SqlpStatTest(unittest.TestCase):
 
         self.assert_sql_state_equal("""
         SELECT * FROM Test
-        WHERE Test.a = ? 
+        WHERE Test.a = ?
         """, stat.build())
         self.assertListEqual([1], stat._para)
 
@@ -226,7 +297,7 @@ class SqlpStatTest(unittest.TestCase):
         )
         self.assert_sql_state_equal("""
         SELECT * FROM Test
-        WHERE Test.a = ? AND Test.b = ? 
+        WHERE Test.a = ? AND Test.b = ?
         """, stat.build())
         self.assertListEqual(['1', 0], stat._para)
 
@@ -340,7 +411,7 @@ class SqlpStatTest(unittest.TestCase):
 
         stat = sqlp.insert_into(Test).select_from(Other).build()
         self.assert_sql_state_equal("""
-        INSERT INTO Test ( a , b , c ) 
+        INSERT INTO Test ( a , b , c )
         SELECT * FROM Other
         """, stat)
 
@@ -391,7 +462,7 @@ class SqlpStatTest(unittest.TestCase):
     def test_table_alias(self):
         @named_tuple_table_class
         class Test(NamedTuple):
-            name: Annotated[str, PRIMARY]
+            name: Annotated[str, sqlp.PRIMARY]
             age: int
 
         t = sqlp.alias(Test, 't')

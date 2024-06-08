@@ -29,11 +29,11 @@ class Account(NamedTuple):
     person: Annotated[str, PRIMARY]
     money: int
 
-    @foreign(Person.name)
+    @foreign(Person)
     def _person(self):
         return self.person
 
-    @foreign(Bank.name)
+    @foreign(Bank)
     def _bank(self):
         return self.bank
 
@@ -45,9 +45,9 @@ class SqlpTableTest(unittest.TestCase):
     def setUpClass(cls):
         cls.conn = Connection(debug=True)
         with cls.conn:
-            create_table(Person)
-            create_table(Bank)
-            create_table(Account)
+            create_table(Person).submit()
+            create_table(Bank).submit()
+            create_table(Account).submit()
 
             insert_into(Person).submit([
                 Person('Alice', 18),
@@ -113,13 +113,13 @@ class SqlpTableTest(unittest.TestCase):
         self.assertEqual(Account('K', 'Eve', 0), select_from(Account).where(Account.bank == 'K').fetchone())
         update(Account, Account.money == 100).where(
             Account.bank == 'K'
-        ).submit(commit=True)
+        ).submit()
         self.assertEqual(Account('K', 'Eve', 100), select_from(Account).where(Account.bank == 'K').fetchone())
 
     def test_delete(self):
         insert_into(Account, policy='REPLACE').submit([Account('K', 'Eve', 0)])
         self.assertEqual(Account('K', 'Eve', 0), select_from(Account).where(Account.bank == 'K').fetchone())
-        delete_from(Account).where(Account.bank == 'K').submit(commit=True)
+        delete_from(Account).where(Account.bank == 'K').submit()
         self.assertIsNone(select_from(Account).where(Account.bank == 'K').fetchone())
 
     def test_foreign_field(self):
@@ -222,8 +222,8 @@ class SqlTableOtherTest(unittest.TestCase):
             create_table(A)
             self.assert_sql_state_equal("""
         CREATE TABLE A (
-            a INT NOT NULL ,
-            b INT 
+            a INTEGER NOT NULL ,
+            b INTEGER
         )
         """, conn.table_schema(A))
 
@@ -241,12 +241,12 @@ class SqlTableOtherTest(unittest.TestCase):
             create_table(A)
             self.assert_sql_state_equal("""
             CREATE TABLE A (
-                a INT NOT NULL ,
-                b INT NOT NULL DEFAULT 0 ,
+                a INTEGER NOT NULL ,
+                b INTEGER NOT NULL DEFAULT 0 ,
                 c TEXT NOT NULL DEFAULT '' ,
                 d BOOLEAN NOT NULL DEFAULT True ,
                 e BOOLEAN NOT NULL DEFAULT False ,
-                f TEXT DEFAULT NULL 
+                f TEXT DEFAULT NULL
             )
             """, conn.table_schema(A))
             insert_into(A).submit([A(1)])
@@ -277,8 +277,7 @@ class SqlTableOtherTest(unittest.TestCase):
             create_table(A)
             self.assert_sql_state_equal("""
                    CREATE TABLE A (
-                       a TEXT NOT NULL ,
-                       PRIMARY KEY ( a ) 
+                       a TEXT NOT NULL PRIMARY KEY
                    )
                    """, conn.table_schema(A))
 

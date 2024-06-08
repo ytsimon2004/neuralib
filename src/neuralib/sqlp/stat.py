@@ -67,33 +67,32 @@ class SqlStat(Generic[T]):
         par = list(self._para)
         for value in self._stat:
             if value == '?':
-                ret.append(f'?({par.pop(0)})')
+                ret.append(f'?({repr(par.pop(0))})')
             else:
                 ret.append(value)
         return ' '.join(ret)
 
-    def submit(self, *, commit=False) -> Cursor[T]:
+    def submit(self) -> Cursor[T]:
         """
         build the SQL statement and execute.
 
-        :param commit: commit this statement.
         :return: a cursor
         :raise RuntimeError: current statement does not bind with a connection.
         """
         if (connection := self._connection) is None:
             raise RuntimeError('Do not in a connection context')
 
-        ret = Cursor(connection, connection.execute(self, commit=commit), self.table)
+        ret = Cursor(connection, connection.execute(self), self.table)
         self._connection = None
         return ret
 
     def __del__(self):
         # check connection and auto_commit,
-        # make SqlStat auto submit itself when nobody is refer to it,
+        # make SqlStat auto submit itself when nobody is referring to it,
         # so users do need to explict call submit() for every statements.
-        if (c := self._connection) is not None and c._auto_commit and self._stat is not None and len(self._stat) > 0:
+        if self._connection is not None and self._stat is not None and len(self._stat) > 0:
             try:
-                self.submit(commit=True)
+                self.submit()
             except BaseException as e:
                 warnings.warn(repr(e))
 
@@ -370,7 +369,8 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
 
         """
         if by is not None:
-            self.add([by.upper(), 'JOIN'])
+            self.add(by.upper())
+        self.add('JOIN')
 
         if isinstance(table, type):
             that_table = table
@@ -387,7 +387,9 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
             self.add(table._name)
             that_table = table._value.stat._this_table
         else:
-            raise TypeError()
+            raise TypeError(f'JOIN {table}')
+
+        self.table = None
 
         if by == 'cross':
             return self
@@ -744,11 +746,11 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
             if self._returning:
                 if len(parameter) > 1:
                     raise RuntimeError('only support return one data')
-                cur = connection.execute(self, parameter[0], commit=False)
+                cur = connection.execute(self, parameter[0])
             else:
-                cur = connection.execute_batch(self, parameter, commit=not self._returning)
+                cur = connection.execute_batch(self, parameter)
         else:
-            cur = connection.execute(self, parameter, commit=not self._returning)
+            cur = connection.execute(self, parameter)
 
         ret = Cursor(connection, cur, self.table)
         self._connection = None
@@ -1256,6 +1258,7 @@ def create_table(table: type[T], *,
 
     * `IF NOT EXISTS`
     * column constraint `NOT NULL`
+    * column constraint `PRIMARY KEY`
     * column constraint `UNIQUE`
     * column constraint `CHECK`
     * column constraint `DEFAULT value`
@@ -1270,9 +1273,7 @@ def create_table(table: type[T], *,
     * `CREATE TEMP`
     * `AS SELECT`
     * column constraint `CONSTRAINT`
-    * column constraint `PRIMARY KEY`
     * column constraint `NOT NULL ON CONFLICT`
-    * column constraint `UNIQUE ON CONFLICT`
     * column constraint `DEFAULT (EXPR)`
     * column constraint `COLLATE`
     * column constraint `REFERENCES`
@@ -1293,21 +1294,27 @@ def create_table(table: type[T], *,
     self.add(table_name(table))
     self.add('(')
 
+    n_primary_key = len(primary_keys := table_primary_fields(table))
+
     for i, field in enumerate(table_fields(table)):
-        _column_def(self, field)
+        if n_primary_key == 1 and field.is_primary:
+            _column_def(self, field, field.get_primary())
+        else:
+            _column_def(self, field)
         self.add(',')
 
-    if len(primary_keys := table_primary_field_names(table)) > 0:
-        self.add(['PRIMARY KEY', '(', ','.join(primary_keys), ')'])
+    if n_primary_key > 1:
+        self.add(['PRIMARY KEY', '(', ' , '.join([it.name for it in primary_keys]), ')'])
         if primary_policy is not None:
             self.add(['ON CONFLICT', primary_policy.upper()])
         self.add(',')
 
-    if len(unique_keys := table_unique_field_names(table)) > 0:
-        self.add(['UNIQUE', '(', ','.join(unique_keys), ')'])
-        if unique_policy is not None:
-            self.add(['ON CONFLICT', unique_policy.upper()])
-        self.add(',')
+    for unique in table_unique_fields(table):
+        if len(unique.fields) > 1:
+            self.add(['UNIQUE', '(', ' , '.join(unique.fields), ')'])
+            if unique.conflict is not None:
+                self.add(['ON CONFLICT', unique.conflict.upper()])
+            self.add(',')
 
     for foreign_key in table_foreign_fields(table):
         _foreign_key(self, foreign_key)
@@ -1326,35 +1333,56 @@ def create_table(table: type[T], *,
     return self
 
 
-def _column_def(self: SqlStat, field: Field):
+def _column_def(self: SqlStat, field: Field, primary: PRIMARY = None):
     self.add(field.name)
 
-    if field.f_type == Any:
+    if field.sql_type == Any:
         pass
-    elif field.f_type == int:
-        self.add('INT')
-    elif field.f_type == float:
+    elif field.sql_type == int:
+        self.add('INTEGER')
+    elif field.sql_type == float:
         self.add('FLOAT')
-    elif field.f_type == bool:
+    elif field.sql_type == bool:
         self.add('BOOLEAN')
-    elif field.f_type == bytes:
+    elif field.sql_type == bytes:
         self.add('BLOB')
-    elif field.f_type == str:
+    elif field.sql_type == str:
         self.add('TEXT')
-    elif field.f_type == datetime.date:
+    elif field.sql_type == datetime.time:
         self.add('DATETIME')
-    elif field.f_type == datetime.datetime:
+    elif field.sql_type == datetime.date:
+        self.add('DATETIME')
+    elif field.sql_type == datetime.datetime:
         self.add('DATETIME')
     else:
-        raise RuntimeError(f'field type {field.f_type}')
+        raise RuntimeError(f'field type {field.sql_type}')
 
     if field.not_null:
         if not field.has_default or field.f_value is not None:
             self.add('NOT NULL')
 
+    if primary is not None:
+        self.add(['PRIMARY', 'KEY'])
+        if primary.order is not None:
+            self.add(primary.order.upper())
+        if primary.conflict is not None:
+            self.add(['ON CONFLICT', primary.conflict.upper()])
+        if primary.auto_increment:
+            self.add('AUTOINCREMENT')
+    elif (unique := field.get_unique()) is not None:
+        self.add('UNIQUE')
+        if unique.conflict is not None:
+            self.add(['ON CONFLICT', unique.conflict.upper()])
+
     if field.has_default:
         if field.f_value is None:
             self.add(f'DEFAULT NULL')
+        elif field.f_value == CURRENT_DATE:
+            self.add(f'DEFAULT CURRENT_DATE')
+        elif field.f_value == CURRENT_TIME:
+            self.add(f'DEFAULT CURRENT_TIME')
+        elif field.f_value == CURRENT_DATETIME:
+            self.add(f'DEFAULT CURRENT_DATETIME')
         else:
             self.add(f'DEFAULT {repr(field.f_value)}')
 

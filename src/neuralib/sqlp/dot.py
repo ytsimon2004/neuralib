@@ -118,19 +118,17 @@ def _generate_dot_table(db: Database, file=sys.stdout):
         table: Table = _table_class(table)
         print(f'"{table.table_name}"', '[', file=file)
 
-        pf = table.table_primary_field_names
-        uf = table.table_unique_field_names
         ff = []
 
         for field in table.table_fields:
             at = [f'<{field.name}>']
-            if field.name in pf:
+            if field.is_primary:
                 at.append('#')
-            elif field.name in uf:
+            elif field.is_unique:
                 at.append('!')
             at.append(field.name)
             at.append(':')
-            at.append(field.f_type.__name__)
+            at.append(field.sql_type.__name__)
             if not field.not_null:
                 at.append('?')
             ff.append(''.join(at))

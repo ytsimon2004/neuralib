@@ -17,5 +17,5 @@ from .func_stat import *
 from .func_win import *
 from .literal import *
 from .stat import create_table, select_from, insert_into, replace_into, update, delete_from, Cursor
-from .table import foreign, check, PRIMARY, UNIQUE
+from .table import foreign, check, unique, PRIMARY, UNIQUE, CURRENT_DATE, CURRENT_TIME, CURRENT_DATETIME
 from .table_nt import *

@@ -242,7 +242,7 @@ def wrap(other: Any) -> SqlExpr:
     elif isinstance(other, datetime.datetime):
         return SqlLiteral(repr(other.strftime('%Y-%m-%d %H:%M:%S')))
     else:
-        raise TypeError()
+        raise TypeError(repr(other))
 
 
 def wrap_seq(*other) -> list[SqlExpr]:

@@ -50,9 +50,9 @@ class ChangeTest(SqlTestCase):
         if self.tmp_database is not None:
             self.tmp_database.unlink(missing_ok=True)
 
-    def execute_both(self, raw_sql: str, parameter=(), commit=True):
-        self.connection_ref.execute(raw_sql, parameter, commit=commit)
-        self.connection.execute(raw_sql, parameter, commit=commit)
+    def execute_both(self, raw_sql: str, parameter=()):
+        self.connection_ref.execute(raw_sql, parameter)
+        self.connection.execute(raw_sql, parameter)
 
     def assertSqlExeEqual(self, raw_sql: str, stat: Union[SqlStat[T], Cursor[T]], parameter=()) -> list[T]:
         r1 = self.connection_ref.execute(raw_sql, parameter).fetchall()
@@ -107,7 +107,7 @@ class InsertTest(ChangeTest):
     def test_insert_from_select(self):
         @sqlp.named_tuple_table_class
         class ArtistsBackup(NamedTuple):
-            ArtistsId: Annotated[int, sqlp.PRIMARY]
+            ArtistsId: Annotated[int, sqlp.PRIMARY(auto_increment=True)]
             Name: str
 
         self.assertSqlExeEqual("""\

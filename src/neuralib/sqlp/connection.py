@@ -23,16 +23,13 @@ class Connection:
     """
 
     def __init__(self, filename: Union[str, Path] = ':memory:', *,
-                 auto_commit=True,
                  debug=False):
         """
         :param filename: sqlite database filepath. use in-memory database by default.
-        :param auto_commit: auto commit any statement which bound with this connection.
         :param debug: print statement when executing.
         """
         self._connection = sqlite3.Connection(str(filename))
         self._debug = debug
-        self._auto_commit = auto_commit
         self._context: Optional[contextvars.Token] = None
 
     @property
@@ -44,6 +41,11 @@ class Connection:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_val is None:
+            self._connection.commit()
+        else:
+            self._connection.rollback()
+
         if (token := self._context) is not None:
             CONNECTION.reset(token)
             self._context = None
@@ -87,14 +89,18 @@ class Connection:
     # execute #
     # ======= #
 
-    def execute(self, stat: Union[str, SqlStat], parameter: Union[list[Any], dict[str, Any]] = (),
-                commit=False) -> sqlite3.Cursor:
+    def commit(self):
+        self._connection.commit()
+
+    def rollback(self):
+        self._connection.rollback()
+
+    def execute(self, stat: Union[str, SqlStat], parameter: Union[list[Any], dict[str, Any]] = ()) -> sqlite3.Cursor:
         """
         execute a statement.
 
         :param stat: a raw SQL statement or a SqlStat
         :param parameter: statement variable's value.
-        :param commit: commit statement.
         :return: a cursor.
         """
         if isinstance(stat, SqlStat):
@@ -104,9 +110,7 @@ class Connection:
             stat = stat.build()
 
         if self._debug:
-            print(stat)
-            if len(parameter):
-                print('?=', parameter)
+            print(repr(stat))
 
         try:
             ret = self._connection.execute(stat, parameter)
@@ -117,17 +121,14 @@ class Connection:
         except sqlite3.InterfaceError as e:
             raise RuntimeError(repr(parameter)) from e
 
-        if commit:
-            self._connection.commit()
         return ret
 
-    def execute_batch(self, stat: Union[str, SqlStat], parameter: list, commit=False) -> sqlite3.Cursor:
+    def execute_batch(self, stat: Union[str, SqlStat], parameter: list) -> sqlite3.Cursor:
         """
         execute a statement in batch mode.
 
         :param stat: a raw SQL statement or a SqlStat
         :param parameter: list of statement variable's value.
-        :param commit: commit statement.
         :return: a cursor.
         """
         if isinstance(stat, SqlStat):
@@ -135,7 +136,7 @@ class Connection:
             stat = stat.build()
 
         if self._debug:
-            print(stat)
+            print(repr(stat))
 
         try:
             ret = self._connection.executemany(stat, parameter)
@@ -146,11 +147,9 @@ class Connection:
         except sqlite3.InterfaceError as e:
             raise RuntimeError(repr(parameter)) from e
 
-        if commit:
-            self._connection.commit()
         return ret
 
-    def execute_script(self, stat: Union[str, list[str], list[SqlStat]], commit=False):
+    def execute_script(self, stat: Union[str, list[str], list[SqlStat]]):
         """
         execute SQL script.
 
@@ -173,7 +172,7 @@ class Connection:
 
         script = ';\n'.join(script)
         if self._debug:
-            print(script)
+            print(repr(stat))
 
         try:
             ret = self._connection.executescript(script)
@@ -184,8 +183,6 @@ class Connection:
         except sqlite3.InterfaceError as e:
             raise RuntimeError(script) from e
 
-        if commit:
-            self._connection.commit()
         return ret
 
     # ========= #
@@ -265,7 +262,7 @@ class Connection:
         self.execute_batch(stat, [
             tuple([row[f] for f in fields])
             for row in df.iter_rows(named=True)
-        ], commit=True)
+        ])
 
     def export_csv(self, table: Union[str, type[T]], file: Union[str, Path]):
         """

@@ -4,15 +4,17 @@ import abc
 import typing
 from typing import NamedTuple, Any, Optional, Generic, TYPE_CHECKING, Annotated, Callable
 
-from .literal import FOREIGN_POLICY
+from .literal import FOREIGN_POLICY, CONFLICT_POLICY
 
 if TYPE_CHECKING:
+    import datetime
     from .expr import SqlExpr
 
 __all__ = [
-    'Field', 'PRIMARY', 'UNIQUE',
+    'Field', 'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_DATETIME',
     'table_name', 'table_new', 'table_field_names', 'table_fields', 'table_field',
-    'table_primary_field_names', 'table_unique_field_names',
+    'PRIMARY', 'table_primary_fields',
+    'UNIQUE', 'unique', 'UniqueConstraint', 'table_unique_fields',
     'foreign', 'ForeignConstraint', 'table_foreign_fields', 'table_foreign_field',
     'check', 'CheckConstraint', 'table_check_fields', 'table_check_field'
 ]
@@ -30,8 +32,12 @@ class PRIMARY(object):
     ...     a: Annotated[str, PRIMARY]  # style 1
     """
 
-    def __init__(self):
-        raise RuntimeError()
+    def __init__(self, order: typing.Literal['ASC', 'DESC'] = None,
+                 conflict: CONFLICT_POLICY = None,
+                 auto_increment=False):
+        self.order = order
+        self.conflict = conflict
+        self.auto_increment = auto_increment
 
 
 @typing.final
@@ -41,6 +47,48 @@ class UNIQUE(object):
 
     >>> class Example:
     ...     a: Annotated[str, UNIQUE]  # style 1
+    """
+
+    def __init__(self, conflict: CONFLICT_POLICY = None):
+        self.conflict = conflict
+
+
+@typing.final
+class CURRENT_DATE(object):
+    """
+    annotated a date field which use current date as its default.
+
+    >>> class Example:
+    ...     a: Annotated[datetime.date, CURRENT_DATE]
+
+    """
+
+    def __init__(self):
+        raise RuntimeError()
+
+
+@typing.final
+class CURRENT_TIME(object):
+    """
+    annotated a time field which use current time as its default.
+
+    >>> class Example:
+    ...     a: Annotated[datetime.time, CURRENT_TIME]
+
+    """
+
+    def __init__(self):
+        raise RuntimeError()
+
+
+@typing.final
+class CURRENT_DATETIME(object):
+    """
+    annotated a datetime field which use current datetime as its default.
+
+    >>> class Example:
+    ...     a: Annotated[datetime.datetime, CURRENT_DATETIME]
+
     """
 
     def __init__(self):
@@ -57,7 +105,10 @@ class Field(NamedTuple):
     name: str
     """column/field name"""
 
-    f_type: type
+    raw_type: type
+    """origin field type"""
+
+    sql_type: type
     """column/field type. Should be supported by SQL"""
 
     f_value: Any = missing
@@ -66,6 +117,8 @@ class Field(NamedTuple):
     not_null: bool = True
     """Is it not NULL."""
 
+    annotated: list[Any] = ()
+
     @property
     def table_name(self) -> str:
         return table_name(self.table)
@@ -73,6 +126,36 @@ class Field(NamedTuple):
     @property
     def has_default(self) -> bool:
         return self.f_value is not missing
+
+    @property
+    def is_primary(self) -> bool:
+        return self.get_primary() is not None
+
+    def get_primary(self) -> PRIMARY | None:
+        for a in self.annotated:
+            if a == PRIMARY:
+                return PRIMARY()
+            elif isinstance(a, PRIMARY):
+                return a
+        return None
+
+    @property
+    def is_unique(self) -> bool:
+        return self.get_unique() is not None
+
+    def get_unique(self) -> UNIQUE | None:
+        for a in self.annotated:
+            if a == UNIQUE:
+                return UNIQUE()
+            elif isinstance(a, UNIQUE):
+                return a
+        return None
+
+    def get_annotation(self, annotation_type: type[T]) -> T | None:
+        for a in self.annotated:
+            if isinstance(a, annotation_type):
+                return a
+        return None
 
 
 class Table(Generic[T], metaclass=abc.ABCMeta):
@@ -83,11 +166,8 @@ class Table(Generic[T], metaclass=abc.ABCMeta):
     table_type: type[T]
     """associated table"""
 
-    @property
-    @abc.abstractmethod
-    def table_name(self) -> str:
-        """name of the table."""
-        pass
+    table_name: str
+    """name of the table."""
 
     @abc.abstractmethod
     def table_seq(self, instance: T) -> tuple[Any, ...]:
@@ -126,16 +206,9 @@ class Table(Generic[T], metaclass=abc.ABCMeta):
         pass
 
     @property
-    @abc.abstractmethod
-    def table_primary_field_names(self) -> list[str]:
-        """list of the name for each primary field in the table."""
-        pass
-
-    @property
-    @abc.abstractmethod
-    def table_unique_field_names(self) -> list[str]:
-        """list of the name for each unique field in the table."""
-        pass
+    def table_primary_fields(self) -> list[Field]:
+        """list of primary field in the table."""
+        return [field for field in self.table_fields if field.is_primary]
 
     def table_field(self, name: str) -> Field:
         """
@@ -149,6 +222,12 @@ class Table(Generic[T], metaclass=abc.ABCMeta):
             if field.name == name:
                 return field
         raise RuntimeError(f'{self.table_name} no such field {name}')
+
+    @property
+    @abc.abstractmethod
+    def table_unique_fields(self) -> list[UniqueConstraint]:
+        """get a list of the unique constraint in the table."""
+        pass
 
     @property
     @abc.abstractmethod
@@ -195,6 +274,31 @@ def table_dict(instance: T, *, sql_type: bool = True) -> dict[str, Any]:
 def table_new(table: type[T], *args) -> T:
     """create an instance for the table."""
     return _table_class(table).table_new(*args)
+
+
+class UniqueConstraint(NamedTuple):
+    name: str
+    """constraint name"""
+
+    table: type
+    """associated table"""
+
+    fields: list[str]
+    """associated fields"""
+
+    conflict: CONFLICT_POLICY | None
+
+
+def unique(conflict: CONFLICT_POLICY = None):
+    """
+    A decorator to create an unique constraint.
+    """
+
+    def _decorator(f):
+        setattr(f, '_sql_unique', (conflict,))
+        return f
+
+    return _decorator
 
 
 class ForeignConstraint(NamedTuple):
@@ -274,6 +378,9 @@ def foreign(*field,
 
 class CheckConstraint(NamedTuple):
     """SQL check constraint"""
+    name: str
+    """constraint name"""
+
     table: type
     """associated table"""
     field: Optional[str]
@@ -306,7 +413,7 @@ def check(field: str = None):
     """
 
     def _decorator(f):
-        setattr(f, '_sql_check', field)
+        setattr(f, '_sql_check', (field,))
         return f
 
     return _decorator
@@ -333,14 +440,14 @@ def table_field(table: type[T], field: str) -> Field:
     return _table_class(table).table_field(field)
 
 
-def table_primary_field_names(table: type[T]) -> list[str]:
+def table_primary_fields(table: type[T]) -> list[Field]:
     """list of the name for each primary field in the table."""
-    return _table_class(table).table_primary_field_names
+    return _table_class(table).table_primary_fields
 
 
-def table_unique_field_names(table: type[T]) -> list[str]:
+def table_unique_fields(table: type[T]) -> list[UniqueConstraint]:
     """list of the name for each unique field in the table."""
-    return _table_class(table).table_unique_field_names
+    return _table_class(table).table_unique_fields
 
 
 def table_foreign_fields(table: type[T]) -> list[ForeignConstraint]:
@@ -348,7 +455,7 @@ def table_foreign_fields(table: type[T]) -> list[ForeignConstraint]:
     return _table_class(table).table_foreign_fields
 
 
-def table_foreign_field(table: type[T], target: type | Callable) -> Optional[ForeignConstraint]:
+def table_foreign_field(table: type[T], target: type | Callable) -> ForeignConstraint | None:
     """
     get the foreign constraint in the table that refer to the target table.
 
@@ -364,7 +471,6 @@ def table_foreign_field(table: type[T], target: type | Callable) -> Optional[For
         for field in table_foreign_fields(table):
             if field.name == target.__name__:
                 return field
-
     return None
 
 
