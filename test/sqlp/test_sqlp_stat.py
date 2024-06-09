@@ -253,12 +253,11 @@ class SqlpStatTest(unittest.TestCase):
                 return (self.age > 10) & (self.name != '')
 
         stat = sqlp.create_table(Test).build()
-        print(stat)
         self.assert_sql_state_equal("""
         CREATE TABLE IF NOT EXISTS Test (
             name TEXT NOT NULL PRIMARY KEY ,
             age INTEGER NOT NULL ,
-            CHECK ( Test.age > 10 AND Test.name != '' )
+            CHECK ( ( Test.age > 10 AND Test.name != '' ) )
         )
         """, stat)
 
@@ -297,7 +296,7 @@ class SqlpStatTest(unittest.TestCase):
         )
         self.assert_sql_state_equal("""
         SELECT * FROM Test
-        WHERE Test.a = ? AND Test.b = ?
+        WHERE ( Test.a = ? AND Test.b = ? )
         """, stat.build())
         self.assertListEqual(['1', 0], stat._para)
 
@@ -308,7 +307,7 @@ class SqlpStatTest(unittest.TestCase):
 
         self.assert_sql_state_equal("""
         SELECT * FROM Test
-        WHERE Test.a = ? AND Test.b = ?
+        WHERE ( Test.a = ? AND Test.b = ? )
         """, stat.build())
         self.assertListEqual(['1', 0], stat._para)
 
@@ -319,7 +318,7 @@ class SqlpStatTest(unittest.TestCase):
 
         self.assert_sql_state_equal("""
         SELECT * FROM Test
-        WHERE Test.a = ? OR Test.b = ?
+        WHERE ( Test.a = ? OR Test.b = ? )
         """, stat.build())
         self.assertListEqual(['1', 0], stat._para)
 

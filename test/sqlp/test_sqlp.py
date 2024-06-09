@@ -2,7 +2,7 @@ import re
 import sqlite3
 import unittest
 from pathlib import Path
-from typing import NamedTuple, Annotated, Optional
+from typing import NamedTuple, Annotated, Optional, Union
 
 from neuralib.sqlp import *
 from neuralib.sqlp.stat import SqlStat
@@ -156,6 +156,168 @@ class SqlpTableTest(unittest.TestCase):
             Account('V', 'Alice', 1000),
             Account('M', 'Alice', 200),
         ], results)
+
+
+class SqlCreateTableTest(unittest.TestCase):
+    conn: Connection
+
+    def setUp(self):
+        self.conn = Connection(debug=True)
+        self.conn.__enter__()
+
+    def tearDown(self):
+        self.conn.__exit__(None, None, None)
+
+    def test_create_table(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: str
+            b: int
+
+        create_table(Test)
+
+    def test_create_table_with_primary_key(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, PRIMARY]
+            b: int
+
+        create_table(Test)
+
+    def test_create_table_with_primary_keys(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, PRIMARY]
+            b: Annotated[int, PRIMARY]
+
+        create_table(Test)
+
+    def test_create_table_with_unique_key(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, UNIQUE]
+            b: int
+
+        create_table(Test)
+
+    def test_create_table_with_unique_keys(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, UNIQUE]
+            b: Annotated[str, UNIQUE]
+
+        create_table(Test)
+
+    def test_create_table_with_unique_keys_on_table(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: str
+            b: str
+
+            @unique()
+            def _unique_ab_pair(self):
+                return self.a, self.b
+
+        create_table(Test)
+
+    def test_create_table_with_null(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Optional[str]
+            b: Union[int, None]
+            c: Union[None, float]
+
+        create_table(Test)
+
+    def test_create_table_with_auto_increment(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[int, PRIMARY(auto_increment=True)]
+
+        create_table(Test)
+
+    def test_create_table_with_default_date_time(self):
+        import datetime
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[datetime.date, CURRENT_DATE]
+            b: Annotated[datetime.time, CURRENT_TIME]
+            c: Annotated[datetime.datetime, CURRENT_DATETIME]
+
+        create_table(Test)
+
+    def test_create_table_foreign(self):
+        @named_tuple_table_class
+        class Ref(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            other: str
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            ref: str
+
+            @foreign(Ref.name, update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        create_table(Ref)
+        create_table(Test)
+
+    def test_create_table_foreign_primary(self):
+        @named_tuple_table_class
+        class Ref(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            other: str
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            ref: str
+
+            @foreign(Ref, update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        create_table(Ref)
+        create_table(Test)
+
+    def test_create_table_foreign_self(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            ref: str
+
+            @foreign('name', update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        create_table(Test)
+
+    def test_create_table_check_field(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            age: int
+
+            @check('age')
+            def _age(self) -> bool:
+                return self.age > 10
+
+        create_table(Test)
+
+    def test_create_table_check(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            age: int
+
+            @check()
+            def _check_all(self) -> bool:
+                return (self.age > 10) & (self.name != '')
+
+        create_table(Test)
 
 
 class SqlUpsertTest(unittest.TestCase):

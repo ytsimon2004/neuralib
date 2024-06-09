@@ -587,7 +587,9 @@ class SqlVarArgOper(SqlOper):
             self.not_().__sql_stat__(stat)
             stat.add(')')
         elif self.oper in ('AND', 'OR'):
+            stat.add('(')
             sql_join(stat, self.oper, self.args)
+            stat.add(')')
         else:
             raise ValueError()
 
