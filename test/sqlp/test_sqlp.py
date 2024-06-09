@@ -2,7 +2,7 @@ import re
 import sqlite3
 import unittest
 from pathlib import Path
-from typing import NamedTuple, Annotated, Optional
+from typing import NamedTuple, Annotated, Optional, Union
 
 from neuralib.sqlp import *
 from neuralib.sqlp.stat import SqlStat
@@ -29,11 +29,11 @@ class Account(NamedTuple):
     person: Annotated[str, PRIMARY]
     money: int
 
-    @foreign(Person.name)
+    @foreign(Person)
     def _person(self):
         return self.person
 
-    @foreign(Bank.name)
+    @foreign(Bank)
     def _bank(self):
         return self.bank
 
@@ -45,9 +45,9 @@ class SqlpTableTest(unittest.TestCase):
     def setUpClass(cls):
         cls.conn = Connection(debug=True)
         with cls.conn:
-            create_table(Person)
-            create_table(Bank)
-            create_table(Account)
+            create_table(Person).submit()
+            create_table(Bank).submit()
+            create_table(Account).submit()
 
             insert_into(Person).submit([
                 Person('Alice', 18),
@@ -113,15 +113,14 @@ class SqlpTableTest(unittest.TestCase):
         self.assertEqual(Account('K', 'Eve', 0), select_from(Account).where(Account.bank == 'K').fetchone())
         update(Account, Account.money == 100).where(
             Account.bank == 'K'
-        ).submit(commit=True)
+        ).submit()
         self.assertEqual(Account('K', 'Eve', 100), select_from(Account).where(Account.bank == 'K').fetchone())
 
     def test_delete(self):
         insert_into(Account, policy='REPLACE').submit([Account('K', 'Eve', 0)])
         self.assertEqual(Account('K', 'Eve', 0), select_from(Account).where(Account.bank == 'K').fetchone())
-        delete_from(Account).where(Account.bank == 'K').submit(commit=True)
+        delete_from(Account).where(Account.bank == 'K').submit()
         self.assertIsNone(select_from(Account).where(Account.bank == 'K').fetchone())
-
 
     def test_foreign_field(self):
         from neuralib.sqlp.table import table_foreign_field, ForeignConstraint
@@ -159,6 +158,216 @@ class SqlpTableTest(unittest.TestCase):
         ], results)
 
 
+class SqlCreateTableTest(unittest.TestCase):
+    conn: Connection
+
+    def setUp(self):
+        self.conn = Connection(debug=True)
+        self.conn.__enter__()
+
+    def tearDown(self):
+        self.conn.__exit__(None, None, None)
+
+    def test_create_table(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: str
+            b: int
+
+        create_table(Test)
+
+    def test_create_table_with_primary_key(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, PRIMARY]
+            b: int
+
+        create_table(Test)
+
+    def test_create_table_with_primary_keys(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, PRIMARY]
+            b: Annotated[int, PRIMARY]
+
+        create_table(Test)
+
+    def test_create_table_with_unique_key(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, UNIQUE]
+            b: int
+
+        create_table(Test)
+
+    def test_create_table_with_unique_keys(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[str, UNIQUE]
+            b: Annotated[str, UNIQUE]
+
+        create_table(Test)
+
+    def test_create_table_with_unique_keys_on_table(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: str
+            b: str
+
+            @unique()
+            def _unique_ab_pair(self):
+                return self.a, self.b
+
+        create_table(Test)
+
+    def test_create_table_with_null(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Optional[str]
+            b: Union[int, None]
+            c: Union[None, float]
+
+        create_table(Test)
+
+    def test_create_table_with_auto_increment(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[int, PRIMARY(auto_increment=True)]
+
+        create_table(Test)
+
+    def test_create_table_with_default_date_time(self):
+        import datetime
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            a: Annotated[datetime.date, CURRENT_DATE]
+            b: Annotated[datetime.time, CURRENT_TIME]
+            c: Annotated[datetime.datetime, CURRENT_DATETIME]
+
+        create_table(Test)
+
+    def test_create_table_foreign(self):
+        @named_tuple_table_class
+        class Ref(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            other: str
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            ref: str
+
+            @foreign(Ref.name, update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        create_table(Ref)
+        create_table(Test)
+
+    def test_create_table_foreign_primary(self):
+        @named_tuple_table_class
+        class Ref(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            other: str
+
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            ref: str
+
+            @foreign(Ref, update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        create_table(Ref)
+        create_table(Test)
+
+    def test_create_table_foreign_self(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            ref: str
+
+            @foreign('name', update='NO ACTION', delete='NO ACTION')
+            def _ref(self):
+                return self.ref
+
+        create_table(Test)
+
+    def test_create_table_check_field(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            age: int
+
+            @check('age')
+            def _age(self) -> bool:
+                return self.age > 10
+
+        create_table(Test)
+
+    def test_create_table_check(self):
+        @named_tuple_table_class
+        class Test(NamedTuple):
+            name: Annotated[str, PRIMARY]
+            age: int
+
+            @check()
+            def _check_all(self) -> bool:
+                return (self.age > 10) & (self.name != '')
+
+        create_table(Test)
+
+
+class SqlUpsertTest(unittest.TestCase):
+    conn: Connection
+
+    def setUp(self):
+        self.conn = Connection(debug=True)
+        with self.conn:
+            create_table(Person).submit()
+            create_table(Bank).submit()
+            create_table(Account).submit()
+
+            insert_into(Person).submit([
+                Person('Alice', 18),
+                Person('Bob', 20),
+            ])
+
+            insert_into(Bank).submit([
+                Bank('V'),
+                Bank('M'),
+            ])
+
+            insert_into(Account).submit([
+                Account('V', 'Alice', 1000),
+                Account('V', 'Bob', 2000),
+                Account('M', 'Alice', 200),
+                Account('M', 'Bob', 100),
+            ])
+
+    def test_update_conflict_with_name(self):
+        with self.conn:
+            insert_into(Person).on_conflict(Person.name).do_update(
+                Person.age == excluded(Person).age
+            ).submit(
+                [Person('Alice', 28)]
+            )
+
+            result = select_from(Person).where(Person.name == 'Alice').fetchone()
+            self.assertEqual(result, Person('Alice', 28))
+
+    def test_update_conflict(self):
+        with self.conn:
+            insert_into(Person).on_conflict().do_nothing().submit(
+                [Person('Alice', 28)]
+            )
+
+            result = select_from(Person).where(Person.name == 'Alice').fetchone()
+            self.assertEqual(result, Person('Alice', 18))
+
+
 class SqlTableOtherTest(unittest.TestCase):
     def assert_sql_state_equal(self, a: str, b: str):
         a = re.split(' +', a.replace('\n', ' ').strip())
@@ -175,8 +384,8 @@ class SqlTableOtherTest(unittest.TestCase):
             create_table(A)
             self.assert_sql_state_equal("""
         CREATE TABLE A (
-            a INT NOT NULL ,
-            b INT 
+            a INTEGER NOT NULL ,
+            b INTEGER
         )
         """, conn.table_schema(A))
 
@@ -194,18 +403,32 @@ class SqlTableOtherTest(unittest.TestCase):
             create_table(A)
             self.assert_sql_state_equal("""
             CREATE TABLE A (
-                a INT NOT NULL ,
-                b INT NOT NULL DEFAULT 0 ,
+                a INTEGER NOT NULL ,
+                b INTEGER NOT NULL DEFAULT 0 ,
                 c TEXT NOT NULL DEFAULT '' ,
                 d BOOLEAN NOT NULL DEFAULT True ,
                 e BOOLEAN NOT NULL DEFAULT False ,
-                f TEXT DEFAULT NULL 
+                f TEXT DEFAULT NULL
             )
             """, conn.table_schema(A))
             insert_into(A).submit([A(1)])
 
             result = select_from(A).fetchone()
             self.assertEqual(result, A(1, 0, '', True, False, None))
+
+    def test_table_field_bool_casting(self):
+        @named_tuple_table_class
+        class A(NamedTuple):
+            a: int
+            b: bool
+
+        with Connection(debug=True):
+            create_table(A)
+            insert_into(A).submit([A(0, False), A(1, True)])
+            self.assertEqual(A(0, False), select_from(A).where(A.a == 0).fetchone())
+            self.assertEqual(A(1, True), select_from(A).where(A.a == 1).fetchone())
+            self.assertEqual((False,), select_from(A.b).where(A.a == 0).fetchone())
+            self.assertEqual((True,), select_from(A.b).where(A.a == 1).fetchone())
 
     def test_table_field_path_casting(self):
         @named_tuple_table_class
@@ -216,8 +439,7 @@ class SqlTableOtherTest(unittest.TestCase):
             create_table(A)
             self.assert_sql_state_equal("""
                    CREATE TABLE A (
-                       a TEXT NOT NULL ,
-                       PRIMARY KEY ( a ) 
+                       a TEXT NOT NULL PRIMARY KEY
                    )
                    """, conn.table_schema(A))
 

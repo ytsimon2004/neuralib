@@ -5,7 +5,7 @@ import operator
 import re
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeVar, Iterable, overload, TYPE_CHECKING
+from typing import TypeVar, Iterable, overload, TYPE_CHECKING, Any
 
 from neuralib.util.table import rich_table
 from .expr import SqlExpr, SqlField
@@ -42,26 +42,31 @@ def datetime_to_str(t: datetime.datetime) -> str:
 
 
 @overload
-def take(index: int, coll: Iterable[tuple[T, ...]]) -> list[T]:
+def take(index: int, coll: Cursor | Iterable[tuple[T, ...]]) -> list[T]:
     pass
 
 
 @overload
-def take(index: V, coll: Iterable[T]) -> list[V]:
+def take(index: type[V], coll: Cursor | Iterable[tuple[T, ...]]) -> list[V]:
     pass
 
 
 @overload
-def take(index: tuple[int, ...], coll: Iterable[tuple[T, ...]]) -> list[tuple[T, ...]]:
+def take(index: tuple[int, ...], coll: Cursor | Iterable[tuple[T, ...]]) -> list[tuple[T, ...]]:
     pass
 
 
 @overload
-def take(index: tuple[V], coll: Iterable[T]) -> list[tuple[V]]:
+def take(index: tuple[V], coll: Cursor | Iterable[T]) -> list[tuple[V]]:
     pass
 
 
-def take(index, coll: Iterable):
+@overload
+def take(index: V, coll: Cursor | Iterable[T]) -> list[V]:
+    pass
+
+
+def take(index, coll: Cursor | Iterable):
     """
     A help function that compose itemgetter and mapping functions.
 
@@ -79,25 +84,37 @@ def take(index, coll: Iterable):
     :param coll:
     :return:
     """
+    if isinstance(index, type):
+        return list(map(lambda it: index(*it), coll))
+
     if isinstance(index, int):
         return list(map(operator.itemgetter(index), coll))
 
-    elif isinstance(index, tuple) and all([isinstance(it, int) for it in index]):
+    if isinstance(index, tuple) and all([isinstance(it, int) for it in index]):
         def _index(item):
             return tuple([item[it] for it in index])
 
         return list(map(_index, coll))
 
     from .table import table_field_names
+    from .stat import Cursor
 
     if isinstance(index, SqlField):
-        fields = table_field_names(index.field.table)
-        index = fields.index(index.field.name)
+        if isinstance(coll, Cursor):
+            index = coll.headers.index(index.field.name)
+        else:
+            fields = table_field_names(index.field.table)
+            index = fields.index(index.field.name)
+
         return list(map(operator.itemgetter(index), coll))
 
     if isinstance(index, tuple):
-        fields = table_field_names(index[0].field.table)
-        index = tuple([fields.index(it.field.name) for it in index])
+        index = cast(tuple[SqlField], index)
+        if isinstance(coll, Cursor):
+            index = tuple([coll.headers.index(it.field.name) for it in index])
+        else:
+            fields = table_field_names(index[0].field.table)
+            index = tuple([fields.index(it.field.name) for it in index])
 
         return take(index, coll)
 
@@ -170,7 +187,8 @@ def infer_cmp(x: T, v: T | str | range | slice) -> SqlExpr | None:
         return None
     if isinstance(v, SqlExpr):
         return v
-
+    if isinstance(v, (int, float)):
+        return x == v
     if isinstance(v, (range, slice)):
         return infer_in(x, v)
 
@@ -253,7 +271,10 @@ def resolve_field_type(f_type: type) -> tuple[type, type, bool]:
     sql_type = f_type
     o = typing.get_origin(f_type)
 
-    if o == typing.Union:  # or o == types.UnionType:
+    if o == typing.Annotated:
+        return resolve_field_type(typing.get_args(f_type)[0])
+
+    elif o == typing.Union:
         a = typing.get_args(f_type)
         if len(a) == 2:
             try:
@@ -267,6 +288,7 @@ def resolve_field_type(f_type: type) -> tuple[type, type, bool]:
 
     elif o == typing.Literal:
         return str, str, True
+
     elif f_type == Path:
         return f_type, str, True
 
@@ -278,16 +300,18 @@ def cast_to_sql(raw_type: type[T], sql_type: type[V], value: T) -> V:
         return None
     if sql_type == str:
         return str(value)
+    if raw_type == Any:
+        return value
     return value
 
 
 def cast_from_sql(raw_type: type[T], sql_type: type[V], value: V) -> T:
     if value is None:
         return None
-    if sql_type in (int, float):
+    if raw_type == Any:
         return value
-    if sql_type == bool:
-        return value != 0
+    if sql_type in (int, float, bool):
+        return value
     if raw_type == datetime.datetime and isinstance(value, str):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     if raw_type == datetime.date and isinstance(value, str):

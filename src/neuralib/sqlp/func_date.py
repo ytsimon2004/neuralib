@@ -3,7 +3,9 @@ SQL functions related to datetime.
 
 https://www.sqlite.org/lang_datefunc.html
 """
-from .expr import SqlExpr
+from typing_extensions import LiteralString
+
+from . import expr
 from .func_dec import as_func_expr
 
 __all__ = [
@@ -13,7 +15,7 @@ __all__ = [
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
-def date(t, *m) -> SqlExpr:
+def date(t, *m) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html
@@ -27,7 +29,7 @@ def date(t, *m) -> SqlExpr:
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
-def time(t, *m) -> SqlExpr:
+def time(t, *m) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html
@@ -41,7 +43,7 @@ def time(t, *m) -> SqlExpr:
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
-def datetime(t, *m) -> SqlExpr:
+def datetime(t, *m) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html
@@ -55,7 +57,7 @@ def datetime(t, *m) -> SqlExpr:
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
-def julianday(t, *m) -> SqlExpr:
+def julianday(t, *m) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html
@@ -69,7 +71,7 @@ def julianday(t, *m) -> SqlExpr:
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
-def unixepoch(t, *m) -> SqlExpr:
+def unixepoch(t, *m) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html
@@ -82,8 +84,7 @@ def unixepoch(t, *m) -> SqlExpr:
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
-@as_func_expr
-def strftime(fmt, t, *m) -> SqlExpr:
+def strftime(fmt: LiteralString, t, *m) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html
@@ -93,12 +94,12 @@ def strftime(fmt, t, *m) -> SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    return expr.SqlFuncOper('STRFTIME', expr.SqlLiteral(repr(fmt)), t, *m)
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
-def timediff(a, b) -> SqlExpr:
+def timediff(a, b) -> expr.SqlExpr:
     """
 
     https://www.sqlite.org/lang_datefunc.html

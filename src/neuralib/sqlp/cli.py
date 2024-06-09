@@ -1,5 +1,6 @@
 import abc
 import functools
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Optional, Literal
@@ -9,7 +10,35 @@ import polars as pl
 from neuralib.argp import AbstractParser, argument
 from .connection import Connection
 
-__all__ = ['Database']
+__all__ = ['Database', 'transaction']
+
+
+def transaction():
+    """
+    A decorator that decorate a function as a transaction session
+    that open a connection and set to the global variable.
+
+    >>> @transaction
+    ... def example(self):
+    ...     self.do_something()
+
+    equalivent to
+
+    >>> def example(self):
+    ...     with self.open_connection():
+    ...         self.do_something()
+
+    """
+
+    def _decorator(f):
+        @functools.wraps(f)
+        def _transaction(self: Database, *args, **kwargs):
+            with self.open_connection():
+                return f(self, *args, **kwargs)
+
+        return _transaction
+
+    return _decorator
 
 
 class Database(metaclass=abc.ABCMeta):
@@ -46,40 +75,11 @@ class Database(metaclass=abc.ABCMeta):
             from .stat import create_table
             with ret:
                 for table in self.database_tables:
-                    create_table(table).submit(commit=True)
+                    create_table(table).submit()
+
             setattr(cls, '__first_connect_init', False)
 
         return ret
-
-    @classmethod
-    def transaction(cls):
-        """
-        A decorator that decorate a function as a transaction session
-        that open a connection and set to the global variable.
-
-        >>> @Database.transaction
-        ... def example(self):
-        ...     self.do_something()
-
-        equalivent to
-
-        >>> def example(self):
-        ...     with self.open_connection():
-        ...         self.do_something()
-
-        """
-
-        # TODO rollback?
-
-        def _decorator(f):
-            @functools.wraps(f)
-            def _transaction(self: Database, *args, **kwargs):
-                with self.open_connection():
-                    return f(self, *args, **kwargs)
-
-            return _transaction
-
-        return _decorator
 
 
 class CliDatabase(Database, AbstractParser):
@@ -94,7 +94,7 @@ class CliDatabase(Database, AbstractParser):
     list_table: str = argument('--table', metavar='NAME', default=None, const='', nargs='?')
     from_file: bool = argument('-f', '--file')
     action: Literal['import', 'export'] = argument('--action', default=None)
-    commit: bool = argument('--commit')
+    pretty: bool = argument('-p', '--pretty')
 
     USAGE = """\
 %(prog)s -d FILE --table [NAME]
@@ -182,15 +182,37 @@ class CliDatabase(Database, AbstractParser):
         if len(self.DB_STAT) > 1:
             raise RuntimeError(f'too many arguments : {self.DB_STAT[1:]}')
 
-        script = Path(self.DB_STAT[0]).read_text()
         with self.open_connection() as connection:
-            connection.connection.executescript(script)
+            stat = []
+
+            with Path(self.DB_STAT[0]).open() as file:
+                for line in file:
+                    stat.append(line)
+
+                    if ';' in line:
+                        result = connection.execute(''.join(stat))
+                        stat = []
+                        self._print_result(connection, result)
+
+            if len(stat):
+                result = connection.execute(''.join(stat))
+                self._print_result(connection, result)
 
     def run_statement(self):
         with self.open_connection() as connection:
-            for data in connection.execute(' '.join(self.DB_STAT), commit=self.commit):
-                print(data)
+            result = connection.execute(' '.join(self.DB_STAT))
+            self._print_result(connection, result)
 
+    def _print_result(self, connection, cursor: sqlite3.Cursor):
+        if self.pretty:
+            from neuralib.sqlp.stat import Cursor
+            print(Cursor(connection, cursor).fetch_polars())
+        else:
+            header = cursor.description
+            if header is not None:
+                print('--', tuple([it[0] for it in header]))
+            for data in cursor:
+                print(data)
 
 if __name__ == '__main__':
     CliDatabase().main()

@@ -11,11 +11,23 @@ if TYPE_CHECKING:
     from .stat import SqlStat
 
 __all__ = [
-    'wrap', 'alias', 'cast', 'asc', 'desc', 'nulls_first', 'nulls_last', 'concat', 'and_', 'or_',
+    'TRUE', 'FALSE', 'NULL', 'ROWID',
+    'literal', 'wrap', 'alias', 'cast', 'case', 'exists', 'asc', 'desc', 'nulls_first', 'nulls_last', 'concat',
+    'and_', 'or_',
     'like', 'not_like', 'glob', 'contains', 'not_contains', 'between', 'not_between', 'is_null', 'is_not_null',
+    'excluded'
 ]
 
 T = TypeVar('T')
+
+TRUE = expr.SqlLiteral.SQL_TRUE
+FALSE = expr.SqlLiteral.SQL_FALSE
+NULL = expr.SqlLiteral.SQL_NULL
+ROWID = expr.SqlLiteral('rowid')
+
+
+def literal(x: str) -> expr.SqlExpr:
+    return expr.SqlLiteral(x)
 
 
 def wrap(x) -> expr.SqlExpr:
@@ -59,6 +71,25 @@ def cast(t: type[T], x) -> T:
     """
     return expr.SqlCastOper(t.__name__, expr.wrap(x))
 
+
+def case(x=None) -> expr.SqlCaseExpr:
+    """
+    https://www.sqlite.org/lang_expr.html#the_case_expression
+
+    .. code-block::SQL
+
+        CASE :x
+            ...
+
+    :param x:
+    :return:
+    """
+    return expr.SqlCaseExpr(None if x is None else expr.wrap(x))
+
+
+def exists(x) -> expr.SqlExpr:
+    """https://www.sqlite.org/lang_expr.html#the_exists_operator"""
+    return expr.SqlExistsOper('EXISTS', x)
 
 def asc(x) -> expr.SqlExpr:
     """
@@ -153,7 +184,7 @@ def or_(*other) -> expr.SqlExpr:
     return expr.SqlVarArgOper('OR', expr.wrap_seq(*other))
 
 
-def like(x, s) -> expr.SqlExpr:
+def like(x, s) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -167,7 +198,7 @@ def like(x, s) -> expr.SqlExpr:
     return expr.wrap(x).like(s)
 
 
-def not_like(x, s) -> expr.SqlExpr:
+def not_like(x, s) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -181,7 +212,7 @@ def not_like(x, s) -> expr.SqlExpr:
     return expr.wrap(x).not_like(s)
 
 
-def glob(x, s) -> expr.SqlExpr:
+def glob(x, s) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -195,7 +226,7 @@ def glob(x, s) -> expr.SqlExpr:
     return expr.wrap(x).glob(s)
 
 
-def contains(x, coll) -> expr.SqlExpr:
+def contains(x, coll) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -212,7 +243,7 @@ def contains(x, coll) -> expr.SqlExpr:
     return expr.wrap(x).contains(coll)
 
 
-def not_contains(x, coll) -> expr.SqlExpr:
+def not_contains(x, coll) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -229,8 +260,10 @@ def not_contains(x, coll) -> expr.SqlExpr:
     return expr.wrap(x).not_contains(coll)
 
 
-def between(x, *value) -> expr.SqlExpr:
+def between(x, *value) -> expr.SqlCompareOper:
     """
+    https://www.sqlite.org/lang_expr.html#the_between_operator
+
     ..  code-block::SQL
 
         :x BETWEEN :value[0] AND :value[1]
@@ -243,8 +276,10 @@ def between(x, *value) -> expr.SqlExpr:
     return expr.wrap(x).between(*value)
 
 
-def not_between(x, *value) -> expr.SqlExpr:
+def not_between(x, *value) -> expr.SqlCompareOper:
     """
+    https://www.sqlite.org/lang_expr.html#the_between_operator
+
     ..  code-block::SQL
 
         :x NOT BETWEEN :value[0] AND :value[1]
@@ -257,7 +292,7 @@ def not_between(x, *value) -> expr.SqlExpr:
     return expr.wrap(x).not_between(*value)
 
 
-def is_null(x) -> expr.SqlExpr:
+def is_null(x) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -267,7 +302,7 @@ def is_null(x) -> expr.SqlExpr:
     return expr.wrap(x).is_null()
 
 
-def is_not_null(x) -> expr.SqlExpr:
+def is_not_null(x) -> expr.SqlCompareOper:
     """
     ..  code-block::SQL
 
@@ -275,3 +310,8 @@ def is_not_null(x) -> expr.SqlExpr:
 
     """
     return expr.wrap(x).is_not_null()
+
+
+def excluded(t: type[T]) -> T:
+    """https://www.sqlite.org/lang_upsert.html"""
+    return expr.SqlAlias(t, 'excluded')
