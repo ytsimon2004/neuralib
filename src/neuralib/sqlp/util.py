@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import operator
 import re
-from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar, Iterable, overload, TYPE_CHECKING, Any
 
@@ -349,7 +348,7 @@ def get_fields_from_schema(schema: str) -> list[str]:
     return found
 
 
-def map_foreign(value: T, foreign: type[V] | Callable) -> Cursor[V]:
+def map_foreign(value: T, foreign: type[V]) -> Cursor[V]:
     """
     Let a table ``T`` with a foreign constraint refer to table ``V``,
     map a ``T`` data to the ``V`` data.
@@ -359,7 +358,7 @@ def map_foreign(value: T, foreign: type[V] | Callable) -> Cursor[V]:
     :return:
     """
     from .table import table_foreign_field
-    from .stat import select_from
+    from .stat_start import select_from
 
     table = type(value)
     if (constraint := table_foreign_field(table, foreign)) is None:
@@ -383,7 +382,7 @@ def pull_foreign(target: type[T], foreign: V) -> Cursor[T]:
     :return:
     """
     from .table import table_foreign_field
-    from .stat import select_from
+    from .stat_start import select_from
 
     if (constraint := table_foreign_field(target, type(foreign))) is None:
         raise RuntimeError(f'not a foreign constraint')

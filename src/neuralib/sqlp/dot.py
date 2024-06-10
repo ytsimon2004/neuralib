@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import overload, IO, Any, Union
 
 from .cli import Database
-from .table import _table_class, table_name, Table
+from .table import table_class, table_name, Table
 
 __all__ = ['generate_dot']
 
@@ -115,7 +115,7 @@ def _generate_dot(db: Database, file=sys.stdout, *,
 
 def _generate_dot_table(db: Database, file=sys.stdout):
     for table in db.database_tables:
-        table: Table = _table_class(table)
+        table: Table = table_class(table)
         print(f'"{table.table_name}"', '[', file=file)
 
         ff = []
@@ -138,7 +138,7 @@ def _generate_dot_table(db: Database, file=sys.stdout):
         print('];', file=file)
 
     for table in db.database_tables:
-        table: Table = _table_class(table)
+        table: Table = table_class(table)
         for foreign in table.table_foreign_fields:
             if foreign.fields == foreign.foreign_fields:
                 print(table_name(foreign.table), ':0', '->', table_name(foreign.foreign_table), ':0', file=file)

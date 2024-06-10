@@ -1,7 +1,6 @@
 import typing
 
-from .expr import SqlField
-from .literal import FOREIGN_POLICY, CONFLICT_POLICY
+from .annotation import *
 from .table import *
 from .table import Table, missing
 from .util import resolve_field_type, cast_from_sql, cast_to_sql
@@ -79,12 +78,19 @@ class NamedTupleTable(Table[T], typing.Generic[T]):
         for attr in dir(table_type):
             if callable(attr_value := getattr(table_type, attr)):
                 if (constraint := getattr(attr_value, '_sql_foreign', None)) is not None:
-                    self._foreign.append(make_foreign_constrain(self, attr_value, *constraint))
+                    constraint = make_foreign_constrain(self, attr_value, *constraint)
+                    self._foreign.append(constraint)
+                    setattr(attr_value, '_sql_foreign', constraint)
                 if (constraint := getattr(attr_value, '_sql_check', missing)) is not missing:
                     constraint = make_check_constraint(self, attr_value, *constraint)
                     self._check[constraint.field] = constraint
+                    setattr(attr_value, '_sql_check', constraint)
                 if (constraint := getattr(attr_value, '_sql_unique', missing)) is not missing:
-                    self._unique.append(make_unique_constraint(self, attr_value, *constraint))
+                    constraint = make_unique_constraint(self, attr_value, *constraint)
+                    self._unique.append(constraint)
+                    setattr(attr_value, '_sql_unique', constraint)
+            elif isinstance(attr_value, property):
+                attr_value.fget._sql_owner = table_type
 
     @property
     def table_name(self) -> str:
@@ -146,73 +152,3 @@ class TableFieldDescriptor:
         return self.__field.name
 
 
-def make_foreign_constrain(table: Table,
-                           prop: callable,
-                           fields: list,
-                           update: FOREIGN_POLICY,
-                           delete: FOREIGN_POLICY) -> ForeignConstraint:
-    foreign_fields = []
-
-    if len(fields) == 0:
-        raise RuntimeError('empty fields')
-    elif isinstance(fields[0], str):
-        if not all([isinstance(it, str) for it in fields]):
-            raise TypeError()
-
-        foreign_table = table.table_type
-        foreign_fields.extend(fields)
-    elif len(fields) == 1 and isinstance(fields[0], type):
-        from .table import table_primary_fields
-        foreign_table = fields[0]
-        foreign_fields = [it.name for it in table_primary_fields(foreign_table)]
-    else:
-        foreign_table = None
-
-        for field in fields:
-            if isinstance(field, SqlField):
-                if foreign_table is None:
-                    foreign_table = field.table
-                elif foreign_table != field.table:
-                    raise RuntimeError()
-
-                foreign_fields.append(field.name)
-            else:
-                raise TypeError()
-
-    ret = prop(table.table_type)
-    if not isinstance(ret, tuple):
-        ret = [ret]
-
-    self_fields = []
-    for field in ret:
-        if isinstance(field, SqlField):
-            if table.table_type != field.table:
-                raise RuntimeError()
-            self_fields.append(field.name)
-        else:
-            raise TypeError()
-
-    return ForeignConstraint(prop.__name__, table.table_type, self_fields, foreign_table, foreign_fields, update, delete)
-
-
-def make_check_constraint(table: Table, prop: callable, field: typing.Optional[str]) -> CheckConstraint:
-    from .expr import wrap
-    ret = wrap(prop(table.table_type))
-    return CheckConstraint(prop.__name__, table.table_type, field, ret)
-
-
-def make_unique_constraint(table: Table, prop: callable, conflict: CONFLICT_POLICY = None) -> UniqueConstraint:
-    ret = prop(table.table_type)
-    if not isinstance(ret, tuple):
-        ret = [ret]
-
-    fields = []
-    for field in ret:
-        if isinstance(field, SqlField):
-            if table.table_type != field.table:
-                raise RuntimeError()
-            fields.append(field.name)
-        else:
-            raise TypeError()
-
-    return UniqueConstraint(prop.__name__, table.table_type, fields, conflict)

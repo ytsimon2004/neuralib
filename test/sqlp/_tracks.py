@@ -10,7 +10,7 @@ from typing import NamedTuple, Annotated, Optional
 
 from neuralib.sqlp import named_tuple_table_class, foreign, PRIMARY
 
-__all__ = ['Artists', 'Genres', 'MediaTypes', 'Albums', 'Tracks', 'Employees', 'Customers', 'Invoices']
+__all__ = ['Artists', 'Genres', 'MediaTypes', 'Albums', 'Tracks', 'Employees', 'Customers', 'Invoices', 'Invoice_Items']
 
 
 @named_tuple_table_class
@@ -22,7 +22,7 @@ class Artists(NamedTuple):
     )
 
     """
-    ArtistId: Annotated[int, PRIMARY]
+    ArtistId: Annotated[int, PRIMARY(auto_increment=True)]
     Name: Optional[str]
 
 
@@ -34,7 +34,7 @@ class Genres(NamedTuple):
         [Name] NVARCHAR(120)
     )
     """
-    GenreId: Annotated[int, PRIMARY]
+    GenreId: Annotated[int, PRIMARY(auto_increment=True)]
     Name: Optional[str]
 
 
@@ -47,7 +47,7 @@ class MediaTypes(NamedTuple):
     )
 
     """
-    MediaTypeId: Annotated[int, PRIMARY]
+    MediaTypeId: Annotated[int, PRIMARY(auto_increment=True)]
     Name: Optional[str]
 
 
@@ -63,7 +63,7 @@ class Albums(NamedTuple):
     )
 
     """
-    AlbumId: Annotated[int, PRIMARY]
+    AlbumId: Annotated[int, PRIMARY(auto_increment=True)]
     Title: str
     ArtistId: int
 
@@ -95,7 +95,7 @@ class Tracks(NamedTuple):
 
     """
 
-    TrackId: Annotated[int, PRIMARY]
+    TrackId: Annotated[int, PRIMARY(auto_increment=True)]
     Name: str
     AlbumId: Optional[int]
     MediaTypeId: int
@@ -142,7 +142,7 @@ class Employees(NamedTuple):
     )
 
     """
-    EmployeeId: Annotated[int, PRIMARY]
+    EmployeeId: Annotated[int, PRIMARY(auto_increment=True)]
     LastName: str
     FirstName: str
     Title: Optional[str]
@@ -185,7 +185,7 @@ class Customers(NamedTuple):
     )
 
     """
-    CustomerId: Annotated[int, PRIMARY]
+    CustomerId: Annotated[int, PRIMARY(auto_increment=True)]
     FirstName: str
     LastName: str
     Company: Optional[str]
@@ -222,7 +222,7 @@ class Invoices(NamedTuple):
     )
 
     """
-    InvoiceId: Annotated[int, PRIMARY]
+    InvoiceId: Annotated[int, PRIMARY(auto_increment=True)]
     CustomerId: int
     InvoiceDate: datetime.datetime
     BillingAddress: Optional[str]
@@ -235,3 +235,34 @@ class Invoices(NamedTuple):
     @foreign(Customers)
     def _customer(self):
         return self.CustomerId
+
+
+@named_tuple_table_class
+class Invoice_Items(NamedTuple):
+    """
+    CREATE TABLE "invoice_items" (
+        [InvoiceLineId] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        [InvoiceId] INTEGER  NOT NULL,
+        [TrackId] INTEGER  NOT NULL,
+        [UnitPrice] NUMERIC(10,2)  NOT NULL,
+        [Quantity] INTEGER  NOT NULL,
+        FOREIGN KEY ([InvoiceId]) REFERENCES "invoices" ([InvoiceId])
+            ON DELETE NO ACTION ON UPDATE NO ACTION,
+        FOREIGN KEY ([TrackId]) REFERENCES "tracks" ([TrackId])
+            ON DELETE NO ACTION ON UPDATE NO ACTION
+    )
+    """
+
+    InvoiceLineId: Annotated[int, PRIMARY(auto_increment=True)]
+    InvoiceId: int
+    TrackId: int
+    UnitPrice: float
+    Quantity: int
+
+    @foreign(Invoices)
+    def _invoices(self):
+        return self.InvoiceId
+
+    @foreign(Tracks)
+    def _tracks(self):
+        return self.TrackId

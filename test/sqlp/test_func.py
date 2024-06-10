@@ -213,7 +213,7 @@ class FuncCountExampleTest(SqlTestCase):
         ))
 
     def test_count_join(self):
-        ret = self.assertSqlExeEqual("""\
+        self.assertSqlExeEqual("""\
         SELECT
             tracks.albumid, 
             title, 
@@ -242,19 +242,6 @@ class FuncCountExampleTest(SqlTestCase):
             sqlp.desc(sqlp.count())
         ))
 
-        test = sqlp.select_from(
-            Tracks.AlbumId,
-            Albums.Title,
-            sqlp.count()
-        ).join(Albums, by='inner').on_foreign().group_by(
-            Tracks.AlbumId
-        ).having(
-            sqlp.count() > 25
-        ).order_by(
-            sqlp.desc(sqlp.count())
-        ).fetchall()
-
-        self.assertListEqual(ret, test)
 
     def test_count_distinct(self):
         self.assertSqlExeEqual("""\
@@ -363,7 +350,8 @@ class FuncSumTest(SqlTestCase):
            title;
         """, sqlp.select_from(
             Tracks.AlbumId, Albums.Title, sqlp.sum(Tracks.Milliseconds)
-        ).join(Albums, by='inner').on_foreign(
+        ).join(Albums, by='inner').by(
+            Tracks._albums
         ).group_by(
             Tracks.AlbumId, Albums.Title
         ))
@@ -384,7 +372,8 @@ class FuncSumTest(SqlTestCase):
            SUM(milliseconds) > 1000000;
         """, sqlp.select_from(
             Tracks.AlbumId, Albums.Title, sqlp.sum(Tracks.Milliseconds)
-        ).join(Albums, by='inner').on_foreign(
+        ).join(Albums, by='inner').by(
+            Tracks._albums
         ).group_by(
             Tracks.AlbumId, Albums.Title
         ).having(
