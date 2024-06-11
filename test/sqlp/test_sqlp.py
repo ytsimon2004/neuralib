@@ -243,7 +243,7 @@ class SqlCreateTableTest(unittest.TestCase):
         class Test(NamedTuple):
             a: Annotated[datetime.date, CURRENT_DATE]
             b: Annotated[datetime.time, CURRENT_TIME]
-            c: Annotated[datetime.datetime, CURRENT_DATETIME]
+            c: Annotated[datetime.datetime, CURRENT_TIMESTAMP]
 
         create_table(Test)
 

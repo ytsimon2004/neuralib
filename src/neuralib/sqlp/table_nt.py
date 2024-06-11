@@ -64,8 +64,8 @@ class NamedTupleTable(Table[T], typing.Generic[T]):
                 f_value_missing = CURRENT_DATE
             elif CURRENT_TIME in attr_annotations:
                 f_value_missing = CURRENT_TIME
-            elif CURRENT_DATETIME in attr_annotations:
-                f_value_missing = CURRENT_DATETIME
+            elif CURRENT_TIMESTAMP in attr_annotations:
+                f_value_missing = CURRENT_TIMESTAMP
 
         r_type, f_type, not_null = resolve_field_type(attr_type)
         f_value = table_type._field_defaults.get(attr_name, f_value_missing)

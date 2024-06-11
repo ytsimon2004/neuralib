@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     import datetime
 
 __all__ = [
-    'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_DATETIME',
+    'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP',
     'PRIMARY', 'UNIQUE', 'unique', 'foreign', 'check',
 ]
 
@@ -76,12 +76,12 @@ class CURRENT_TIME(object):
 
 
 @typing.final
-class CURRENT_DATETIME(object):
+class CURRENT_TIMESTAMP(object):
     """
     annotated a datetime field which use current datetime as its default.
 
     >>> class Example:
-    ...     a: Annotated[datetime.datetime, CURRENT_DATETIME]
+    ...     a: Annotated[datetime.datetime, CURRENT_TIMESTAMP]
 
     """
 

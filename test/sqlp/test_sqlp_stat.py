@@ -143,14 +143,14 @@ class SqlpStatTest(unittest.TestCase):
         class Test(NamedTuple):
             a: Annotated[datetime.date, sqlp.CURRENT_DATE]
             b: Annotated[datetime.time, sqlp.CURRENT_TIME]
-            c: Annotated[datetime.datetime, sqlp.CURRENT_DATETIME]
+            c: Annotated[datetime.datetime, sqlp.CURRENT_TIMESTAMP]
 
         stat = sqlp.create_table(Test).build()
         self.assert_sql_state_equal("""
         CREATE TABLE IF NOT EXISTS Test (
             a DATETIME NOT NULL DEFAULT CURRENT_DATE ,
             b DATETIME NOT NULL DEFAULT CURRENT_TIME ,
-            c DATETIME NOT NULL DEFAULT CURRENT_DATETIME
+            c DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """, stat)
 

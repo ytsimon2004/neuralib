@@ -600,8 +600,8 @@ def column_def(self: SqlStat, field: Field, primary: PRIMARY = None):
         self.add(f'DEFAULT CURRENT_DATE')
     elif field.f_value == CURRENT_TIME:
         self.add(f'DEFAULT CURRENT_TIME')
-    elif field.f_value == CURRENT_DATETIME:
-        self.add(f'DEFAULT CURRENT_DATETIME')
+    elif field.f_value == CURRENT_TIMESTAMP:
+        self.add(f'DEFAULT CURRENT_TIMESTAMP')
     else:
         self.add(f'DEFAULT {repr(field.f_value)}')
 
