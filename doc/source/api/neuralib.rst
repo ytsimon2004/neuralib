@@ -23,7 +23,6 @@ neuralib package
     neuralib.segmentation
     neuralib.stimpy
     neuralib.tools
-    neuralib.tools.pkl_parq_view
     neuralib.tools.slack_bot
     neuralib.util
     neuralib.wrapper
