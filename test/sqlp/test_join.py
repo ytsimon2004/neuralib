@@ -24,6 +24,16 @@ class JoinTest(SqlTestCase):
                                .join(Artists, by='inner')
                                .on(Artists.ArtistId == Albums.ArtistId))
 
+    def test_inner_join_on_foreign_constraint(self):
+        self.assertSqlExeEqual("""\
+        SELECT
+            Title,
+            Name
+        FROM
+            albums
+        INNER JOIN artists USING (ArtistId);
+        """, sqlp.select_from(Albums.Title, Artists.Name).join(Artists, by='inner').by(Albums._artists))
+
     def test_join_alias(self):
         l = sqlp.alias(Albums, 'l')
         r = sqlp.alias(Artists, 'r')
@@ -317,6 +327,21 @@ class SelfJoinTest(SqlTestCase):
             sqlp.concat(e.FirstName, ' ', e.LastName) @ 'Direct report',
             from_table=e
         ).join(m, by='inner').on(m.EmployeeId == e.ReportsTo).order_by(manager))
+
+    def test_self_join_by_foreign_constraint(self):
+        e = sqlp.alias(Employees, 'e')
+        m = sqlp.alias(Employees, 'm')
+        self.assertSqlExeEqual("""\
+        SELECT m.firstname || ' ' || m.lastname AS 'Manager',
+               e.firstname || ' ' || e.lastname AS 'Direct report'
+        FROM employees e
+        INNER JOIN employees m ON m.employeeid = e.reportsto
+        ORDER BY manager;
+        """, sqlp.select_from(
+            (manager := sqlp.concat(m.FirstName, ' ', m.LastName) @ 'Manager'),
+            sqlp.concat(e.FirstName, ' ', e.LastName) @ 'Direct report',
+            from_table=e
+        ).join(m, by='inner').by(Employees._report_to).order_by(manager))
 
     def test_self_join_example2(self):
         e1 = sqlp.alias(Employees, 'e1')

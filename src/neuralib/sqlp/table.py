@@ -2,97 +2,26 @@ from __future__ import annotations
 
 import abc
 import typing
-from typing import NamedTuple, Any, Optional, Generic, TYPE_CHECKING, Annotated, Callable
+from typing import NamedTuple, Any, Optional, Generic, TYPE_CHECKING, Callable
 
+from .annotation import *
 from .literal import FOREIGN_POLICY, CONFLICT_POLICY
 
 if TYPE_CHECKING:
-    import datetime
     from .expr import SqlExpr
 
 __all__ = [
-    'Field', 'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_DATETIME',
-    'table_name', 'table_new', 'table_field_names', 'table_fields', 'table_field',
-    'PRIMARY', 'table_primary_fields',
-    'UNIQUE', 'unique', 'UniqueConstraint', 'table_unique_fields',
-    'foreign', 'ForeignConstraint', 'table_foreign_fields', 'table_foreign_field',
-    'check', 'CheckConstraint', 'table_check_fields', 'table_check_field'
+    'Field', 'table_name', 'table_field_names', 'table_fields', 'table_field',
+    'table_primary_fields',
+    'UniqueConstraint', 'table_unique_fields', 'make_unique_constraint',
+    'ForeignConstraint', 'table_foreign_fields', 'table_foreign_field', 'make_foreign_constrain',
+    'CheckConstraint', 'table_check_fields', 'table_check_field', 'make_check_constraint',
+
 ]
 
 T = typing.TypeVar('T')
+F = typing.TypeVar('F')
 missing = object()
-
-
-@typing.final
-class PRIMARY(object):
-    """
-    annotate a field as a primary key.
-
-    >>> class Example:
-    ...     a: Annotated[str, PRIMARY]  # style 1
-    """
-
-    def __init__(self, order: typing.Literal['ASC', 'DESC'] = None,
-                 conflict: CONFLICT_POLICY = None,
-                 auto_increment=False):
-        self.order = order
-        self.conflict = conflict
-        self.auto_increment = auto_increment
-
-
-@typing.final
-class UNIQUE(object):
-    """
-    annotated a field as a unique key.
-
-    >>> class Example:
-    ...     a: Annotated[str, UNIQUE]  # style 1
-    """
-
-    def __init__(self, conflict: CONFLICT_POLICY = None):
-        self.conflict = conflict
-
-
-@typing.final
-class CURRENT_DATE(object):
-    """
-    annotated a date field which use current date as its default.
-
-    >>> class Example:
-    ...     a: Annotated[datetime.date, CURRENT_DATE]
-
-    """
-
-    def __init__(self):
-        raise RuntimeError()
-
-
-@typing.final
-class CURRENT_TIME(object):
-    """
-    annotated a time field which use current time as its default.
-
-    >>> class Example:
-    ...     a: Annotated[datetime.time, CURRENT_TIME]
-
-    """
-
-    def __init__(self):
-        raise RuntimeError()
-
-
-@typing.final
-class CURRENT_DATETIME(object):
-    """
-    annotated a datetime field which use current datetime as its default.
-
-    >>> class Example:
-    ...     a: Annotated[datetime.datetime, CURRENT_DATETIME]
-
-    """
-
-    def __init__(self):
-        raise RuntimeError()
 
 
 class Field(NamedTuple):
@@ -125,7 +54,13 @@ class Field(NamedTuple):
 
     @property
     def has_default(self) -> bool:
-        return self.f_value is not missing
+        if self.f_value is not missing:
+            return True
+
+        if (primary := self.get_primary()) is not None:
+            return primary.auto_increment
+
+        return False
 
     @property
     def is_primary(self) -> bool:
@@ -242,38 +177,13 @@ class Table(Generic[T], metaclass=abc.ABCMeta):
         pass
 
 
-def _table_class(cls: type[T]) -> Table[T]:
+def table_class(cls: type[T]) -> Table[T]:
     return getattr(cls, '_sql_table')
 
 
 def table_name(table: type[T]) -> str:
     """the name of the table."""
-    return _table_class(table).table_name
-
-
-def table_seq(instance: T) -> tuple[Any, ...]:
-    """
-    cast an instance as a tuple as SQL parameters.
-
-    :param instance:
-    :return:
-    """
-    return _table_class(type(instance)).table_seq(instance)
-
-
-def table_dict(instance: T, *, sql_type: bool = True) -> dict[str, Any]:
-    """
-    cast an instance cast as dict as SQL parameters.
-
-    :param instance:
-    :param sql_type: cast value as SQL type
-    """
-    return _table_class(type(instance)).table_dict(instance, sql_type=sql_type)
-
-
-def table_new(table: type[T], *args) -> T:
-    """create an instance for the table."""
-    return _table_class(table).table_new(*args)
+    return table_class(table).table_name
 
 
 class UniqueConstraint(NamedTuple):
@@ -287,18 +197,6 @@ class UniqueConstraint(NamedTuple):
     """associated fields"""
 
     conflict: CONFLICT_POLICY | None
-
-
-def unique(conflict: CONFLICT_POLICY = None):
-    """
-    A decorator to create an unique constraint.
-    """
-
-    def _decorator(f):
-        setattr(f, '_sql_unique', (conflict,))
-        return f
-
-    return _decorator
 
 
 class ForeignConstraint(NamedTuple):
@@ -321,61 +219,6 @@ class ForeignConstraint(NamedTuple):
     on_delete: FOREIGN_POLICY
 
 
-def foreign(*field,
-            update: FOREIGN_POLICY = 'NO ACTION',
-            delete: FOREIGN_POLICY = 'NO ACTION'):
-    """
-    A decorator to create a foreign constraint.
-
-    Common use:
-
-    With a foreign table
-
-    >>> class ForeignTable:
-    ...     a: Annotated[str, str]
-    ...     b: Annotated[str, str]
-
-    1. mapping one-by-one
-
-    >>> class Example:
-    ...     a: Annotated[str, str]
-    ...     b: Annotated[str, str]
-    ...     @foreign(ForeignTable.a, ForeignTable.b)
-    ...     def _foreign(self):
-    ...         return self.a, self.b
-
-    2. by default, with the primary keys for the referred foreign table.
-
-    >>> class Example:
-    ...     a: Annotated[str, str]
-    ...     b: Annotated[str, str]
-    ...     @foreign(ForeignTable)
-    ...     def _foreign(self):
-    ...         return self.a, self.b
-
-    3. Self refered.
-
-    >>> class Example:
-    ...     a: Annotated[str, str]
-    ...     b: Annotated[str, str]
-    ...     @foreign('a')
-    ...     def _foreign(self):
-    ...         return self.b
-
-    :param field: a foreign table or foreign fields.
-    :param update: update policy
-    :param delete: delete policy
-    """
-    if len(field) == 0:
-        raise RuntimeError('empty fields')
-
-    def _decorator(f):
-        setattr(f, '_sql_foreign', (field, update, delete))
-        return f
-
-    return _decorator
-
-
 class CheckConstraint(NamedTuple):
     """SQL check constraint"""
     name: str
@@ -389,96 +232,155 @@ class CheckConstraint(NamedTuple):
     """checking expression"""
 
 
-def check(field: str = None):
-    """
-    A decorator to make a check constraint.
-
-    1. by a field
-
-    >>> class Example:
-    ...     a: str
-    ...     @check('a')
-    ...     def check_a(self):
-    ...         return self.a != ''
-
-    2. by over all
-
-    >>> class Example:
-    ...     a: str
-    ...     @check()
-    ...     def check_a(self):
-    ...         return self.a != ''
-
-    :param field: field name.
-    """
-
-    def _decorator(f):
-        setattr(f, '_sql_check', (field,))
-        return f
-
-    return _decorator
-
-
 def table_field_names(table: type[T]) -> list[str]:
     """list of the name for each field in the table."""
-    return _table_class(table).table_field_names
+    return table_class(table).table_field_names
 
 
 def table_fields(table: type[T]) -> list[Field]:
     """list fields in the table."""
-    return _table_class(table).table_fields
+    return table_class(table).table_fields
 
 
 def table_field(table: type[T], field: str) -> Field:
     """
     Get field by the name in the table.
 
+    :param table:
     :param field:
     :return:
     :raise RuntimeError: no such field.
     """
-    return _table_class(table).table_field(field)
+    return table_class(table).table_field(field)
 
 
 def table_primary_fields(table: type[T]) -> list[Field]:
     """list of the name for each primary field in the table."""
-    return _table_class(table).table_primary_fields
+    return table_class(table).table_primary_fields
 
 
 def table_unique_fields(table: type[T]) -> list[UniqueConstraint]:
     """list of the name for each unique field in the table."""
-    return _table_class(table).table_unique_fields
+    return table_class(table).table_unique_fields
 
 
 def table_foreign_fields(table: type[T]) -> list[ForeignConstraint]:
     """get a list of the foreign constraint in the table."""
-    return _table_class(table).table_foreign_fields
+    return table_class(table).table_foreign_fields
 
 
-def table_foreign_field(table: type[T], target: type | Callable) -> ForeignConstraint | None:
+@typing.overload
+def table_foreign_field(table: Callable) -> ForeignConstraint | None:
+    pass
+
+
+@typing.overload
+def table_foreign_field(table: type[T], target: type[F]) -> ForeignConstraint | None:
+    pass
+
+
+def table_foreign_field(table: type[T] | Callable, target: type[F] = None) -> ForeignConstraint | None:
     """
     get the foreign constraint in the table that refer to the target table.
 
-    :param table:
-    :param target: refer table or foreign constraint function (the function decorated by @foreign)
+    :param table: table or a foreign constraint function/property (the function decorated by @foreign)
+    :param target: refer table
     :return: foreign constraint.
     """
-    if isinstance(target, type):
-        for field in table_foreign_fields(table):
-            if field.foreign_table == target:
-                return field
-    elif hasattr(target, '_sql_foreign'):
-        for field in table_foreign_fields(table):
-            if field.name == target.__name__:
-                return field
-    return None
+    if isinstance(table, type) and isinstance(target, type):
+        for constraint in table_foreign_fields(table):
+            if constraint.foreign_table == target:
+                return constraint
+        return None
+    elif target is None:
+        constraint = getattr(table, '_sql_foreign', None)
+        if isinstance(constraint, ForeignConstraint):
+            return constraint
+        return None
+    else:
+        raise TypeError(repr(table))
 
 
 def table_check_fields(table: type[T]) -> dict[Optional[str], CheckConstraint]:
     """get a dict of the field constraint in the table."""
-    return _table_class(table).table_check_fields
+    return table_class(table).table_check_fields
 
 
 def table_check_field(table: type[T], field: Optional[str]) -> Optional[CheckConstraint]:
     """get the check constrain of a field in the table."""
-    return _table_class(table).table_check_fields.get(field, None)
+    return table_class(table).table_check_fields.get(field, None)
+
+
+def make_foreign_constrain(table: Table,
+                           prop: callable,
+                           fields: list,
+                           update: FOREIGN_POLICY,
+                           delete: FOREIGN_POLICY) -> ForeignConstraint:
+    from .expr import SqlField
+
+    foreign_fields = []
+
+    if len(fields) == 0:
+        raise RuntimeError('empty fields')
+    elif isinstance(fields[0], str):
+        if not all([isinstance(it, str) for it in fields]):
+            raise TypeError()
+
+        foreign_table = table.table_type
+        foreign_fields.extend(fields)
+    elif len(fields) == 1 and isinstance(fields[0], type):
+        foreign_table = fields[0]
+        foreign_fields = [it.name for it in table_primary_fields(foreign_table)]
+    else:
+        foreign_table = None
+
+        for field in fields:
+            if isinstance(field, SqlField):
+                if foreign_table is None:
+                    foreign_table = field.table
+                elif foreign_table != field.table:
+                    raise RuntimeError()
+
+                foreign_fields.append(field.name)
+            else:
+                raise TypeError()
+
+    ret = prop(table.table_type)
+    if not isinstance(ret, tuple):
+        ret = [ret]
+
+    self_fields = []
+    for field in ret:
+        if isinstance(field, SqlField):
+            if table.table_type != field.table:
+                raise RuntimeError()
+            self_fields.append(field.name)
+        else:
+            raise TypeError()
+
+    return ForeignConstraint(prop.__name__, table.table_type, self_fields, foreign_table, foreign_fields, update, delete)
+
+
+def make_check_constraint(table: Table, prop: callable, field: str | None) -> CheckConstraint:
+    from .expr import wrap
+    ret = wrap(prop(table.table_type))
+    return CheckConstraint(prop.__name__, table.table_type, field, ret)
+
+
+def make_unique_constraint(table: Table, prop: callable, conflict: CONFLICT_POLICY = None) -> UniqueConstraint:
+    from .expr import SqlField
+
+    ret = prop(table.table_type)
+    if not isinstance(ret, tuple):
+        ret = [ret]
+
+    fields = []
+    for field in ret:
+        if isinstance(field, SqlField):
+            if table.table_type != field.table:
+                raise RuntimeError()
+            fields.append(field.name)
+        else:
+            raise TypeError()
+
+    return UniqueConstraint(prop.__name__, table.table_type, fields, conflict)

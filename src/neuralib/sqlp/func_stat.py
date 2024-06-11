@@ -3,19 +3,20 @@ SQL help functions.
 """
 from __future__ import annotations
 
+from collections.abc import Collection
 from typing import overload, Any, TypeVar, TYPE_CHECKING
 
 from . import expr
 
 if TYPE_CHECKING:
-    from .stat import SqlStat
+    from .stat import SqlStat, SqlSelectStat
 
 __all__ = [
     'TRUE', 'FALSE', 'NULL', 'ROWID',
     'literal', 'wrap', 'alias', 'cast', 'case', 'exists', 'asc', 'desc', 'nulls_first', 'nulls_last', 'concat',
     'and_', 'or_',
     'like', 'not_like', 'glob', 'contains', 'not_contains', 'between', 'not_between', 'is_null', 'is_not_null',
-    'excluded'
+    'excluded', 'with_common_table', 'fields'
 ]
 
 T = TypeVar('T')
@@ -90,6 +91,7 @@ def case(x=None) -> expr.SqlCaseExpr:
 def exists(x) -> expr.SqlExpr:
     """https://www.sqlite.org/lang_expr.html#the_exists_operator"""
     return expr.SqlExistsOper('EXISTS', x)
+
 
 def asc(x) -> expr.SqlExpr:
     """
@@ -315,3 +317,37 @@ def is_not_null(x) -> expr.SqlCompareOper:
 def excluded(t: type[T]) -> T:
     """https://www.sqlite.org/lang_upsert.html"""
     return expr.SqlAlias(t, 'excluded')
+
+
+@overload
+def with_common_table(name: str, select: SqlSelectStat) -> expr.SqlCteExpr:
+    pass
+
+
+@overload
+def with_common_table(name: type[T], select: SqlSelectStat) -> type[T]:
+    pass
+
+
+def with_common_table(name: str, select: SqlSelectStat):
+    if isinstance(name, type):
+        name = name.__name__
+    return expr.SqlCteExpr(name, select)
+
+
+# noinspection PyShadowingNames
+def fields(table: type[T], *,
+           primary: bool = None,
+           has_default: bool = None,
+           excluded: Collection[str] = None) -> tuple[expr.SqlField, ...]:
+    from .table import table_fields
+    fields = table_fields(table)
+
+    if primary is not None:
+        fields = [it for it in fields if it.is_primary == primary]
+    if has_default is not None:
+        fields = [it for it in fields if it.has_default == has_default]
+    if excluded is not None:
+        fields = [it for it in fields if it.name not in excluded]
+
+    return tuple([getattr(table, it.name) for it in fields])

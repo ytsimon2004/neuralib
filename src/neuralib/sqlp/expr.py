@@ -11,7 +11,7 @@ from typing_extensions import Self
 from .table import Field
 
 if TYPE_CHECKING:
-    from .stat import SqlStat
+    from .stat import SqlStat, SqlSelectStat
 
 __all__ = [
     'SqlExpr',
@@ -19,7 +19,7 @@ __all__ = [
     'SqlLiteral', 'SqlPlaceHolder', 'SqlField', 'SqlAlias', 'SqlAliasField', 'SqlSubQuery',
     'SqlOper', 'SqlOrderOper', 'SqlCastOper', 'SqlCompareOper', 'SqlUnaryOper', 'SqlBinaryOper', 'SqlFuncOper',
     'SqlVarArgOper', 'SqlConcatOper', 'SqlExistsOper', 'SqlAggregateFunc', 'SqlWindowDef', 'SqlWindowFunc',
-    'SqlCaseExpr'
+    'SqlCaseExpr', 'SqlCteExpr'
 ]
 
 
@@ -323,7 +323,7 @@ E = TypeVar('E', bound=SqlExpr)
 
 
 class SqlAlias(SqlExpr, Generic[E]):
-    __slots__ = 'value', 'name'
+    __slots__ = '_value', '_name'
 
     def __init__(self, value: Union[E, type[E]], name: str):
         self._value = value
@@ -347,7 +347,7 @@ class SqlAliasField(SqlExpr):
     __slots__ = 'table', 'name', 'attr'
     __match_args__ = 'table', 'name', 'attr'
 
-    def __init__(self, table: Union[type, SqlStat], name: str, attr: str):
+    def __init__(self, table: Union[type, SqlStat, SqlCteExpr], name: str, attr: str):
         self.table = table
         self.name = name
         self.attr = attr
@@ -937,3 +937,19 @@ class SqlCaseExpr(SqlExpr):
 
         self.cases.append((None, then))
         return self
+
+
+class SqlCteExpr(SqlExpr):
+    __slots__ = '_name', '_select'
+
+    def __init__(self, name: str, select: SqlSelectStat):
+        self._name = name
+        self._select = select
+        select._connection = None
+
+    def __getattr__(self, item) -> SqlAliasField:
+        return SqlAliasField(self, self._name, item)
+
+    def __sql_stat__(self, stat: SqlStat):
+        stat.add(['WITH', self._name, 'AS'])
+        stat.add(self._select)

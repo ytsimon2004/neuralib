@@ -134,7 +134,7 @@ class SqlpTableTest(unittest.TestCase):
 
     def test_foreign_field_callable(self):
         from neuralib.sqlp.table import table_foreign_field, ForeignConstraint
-        person = table_foreign_field(Account, Account._person)
+        person = table_foreign_field(Account, Person)
         self.assertIsInstance(person, ForeignConstraint)
         self.assertEqual(person.name, '_person')
         self.assertEqual(person.foreign_table, Person)
@@ -144,7 +144,7 @@ class SqlpTableTest(unittest.TestCase):
 
     def test_map_foreign(self):
         from neuralib.sqlp.util import map_foreign
-        results = map_foreign(Account('V', 'Alice', 1000), Account._person).fetchall()
+        results = map_foreign(Account('V', 'Alice', 1000), Person).fetchall()
         self.assertListEqual([
             Person('Alice', 18),
         ], results)
@@ -243,7 +243,7 @@ class SqlCreateTableTest(unittest.TestCase):
         class Test(NamedTuple):
             a: Annotated[datetime.date, CURRENT_DATE]
             b: Annotated[datetime.time, CURRENT_TIME]
-            c: Annotated[datetime.datetime, CURRENT_DATETIME]
+            c: Annotated[datetime.datetime, CURRENT_TIMESTAMP]
 
         create_table(Test)
 
@@ -383,11 +383,11 @@ class SqlTableOtherTest(unittest.TestCase):
         with Connection(debug=True) as conn:
             create_table(A)
             self.assert_sql_state_equal("""
-        CREATE TABLE A (
-            a INTEGER NOT NULL ,
-            b INTEGER
-        )
-        """, conn.table_schema(A))
+            CREATE TABLE A (
+                a INTEGER NOT NULL ,
+                b INTEGER
+            )
+            """, conn.table_schema(A))
 
     def test_create_table_default(self):
         @named_tuple_table_class
@@ -438,15 +438,70 @@ class SqlTableOtherTest(unittest.TestCase):
         with Connection(debug=True) as conn:
             create_table(A)
             self.assert_sql_state_equal("""
-                   CREATE TABLE A (
-                       a TEXT NOT NULL PRIMARY KEY
-                   )
-                   """, conn.table_schema(A))
+            CREATE TABLE A (
+               a TEXT NOT NULL PRIMARY KEY
+            )
+            """, conn.table_schema(A))
 
             insert_into(A).submit([A(Path('test.txt'))])
 
             result = select_from(A).fetchone()
             self.assertEqual(result, A(Path('test.txt')))
+
+    def test_table_property(self):
+        @named_tuple_table_class
+        class A(NamedTuple):
+            a: int
+            b: int
+
+            @property
+            def c(self) -> int:
+                return self.a + self.b
+
+        with Connection(debug=True) as conn:
+            create_table(A)
+
+            self.assertEqual(6, A(2, 4).c)
+
+            insert_into(A).submit([
+                A(0, 1),
+                A(1, 2),
+                A(2, 3),
+            ])
+
+            results = select_from(A.a, A.b, A.c).fetchall()
+            self.assertListEqual([
+                (0, 1, 1), (1, 2, 3), (2, 3, 5)
+            ], results)
+
+    def test_table_property_sqlp_call(self):
+        @named_tuple_table_class
+        class A(NamedTuple):
+            a: str
+            b: str
+
+            @property
+            def c(self) -> str:
+                if isinstance(self, type):
+                    return concat(self.a, self.b)
+                else:
+                    return self.a + self.b
+
+        with Connection(debug=True) as conn:
+            create_table(A)
+
+            self.assertEqual('24', A('2', '4').c)
+
+            insert_into(A).submit([
+                A('0', '1'),
+                A('1', '2'),
+                A('2', '3'),
+            ])
+
+            results = select_from(A.a, A.b, A.c).fetchall()
+            self.assertListEqual([
+                ('0', '1', '01'), ('1', '2', '12'), ('2', '3', '23')
+            ], results)
 
 
 if __name__ == '__main__':

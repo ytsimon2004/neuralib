@@ -1,5 +1,6 @@
 import datetime
 import unittest
+from typing import NamedTuple
 
 from _test import SqlTestCase
 from _tracks import *
@@ -569,8 +570,11 @@ class IsNullTest(SqlTestCase):
 class CteTest(SqlTestCase):
     """https://www.sqlitetutorial.net/sqlite-cte/"""
 
-    @unittest.skip('not implemented yet')
     def test_simple_case(self):
+        top_tracks = sqlp.with_common_table('top_tracks', sqlp.select_from(
+            Tracks.TrackId, Tracks.Name
+        ).order_by(Tracks.TrackId).limit(5))
+
         self.assertSqlExeEqual("""\
         WITH top_tracks AS (
             SELECT trackid, name
@@ -579,10 +583,23 @@ class CteTest(SqlTestCase):
             LIMIT 5
         )
         SELECT * FROM top_tracks;
-        """, None)
+        """, sqlp.select_from(top_tracks))
 
-    @unittest.skip('not implemented yet')
     def test_complex_case(self):
+        c = sqlp.alias(Customers, 'c')
+        i = sqlp.alias(Invoices, 'i')
+        ii = sqlp.alias(Invoice_Items, 'ii')
+
+        customer_sales = sqlp.with_common_table('customer_sales', sqlp.select_from(
+            c.CustomerId,
+            sqlp.concat(c.FirstName, ' ', c.LastName) @ 'customer_name',
+            sqlp.round(sqlp.sum(ii.UnitPrice * ii.Quantity), 2) @ 'total_sales'
+        ).join(i, by='inner').on(
+            c.CustomerId == i.CustomerId
+        ).join(ii, by='inner').on(
+            i.InvoiceId == ii.InvoiceId
+        ).group_by(c.CustomerId))
+
         self.assertSqlExeEqual("""\
         WITH customer_sales AS (
             SELECT c.customerid,
@@ -597,7 +614,87 @@ class CteTest(SqlTestCase):
         FROM customer_sales
         ORDER BY total_sales DESC, customer_name
         LIMIT 5;
-        """, None)
+        """, sqlp.select_from(
+            customer_sales.customer_name,
+            customer_sales.total_sales,
+        ).order_by(
+            sqlp.desc(customer_sales.total_sales), customer_sales.customer_name
+        ).limit(5))
+
+    def test_complex_case_using_foreign(self):
+        c = sqlp.alias(Customers, 'c')
+        i = sqlp.alias(Invoices, 'i')
+        ii = sqlp.alias(Invoice_Items, 'ii')
+
+        customer_sales = sqlp.with_common_table('customer_sales', sqlp.select_from(
+            c.CustomerId,
+            sqlp.concat(c.FirstName, ' ', c.LastName) @ 'customer_name',
+            sqlp.round(sqlp.sum(ii.UnitPrice * ii.Quantity), 2) @ 'total_sales'
+        ).join(i, by='inner').by(Invoices._customer).join(ii, by='inner').by(Invoice_Items._invoices).group_by(c.CustomerId))
+
+        self.assertSqlExeEqual("""\
+        WITH customer_sales AS (
+            SELECT c.customerid,
+                   c.firstname || ' ' || c.lastname AS customer_name,
+                   ROUND(SUM(ii.unitprice * ii.quantity),2) AS total_sales
+            FROM customers c
+            INNER JOIN invoices i ON c.customerid = i.customerid
+            INNER JOIN invoice_items ii ON i.invoiceid = ii.invoiceid
+            GROUP BY c.customerid
+        )
+        SELECT customer_name, total_sales 
+        FROM customer_sales
+        ORDER BY total_sales DESC, customer_name
+        LIMIT 5;
+        """, sqlp.select_from(
+            customer_sales.customer_name,
+            customer_sales.total_sales,
+        ).order_by(
+            sqlp.desc(customer_sales.total_sales), customer_sales.customer_name
+        ).limit(5))
+
+    def test_complex_case_with_class(self):
+        @sqlp.named_tuple_table_class
+        class customer_sales(NamedTuple):
+            customerid: int
+            customer_name: str
+            total_sales: float
+
+        c = sqlp.alias(Customers, 'c')
+        i = sqlp.alias(Invoices, 'i')
+        ii = sqlp.alias(Invoice_Items, 'ii')
+
+        customer_sales = sqlp.with_common_table(customer_sales, sqlp.select_from(
+            c.CustomerId,
+            sqlp.concat(c.FirstName, ' ', c.LastName) @ 'customer_name',
+            sqlp.round(sqlp.sum(ii.UnitPrice * ii.Quantity), 2) @ 'total_sales'
+        ).join(i, by='inner').on(
+            c.CustomerId == i.CustomerId
+        ).join(ii, by='inner').on(
+            i.InvoiceId == ii.InvoiceId
+        ).group_by(c.CustomerId))
+
+        self.assertSqlExeEqual("""\
+        WITH customer_sales AS (
+            SELECT c.customerid,
+                   c.firstname || ' ' || c.lastname AS customer_name,
+                   ROUND(SUM(ii.unitprice * ii.quantity),2) AS total_sales
+            FROM customers c
+            INNER JOIN invoices i ON c.customerid = i.customerid
+            INNER JOIN invoice_items ii ON i.invoiceid = ii.invoiceid
+            GROUP BY c.customerid
+        )
+        SELECT customer_name, total_sales 
+        FROM customer_sales
+        ORDER BY total_sales DESC, customer_name
+        LIMIT 5;
+        """, sqlp.select_from(
+            customer_sales.customer_name,
+            customer_sales.total_sales,
+        ).order_by(
+            sqlp.desc(customer_sales.total_sales), customer_sales.customer_name
+        ).limit(5))
+
 
 class CaseTest(SqlTestCase):
     """https://www.sqlitetutorial.net/sqlite-case/"""
@@ -648,6 +745,7 @@ class CaseTest(SqlTestCase):
              .when((Tracks.Milliseconds > 60000) & (Tracks.Milliseconds < 30_0000), 'medium')
              .else_('long')) @ 'category'
         ))
+
 
 if __name__ == '__main__':
     unittest.main()
