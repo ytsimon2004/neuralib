@@ -34,7 +34,7 @@ tensorflow
 memory_profiler
 psutil
 
-#jit
+# jit
 numba
 
 # image io
