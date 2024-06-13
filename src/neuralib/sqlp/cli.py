@@ -72,7 +72,7 @@ class Database(metaclass=abc.ABCMeta):
         ret = Connection(database_file, debug=self.sqlp_debug_mode)
         cls = type(self)
         if getattr(cls, '__first_connect_init', True):
-            from .stat import create_table
+            from .stat_start import create_table
             with ret:
                 for table in self.database_tables:
                     create_table(table).submit()
@@ -100,7 +100,7 @@ class CliDatabase(Database, AbstractParser):
 %(prog)s -d FILE --table [NAME]
 %(prog)s -d FILE STAT ...
 %(prog)s -d FILE --file SCRIPT
-%(prog)s -d FILE --action=(import|export) --table NAME FILE 
+%(prog)s -d FILE --action=(import|export) --table NAME FILE
 """
 
     def __init__(self, database: Optional[Database] = None):
