@@ -8,6 +8,5 @@ neuralib.tools
     :maxdepth: 1
     :caption: Modules:
     
-
     neuralib.tools.slack_bot
 

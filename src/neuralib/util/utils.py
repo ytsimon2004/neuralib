@@ -13,7 +13,7 @@ __all__ = ['uglob',
            'joinn',
            'flat_ls',
            'array2str',
-           'deprecated',
+           'future_deprecate',
            'key_from_value']
 
 
@@ -83,18 +83,23 @@ def array2str(x: ArrayLike, sep=' ') -> str:
     return sep.join(map(str, x))
 
 
-def deprecated(f=None, *, reason: str = None):
+def future_deprecate(f=None, *,
+                     reason: str | None = None,
+                     removal_version: str = None):
     """Mark deprecated functions.
 
-    :param f:
-    :param reason:
+    :param f: The function to be deprecated
+    :param reason: The reason why the function is deprecated
+    :param removal_version: Optional version or date when the function is planned to be removed
     :return:
     """
     if reason is None:
-        reason = '...'
+        reason = 'This function is deprecated and may be removed in future versions.'
+
+    if removal_version is not None:
+        reason += f' Scheduled for removal in version {removal_version}.'
 
     def _deprecated(f):
-        # TODO caller sensitive?
         warned = False
 
         @functools.wraps(f)
