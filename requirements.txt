@@ -2,7 +2,7 @@ attrs==23.2.0
 colorama
 matplotlib
 seaborn~=0.12.1
-numpy>=1.26.4
+numpy==1.26.4
 scipy>=1.12
 scikit-image
 pandas~=1.5.0
