@@ -5,7 +5,7 @@ from pathlib import Path
 src = Path('../src/neuralib')
 dst = Path('source/api')
 
-src_files = ['neurocarto.rst']
+src_files = ['neuralib.rst']
 
 CONTENT_FILE = """\
 {module}
