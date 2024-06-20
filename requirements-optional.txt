@@ -41,8 +41,5 @@ numba
 pdf2image
 imageio
 
-# stimpy
-pyparsing
-
 # others
 slackclient

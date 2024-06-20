@@ -21,7 +21,6 @@ neuralib package
     neuralib.plot
     neuralib.scanner
     neuralib.segmentation
-    neuralib.stimpy
     neuralib.tools
     neuralib.tools.slack_bot
     neuralib.util
