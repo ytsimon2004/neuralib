@@ -23,11 +23,11 @@ class MouseBrainRoiNormHandler:
         """
         :param norm_type: which kind of normalization for the roi labeling
 
-            *``channel``: normalize to fraction of rois for a specific color fluorescence channel
+            ``channel``: normalize to fraction of rois for a specific color fluorescence channel
 
-            *``volume``: normalize to the volume size per region (cellatlas-based) # TODO validate with allenSDK source
+            ``volume``: normalize to the volume size per region (cellatlas-based) # TODO validate with allenSDK source
 
-            *``cell``: normalize to the total cell counts per region (cellatlas-based)
+            ``cell``: normalize to the total cell counts per region (cellatlas-based)
         """
         if norm_type is not None and norm_type not in get_args(ROIS_NORM_TYPE):
             raise ValueError('')

@@ -86,10 +86,6 @@ wrapper
 
   - ``neuralib.wrapper.rastermap``: Run and result parser for `rastermap <https://github.com/MouseLand/rastermap>`_
 
-stimpy
-^^^^^^
-
-- Software for visual-guided behavioral dataset (currently only lab internal usage)
 
 Utilities Modules
 ------------------

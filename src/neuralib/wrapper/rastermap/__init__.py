@@ -8,7 +8,7 @@ RasterMap Wrapper
 
 
 Example of 2P dataset pipeline
------------------------
+-------------------------------
 
 
 .. code-block:: python
@@ -150,7 +150,7 @@ Example of 2P dataset pipeline
 
 
 Example of Wfield imaging dataset pipeline
------------------------
+-------------------------------------------
 
 
 **1. Prepare container data input for rastermap**

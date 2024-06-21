@@ -56,10 +56,6 @@
   - `neuralib.wrapper.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
   - `neuralib.wrapper.rastermap`: Run and result parser for [rastermap](https://github.com/MouseLand/rastermap)
 
-## stimpy
-
-- Software for visual-guided behavioral dataset (currently only lab internal usage)
-
 ----------------------------
 
 # Utilities Modules
