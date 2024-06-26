@@ -9,4 +9,5 @@ neuralib.tools
     :caption: Modules:
     
     neuralib.tools.slack_bot
+    neuralib.tools.gspread
 

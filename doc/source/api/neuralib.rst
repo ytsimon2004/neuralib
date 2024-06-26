@@ -22,6 +22,7 @@ neuralib package
     neuralib.scanner
     neuralib.segmentation
     neuralib.tools
+    neuralib.tools.gspread
     neuralib.tools.slack_bot
     neuralib.util
     neuralib.wrapper

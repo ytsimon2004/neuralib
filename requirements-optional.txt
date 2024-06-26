@@ -43,3 +43,4 @@ imageio
 
 # others
 slackclient
+gspread
