@@ -4,11 +4,10 @@ import gspread
 import numpy as np
 
 from neuralib.tools.gspread import *
-from rscvp.util.io import IOConfig
 
 # replace the following for testing
-CFG_FILE = IOConfig.load_from_json().gspread_auth  # config filepath for gspread token (i.e., service_account.json)
-EMAIL_ADDRESS = 'ytsimon2004@gmail.com'  # your email address
+CFG_FILE = ...  # config filepath for gspread token (i.e., service_account.json)
+EMAIL_ADDRESS = ...  # your email address
 
 
 class TestSpreadSheet(unittest.TestCase):

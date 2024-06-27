@@ -1,6 +1,7 @@
 sphinx
 nbsphinx
 furo
+sphinx-rtd-theme
 
 #build
 bg_atlasapi

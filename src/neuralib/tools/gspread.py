@@ -69,10 +69,12 @@ class GoogleWorkSheet:
 
     @property
     def title(self) -> WorkPageName:
+        """``WorkPageName``"""
         return self._worksheet.title
 
     @property
     def headers(self) -> list[str]:
+        """list of worksheet header"""
         return list(self._headers)
 
     @property
@@ -251,11 +253,12 @@ class GoogleSpreadSheet:
 
     @property
     def title(self) -> SpreadSheetName:
+        """``SpreadSheetName``"""
         return self._sheet.title
 
     @property
     def worksheet_list(self) -> list[WorkPageName]:
-        """list of worksheet"""
+        """list of ``WorkPageName``"""
         return [it.title for it in self._worksheets]
 
     def has_worksheet(self, title: WorkPageName) -> bool:
