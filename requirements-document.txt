@@ -1,9 +1,9 @@
 sphinx
 nbsphinx
-furo
+sphinx-rtd-theme
 
-#build
-bg_atlasapi
+# build
+brainglobe-atlasapi
 napari
 plotly
 GPUtil

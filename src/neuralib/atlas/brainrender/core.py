@@ -5,7 +5,7 @@ from typing import Union, Optional, Literal, TypedDict
 
 import brainrender
 import numpy as np
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
 from brainrender.actors import Points
 from typing_extensions import TypeAlias
 

@@ -1,6 +1,6 @@
 # atlas
 allensdk
-brainrender==2.1.9
+brainrender
 vedo
 iblatlas
 
