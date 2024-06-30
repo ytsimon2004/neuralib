@@ -11,4 +11,6 @@ neuralib.calimg
     neuralib.calimg.scan_image
     neuralib.calimg.scanbox
     neuralib.calimg.suite2p
+    neuralib.calimg.cellular_cords
+    neuralib.calimg.fov
 

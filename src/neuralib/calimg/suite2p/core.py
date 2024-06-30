@@ -8,6 +8,7 @@ import attrs
 import numpy as np
 from numpy.typing import NDArray
 
+from neuralib.calimg.cellular import CellularCoordinates
 from neuralib.util.util_type import PathLike
 from neuralib.util.util_verbose import fprint
 
@@ -16,7 +17,9 @@ __all__ = [
     'CALCIUM_TYPE',
     'Suite2pGUIOptions',
     'Suite2pRoiStat',
-    'Suite2PResult'
+    'Suite2PResult',
+    #
+    'get_s2p_coords'
 ]
 
 SIGNAL_TYPE = Literal["df_f", "spks"]
@@ -487,3 +490,38 @@ class Suite2PResult:
             ret[i] = np.array([x, y])
 
         return ret
+
+
+def get_s2p_coords(s2p: Suite2PResult,
+                   neuron_list: int | list[int] | slice | np.ndarray | None,
+                   plane_index: int,
+                   factor: float) -> CellularCoordinates:
+    """
+    Get the suite2p coordinates of all cells.
+
+    :param s2p: ``Suite2PResult``
+    :param neuron_list: neuron index or index list
+    :param plane_index: optic plane index
+    :param factor: pixel to mm
+    :return: :class:`~neuralib.calimg.cellular_cords.CellularCoordinates`
+    """
+
+    xpix = []
+    ypix = []
+    for i, n in enumerate(neuron_list):
+        xpix.append(np.mean(s2p.stat[i]['xpix']))
+        ypix.append(np.mean(s2p.stat[i]['ypix']))
+
+    xpix = np.array(xpix)
+    ypix = np.array(ypix)
+
+    xcord = xpix * factor / 1000  # ap
+    ycord = ypix * factor / 1000  # ml
+
+    return CellularCoordinates(
+        np.array(neuron_list),
+        xcord,
+        ycord,
+        plane_index=plane_index,
+        unit='mm'
+    )

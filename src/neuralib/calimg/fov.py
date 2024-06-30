@@ -13,7 +13,7 @@ Coordinates: TypeAlias = np.ndarray  # Array[float, [x,y]]
 @attrs.define
 class ObjectiveFov:
     """
-    Class for 2P Field Of View coordinates
+    Class for 2P Field Of View coordinates (``Coordinates``: Array[float, [x,y]])
 
     Use IBL coordinates space ::
 
@@ -22,6 +22,7 @@ class ObjectiveFov:
         ML (+), right hemisphere. (-) left hemisphere
 
     .. seealso::  `<https://int-brain-lab.github.io/iblenv/notebooks_external/atlas_working_with_ibllib_atlas.html#Coordinate-systems>`_
+
 
     """
 
