@@ -16,6 +16,8 @@ neuralib package
     neuralib.calimg.scan_image
     neuralib.calimg.scanbox
     neuralib.calimg.suite2p
+    neuralib.calimg.cellular
+    neuralib.calimg.fov
     neuralib.imglib
     neuralib.model
     neuralib.plot

@@ -104,14 +104,12 @@ class CellularCoordinates:
     @staticmethod
     def ml_rotate(x: np.ndarray, y: np.ndarray, deg: float) -> tuple[np.ndarray, np.ndarray]:
         """
-        x axis rotation
+        calculate the values for x axis rotation
 
         :param x: coordinate x (N,)
         :param y: coordinate Y (N,)
         :param deg: rotation degree
-        :return:
-            x' (N,)
-            y' (N,)
+        :return: value to be subtracted. dx (N,) and dy (N,)
         """
         angle = np.radians(deg)
         dx = x * np.cos(angle) - y * np.sin(angle)

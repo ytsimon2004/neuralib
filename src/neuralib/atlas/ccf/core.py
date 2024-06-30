@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 from pathlib import Path
-from typing import NamedTuple, Final, Any, Literal
+from typing import NamedTuple, Final, Any, Literal, get_args, Iterable
 
 import attrs
 import numpy as np
@@ -10,6 +10,7 @@ import polars as pl
 from scipy.io import loadmat
 from scipy.io.matlab import MatlabOpaque
 
+from neuralib.atlas.type import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, load_slice_view
 from neuralib.util.util_type import PathLike
@@ -18,8 +19,10 @@ from neuralib.util.utils import uglob, joinn
 
 __all__ = [
     'AbstractCCFDir',
-    'CCFBaseDir',
-    'CCFOverlapDir',
+    'CoronalCCFDir',
+    'CoronalCCFOverlapDir',
+    'SagittalCCFDir',
+    'SagittalCCFOverlapDir',
     #
     'CCFTransMatrix',
     'load_transform_matrix'
@@ -56,7 +59,7 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
             │    └── ANIMAL_001_g*_s*_{channel}.roi
             ├── roi_cpose/
             │    └── ANIMAL_001_g*_s*_{channel}.roi
-            ├── resize/ (src for the allenccf)
+            ├── resize/ (src for the allenccf, if sagittal slice, could be resize_contra and resize_ipsi)
             │    ├── ANIMAL_001_g*_s*_resize.tif
             │    └── processed/
             │           ├── ANIMAL_001_g*_s*_resize_processed.tif
@@ -67,37 +70,77 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
             │                       ├── {*channel}_roitable.csv
             │                       └── parsed_data /
             │                             └── parsed_csv_merge.csv
+            ├── resize_*_overlap/ (optional, same structure as **resize**, for dual channels labeling)
             │
             └── output_files/ (for generate output fig)
 
     """
-    def __new__(cls, root: PathLike,
-                auto_mkdir: bool = True,
-                with_overlap_sources: bool = True):
 
-        if with_overlap_sources:
-            return object.__new__(CCFOverlapDir)
+    def __new__(
+            cls,
+            root: PathLike,
+            with_overlap_sources: bool = True,
+            plane_type: PLANE_TYPE = 'coronal',
+            hemisphere_type: HEMISPHERE_TYPE | None = None,
+            auto_mkdir: bool = True,
+    ):
+
+        if plane_type == 'coronal':
+            if with_overlap_sources:
+                return object.__new__(CoronalCCFOverlapDir)
+            else:
+                return object.__new__(CoronalCCFDir)
+
+        elif plane_type == 'sagittal':
+
+            if hemisphere_type is None or hemisphere_type not in get_args(HEMISPHERE_TYPE):
+                raise ValueError(f'invalid hemisphere_type for sagittal dir: {hemisphere_type}')
+
+            #
+            if with_overlap_sources:
+                return object.__new__(SagittalCCFOverlapDir)
+            else:
+                return object.__new__(SagittalCCFDir)
+
         else:
-            return object.__new__(CCFBaseDir)
+            raise ValueError(f'invalid plane type: {plane_type}')
 
-    def __init__(self, root: PathLike,
-                 auto_mkdir: bool = True,
-                 with_overlap_sources: bool = True):
+    def __init__(
+            self,
+            root: PathLike,
+            with_overlap_sources: bool = True,
+            plane_type: PLANE_TYPE = 'coronal',
+            hemisphere_type: HEMISPHERE_TYPE | None = None,
+            auto_mkdir: bool = True,
+    ):
         """
-        :param root:
-        :param auto_mkdir:
+
+        :param root: root path (i.e., */ANIMAL_001)
         :param with_overlap_sources:
+        :param plane_type:
+        :param hemisphere_type:
+        :param auto_mkdir:
         """
         self.root: Final[Path] = root
+        self.with_overlap_sources = with_overlap_sources
+        self.plane_type: Final[PLANE_TYPE] = plane_type
+        self.hemisphere: Final[HEMISPHERE_TYPE] = hemisphere_type
 
         if auto_mkdir:
             self._init_folder_structure()
 
-        self.with_overlap_sources: Final[bool] = with_overlap_sources
+    def __len__(self):
+        """number of slices"""
+        return len(list(self.resize_folder.glob('*.tif')))
+
+    def __iter__(self):
+        return self.resize_folder.glob('*.tif')
 
     @abc.abstractmethod
     def _init_folder_structure(self) -> None:
         pass
+
+    slice_name: str = None  # assign when glob
 
     @abc.abstractmethod
     def glob(self,
@@ -118,19 +161,18 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
         """
         pass
 
+    @property
     @abc.abstractmethod
-    def get_transformation_matrix(self,
-                                  glass_id: int,
-                                  slice_id: int,
-                                  plane_type: PLANE_TYPE) -> CCFTransMatrix:
+    def resize_folder(self) -> Path:
         pass
 
+    # ============================ #
+    # Default Dir for the pipeline #
+    # ============================ #
 
-class CCFBaseDir(AbstractCCFDir):
-    """Base folder structure for 2dccf pipeline"""
-
-    def _init_folder_structure(self):
-        iter_dir = (
+    @property
+    def default_iter_dir(self) -> Iterable[Path]:
+        return [
             self.raw_folder,
             self.resize_folder,
             self.roi_folder,
@@ -140,13 +182,8 @@ class CCFBaseDir(AbstractCCFDir):
             self.transformed_folder,
             self.labelled_roi_folder,
             self.parsed_data_folder,
-            self.output_folder,
-        )
-
-        for d in iter_dir:
-            if not d.exists():
-                d.mkdir(parents=True, exist_ok=True)
-                fprint(f'auto make folder <{d.name}> for {self.animal}', vtype='io')
+            self.output_folder
+        ]
 
     @property
     def animal(self) -> str:
@@ -155,10 +192,6 @@ class CCFBaseDir(AbstractCCFDir):
     @property
     def raw_folder(self) -> Path:
         return self.root / 'raw'
-
-    @property
-    def resize_folder(self) -> Path:
-        return self.root / 'resize'
 
     @property
     def roi_folder(self) -> Path:
@@ -171,6 +204,28 @@ class CCFBaseDir(AbstractCCFDir):
     @property
     def zproj_folder(self) -> Path:
         return self.root / 'zproj'
+
+    # =============================== #
+    # Dual Channel Overlap (Optional) #
+    # =============================== #
+
+    @property
+    def resize_overlap_folder(self) -> Path | None:
+        if not self.with_overlap_sources:
+            raise ValueError('')
+        return
+
+    @property
+    def processed_folder_overlap(self) -> Path | None:
+        if not self.with_overlap_sources:
+            raise ValueError('')
+        return
+
+    @property
+    def transformed_folder_overlap(self) -> Path | None:
+        if not self.with_overlap_sources:
+            raise ValueError('')
+        return
 
     # ========================================== #
     # CCF folder (MATLAB pipeline auto-generate) #
@@ -212,6 +267,14 @@ class CCFBaseDir(AbstractCCFDir):
         ret = self.output_folder / joinn(sep, *suffix)
         return ret.with_suffix('.csv')
 
+    @property
+    def roi_atlas_output(self) -> Path:
+        return self.output_folder / 'roiatlas'
+
+    @property
+    def roi_atlas_ibl_output(self) -> Path:
+        return self.output_folder / 'roiatlas_ibl'
+
     # ========= #
     # File Glob #
     # ========= #
@@ -228,7 +291,32 @@ class CCFBaseDir(AbstractCCFDir):
             ret += f'_{channel}'
         return ret
 
-    slice_name: str = None  # assign when glob
+    def get_transformation_matrix(self,
+                                  glass_id: int,
+                                  slice_id: int,
+                                  plane_type: PLANE_TYPE) -> CCFTransMatrix:
+        return load_transform_matrix(
+            self.glob(glass_id, slice_id, 'transformation_matrix'),
+            plane_type
+        )
+
+
+# ============= #
+# Coronal Slice #
+# ============= #
+
+class CoronalCCFDir(AbstractCCFDir):
+    """Base folder structure for 2dccf pipeline"""
+
+    def _init_folder_structure(self):
+        for d in self.default_iter_dir:
+            if not d.exists():
+                d.mkdir(parents=True, exist_ok=True)
+                fprint(f'auto make folder <{d.name}> for {self.animal}', vtype='io')
+
+    @property
+    def resize_folder(self) -> Path:
+        return self.root / 'resize'
 
     def glob(self,
              glass_id: int,
@@ -258,17 +346,8 @@ class CCFBaseDir(AbstractCCFDir):
         else:
             return
 
-    def get_transformation_matrix(self,
-                                  glass_id: int,
-                                  slice_id: int,
-                                  plane_type: PLANE_TYPE) -> CCFTransMatrix:
-        return load_transform_matrix(
-            self.glob(glass_id, slice_id, 'transformation_matrix'),
-            plane_type
-        )
 
-
-class CCFOverlapDir(CCFBaseDir):
+class CoronalCCFOverlapDir(CoronalCCFDir):
     """ 2dccf Folder structure for multiple sources overlap labeling
     For example: Dual tracing with different fluorescence protein, and tend to see the overlap channel counts"""
 
@@ -287,7 +366,7 @@ class CCFOverlapDir(CCFBaseDir):
 
     @property
     def resize_overlap_folder(self) -> Path:
-        """for double lapping channel
+        """for double labeling channel
         since maximal 2 channels for roi detection,
         then need extra folder use pseudo-color
         """
@@ -319,9 +398,103 @@ class CCFOverlapDir(CCFBaseDir):
         return
 
 
-class CCFSagittalDir(AbstractCCFDir):
-    # TODO
-    pass
+# ============== #
+# Sagittal Slice #
+# ============== #
+
+class SagittalCCFDir(AbstractCCFDir):
+
+    def _init_folder_structure(self) -> None:
+        for d in self.default_iter_dir:
+            if not d.exists():
+                d.mkdir(parents=True, exist_ok=True)
+                fprint(f'auto make folder <{d.name}> for {self.animal}', vtype='io')
+
+    def glob(self, glass_id: int, slice_id: int, glob_type: CCF_GLOB_TYPE, hemisphere: Literal['i', 'c'] | None = None,
+             channel: CHANNEL_SUFFIX | None = None) -> Path | None:
+
+        if glob_type in ('roi', 'roi_cpose', 'zproj'):
+            self.slice_name = name = self.get_slice_id(glass_id, slice_id, hemisphere=hemisphere, channel=channel)
+        else:
+            self.slice_name = name = self.get_slice_id(glass_id, slice_id, hemisphere=hemisphere)
+
+            #
+        if glob_type == 'roi':
+            return uglob(self.roi_folder, f'{name}*.roi')
+        elif glob_type == 'roi_cpose':
+            return uglob(self.cpose_roi_folder, f'{name}*cpose.roi')
+        elif glob_type == 'zproj':
+            return uglob(self.zproj_folder, f'{name}.*')
+        elif glob_type == 'resize':
+            return uglob(self.zproj_folder, f'{name}_resize.*')
+        elif glob_type == 'transformation_matrix':
+            return uglob(self.transformed_folder, f'{name}*.mat')
+        elif glob_type == 'transformation_img':
+            return uglob(self.transformed_folder, f'{name}*.tif')
+        else:
+            return
+
+    @property
+    def resize_folder(self) -> Path:
+        if self.hemisphere == 'ipsi':
+            return self.root / 'resize_ipsi'
+        elif self.hemisphere == 'contra':
+            return self.root / 'resize_contra'
+        else:
+            raise ValueError('')
+
+
+class SagittalCCFOverlapDir(SagittalCCFDir):
+    def _init_folder_structure(self):
+        super()._init_folder_structure()
+
+        iter_overlap = (
+            self.resize_overlap_folder,
+            self.processed_folder,
+            self.transformed_folder_overlap
+        )
+        for d in iter_overlap:
+            if not d.exists():
+                d.mkdir(parents=True, exist_ok=True)
+                fprint(f'auto make folder <{d.name}> for {self.animal}', vtype='io')
+
+    @property
+    def resize_overlap_folder(self) -> Path:
+        """for double labeling channel
+        since maximal 2 channels for roi detection,
+        then need extra folder use pseudo-color
+        """
+        if self.hemisphere == 'ipsi':
+            return self.root / 'resize_ipsi_overlap'
+        elif self.hemisphere == 'contra':
+            return self.root / 'resiz_contra_overlap'
+        else:
+            raise ValueError('')
+
+    @property
+    def processed_folder_overlap(self) -> Path:
+        return self.resize_overlap_folder / 'processed'
+
+    @property
+    def transformed_folder_overlap(self) -> Path:
+        return self.processed_folder_overlap / 'transformations'
+
+    def glob(self,
+             glass_id: int,
+             slice_id: int,
+             glob_type: CCF_GLOB_TYPE, *,
+             hemisphere: Literal['i', 'c'] | None = None,
+             channel: CHANNEL_SUFFIX | None = None) -> Path | None:
+
+        ret = super().glob(glass_id, slice_id, glob_type, hemisphere=hemisphere, channel=channel)
+
+        if ret is None:
+            if glob_type == 'resize_overlap':
+                return uglob(self.resize_overlap_folder, f'{self.slice_name}_resize_overlap.*')
+            elif glob_type == 'transformation_img_overlap':
+                return uglob(self.transformed_folder_overlap, f'{self.slice_name}*.tif')
+
+        return
 
 
 # ===================== #
