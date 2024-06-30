@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import polars as pl
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
 from plotly import express as px
 
 from neuralib.util.util_type import PathLike

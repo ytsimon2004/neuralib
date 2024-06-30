@@ -113,7 +113,7 @@ class AtlasBrainView(AbstractBrainView):
     def __init__(self, source: str, check_latest=False, plane: PLANE = 'coronal'):
         super().__init__()
 
-        from bg_atlasapi import BrainGlobeAtlas
+        from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
         atlas = BrainGlobeAtlas(
             source,
             check_latest=check_latest,
