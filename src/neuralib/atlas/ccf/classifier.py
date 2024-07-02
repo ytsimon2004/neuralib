@@ -191,7 +191,7 @@ class RoiClassifier:
         if verbose:
             exc = (
                 df.filter(pl.col('acronym').str.starts_with(area))
-                .groupby('hemi.').agg(pl.count())
+                .group_by('hemi.').agg(pl.count())
             )
 
             print(exc)
@@ -533,7 +533,7 @@ class RoiClassifiedNormTable:
         bias_col = 'bias_value'
 
         if to_index:
-            expr_calc = (pl.col('pRSC') / pl.col('aRSC')).apply(np.log2)
+            expr_calc = (pl.col('pRSC') / pl.col('aRSC')).map_elements(np.log2, return_dtype=pl.Float64)
             yunit = 'percent'  # force
             bias_col = 'bias_index'
         else:

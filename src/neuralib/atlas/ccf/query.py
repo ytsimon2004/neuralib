@@ -179,7 +179,7 @@ class SubregionResult:
     roi profile::
     
         ┌─────────┬────────┬───────┬────────────┐
-        │ source  ┆ n_rois ┆ count ┆ total_perc │
+        │ source  ┆ n_rois ┆ len   ┆ total_perc │
         │ ---     ┆ ---    ┆ ---   ┆ ---        │
         │ str     ┆ u32    ┆ u32   ┆ f64        │
         ╞═════════╪════════╪═══════╪════════════╡
@@ -209,7 +209,7 @@ class SubregionResult:
     @property
     def channel_weight(self) -> pl.DataFrame:
         """fraction foreach source in all rois"""
-        return self.roi_profile.drop('n_rois', 'count')
+        return self.roi_profile.drop('n_rois', 'len')
 
     @property
     def weight_list(self) -> list[float]:
