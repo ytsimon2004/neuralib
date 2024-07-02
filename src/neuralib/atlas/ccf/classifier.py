@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self, TypeAlias
 
-from neuralib.atlas.ccf.core import CCFBaseDir
+from neuralib.atlas.ccf.core import CoronalCCFDir
 from neuralib.atlas.ccf.norm import MouseBrainRoiNormHandler, ROIS_NORM_TYPE
 from neuralib.atlas.map import merge_until_level, NUM_MERGE_LAYER, DEFAULT_FAMILY_DICT
 from neuralib.atlas.type import Area, HEMISPHERE_TYPE, Source, Channel
@@ -81,7 +81,7 @@ class RoiClassifier:
                  'ignore_injection_site', 'fluor_repr', '_fluor_order',
                  '_injection_area', '_injection_hemi', '_parse_df')
 
-    def __init__(self, ccf_dir: CCFBaseDir,
+    def __init__(self, ccf_dir: CoronalCCFDir,
                  merge_level: int | str | None = None,
                  plane: PLANE_TYPE = 'coronal',
                  config: UserInjectionConfig | None = None):
@@ -629,7 +629,7 @@ class RoiClassifiedNormTable:
 # ======================================== #
 
 
-def _concat_channel(ccf_dir: CCFBaseDir,
+def _concat_channel(ccf_dir: CoronalCCFDir,
                     fluor_repr: FluorReprType,
                     plane: PLANE_TYPE) -> pl.DataFrame:
     """
@@ -667,7 +667,7 @@ def _single_proc(f: list[Path], fluor_repr: FluorReprType):
 
 def _multiple_concat_proc(f: list[Path],
                           plane: PLANE_TYPE,
-                          ccf_dir: CCFBaseDir,
+                          ccf_dir: CoronalCCFDir,
                           fluor_repr: FluorReprType) -> pl.DataFrame:
     Logger.log(LOGGING_IO_LEVEL, f'load multiple csv files: {len(f)} files')
 
@@ -701,7 +701,7 @@ def _multiple_concat_proc(f: list[Path],
 # Raw CSV Parsing Functions #
 # ========================= #
 
-def parse_csv(ccf_dir: CCFBaseDir | None,
+def parse_csv(ccf_dir: CoronalCCFDir | None,
               fluor_repr: FluorReprType, *,
               plane: PLANE_TYPE = 'coronal',
               df: pl.DataFrame | None = None,
