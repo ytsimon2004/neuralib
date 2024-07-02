@@ -32,7 +32,7 @@ DATA_SOURCE_TYPE = Literal['ccf_annotation', 'ccf_template', 'allensdk_annotatio
 # AllenCCF Data Source #
 # ===================== #
 
-def _cache_nparray(url: str, file: PathLike):
+def _cache_nparray(url: str, file: PathLike) -> None:
     fprint(f'DOWNLOADING... {file.name} from {url}', vtype='io')
 
     with warnings.catch_warnings():
@@ -141,7 +141,9 @@ def load_structure_tree(version: Literal['2017', 'old'] = '2017',
 
     ret = (pl.read_csv(file)
            .with_columns(pl.col('parent_structure_id').fill_null(-1))
-           .with_columns(pl.col('structure_id_path').map_elements(lambda it: tuple(map(int, it[1:-1].split('/'))))))
+           .with_columns(pl.col('structure_id_path')
+                         .map_elements(lambda it: tuple(map(int, it[1:-1].split('/'))),
+                                       return_dtype=pl.List(pl.Int64))))
     #
     if '2017' in Path(file).name:
         ret = ret.with_columns(pl.col('atlas_id').fill_null(-2))
