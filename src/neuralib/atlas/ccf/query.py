@@ -140,7 +140,7 @@ class RoiAreaQuery:
                        .with_columns((pl.col('n_rois') / pl.col('len')).alias('total_perc'))
                        .sort(ch_sort))
         #
-        df = (df.pivot(columns=self._show_col, index='source', values=unit, aggregate_function='first')
+        df = (df.pivot(self._show_col, index='source', values=unit, aggregate_function='first')
               .fill_null(0))
 
         df = df.sort(ch_sort)

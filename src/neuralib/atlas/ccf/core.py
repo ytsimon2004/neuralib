@@ -467,7 +467,7 @@ class SagittalCCFOverlapDir(SagittalCCFDir):
         if self.hemisphere == 'ipsi':
             return self.root / 'resize_ipsi_overlap'
         elif self.hemisphere == 'contra':
-            return self.root / 'resiz_contra_overlap'
+            return self.root / 'resize_contra_overlap'
         else:
             raise ValueError('')
 
@@ -515,10 +515,16 @@ class MatMatrix(NamedTuple):
 
     # noinspection PyTypeChecker
     @property
-    def angle_xy(self) -> tuple[float, float]:
-        """angle shifting for xy axis (width, height) for a specific plane type"""
-        angle = self.allen_location[1]
-        return angle[0], angle[1]
+    def delta_values(self) -> tuple[int, int]:
+        """shifting values for yx axis (height, width) for a specific plane type.
+
+        Coronal slice: [0]:DV, [1]:ML
+
+        Sagittal Slice: [0]:DV, [1]:AP
+
+        """
+        delta = self.allen_location[1]
+        return delta[0], delta[1]
 
 
 def load_transform_matrix(filepath: PathLike,
@@ -564,15 +570,23 @@ class CCFTransMatrix:
         return self.matrix.slice_index
 
     @property
-    def angle_xy(self) -> tuple[float, float]:
-        return self.matrix.angle_xy
+    def delta_xy(self) -> tuple[int, int]:
+        """map delta value to xy slice view"""
+        return self.matrix.delta_values[1], self.matrix.delta_values[0]
 
     def get_slice_plane(self) -> SlicePlane:
-        ret = (load_slice_view('ccf_template', self.plane_type, allen_annotation_res=self.resolution)
-               .plane_at(self.slice_index))
+        ret = (
+            load_slice_view('ccf_template', self.plane_type, allen_annotation_res=self.resolution)
+            .plane_at(self.slice_index)
+        )
 
-        if np.any([a != 0 for a in self.matrix.angle_xy]):
-            ret = ret.with_angle_offset(-self.matrix.angle_xy[0], self.matrix.angle_xy[1])
+        dw = self.delta_xy[0]
+        dh = self.delta_xy[1]
+
+        ret = ret.with_offset(
+            dw=dw + 1 if dw != 0 else 0,  # avoid index err
+            dh=dh + 1 if dh != 0 else 0,  # avoid index err
+        )
 
         return ret
 
@@ -583,8 +597,8 @@ class CCFTransMatrix:
             'atlas_resolution': self.resolution,
             'slice_index': self.slice_index,
             'reference_value': self.get_slice_plane().reference_value,
-            'dw': self.angle_xy[0],
-            'dh': self.angle_xy[1]
+            'dw': self.delta_xy[0],
+            'dh': self.delta_xy[1]
         }
 
         if to_polars:

@@ -315,20 +315,35 @@ class SlicePlane:
         factor = 1000 / self.view.resolution
         return round((self.view.reference_point - self.slice_index) / factor, 2)
 
-    def with_offset(self, dw: int, dh: int) -> Self:
+    def with_offset(self, dw: int, dh: int, debug: bool = False) -> Self:
+        if debug:
+            deg_x, deg_y = self._value_to_angle(dw, dh)
+            print(f'{dw=}, {dh=}')
+            print(f'{deg_x=}, {deg_y=}')
+
         return attrs.evolve(self, dw=dw, dh=dh)
+
+    def _value_to_angle(self, dw: int, dh: int) -> tuple[float, float]:
+        """delta value to degree"""
+        rx = math.atan(2 * dw / self.view.width)
+        ry = math.atan(2 * dh / self.view.height)
+        deg_x = np.rad2deg(rx)
+        deg_y = np.rad2deg(ry)
+
+        return deg_x, deg_y
 
     def with_angle_offset(self, deg_x: float, deg_y: float) -> Self:
         """
+        with degree offset
 
-        :param deg_x:
-        :param deg_y:
+        :param deg_x: degree in x axis (width)
+        :param deg_y: degree in y axis (height)
         :return:
         """
         rx = np.deg2rad(deg_x)
         ry = np.deg2rad(deg_y)
 
-        dw = int(-self.view.width * math.tan(rx) / 2)
+        dw = int(self.view.width * math.tan(rx) / 2)
         dh = int(self.view.height * math.tan(ry) / 2)
 
         return self.with_offset(dw, dh)
