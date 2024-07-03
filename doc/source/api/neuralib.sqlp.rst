@@ -8,11 +8,12 @@ neuralib.sqlp
     :maxdepth: 1
     :caption: Modules:
 
-    neuralib.sqlp.dot
+    neuralib.sqlp.annotation
     neuralib.sqlp.connection
     neuralib.sqlp.expr
     neuralib.sqlp.literal
     neuralib.sqlp.stat
+    neuralib.sqlp.stat_start
 
 Table Declaration
 -----------------
@@ -51,5 +52,6 @@ Others
     :maxdepth: 1
     :caption: Modules:
 
+    neuralib.sqlp.dot
     neuralib.sqlp.cli
     neuralib.sqlp.util

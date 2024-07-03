@@ -274,7 +274,7 @@ class RoiClassifier:
         :param hemisphere: which hemisphere {'ipsi', 'contra', 'both'}
         :return: dataframe
 
-        *hemi: optional col. if hemisphere is`both`, then sum together
+        **hemi**: optional col. if hemisphere is`both`, then sum together
 
         Example of merge level equal to 2::
 
@@ -585,9 +585,10 @@ class RoiClassifiedNormTable:
 
     def to_winner_dataframe(self) -> pl.DataFrame:
         """
-        for ternary plot in plotly module
+        For ternary plot in plotly module
 
         :return: dataframe
+
         ::
 
             ┌────────────┬─────────┬──────┬──────┬───────┬────────┐
