@@ -113,9 +113,9 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
             hemisphere_type: HEMISPHERE_TYPE | None = None,
             auto_mkdir: bool = True,
     ):
-        """
+        r"""
 
-        :param root: root path (i.e., */ANIMAL_001)
+        :param root: root path (i.e., \*/ANIMAL_001)
         :param with_overlap_sources:
         :param plane_type:
         :param hemisphere_type:

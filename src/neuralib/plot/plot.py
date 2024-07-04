@@ -10,14 +10,15 @@ from matplotlib.axes import Axes
 from scipy.ndimage import gaussian_filter1d
 
 from neuralib.plot.colormap import insert_colorbar
-from neuralib.util.util_type import ArrayLike
+from neuralib.util.util_type import ArrayLike, DataFrame, PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = [
     'plot_2d_dots',
     'plot_regression_cc',
     'plot_joint_scatter_histogram',
-    'plot_histogram_cutoff'
+    'plot_histogram_cutoff',
+    'plot_half_violin_box_dot'
 ]
 
 
@@ -35,16 +36,17 @@ def plot_2d_dots(ax: Axes,
                  size_factor: float = 3000,
                  **kwargs):
     """
+    Plot values as 2D dots
 
-    :param ax:
-    :param x:
-    :param y:
-    :param size:
-    :param with_color:
-    :param with_legends:
+    :param ax: ``Axes``
+    :param x: string values (X,)
+    :param y: string values (Y,)
+    :param size: size of the dots (Y, X)
+    :param with_color: `size` domain as colormap
+    :param with_legends: show the value scaling as legend
     :param size_type: whether the value corresponding to circle radius or surface area.
-    :param size_factor:
-    :param kwargs:
+    :param size_factor: scaling factor for visualization
+    :param kwargs: passed to ``ax.scatter()``
     :return:
     """
     size = np.array([size]).flatten()
@@ -76,7 +78,7 @@ def ax_size_legend(ax: Axes,
     """
     add the label and legend of the size in scatter plot
 
-    :param ax:
+    :param ax: ``Axes``
     :param value: values reflect to size
     :param f: amplified callable
     :return:
@@ -104,18 +106,20 @@ def plot_regression_cc(ax: Axes,
                        y: np.ndarray,
                        order: int = 1,
                        show_cc: bool = True,
-                       bins=10,
+                       bins: int = 10,
+                       bin_func: Literal['median', 'mean'] = 'median',
                        **kwargs):
     """
     Regression to see the relationship between x and y
 
-    :param ax:
-    :param x:
-    :param y:
-    :param order:
-    :param bins:
-    :param show_cc:
-    :param kwargs:
+    :param ax: ``Axes``
+    :param x: numerical array x
+    :param y: numerical array x
+    :param order: order of the polynomial to fit when calculating the residuals.
+    :param bins: number of bins
+    :param show_cc: show correlation coefficient
+    :param bin_func: Literal['median', 'mean']. default is median
+    :param kwargs: passed to ``ax.set``
     :return:
     """
     import seaborn as sns
@@ -130,7 +134,7 @@ def plot_regression_cc(ax: Axes,
                 line_kws={
                     'color': 'black'
                 })
-    _hist_line_plot(ax, x, y, bins)
+    _hist_line_plot(ax, x, y, bins, bin_func=bin_func)
 
     ax.set(**kwargs)
     ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
@@ -143,28 +147,29 @@ def plot_regression_cc(ax: Axes,
 def _hist_line_plot(ax,
                     x: np.ndarray,
                     y: np.ndarray,
-                    bins=20,
-                    ptype: Literal['median', 'mean'] = 'median'):
+                    bins: int = 20,
+                    bin_func: Literal['median', 'mean'] = 'median'):
     """
     average or pickup the median of the y value in certain bins
-    :param ax:
+    :param ax: ``Axes``
     :param x: (N, )
     :param y: (N, )
     :param bins:
-    :param ptype
+    :param bin_func
     :return:
     """
 
-    if ptype == 'mean':
+    if bin_func == 'mean':
         a, edg = np.histogram(x, weights=y, bins=bins)
         n = np.histogram(x, bins)[0]  # (B, )
 
         weights = np.divide(a, n, out=np.zeros_like(a, dtype=float), where=n != 0)  # avoid true divide
         weights = gaussian_filter1d(weights, 1)
 
-        ax.plot(edg[1:], weights, 'r--', alpha=0.5)
+        x = edg[:-1] + np.median(np.diff(edg)) / 2  # alignment
+        ax.plot(x, weights, 'r--', alpha=0.5)
 
-    elif ptype == 'median':
+    elif bin_func == 'median':
         counts, edg = np.histogram(x, weights=y, bins=bins)
 
         medians = []
@@ -173,10 +178,11 @@ def _hist_line_plot(ax,
             median_val = np.nanmedian(bin_data)
             medians.append(median_val)
 
-        ax.plot(edg[1:], medians, 'r--', alpha=0.5)
+        x = edg[:-1] + np.median(np.diff(edg)) / 2  # alignment
+        ax.plot(x, medians, 'r--', alpha=0.5)
 
     else:
-        raise ValueError(f'{ptype}')
+        raise ValueError(f'{bin_func}')
 
 
 def calculate_cc(x: np.ndarray, y: np.ndarray) -> float:
@@ -203,11 +209,11 @@ def plot_histogram_cutoff(ax: Axes,
     """
     Plot the histogram with a cutoff value
 
-    :param ax:
+    :param ax: ``Axes``
     :param value: (N,) 1d array
     :param cutoff: cutoff (threshold) value for the certain value, >= represents pass
     :param mask: (N,) mask for value. i.e., cell selection
-    :param kwargs: passed to `ax.set`
+    :param kwargs: passed to ``ax.set``
     """
     if value.ndim != 1:
         raise ValueError('value must be 1d array')
@@ -230,7 +236,16 @@ def plot_joint_scatter_histogram(x: np.ndarray,
                                  show_cc: bool = True,
                                  output: Path | None = None,
                                  **kwargs):
-    """plot the linear correlation scatter and histogram between two variables"""
+    """
+    plot the linear correlation scatter and histogram between two variables
+
+    :param x: numerical array x
+    :param y: numerical array y
+    :param show_cc: if show correlation coefficient
+    :param output: fig save output
+    :param kwargs: pass through ``ax.set()``
+    :return:
+    """
 
     sns.set(style='white', font_scale=1.2)
 
@@ -252,3 +267,55 @@ def plot_joint_scatter_histogram(x: np.ndarray,
         plt.savefig(output)
     else:
         plt.show()
+
+
+def plot_half_violin_box_dot(ax: Axes,
+                             data: DataFrame | dict | list[np.ndarray],
+                             x: str | None = None,
+                             y: str | None = None,
+                             hue: str | None = None,
+                             output: PathLike | None = None,
+                             **kwargs) -> None:
+    """
+    Plot the data with half violin together with boxes and dots
+
+    :param ax: ``Axes``
+    :param data: Dataset for plotting
+    :param x: names of variables in data or vector data: ``x``
+    :param y: names of variables in data or vector data: ``y``
+    :param hue: names of variables in data or vector data: ``hue``
+    :param output: fig save output
+    :param kwargs: pass through ``sns.violinplot``, ``sns.boxplot`` and ``sns.stripplot``
+    :return:
+    """
+    kws = dict(
+        ax=ax,
+        x=x,
+        y=y,
+        hue=hue,
+        data=data,
+        palette='Set2',
+        **kwargs
+    )
+
+    sns.violinplot(dodge=False, density_norm="width", inner=None, **kws)
+
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    for violin in ax.collections:
+        bbox = violin.get_paths()[0].get_extents()
+        x0, y0, width, height = bbox.bounds
+        violin.set_clip_path(plt.Rectangle((x0, y0), width / 2, height, transform=ax.transData))
+
+    sns.boxplot(saturation=1, showfliers=False, width=0.3, boxprops={'zorder': 3, 'facecolor': 'none'}, **kws)
+
+    old_len_collections = len(ax.collections)
+    sns.stripplot(dodge=False, alpha=0.7, size=3, **kws)
+
+    for dots in ax.collections[old_len_collections:]:
+        dots.set_offsets(dots.get_offsets() + np.array([0.12, 0]))
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
+    if output is not None:
+        plt.savefig(output)

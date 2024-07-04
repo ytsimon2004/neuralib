@@ -17,3 +17,10 @@ neuralib.plot
     neuralib.plot.tools
     neuralib.plot.venn
 
+
+.. toctree::
+    :maxdepth: 1
+    :caption: examples
+
+    ../notebooks/example_neuralib_plot
+

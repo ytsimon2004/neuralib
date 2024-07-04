@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional, Any, Literal, NamedTuple
+from typing import Optional, Any, NamedTuple
 
 from matplotlib.axes import Axes
+
+__all__ = ['VennHandler',
+           'plot_venn']
 
 
 class VennHandler(NamedTuple):
@@ -25,12 +28,8 @@ class VennHandler(NamedTuple):
 
         return fa * fb * 100
 
-    def with_total(self, total: int | Literal['default']) -> 'VennHandler':
-        """total set number. should include the non-classified population.
-            If None, then use the sum of the given subsets"""
-        if total == 'default':
-            total = self.subset_a + self.subset_b + self.subset_overlap
-
+    def with_total(self, total: int) -> 'VennHandler':
+        """total set number. should include the non-classified population"""
         return self._replace(total_set=total)
 
     def get_pure_number(self) -> tuple[int, ...]:
@@ -49,15 +48,15 @@ def plot_venn(ax: Axes,
               vhandler: VennHandler,
               msg: Optional[list[Any]] = None,
               labels: tuple[str, str] = ('visual', 'place'),
-              show_msg=True):
+              show_msg: bool = True):
     """
     three classified population venn diagram, and calculate the chance level
 
-    :param ax:
+    :param ax: ``Axes``
     :param vhandler: VennHandler
     :param msg: msg show in title
     :param labels: label inside the venn
-    :param show_msg:
+    :param show_msg: show fraction message
     :return:
     """
     from matplotlib_venn import venn2
