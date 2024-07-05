@@ -43,3 +43,16 @@ Utilities Modules
     neuralib.argp
     neuralib.persistence
     neuralib.sqlp
+
+
+
+Notebook Demo
+------------------
+
+.. toctree::
+    :maxdepth: 1
+    :caption: examples
+
+    ../notebooks/example_slice_view
+    ../notebooks/example_ibl_plot
+    ../notebooks/example_neuralib_plot
