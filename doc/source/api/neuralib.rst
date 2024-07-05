@@ -45,13 +45,13 @@ Utilities Modules
     neuralib.sqlp
 
 
+Examples
+___________
 
-Notebook Demo
-------------------
 
 .. toctree::
     :maxdepth: 1
-    :caption: examples
+    :caption: Notebook Demo
 
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot

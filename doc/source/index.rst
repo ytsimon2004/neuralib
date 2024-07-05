@@ -124,6 +124,7 @@ Others
 - ``neuralib.util.profile_test``: Simple benchmark profile testing
 - ``neuralib.util.table``: Rich table visualization
 
+
 project.scripts using CLI
 ---------------------------
 
@@ -132,5 +133,17 @@ project.scripts using CLI
 
 - See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
 
+
+
+
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Notebook Demo
+
+    ../notebooks/example_slice_view
+    ../notebooks/example_ibl_plot
+    ../notebooks/example_neuralib_plot
 
 

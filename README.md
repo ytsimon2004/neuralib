@@ -5,7 +5,6 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/neura-library)
 [![PyPI version](https://badge.fury.io/py/neura-library.svg)](https://badge.fury.io/py/neura-library)
 [![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ytsimon2004/neuralib)
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
