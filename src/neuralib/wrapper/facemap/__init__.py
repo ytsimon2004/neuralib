@@ -35,9 +35,21 @@ Example of launch the GUI with the existed results
 
 Example of load the keypoint result
 ------------------------------------
-TODO
+
+.. code-block:: python
+
+    directory = ...
+    fmap = FaceMapResult.load(directory, track_type='keypoints')
+
+    plot_facemap_keypoints(fmap, frame_interval=(0, 100), keypoints=['eye(back)', 'eye(bottom)', 'eye(front)', 'eye(top)'])
 
 
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Notebook Demo
+
+    ../notebooks/example_facemap
 
 """
 from .core import *

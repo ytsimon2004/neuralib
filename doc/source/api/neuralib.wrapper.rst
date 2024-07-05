@@ -11,3 +11,10 @@ neuralib.wrapper
     neuralib.wrapper.deeplabcut
     neuralib.wrapper.facemap
     neuralib.wrapper.rastermap
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Notebook Demo
+
+    ../notebooks/example_facemap

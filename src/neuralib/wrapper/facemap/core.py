@@ -258,7 +258,17 @@ class FaceMapResult:
         raise NotImplementedError('')
 
     def get_pupil_area(self) -> np.ndarray:
+        """pupil area (F, )"""
         return self.get_pupil_tracking()['area_smooth']
+
+    def get_pupil_center_of_mass(self) -> np.ndarray:
+        """center of mass of pupil tracking (F, 2)"""
+        return self.get_pupil_tracking()['com']
+
+    def get_pupil_location_movement(self) -> np.ndarray:
+        """Calculate the Euclidean distance from the origin for each point in a 2D array"""
+        com = self.get_pupil_center_of_mass()
+        return np.sqrt(np.sum(com ** 2, axis=1))
 
     def get_eye_blink(self) -> np.ndarray:
         """eye blinking array (F, )"""

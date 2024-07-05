@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.colors import Normalize
 
 from neuralib.plot import plot_figure
 from neuralib.plot.colormap import get_customized_cmap
 from neuralib.util.util_type import ArrayLikeStr, PathLike
 from neuralib.wrapper.facemap import FaceMapResult
 
-__all__ = ['plot_facemap_keypoints']
+__all__ = ['plot_facemap_keypoints',
+           'plot_camp_time_series']
 
 
 def plot_facemap_keypoints(fmap: FaceMapResult,
@@ -46,3 +49,30 @@ def plot_facemap_keypoints(fmap: FaceMapResult,
 
         ax.set(xlabel='frame', ylabel='keypoint coordinates')
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+
+
+def plot_camp_time_series(x: np.ndarray,
+                          y: np.ndarray,
+                          cmap: str = 'viridis',
+                          output: PathLike | None = None,
+                          **kwargs):
+    """
+    Plots a scatter plot with a colorbar
+
+    :param x: X-axis values
+    :param y: Y-axis values
+    :param cmap: Colormap to use
+    :param output: Output file path to save the plot
+    :return:
+    """
+    if x.size != y.size:
+        raise ValueError('size xy inconsistent')
+
+    colors = get_customized_cmap(cmap, value=(0, 1), numbers=len(x))
+    norm = Normalize(vmin=0, vmax=len(x))
+
+    with plot_figure(output) as ax:
+        ax.scatter(x, y, c=colors, alpha=0.5, **kwargs)
+        cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax)
+        cbar.set_label('frames')
+        ax.set(xlabel='x', ylabel='y')

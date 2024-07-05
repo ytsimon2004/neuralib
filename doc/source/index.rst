@@ -139,6 +139,8 @@ project.scripts using CLI
 
     ../notebooks/example_calimg
 
+    ../notebooks/example_facemap
+
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot
     ../notebooks/example_neuralib_plot
