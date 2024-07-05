@@ -8,7 +8,7 @@
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
-## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html)
+## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html) and [Examples](notebooks)
 
 # Installation
 
@@ -75,20 +75,12 @@
 
 - `neuralib.sqlp`: Python functions to build a SQL (sqlite3) statement.
 
---------------------------
-
-# Others
+## Others
 
 - `neuralib.plot`: Module for general plotting purpose
-
-
 - `neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
-
-
 - `neuralib.tools.imglib`: Image processing library (under DEV)
 - `neuralib.tools.slack_bot`: Real-time slack notification bot for analysis pipeline
-
-
 - `neuralib.util.cli_args`: run script as subprocess
 - `neuralib.util.color_logging`: logging with color format
 - `neuralib.util.csv`: csv context manager
@@ -98,9 +90,7 @@
 
 ## project.scripts using CLI
 
-### `brender`
-
-- see examples in [api](https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html)
+- `brender`: see examples in [api](https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html)
 
 
 
