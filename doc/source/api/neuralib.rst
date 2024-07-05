@@ -53,6 +53,8 @@ ___________
     :maxdepth: 1
     :caption: Notebook Demo
 
+    ../notebooks/example_calimg
+
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot
     ../notebooks/example_neuralib_plot

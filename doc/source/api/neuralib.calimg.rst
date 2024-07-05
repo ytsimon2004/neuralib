@@ -14,3 +14,9 @@ neuralib.calimg
     neuralib.calimg.cellular
     neuralib.calimg.fov
 
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Notebook Demo
+
+    ../notebooks/example_calimg

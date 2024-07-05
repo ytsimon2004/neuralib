@@ -128,12 +128,7 @@ Others
 project.scripts using CLI
 ---------------------------
 
-``brender``
-^^^^^^^^^^^^
-
-- See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
-
-
+- ``brender``: See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
 
 
 
@@ -141,6 +136,8 @@ project.scripts using CLI
 .. toctree::
     :maxdepth: 1
     :caption: Notebook Demo
+
+    ../notebooks/example_calimg
 
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot
