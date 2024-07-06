@@ -141,6 +141,7 @@ project.scripts using CLI
 
     ../notebooks/example_facemap
     ../notebooks/example_rastermap_2p
+    ../notebooks/example_rastermap_wfield
 
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot

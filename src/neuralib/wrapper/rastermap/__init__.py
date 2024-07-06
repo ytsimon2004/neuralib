@@ -252,10 +252,10 @@ Example of Wfield imaging dataset pipeline
 .. code-block:: python
 
 
-    def run_rastermap_2p(dat: BaseRasterMapInputWField,
-                         ops: RasterOptions | None = None,
-                         neuron_bins: int = 500,
-                         **kwargs) -> RasterMapResult:
+    def run_rastermap_wfield(dat: BaseRasterMapInputWField,
+                             ops: RasterOptions | None = None,
+                             neuron_bins: int = 500,
+                             **kwargs) -> RasterMapResult:
         if ops is None:
             ops = DEFAULT_WFIELD_RASTER_OPT
 

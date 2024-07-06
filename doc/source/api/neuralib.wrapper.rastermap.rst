@@ -16,3 +16,4 @@ neuralib.wrapper.rastermap
     :caption: Notebook Demo
 
     ../notebooks/example_rastermap_2p
+    ../notebooks/example_rastermap_wfield
