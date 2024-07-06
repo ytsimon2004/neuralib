@@ -22,12 +22,6 @@ API Reference
    api/neuralib.rst
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 Installation
 -----------------------
@@ -37,6 +31,30 @@ Installation
    pip install neura-library
 
 - Checkout `Release notes <https://github.com/ytsimon2004/neuralib/releases>`_
+
+
+
+CLI project.scripts
+---------------------------
+
+- ``brender``: See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
+
+
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Notebook Demo
+
+    ../notebooks/example_calimg
+
+    ../notebooks/example_facemap
+    ../notebooks/example_rastermap_2p
+    ../notebooks/example_rastermap_wfield
+
+    ../notebooks/example_slice_view
+    ../notebooks/example_ibl_plot
+    ../notebooks/example_neuralib_plot
 
 
 Open-Source tools API call / data parsing
@@ -125,26 +143,11 @@ Others
 - ``neuralib.util.table``: Rich table visualization
 
 
-project.scripts using CLI
----------------------------
-
-- ``brender``: See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
 
 
+Indices and tables
+==================
 
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Notebook Demo
-
-    ../notebooks/example_calimg
-
-    ../notebooks/example_facemap
-    ../notebooks/example_rastermap_2p
-    ../notebooks/example_rastermap_wfield
-
-    ../notebooks/example_slice_view
-    ../notebooks/example_ibl_plot
-    ../notebooks/example_neuralib_plot
-
-
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

@@ -19,3 +19,4 @@ neuralib.wrapper
 
     ../notebooks/example_facemap
     ../notebooks/example_rastermap_2p
+    ../notebooks/example_rastermap_wfield
