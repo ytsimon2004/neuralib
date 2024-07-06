@@ -10,3 +10,9 @@ neuralib.wrapper.rastermap
     
     neuralib.wrapper.rastermap.core
 
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Notebook Demo
+
+    ../notebooks/example_rastermap_2p

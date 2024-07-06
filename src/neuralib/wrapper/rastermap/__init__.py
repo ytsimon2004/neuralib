@@ -3,7 +3,8 @@ RasterMap Wrapper
 =================
 
 .. seealso:: `<https://github.com/MouseLand/rastermap>`_
-.. seealso:: `<https://colab.research.google.com/github/MouseLand/rastermap/blob/main/notebooks/rastermap_largescale.ipynb#scrollTo=E_WTZXx0Io0Y>`_
+.. seealso:: `<https://colab.research.google.com/github/MouseLand/rastermap/blob/main/notebooks/rastermap_largescale.ipynb>`_
+.. seealso:: `<https://colab.research.google.com/github/MouseLand/rastermap/blob/main/notebooks/rastermap_widefield.ipynb>`_
 
 
 
@@ -115,7 +116,7 @@ Example of 2P dataset pipeline
 .. code-block:: python
 
     def plot_rastermap_2p(raster: RasterMapResult, output: PathLike | None = None):
-        with plot_figure(output, figsize=(6, 12)) as _ax:
+        with plot_figure(output, 10, 20, gridspec_kw={'wspace': 1, 'hspace': 0.3}) as _ax:
             # heatmap
             ax = ax_merge(_ax)[:, :-1]
             ax.imshow(raster.super_neurons,

@@ -18,3 +18,4 @@ neuralib.wrapper
     :caption: Notebook Demo
 
     ../notebooks/example_facemap
+    ../notebooks/example_rastermap_2p

@@ -45,8 +45,6 @@ Utilities Modules
     neuralib.sqlp
 
 
-Examples
-___________
 
 
 .. toctree::
@@ -56,6 +54,7 @@ ___________
     ../notebooks/example_calimg
 
     ../notebooks/example_facemap
+    ../notebooks/example_rastermap_2p
 
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot
