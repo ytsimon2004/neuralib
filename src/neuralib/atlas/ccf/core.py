@@ -124,7 +124,7 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
         self.root: Final[Path] = root
         self.with_overlap_sources = with_overlap_sources
         self.plane_type: Final[PLANE_TYPE] = plane_type
-        self.hemisphere: HEMISPHERE_TYPE = hemisphere_type
+        self.hemisphere: HEMISPHERE_TYPE | None = hemisphere_type if plane_type == 'sagittal' else None
 
         if auto_mkdir:
             self._init_folder_structure()
@@ -385,6 +385,10 @@ class CoronalCCFOverlapDir(CoronalCCFDir):
     @property
     def transformed_folder_overlap(self) -> Path:
         return self.processed_folder_overlap / 'transformations'
+
+    @property
+    def labelled_roi_folder_overlap(self) -> Path:
+        return self.transformed_folder_overlap / 'labelled_regions'
 
     def glob(self,
              glass_id: int,

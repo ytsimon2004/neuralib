@@ -9,12 +9,19 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self, TypeAlias
 
-from neuralib.atlas.ccf.core import AbstractCCFDir, SagittalCCFDir, SagittalCCFOverlapDir
+from neuralib.atlas.ccf.core import (
+    AbstractCCFDir,
+    SagittalCCFDir,
+    SagittalCCFOverlapDir,
+    CoronalCCFOverlapDir,
+    CoronalCCFDir
+)
 from neuralib.atlas.ccf.norm import MouseBrainRoiNormHandler, ROIS_NORM_TYPE
 from neuralib.atlas.map import merge_until_level, NUM_MERGE_LAYER, DEFAULT_FAMILY_DICT
 from neuralib.atlas.type import Area, HEMISPHERE_TYPE, Source, Channel
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.util.color_logging import setup_clogger, LOGGING_IO_LEVEL
+from neuralib.util.utils import uglob
 
 __all__ = [
     'FluorReprType',
@@ -29,8 +36,6 @@ __all__ = [
     '_concat_channel',
     'parse_csv'
 ]
-
-from neuralib.util.utils import uglob
 
 Logger = setup_clogger(caller_name=Path(__file__).name)
 
@@ -182,7 +187,7 @@ class RoiClassifier:
                         return name
 
             df = df.with_columns(pl.col('merge_ac_0')
-                                 .map_elements(categorize_family)
+                                 .map_elements(categorize_family, return_dtype=pl.Utf8)
                                  .fill_null('unknown')
                                  .alias('family'))
 
@@ -644,6 +649,7 @@ class RoiClassifiedNormTable:
 # ======================================== #
 
 
+# noinspection PyTypeChecker
 def _concat_channel(ccf_dir: AbstractCCFDir,
                     fluor_repr: FluorReprType,
                     plane: PLANE_TYPE) -> pl.DataFrame:
@@ -660,8 +666,9 @@ def _concat_channel(ccf_dir: AbstractCCFDir,
     :return:
     """
     if plane == 'sagittal':
-        # noinspection PyTypeChecker
         _auto_sagittal_combine(ccf_dir)
+    elif plane == 'coronal':
+        _auto_coronal_combine(ccf_dir)
 
     f = list(ccf_dir.labelled_roi_folder.glob('*.csv'))
 
@@ -669,6 +676,61 @@ def _concat_channel(ccf_dir: AbstractCCFDir,
         return _single_proc(f, fluor_repr)
     else:
         return _multiple_concat_proc(f, plane, ccf_dir, fluor_repr)
+
+
+def _auto_overlap_copy(ccf: CoronalCCFOverlapDir | SagittalCCFOverlapDir) -> None:
+    src = uglob(ccf.labelled_roi_folder_overlap, '*.csv')
+    filename = f'{ccf.animal}_overlap_roitable'
+    if ccf.plane_type == 'sagittal':
+        filename += f'_{ccf.hemisphere}'
+
+    dst = (ccf.labelled_roi_folder / filename).with_suffix('.csv')
+    shutil.copy(src, dst)
+    Logger.log(LOGGING_IO_LEVEL, f'copy overlap file from {src} to {dst}')
+
+
+def _auto_coronal_combine(ccf_dir: CoronalCCFDir | CoronalCCFOverlapDir):
+    _auto_overlap_copy(ccf_dir)
+
+
+def _auto_sagittal_combine(ccf_dir: SagittalCCFDir | SagittalCCFOverlapDir) -> None:
+    """copy file from overlap dir to major fluorescence (channel) folder,
+    then combine different hemisphere data"""
+
+    old_args = ccf_dir.hemisphere
+
+    def with_hemisphere_stem(ccf: SagittalCCFDir | SagittalCCFOverlapDir) -> list[Path]:
+        ls = list(ccf.labelled_roi_folder.glob('*.csv'))
+        for it in ls:
+            if ccf.hemisphere not in it.name:
+                new_path = it.with_stem(it.stem + f'_{ccf.hemisphere}')
+                it.rename(new_path)
+
+        return list(ccf.labelled_roi_folder.glob('*.csv'))  # new glob
+
+    mv_list = []
+
+    ccf_dir.hemisphere = 'ipsi'
+    if isinstance(ccf_dir, SagittalCCFOverlapDir):
+        _auto_overlap_copy(ccf_dir)
+    ext = with_hemisphere_stem(ccf_dir)
+    mv_list.extend(ext)
+
+    #
+    ccf_dir.hemisphere = 'contra'
+    if isinstance(ccf_dir, SagittalCCFOverlapDir):
+        _auto_overlap_copy(ccf_dir)
+    ext = with_hemisphere_stem(ccf_dir)
+    mv_list.extend(ext)
+
+    #
+    ccf_dir.hemisphere = 'both'  # as resize
+    target = ccf_dir.labelled_roi_folder
+    for file in mv_list:
+        shutil.copy(file, target / file.name)
+        Logger.log(LOGGING_IO_LEVEL, f'copy file from {file} to {target / file.name}')
+
+    ccf_dir.hemisphere = old_args  # assign back
 
 
 def _multiple_concat_proc(f: list[Path],
@@ -709,17 +771,13 @@ def _multiple_concat_proc(f: list[Path],
 
     # validate numbers of file
     if strict:
-        if plane == 'coronal':
-            exp = 1
-        elif plane == 'sagittal':
-            exp = 2
-        else:
-            raise ValueError('')
+        exp = n_channels
 
         if with_overlap_counts:
             exp += 1
 
-        exp *= n_channels
+        if plane == 'sagittal':
+            exp *= 2
 
         if len(df_list) != exp:
             raise RuntimeError(f'missing csv in {ccf_dir.labelled_roi_folder} for {plane} pipeline')
@@ -740,56 +798,6 @@ def _single_proc(f: list[Path], fluor_repr: FluorReprType):
                     .with_columns(pl.lit(source).alias('source')))
 
     raise RuntimeError('')
-
-
-def _auto_coronal_combine():
-    pass
-
-
-def _auto_sagittal_combine(ccf_dir: SagittalCCFDir | SagittalCCFOverlapDir) -> None:
-    """copy file from overlap dir to major fluorescence (channel) folder,
-    then combine different hemisphere data"""
-
-    old_args = ccf_dir.hemisphere
-
-    def auto_overlap_copy(ccf: ccf_dir) -> None:
-        src = uglob(ccf.labelled_roi_folder_overlap, '*.csv')
-        dst = ccf.labelled_roi_folder / f'{ccf.animal}_overlap_roitable_{ccf.hemisphere}.csv'
-        shutil.copy(src, dst)
-        Logger.log(LOGGING_IO_LEVEL, f'copy overlap file from {src} to {dst}')
-
-    def with_hemisphere_stem(ccf: ccf_dir) -> list[Path]:
-        ls = list(ccf.labelled_roi_folder.glob('*.csv'))
-        for it in ls:
-            if ccf.hemisphere not in it.name:
-                new_path = it.with_stem(it.stem + f'_{ccf.hemisphere}')
-                it.rename(new_path)
-
-        return list(ccf.labelled_roi_folder.glob('*.csv'))  # new glob
-
-    mv_list = []
-
-    ccf_dir.hemisphere = 'ipsi'
-    if isinstance(ccf_dir, SagittalCCFOverlapDir):
-        auto_overlap_copy(ccf_dir)
-    ext = with_hemisphere_stem(ccf_dir)
-    mv_list.extend(ext)
-
-    #
-    ccf_dir.hemisphere = 'contra'
-    if isinstance(ccf_dir, SagittalCCFOverlapDir):
-        auto_overlap_copy(ccf_dir)
-    ext = with_hemisphere_stem(ccf_dir)
-    mv_list.extend(ext)
-
-    #
-    ccf_dir.hemisphere = 'both'  # as resize
-    target = ccf_dir.labelled_roi_folder
-    for file in mv_list:
-        shutil.copy(file, target / file.name)
-        Logger.log(LOGGING_IO_LEVEL, f'copy file from {file} to {target / file.name}')
-
-    ccf_dir.hemisphere = old_args  # assign back
 
 
 # ========================= #
