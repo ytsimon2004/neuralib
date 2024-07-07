@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 from typing import TypedDict, Final, Literal, get_args
 
@@ -8,7 +9,7 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self, TypeAlias
 
-from neuralib.atlas.ccf.core import CoronalCCFDir
+from neuralib.atlas.ccf.core import CoronalCCFDir, AbstractCCFDir
 from neuralib.atlas.ccf.norm import MouseBrainRoiNormHandler, ROIS_NORM_TYPE
 from neuralib.atlas.map import merge_until_level, NUM_MERGE_LAYER, DEFAULT_FAMILY_DICT
 from neuralib.atlas.type import Area, HEMISPHERE_TYPE, Source, Channel
@@ -170,7 +171,8 @@ class RoiClassifier:
                     if row in family:
                         return name
 
-            df = df.with_columns(pl.col('merge_ac_0').apply(categorize_family)
+            df = df.with_columns(pl.col('merge_ac_0')
+                                 .map_elements(categorize_family)
                                  .fill_null('unknown')
                                  .alias('family'))
 
@@ -337,7 +339,7 @@ class RoiClassifier:
             supply_df = supply_overlap_dataframe(self.parsed_df)
             self.parsed_df = supply_df  # trigger setter
         else:
-            Logger.warning(f'Source counts exclude overlap channel!')
+            Logger.warning('Source counts exclude overlap channel!')
 
         df = self.get_percent_sorted_df(hemisphere)
 
@@ -630,46 +632,50 @@ class RoiClassifiedNormTable:
 # ======================================== #
 
 
-def _concat_channel(ccf_dir: CoronalCCFDir,
+def _concat_channel(ccf_dir: AbstractCCFDir,
                     fluor_repr: FluorReprType,
                     plane: PLANE_TYPE) -> pl.DataFrame:
     """
     Find the csv data from `labelled_roi_folder`, if multiple files are found, concat to single df.
-    `channel` & `source` columns are added to the dataframe
+    `channel` & `source` columns are added to the dataframe.
+    
+    If sagittal slice, auto move ipsi/contra hemispheres dataset (`resize_ipsi`, `resize_contra`) 
+    to new `resize` directory
 
-    :param ccf_dir: :class:`~neuralib.atlas.ccf.core.CCFBaseDir()`
+    :param ccf_dir: :class:`~neuralib.atlas.ccf.core.AbstractCCFDir()`
     :param fluor_repr: ``FluorReprType``
     :param plane: ``PLANE_TYPE`` {'coronal', 'sagittal', 'transverse'}
     :return:
     """
+    if plane == 'sagittal':
+        _auto_sagittal_combine(ccf_dir)
+
     f = list(ccf_dir.labelled_roi_folder.glob('*.csv'))
 
     if len(f) == 1:
         return _single_proc(f, fluor_repr)
-
     else:
         return _multiple_concat_proc(f, plane, ccf_dir, fluor_repr)
 
 
-def _single_proc(f: list[Path], fluor_repr: FluorReprType):
-    Logger.log(LOGGING_IO_LEVEL, f'load single csv file')
-    file = f[0]
-    df = pl.read_csv(file)
-    for pattern in ['rfp', 'gfp', 'overlap']:
-        if pattern in file.name:
-            channel = pattern
-            source = fluor_repr[channel]
-
-            return (df.with_columns(pl.lit(channel).alias('channel'))
-                    .with_columns(pl.lit(source).alias('source')))
-
-    raise RuntimeError('')
-
-
 def _multiple_concat_proc(f: list[Path],
                           plane: PLANE_TYPE,
-                          ccf_dir: CoronalCCFDir,
-                          fluor_repr: FluorReprType) -> pl.DataFrame:
+                          ccf_dir: AbstractCCFDir,
+                          fluor_repr: FluorReprType,
+                          strict: bool = True,
+                          n_channels: int = 2,
+                          with_overlap_counts: bool = True) -> pl.DataFrame:
+    """
+
+    :param f:
+    :param plane: ``PLANE_TYPE``
+    :param ccf_dir:  ``AbstractCCFDir``
+    :param fluor_repr:  ``FluorReprType``
+    :param strict: if strict check the file number is correct for the pipeline
+    :param n_channels: number of fluorescence channel (without overlap)
+    :param with_overlap_counts: if has overlap channel counts
+    :return:
+    """
     Logger.log(LOGGING_IO_LEVEL, f'load multiple csv files: {len(f)} files')
 
     df_list = []
@@ -688,14 +694,59 @@ def _multiple_concat_proc(f: list[Path],
         df_list.append(pl.read_csv(ff).with_columns(pl.lit(channel).alias('channel'))
                        .with_columns(pl.lit(source).alias('source')))
 
-    # validate
-    if plane == 'coronal' and len(df_list) != 3:
-        raise RuntimeError(f'missing csv in {ccf_dir.labelled_roi_folder} for {plane} pipeline')
+    # validate numbers of file
+    if strict:
+        if plane == 'coronal':
+            exp = 1
+        elif plane == 'sagittal':
+            exp = 2
+        else:
+            raise ValueError('')
 
-    if plane == 'sagittal' and len(df_list) != 6:
-        raise RuntimeError(f'missing csv in {ccf_dir.labelled_roi_folder} for {plane} pipeline')
+        if with_overlap_counts:
+            exp += 1
+
+        exp *= n_channels
+
+        if len(df_list) != exp:
+            raise RuntimeError(f'missing csv in {ccf_dir.labelled_roi_folder} for {plane} pipeline')
 
     return pl.concat(df_list)
+
+
+def _single_proc(f: list[Path], fluor_repr: FluorReprType):
+    Logger.log(LOGGING_IO_LEVEL, 'load single csv file')
+    file = f[0]
+    df = pl.read_csv(file)
+    for pattern in ['rfp', 'gfp', 'overlap']:
+        if pattern in file.name:
+            channel = pattern
+            source = fluor_repr[channel]
+
+            return (df.with_columns(pl.lit(channel).alias('channel'))
+                    .with_columns(pl.lit(source).alias('source')))
+
+    raise RuntimeError('')
+
+
+def _auto_sagittal_combine(ccf_dir: AbstractCCFDir) -> None:
+    old_args = ccf_dir.hemisphere
+
+    mv_list = []
+    ccf_dir.hemisphere = 'ipsi'
+    mv_list.extend(list(ccf_dir.labelled_roi_folder.glob('*.csv')))
+
+    ccf_dir.hemisphere = 'contra'
+    mv_list.extend(list(ccf_dir.labelled_roi_folder.glob('*.csv')))
+
+    ccf_dir.hemisphere = 'both'
+    target = ccf_dir.labelled_roi_folder
+
+    for file in mv_list:
+        shutil.copy(file, target / file.name)
+        Logger.log(LOGGING_IO_LEVEL, f'copy file from {file} to {target / file.name}')
+
+    ccf_dir.hemisphere = old_args  # assign back
 
 
 # ========================= #

@@ -124,7 +124,7 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
         self.root: Final[Path] = root
         self.with_overlap_sources = with_overlap_sources
         self.plane_type: Final[PLANE_TYPE] = plane_type
-        self.hemisphere: Final[HEMISPHERE_TYPE] = hemisphere_type
+        self.hemisphere: HEMISPHERE_TYPE | None = hemisphere_type
 
         if auto_mkdir:
             self._init_folder_structure()
@@ -249,7 +249,7 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
 
     @property
     def parse_csv(self) -> Path:
-        return uglob(self.parsed_data_folder, 'parsed_csv_merge.csv')
+        return self.parsed_data_folder / 'parsed_csv_merge.csv'
 
     # ======= #
     # Outputs #
@@ -440,6 +440,8 @@ class SagittalCCFDir(AbstractCCFDir):
             return self.root / 'resize_ipsi'
         elif self.hemisphere == 'contra':
             return self.root / 'resize_contra'
+        elif self.hemisphere == 'both':
+            return self.root / 'resize'
         else:
             raise ValueError('')
 
@@ -468,6 +470,8 @@ class SagittalCCFOverlapDir(SagittalCCFDir):
             return self.root / 'resize_ipsi_overlap'
         elif self.hemisphere == 'contra':
             return self.root / 'resize_contra_overlap'
+        elif self.hemisphere == 'both':
+            return self.root / 'resize_overlap'
         else:
             raise ValueError('')
 
