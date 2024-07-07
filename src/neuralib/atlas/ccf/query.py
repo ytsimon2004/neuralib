@@ -7,10 +7,9 @@ from typing_extensions import Self, Final, final
 from neuralib.atlas.ccf.classifier import supply_overlap_dataframe
 from neuralib.atlas.type import Source, Area
 from neuralib.atlas.util import get_margin_merge_level
+from neuralib.util.util_verbose import fprint
 
 __all__ = ['RoiAreaQuery', 'SubregionResult']
-
-from neuralib.util.util_verbose import fprint
 
 
 @final
@@ -121,7 +120,7 @@ class RoiAreaQuery:
         dat = self.query_result.select(['source', self.show_col])
 
         if supply_overlap:
-            dat = supply_overlap_dataframe(dat)
+            dat = supply_overlap_dataframe(dat, ['aRSC', 'pRSC'])
 
         df = (dat.group_by(['source', self.show_col])
               .agg(pl.col(self.show_col).count().alias('n_rois'))

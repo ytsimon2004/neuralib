@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import TypedDict, Final, Literal, get_args
+from typing import TypedDict, Final, Literal, get_args, Iterable
 
 import attrs
 import numpy as np
@@ -336,7 +336,9 @@ class RoiClassifier:
         :return: :class:`RoiClassifiedNormTable`
         """
         if supply_overlap and source != 'overlap':
-            supply_df = supply_overlap_dataframe(self.parsed_df)
+            source = list(self.fluor_repr.keys())
+            source.remove('overlap')
+            supply_df = supply_overlap_dataframe(self.parsed_df, supply_channel_name=source)
             self.parsed_df = supply_df  # trigger setter
         else:
             Logger.warning('Source counts exclude overlap channel!')
@@ -800,16 +802,19 @@ def parse_csv(ccf_dir: CoronalCCFDir | None,
     return df
 
 
-# TODO might be user-specific, be more generalized
-def supply_overlap_dataframe(df: pl.DataFrame) -> pl.DataFrame:
+def supply_overlap_dataframe(df: pl.DataFrame, supply_channel_name: Iterable[Channel]) -> pl.DataFrame:
     """Supply overlap counting in the parsed dataframe.
 
     ** Only used if excluding the overlap cell while counting the rfp and gfp channel
 
 
     :param df: dataframe contain `source` column with `overlap` literal in the cell
+    :param supply_channel_name: channel names to be supplied from `overlap`
     """
-    ori = df
-    dat_s1 = df.filter(pl.col('source') == 'overlap').with_columns(pl.lit('aRSC').alias('source'))
-    dat_s2 = df.filter(pl.col('source') == 'overlap').with_columns(pl.lit('pRSC').alias('source'))
-    return pl.concat([ori, dat_s1, dat_s2])
+
+    ret = [df]
+    for name in supply_channel_name:
+        s = df.filter(pl.col('source') == 'overlap').with_columns(pl.lit(name).alias('source'))
+        ret.append(s)
+
+    return pl.concat(ret)
