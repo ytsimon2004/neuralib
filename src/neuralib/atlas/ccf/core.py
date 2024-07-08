@@ -552,11 +552,11 @@ def load_transform_matrix(filepath: PathLike,
     """
     matrix for image transformation
 
-    :param filepath:
-    :param plane_type
-    :param resolution
-    :param default_name
-    :return:
+    :param filepath: transformation matrix .mat file
+    :param plane_type: ``PLANE_TYPE`` {'coronal', 'sagittal', 'transverse'}
+    :param resolution: atlas resolution
+    :param default_name: name of the ``CCFTransMatrix``
+    :return: ``CCFTransMatrix``
     """
     mat = loadmat(filepath, squeeze_me=True, struct_as_record=False)['save_transform']
     f = Path(filepath).name

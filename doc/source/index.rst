@@ -106,40 +106,36 @@ wrapper
 
 
 Utilities Modules
-------------------
-
-argp
-^^^^
+^^^^^^^^^^^^^^^^^
 
 - ``neuralib.argp``: Use argparse as dataclass field
 
-persistence
-^^^^^^^^^^^
-
 - ``neuralib.persistence``: Caching the analyzed results (i.e., concatenation for statistic purpose)
-
-bokeh_model
-^^^^^^^^^^^
-
-- ``neuralib.bokeh_model``: Interactive dashboard visualization
-
-sqlp
-^^^^
 
 - ``neuralib.sqlp``: Python functions to build a SQL (sqlite3) statement.
 
-Others
--------
+- ``neuralib.bokeh_model``: Interactive dashboard visualization
 
 - ``neuralib.plot``: Module for general plotting purpose
+
 - ``neuralib.model.bayes_decoding``: Position decoding using population neuronal activity
-- ``neuralib.tools.imglib``: Image processing library (under DEV)
+
+- ``neuralib.imglib``: Image processing library
+
+- ``neuralib.tools.gspread``: Google spreadsheet API wrapper for read/write
+
 - ``neuralib.tools.slack_bot``: Real-time Slack notification bot for analysis pipeline
+
 - ``neuralib.util.cli_args``: Run script as subprocess
+
 - ``neuralib.util.color_logging``: Logging with color format
+
 - ``neuralib.util.csv``: CSV context manager
+
 - ``neuralib.util.gpu``: OS-dependent GPU info
+
 - ``neuralib.util.profile_test``: Simple benchmark profile testing
+
 - ``neuralib.util.table``: Rich table visualization
 
 

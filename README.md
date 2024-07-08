@@ -10,6 +10,7 @@
 
 ## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html) and [Examples](notebooks)
 
+
 # Installation
 
 - `pip install neura-library` in your conda env with Python ~= 3.9.0
@@ -52,45 +53,43 @@
 
 - Module for other open-source tools wrapper
   - `neuralib.wrapper.deeplabcut`: Result parser for [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
+  -
   - `neuralib.wrapper.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
+  -
   - `neuralib.wrapper.rastermap`: Run and result parser for [rastermap](https://github.com/MouseLand/rastermap)
 
-----------------------------
-
-# Utilities Modules
-
-## argp
+## Utilities Modules
 
 - `neuralib.argp`: Use argparse as dataclass field
 
-## persistence
-
 - `neuralib.persistence`: caching the analyzed results (i.e., concatenation for statistic purpose)
-
-## bokeh_model
 
 - `neuralib.bokeh_model`: Interactive dashboard visualization
 
-## sqlp
-
 - `neuralib.sqlp`: Python functions to build a SQL (sqlite3) statement.
 
-## Others
-
 - `neuralib.plot`: Module for general plotting purpose
+
 - `neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
-- `neuralib.tools.imglib`: Image processing library (under DEV)
+
+- `neuralib.imglib`: Image processing library (under DEV)
+
+- `neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write
+
 - `neuralib.tools.slack_bot`: Real-time slack notification bot for analysis pipeline
+
 - `neuralib.util.cli_args`: run script as subprocess
+
 - `neuralib.util.color_logging`: logging with color format
+
 - `neuralib.util.csv`: csv context manager
+
 - `neuralib.util.gpu`: OS-dependent gpu info
+
 - `neuralib.util.profile_test`: simple benchmark profile testing
+
 - `neuralib.util.table`: rich table visualization
 
-## project.scripts using CLI
+# CLI project.scripts
 
 - `brender`: see examples in [api](https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html)
-
-
-
