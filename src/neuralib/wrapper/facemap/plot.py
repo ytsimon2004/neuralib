@@ -10,7 +10,7 @@ from neuralib.util.util_type import ArrayLikeStr, PathLike
 from neuralib.wrapper.facemap import FaceMapResult
 
 __all__ = ['plot_facemap_keypoints',
-           'plot_camp_time_series']
+           'plot_cmap_time_series']
 
 
 def plot_facemap_keypoints(fmap: FaceMapResult,
@@ -51,7 +51,7 @@ def plot_facemap_keypoints(fmap: FaceMapResult,
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
 
 
-def plot_camp_time_series(x: np.ndarray,
+def plot_cmap_time_series(x: np.ndarray,
                           y: np.ndarray,
                           cmap: str = 'viridis',
                           output: PathLike | None = None,
