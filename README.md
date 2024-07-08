@@ -8,7 +8,7 @@
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
-## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html) and [Examples](notebooks)
+## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html) and [Examples](doc/source/notebooks)
 
 
 # Installation
