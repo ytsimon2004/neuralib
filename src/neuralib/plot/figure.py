@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal
+from typing import Literal, ContextManager
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -30,8 +29,10 @@ def plot_figure(output: Path | None,
                 win_backend: MPL_BACKEND_TYPE = 'QtCairo',
                 dpi: int | None = None,
                 use_default_style: bool = True,
-                **kwargs) -> Axes:
+                tight_layout: bool = True,
+                **kwargs) -> ContextManager[Axes]:
     """
+    Context manager for creating and saving a matplotlib figure
 
     **Example**
 
@@ -41,16 +42,17 @@ def plot_figure(output: Path | None,
 
     generate output.png
 
-    :param output: output figure path
-    :param args: plt.subplots(*args)
-    :param set_square: sqaure plot
-    :param set_equal_scale: equal for xy scaling. i.e., annotomical plot
-    :param win_backend: handle backend problem in win10 pdf output.
-        if high resolution image (WXAgg), otherwise keep normal pdf output (WXCario)
-    :param dpi
-    :param use_default_style:
-    :param kwargs: plt.subplots(**kwargs)
-    :return:
+    :param output: Path to save the output figure. If None, the figure will be shown.
+    :param args: Arguments for ``plt.subplots()``
+    :param set_square: If True, set the plot to be square
+    :param set_equal_scale: If True, set equal scaling for x and y axes
+    :param win_backend: Backend to handle backend issues in Windows
+        If high resolution image (WXAgg), otherwise keep normal pdf output (WXCario)
+    :param dpi: DPI for saving the figure
+    :param use_default_style: If True, apply default style to the axes
+    :param tight_layout: If True, apply tight layout to the figure
+    :param kwargs: Additional keyword arguments for ``plt.subplots()``
+    :return: A matplotlib Axes object
     """
     _os_handler(win_backend=win_backend)
     _mplrc_set()
@@ -67,23 +69,19 @@ def plot_figure(output: Path | None,
     #
     try:
         yield ax
-    except:
-        raise
+    except Exception as e:
+        raise RuntimeError(f'An error occurred while plotting {e}')
     else:
         if output is None:
-            plt.tight_layout()
+            if tight_layout:
+                plt.tight_layout()
             plt.show()
         else:
             while True:
-                try:
-                    # UserWarning: This figure includes Axes that are not compatible with tight_layout,
-                    # so results might be incorrect
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('ignore')
-                        plt.tight_layout()
-                except:
-                    pass
+                if tight_layout:
+                    plt.tight_layout()
 
+                # for batch calling pulse
                 try:
                     plt.savefig(output, dpi=dpi if dpi is not None else None)
                     break

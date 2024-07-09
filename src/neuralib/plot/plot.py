@@ -18,7 +18,8 @@ __all__ = [
     'plot_regression_cc',
     'plot_joint_scatter_histogram',
     'plot_histogram_cutoff',
-    'plot_half_violin_box_dot'
+    'plot_half_violin_box_dot',
+    'plot_grid_subplots'
 ]
 
 
@@ -318,4 +319,73 @@ def plot_half_violin_box_dot(ax: Axes,
     ax.set_ylim(ylim)
 
     if output is not None:
+        plt.savefig(output)
+
+
+def plot_grid_subplots(data: np.ndarray,
+                       images_per_row: int,
+                       plot_func: Callable | str, *,
+                       dtype: Literal['xy', 'img'],
+                       hide_axis: bool = True,
+                       output: PathLike | None = None,
+                       **kwargs) -> None:
+    r"""
+    Plots a sequence of subplots in a grid format
+
+    Example for plot xy grid::
+
+        >>> data = np.random.sample((30, 10, 2))
+        >>> plot_grid_subplots(data, 5, 'plot', dtype='xy')
+
+    Example for plot img array grid ::
+
+        >>> data = np.random.sample((30, 10, 10))
+        >>> plot_grid_subplots(data, 5, 'imshow', dtype='img', cmap='gray')
+
+    :param data: Array containing the data to be plotted. For 'xy' dtype, the shape must be (N, (\*, 2)).
+        For 'img' dtype, the shape must be (N, (\*img))
+    :param images_per_row: Number of images per row in the subplot grid
+    :param plot_func: Function or method name to be used for plotting. If a string is provided,
+        it should be a valid method name of a matplotlib Axes object
+    :param dtype: {'xy', 'img'}. Type of data. 'xy' for (x, y) coordinate data, 'img' for image data
+    :param hide_axis: If True, hides the axes of the subplots
+    :param output: Path to save the plot image. If None, displays the plot.
+    :param kwargs: Additional keyword arguments passed to the plotting function ``plot_func``
+    :return:
+    """
+    n_images = data.shape[0]
+    n_rows = np.ceil(n_images / images_per_row).astype(int)
+    n_cols = min(images_per_row, n_images)
+
+    _, ax = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), squeeze=False)
+
+    for i in range(n_rows * n_cols):
+        r, c = divmod(i, images_per_row)
+        if hide_axis:
+            ax[r, c].axis('off')
+
+        #
+        if i < n_images:  # check to avoid index error
+            if callable(plot_func):
+                f = plot_func
+                kwargs['ax'] = ax[r, c]
+            else:
+                f = getattr(ax[r, c], plot_func)
+
+            #
+            if dtype == 'xy':
+                if data.shape[2] != 2:
+                    raise ValueError(f'invalid {data.size}')
+                dat = data[i]
+                f(dat[:, 0], dat[:, 1], **kwargs)
+            elif dtype == 'img':
+                f(data[i], **kwargs)
+            else:
+                raise ValueError(f'unknown data type: {dtype}')
+        else:
+            ax[r, c].set_visible(False)
+
+    if output is None:
+        plt.show()
+    else:
         plt.savefig(output)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
 
 from neuralib.plot import plot_figure
@@ -52,17 +53,24 @@ def plot_facemap_keypoints(fmap: FaceMapResult,
 
 
 def plot_cmap_time_series(x: np.ndarray,
-                          y: np.ndarray,
+                          y: np.ndarray, *,
                           cmap: str = 'viridis',
+                          ax: Axes | None = None,
+                          with_color_bar: bool = True,
+                          color_bar_label: str = 'frames',
                           output: PathLike | None = None,
-                          **kwargs):
+                          **kwargs) -> None:
     """
     Plots a scatter plot with a colorbar
 
     :param x: X-axis values
     :param y: Y-axis values
     :param cmap: Colormap to use
+    :param ax: ``matplotlib.axes.Axes``
+    :param with_color_bar: if show the colorbar
+    :param color_bar_label: color bar label
     :param output: Output file path to save the plot
+    :param kwargs: pass through ``ax.scatter()``
     :return:
     """
     if x.size != y.size:
@@ -71,8 +79,18 @@ def plot_cmap_time_series(x: np.ndarray,
     colors = get_customized_cmap(cmap, value=(0, 1), numbers=len(x))
     norm = Normalize(vmin=0, vmax=len(x))
 
-    with plot_figure(output) as ax:
+    def _plot(ax: Axes):
         ax.scatter(x, y, c=colors, alpha=0.5, **kwargs)
-        cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax)
-        cbar.set_label('frames')
-        ax.set(xlabel='x', ylabel='y')
+        if with_color_bar:
+            cbar = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax)
+            cbar.set_label(color_bar_label)
+            ax.set(xlabel='x', ylabel='y')
+
+    #
+    if ax is None:
+        with plot_figure(output) as ax:
+            _plot(ax)
+    else:
+        _plot(ax)
+        if output is not None:
+            plt.savefig(output)
