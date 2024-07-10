@@ -53,9 +53,9 @@
 
 - Module for other open-source tools wrapper
   - `neuralib.wrapper.deeplabcut`: Result parser for [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
-  -
+
   - `neuralib.wrapper.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
-  -
+
   - `neuralib.wrapper.rastermap`: Run and result parser for [rastermap](https://github.com/MouseLand/rastermap)
 
 ## Utilities Modules

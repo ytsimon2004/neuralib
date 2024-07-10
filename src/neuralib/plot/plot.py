@@ -322,7 +322,7 @@ def plot_half_violin_box_dot(ax: Axes,
         plt.savefig(output)
 
 
-def plot_grid_subplots(data: np.ndarray,
+def plot_grid_subplots(data: np.ndarray | list[np.ndarray],
                        images_per_row: int,
                        plot_func: Callable | str, *,
                        dtype: Literal['xy', 'img'],
@@ -342,8 +342,8 @@ def plot_grid_subplots(data: np.ndarray,
         >>> data = np.random.sample((30, 10, 10))
         >>> plot_grid_subplots(data, 5, 'imshow', dtype='img', cmap='gray')
 
-    :param data: Array containing the data to be plotted. For 'xy' dtype, the shape must be (N, (\*, 2)).
-        For 'img' dtype, the shape must be (N, (\*img))
+    :param data: 3D Array containing the data to be plotted. For 'xy' dtype, the shape must be (N, (\*, 2)).
+        For 'img' dtype, the shape must be (N, (\*img)). Accepted also list of 2D array different size
     :param images_per_row: Number of images per row in the subplot grid
     :param plot_func: Function or method name to be used for plotting. If a string is provided,
         it should be a valid method name of a matplotlib Axes object
@@ -353,7 +353,7 @@ def plot_grid_subplots(data: np.ndarray,
     :param kwargs: Additional keyword arguments passed to the plotting function ``plot_func``
     :return:
     """
-    n_images = data.shape[0]
+    n_images = len(data)
     n_rows = np.ceil(n_images / images_per_row).astype(int)
     n_cols = min(images_per_row, n_images)
 
@@ -374,9 +374,9 @@ def plot_grid_subplots(data: np.ndarray,
 
             #
             if dtype == 'xy':
-                if data.shape[2] != 2:
-                    raise ValueError(f'invalid {data.size}')
                 dat = data[i]
+                if dat.shape[1] != 2:
+                    raise ValueError(f'invalid {data.size}')
                 f(dat[:, 0], dat[:, 1], **kwargs)
             elif dtype == 'img':
                 f(data[i], **kwargs)
