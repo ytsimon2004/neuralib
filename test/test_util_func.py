@@ -4,7 +4,7 @@ import unittest
 class TestUtilFunc(unittest.TestCase):
 
     def test_check_attrs_in_clazz(self):
-        from neuralib.util.util_clazz import check_attrs_in_clazz
+        from neuralib.util.util_class import check_attrs_in_clazz
 
         class Parent:
             a: int
