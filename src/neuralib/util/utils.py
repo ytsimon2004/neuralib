@@ -3,16 +3,14 @@ from __future__ import annotations
 import functools
 import re
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TypeVar
 
-from neuralib.util.util_type import PathLike, ArrayLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = ['uglob',
            'glob_re',
            'joinn',
-           'flat_ls',
-           'array2str',
            'future_deprecate',
            'key_from_value']
 
@@ -63,24 +61,6 @@ def glob_re(pattern: str, strings: list[str]) -> list[str]:
 def joinn(sep: str, *part: str | None) -> str:
     """join not-None str"""
     return sep.join(str(it) for it in part if it is not None)
-
-
-def flat_ls(ls: list[ArrayLike]) -> list[Any]:
-    """flatten the list"""
-    from itertools import chain
-    return list(chain(*ls))
-
-
-def array2str(x: ArrayLike, sep=' ') -> str:
-    """
-    covert array to str with sep.
-    i.e., used in csv writing of array in a specific cell
-
-    :param x: 1D
-    :param sep:
-    :return:
-    """
-    return sep.join(map(str, x))
 
 
 def future_deprecate(f=None, *,

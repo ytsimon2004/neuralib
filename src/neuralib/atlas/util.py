@@ -11,7 +11,7 @@ import polars as pl
 from neuralib.atlas.data import load_structure_tree
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.type import Source, HEMISPHERE_TYPE
-from neuralib.util.util_type import DataFrame
+from neuralib.typing import DataFrame
 from neuralib.util.util_verbose import fprint
 
 __all__ = [

@@ -8,7 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib.offsetbox import AnchoredOffsetbox
 from matplotlib.transforms import Transform
 
-from neuralib.util.util_type import PathLike, ArrayLike
+from neuralib.typing import ArrayLike, PathLike
 
 __all__ = [
     'AnchoredScaleBar',

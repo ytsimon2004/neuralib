@@ -11,7 +11,7 @@ import numpy as np
 from scipy.io import loadmat
 
 from neuralib.util.json import JsonEncodeHandler
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = [
     'SBXInfo',

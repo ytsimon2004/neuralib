@@ -7,7 +7,7 @@ import allensdk.core.structure_tree
 from allensdk.core.reference_space_cache import ReferenceSpaceCache
 
 from neuralib.util.io import ALLEN_SDK_DIRECTORY
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = ['AllenReferenceWrapper']
 

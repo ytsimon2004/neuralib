@@ -138,7 +138,7 @@ from typing import Type, TypeVar, Union, Callable, Optional, Generic, Any, Itera
 import numpy as np
 
 from neuralib.util.func import create_fn
-from neuralib.util.util_type import is_iterable
+from neuralib.typing import is_iterable
 from neuralib.util.util_verbose import fprint
 
 __all__ = [

@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from neuralib.imglib.norm import normalize_sequences
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = [
     'read_sequences',

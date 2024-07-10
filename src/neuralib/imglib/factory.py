@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from typing_extensions import Self
 
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = [
     'ImageProcFactory',

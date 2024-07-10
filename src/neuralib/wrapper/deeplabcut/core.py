@@ -9,7 +9,7 @@ import polars as pl
 from scipy.ndimage import gaussian_filter1d
 
 from neuralib.plot import plot_figure
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.wrapper.deeplabcut.util import remove_jumps, interpolate_gaps, compute_velocity
 
 __all__ = [

@@ -9,7 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from neuralib.calimg.cellular import CellularCoordinates
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = [

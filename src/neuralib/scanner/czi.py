@@ -14,7 +14,7 @@ import xmltodict
 from matplotlib.axes import Axes
 
 from neuralib.scanner import AbstractConfocalScanner, SceneIdx, DimCode, ZEISS_CZI_CHANNELS_ORDER, ZPROJ_TYPE
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.utils import joinn
 
 __all__ = ['CziConfocalScanner']

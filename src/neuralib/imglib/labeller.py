@@ -67,7 +67,7 @@ from typing_extensions import Self
 
 from neuralib.util.csv import csv_header
 from neuralib.util.util_cv2 import get_keymapping, KeyMapping, find_key_from_value
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = ['SequenceLabeller']

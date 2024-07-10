@@ -41,7 +41,7 @@ import os
 from slack import WebClient
 from slack.errors import SlackApiError
 
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = ['send_slack_message']

@@ -9,7 +9,7 @@ from iblatlas.regions import BrainRegions
 from matplotlib.axes import Axes
 
 from neuralib.util.io import IBL_CACHE_DIRECTORY
-from neuralib.util.util_type import PathLike, ArrayLike
+from neuralib.typing import ArrayLike, PathLike
 
 __all__ = [
     #

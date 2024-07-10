@@ -4,7 +4,7 @@ from typing import Iterable
 
 import numpy as np
 
-from neuralib.util.util_type import ArrayLike
+from neuralib.typing import ArrayLike
 
 __all__ = ['Segment',
            #

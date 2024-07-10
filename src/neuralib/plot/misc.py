@@ -6,7 +6,7 @@ from typing import TypedDict
 import numpy as np
 
 from neuralib.plot import plot_figure
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = [
     'plot_task_gantt',

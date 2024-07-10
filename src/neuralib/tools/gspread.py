@@ -8,7 +8,7 @@ import pandas as pd
 import polars as pl
 from typing_extensions import TypeAlias, Self, Literal
 
-from neuralib.util.util_type import PathLike, DataFrame
+from neuralib.typing import PathLike, DataFrame
 from neuralib.util.util_verbose import fprint
 
 __all__ = [

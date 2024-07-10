@@ -13,7 +13,7 @@ from scipy.io.matlab import MatlabOpaque
 from neuralib.atlas.type import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, load_slice_view
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import uglob, joinn
 

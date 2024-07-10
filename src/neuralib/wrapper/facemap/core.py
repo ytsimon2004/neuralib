@@ -9,7 +9,7 @@ import numpy as np
 from typing_extensions import TypeAlias, Self
 
 from neuralib.util.cli_args import CliArgs
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import uglob
 

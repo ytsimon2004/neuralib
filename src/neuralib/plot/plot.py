@@ -10,7 +10,8 @@ from matplotlib.axes import Axes
 from scipy.ndimage import gaussian_filter1d
 
 from neuralib.plot.colormap import insert_colorbar
-from neuralib.util.util_type import ArrayLike, DataFrame, PathLike
+from neuralib.typing import PathLike, DataFrame
+from neuralib.typing import ArrayLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = [

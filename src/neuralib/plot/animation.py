@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from matplotlib import pyplot as plt
 
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = ['plot_scatter_animation']
 

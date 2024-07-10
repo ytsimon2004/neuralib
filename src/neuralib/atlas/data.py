@@ -11,7 +11,7 @@ import polars as pl
 
 from neuralib.util.io import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
 from neuralib.util.tqdm import download_with_tqdm
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = [

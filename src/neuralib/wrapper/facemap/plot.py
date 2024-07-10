@@ -7,7 +7,7 @@ from matplotlib.colors import Normalize
 
 from neuralib.plot import plot_figure
 from neuralib.plot.colormap import get_customized_cmap
-from neuralib.util.util_type import ArrayLikeStr, PathLike
+from neuralib.typing import ArrayLikeStr, PathLike
 from neuralib.wrapper.facemap import FaceMapResult
 
 __all__ = ['plot_facemap_keypoints',

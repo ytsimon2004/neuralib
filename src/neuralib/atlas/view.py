@@ -15,7 +15,7 @@ from neuralib.atlas.data import DATA_SOURCE_TYPE, load_ccf_annotation, load_ccf_
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
 from neuralib.plot import plot_figure
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = [
     'load_slice_view',

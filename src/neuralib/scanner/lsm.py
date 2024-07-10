@@ -17,7 +17,7 @@ from neuralib.scanner import (
     ZEISS_LSM_CHANNELS_ORDER,
     ZPROJ_TYPE
 )
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = ['LSMConfocalScanner']
 

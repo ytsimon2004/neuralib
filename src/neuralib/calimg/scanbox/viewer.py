@@ -9,7 +9,7 @@ import sbxreader
 from neuralib.argp import int_tuple_type
 from neuralib.calimg.scanbox.core import SBXInfo
 from neuralib.imglib.labeller import SequenceLabeller
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 from neuralib.util.utils import uglob
 
 __all__ = ['SBXViewer']

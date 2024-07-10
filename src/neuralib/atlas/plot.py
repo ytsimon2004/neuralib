@@ -4,7 +4,7 @@ import polars as pl
 from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
 from plotly import express as px
 
-from neuralib.util.util_type import PathLike
+from neuralib.typing import PathLike
 
 __all__ = ['plot_sunburst_acronym']
 

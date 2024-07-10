@@ -8,7 +8,7 @@ import pandas as pd
 import polars as pl
 from colorama import Fore, Style
 
-from neuralib.util.util_type import DataFrame
+from neuralib.typing import DataFrame
 
 __all__ = ['fprint',
            'printdf',
