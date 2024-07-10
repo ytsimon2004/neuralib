@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Sequence
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -8,7 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib.offsetbox import AnchoredOffsetbox
 from matplotlib.transforms import Transform
 
-from neuralib.util.util_type import PathLike
+from neuralib.util.util_type import PathLike, ArrayLike
 
 __all__ = [
     'AnchoredScaleBar',
@@ -99,12 +99,45 @@ class AnchoredScaleBar(AnchoredOffsetbox):
 # ========================= #
 
 class AxesExtendHelper:
+    """
+    Add a child inset Axes to this existing Axes
+
+    Example of add hist::
+
+        >>> from neuralib.plot import plot_figure
+
+        >>> x = np.random.sample(10)
+        >>> y = np.random.sample(10)
+        >>> with plot_figure(None) as ax:
+        ...     ax.plot(x, y, 'k.')
+        ...     helper = AxesExtendHelper(ax)
+        ...     helper.xhist(x, bins=10)
+        ...     helper.yhist(y, bins=10)
+
+
+    Example of add bar::
+
+        >>> from neuralib.plot import plot_figure
+        >>> img = np.random.sample((10, 10))
+        >>> with plot_figure(None) as ax:
+        ...     ax.imshow(img)
+        ...     helper = AxesExtendHelper(ax)
+        ...     x = y = np.arange(10)
+        ...     helper.xbar(x, np.mean(img, axis=0), align='center')
+        ...     helper.ybar(y, np.mean(img, axis=1), align='center')
+
+    """
     ax_x: Axes | None
     ax_y: Axes | None
 
     def __init__(self,
                  ax: Axes,
                  mode: Literal['both', 'x', 'y'] = 'both'):
+        """
+
+        :param ax: :class:`matplotlib.axes.Axes`
+        :param mode: extended axis {'both', 'x', 'y'}. default is to add `both`
+        """
         ax.set(aspect=1)
         if mode in ('both', 'x'):
             self.ax_x = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
@@ -118,16 +151,42 @@ class AxesExtendHelper:
 
         self.ax = ax
 
-    def xhist(self, values, bins, **kwargs):
+    def xhist(self, values: ArrayLike,
+              bins: int | Sequence[float] | str | None,
+              **kwargs):
+        """x axis histogram
+
+        :param values: histogram x axis
+        :param bins: number of bins
+        :param kwargs: additional arguments passed to ``Axes.hist()``
+        :return:
+        """
         if self.ax_x is not None:
             self.ax_x.hist(values, bins, **kwargs)
 
-    def yhist(self, values, bins, **kwargs):
+    def yhist(self, values: ArrayLike,
+              bins: int | Sequence[float] | str | None,
+              **kwargs):
+        """y axis histogram
+
+        :param values: histogram x axis
+        :param bins: number of bins
+        :param kwargs: additional arguments passed to ``Axes.hist()``
+        """
         if self.ax_y is not None:
             self.ax_y.hist(values, bins, orientation='horizontal', **kwargs)
 
-    def xbar(self, x, height, width: float | np.ndarray = None, **kwargs):
+    def xbar(self, x: ArrayLike,
+             height: np.ndarray,
+             width: float | np.ndarray | None = None,
+             **kwargs):
+        """x axis bar
 
+        :param x: x axis
+        :param height: bar height
+        :param width: bar width
+        :param kwargs: additional arguments passed to ``Axes.bar()``
+        """
         default_kw = {
             'color': 'grey',
             'edgecolor': 'black',
@@ -144,7 +203,17 @@ class AxesExtendHelper:
 
             self.ax_x.tick_params(axis="x", labelbottom=False)
 
-    def ybar(self, y, width, height: float | np.ndarray = None, **kwargs):
+    def ybar(self, y: ArrayLike,
+             width: np.ndarray,
+             height: float | np.ndarray | None = None,
+             **kwargs):
+        """y axis bar
+
+        :param y: y axis
+        :param height: bar height
+        :param width: bar width
+        :param kwargs: additional arguments passed to ``Axes.bar()``
+        """
         default_kw = {
             'color': 'grey',
             'edgecolor': 'black',
@@ -167,7 +236,12 @@ class AxesExtendHelper:
 def insert_latex_equation(ax: Axes,
                           tex: str,
                           output: PathLike | None = None):
-    """Plot figure with latex expression, and save as image"""
+    """Plot figure with latex expression, and save as image
+
+    :param ax: :class:`matplotlib.axes.Axes`
+    :param tex: latex string
+    :param output: output of the fig, if None then save the figure
+    """
     plt.rcParams['text.usetex'] = True
 
     ax.set_title(tex)
