@@ -26,6 +26,9 @@ neuralib package
     neuralib.tools
     neuralib.tools.gspread
     neuralib.tools.slack_bot
+    neuralib.typing
+    neuralib.typing.alias
+    neuralib.typing.func
     neuralib.util
     neuralib.wrapper
     neuralib.wrapper.deeplabcut

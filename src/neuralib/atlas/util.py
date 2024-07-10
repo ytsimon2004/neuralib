@@ -70,7 +70,7 @@ def iter_source_coordinates(
     :param to_brainrender: convert the coordinates to brain render
     :param to_um
     :param ret_order: whether specify the source generator order
-    :return: :class:`SourceCoordinates`
+    :return: Iterable of :class:`SourceCoordinates`
     """
     df = pl.read_csv(file)
     #

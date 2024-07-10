@@ -19,10 +19,9 @@ neuralib.util
     neuralib.util.segement
     neuralib.util.table
     neuralib.util.tqdm
-    neuralib.util.util_type
     neuralib.util.util_verbose
     neuralib.util.util_cv2
-    neuralib.util.util_clazz
+    neuralib.util.util_class
     neuralib.util.utils
     neuralib.util.version
 

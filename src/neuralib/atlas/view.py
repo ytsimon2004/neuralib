@@ -292,7 +292,7 @@ class TransverseSliceView(AbstractSliceView):
 
 @attrs.define
 class SlicePlane:
-    """2D Wrapper class of *SliceView for specific plane"""
+    """2D Wrapper class of ``SliceView`` for specific plane"""
     slice_index: int  # anchor index
     ax: int  # anchor x
     ay: int  # anchor y

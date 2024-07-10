@@ -11,8 +11,6 @@ currently support .lsm & .czi format.
 - For general image visualization, **Zen/Fiji/ImageJ** are recommended
 
 
-
-
 Image Data Dim
 ---------------
 

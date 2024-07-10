@@ -15,7 +15,7 @@ def plot_scatter_animation(x: np.ndarray,
                            size: int = 10,
                            output: PathLike | None = None,
                            **kwargs) -> None:
-    """
+    r"""
     Plot xy scatter animation with given time points
 
     :param x: x loc (T, )
@@ -23,8 +23,8 @@ def plot_scatter_animation(x: np.ndarray,
     :param t: time array in sec (T, )
     :param size: size of the scatter
     :param step: step run per datapoint
-    :param output: output for animation. i.e., *.gif
-    :param kwargs: FuncAnimation(**kwargs)
+    :param output: output for animation. i.e., \*.gif
+    :param kwargs: additional arguments passed to ``FuncAnimation()``
     :return:
     """
     from matplotlib.animation import FuncAnimation
