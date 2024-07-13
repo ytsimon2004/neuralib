@@ -3,6 +3,7 @@ allensdk
 brainrender
 vedo
 iblatlas
+anytree
 
 # scanner
 xmltodict
