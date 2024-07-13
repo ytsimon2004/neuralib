@@ -8,13 +8,13 @@ import h5py
 import numpy as np
 from typing_extensions import TypeAlias, Self
 
-from neuralib.util.cli_args import CliArgs
 from neuralib.typing import PathLike
+from neuralib.util.cli_args import CliArgs
 from neuralib.util.util_verbose import fprint
 from neuralib.util.utils import uglob
 
 __all__ = [
-    'TRACK_TYPE',
+    'FACEMAP_TRACK_TYPE',
     'SVDVariables',
     #
     'KeyPoint',
@@ -22,7 +22,7 @@ __all__ = [
     'KeyPointTrack',
 ]
 
-TRACK_TYPE = Literal['keypoints', 'pupil']
+FACEMAP_TRACK_TYPE = Literal['keypoints', 'pupil']
 
 
 class PupilDict(TypedDict):
@@ -135,7 +135,7 @@ class FaceMapResult:
             svd: SVDVariables | None,
             meta: KeyPointsMeta | None,
             data: h5py.Group | None,
-            track_type: TRACK_TYPE,
+            track_type: FACEMAP_TRACK_TYPE,
             with_keypoints: bool,
     ):
         """
@@ -149,12 +149,12 @@ class FaceMapResult:
         self.meta: Final[KeyPointsMeta | None] = meta
         self.data: Final[h5py.Group | None] = data
 
-        self.track_type: Final[TRACK_TYPE] = track_type
+        self.track_type: Final[FACEMAP_TRACK_TYPE] = track_type
         self.with_keypoints: Final[bool] = with_keypoints
 
     @classmethod
     def load(cls, directory: PathLike,
-             track_type: TRACK_TYPE,
+             track_type: FACEMAP_TRACK_TYPE,
              *,
              file_pattern: str = '') -> Self:
         """
