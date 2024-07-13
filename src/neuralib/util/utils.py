@@ -11,6 +11,7 @@ from neuralib.util.util_verbose import fprint
 __all__ = ['uglob',
            'glob_re',
            'joinn',
+           'ensure_dir',
            'future_deprecate',
            'key_from_value']
 
@@ -56,6 +57,23 @@ def uglob(directory: PathLike,
 def glob_re(pattern: str, strings: list[str]) -> list[str]:
     """find list of str element fit for re pattern"""
     return list(filter(re.compile(pattern).match, strings))
+
+
+def ensure_dir(p: PathLike, verbose: bool = True) -> None:
+    """ensure the path, create if not exit
+
+    :param p: path to be checked
+    :param verbose: print verbose
+    """
+    p = Path(p)
+    if not p.is_dir():
+        raise NotADirectoryError(f'not a dir: {p}')
+
+    if not p.exists():
+        p.mkdir(parents=True)
+
+        if verbose:
+            fprint(f'create dir {p}', vtype='io')
 
 
 def joinn(sep: str, *part: str | None) -> str:
