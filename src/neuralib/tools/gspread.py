@@ -23,10 +23,16 @@ __all__ = [
 ]
 
 SpreadSheetName: TypeAlias = str
+"""spreadsheet name"""
+
 WorkPageName: TypeAlias = str
+"""workpage name of the spreadsheet"""
+
 DataIndex: TypeAlias = Union[None, int, str, slice, list[int], list[str], np.ndarray]
+"""data index type"""
 
 VALUE_RENDER_OPT = Literal['FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA']
+"""value render option for the cell"""
 
 
 class GoogleWorkSheet:

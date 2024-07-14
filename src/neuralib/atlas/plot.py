@@ -55,6 +55,7 @@ def plot_structure_tree(output: PathLike | None = None) -> None:
 
         nodes[name].parent = nodes[parent]
 
+    #
     for pre, fill, node in RenderTree(nodes['root']):
         if output is not None:
             output = Path(output)
@@ -67,6 +68,3 @@ def plot_structure_tree(output: PathLike | None = None) -> None:
         else:
             print("%s%s" % (pre, node.name))
 
-
-if __name__ == '__main__':
-    plot_structure_tree(output='test.txt')

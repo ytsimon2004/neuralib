@@ -114,6 +114,7 @@ class KeyPointsMeta(TypedDict):
 # ============== #
 
 KeyPoint: TypeAlias = str
+"""keypoint name"""
 
 
 @final

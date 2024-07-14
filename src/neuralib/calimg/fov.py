@@ -7,7 +7,8 @@ from typing_extensions import TypeAlias, Self
 
 __all__ = ['ObjectiveFov']
 
-Coordinates: TypeAlias = np.ndarray  # Array[float, [x,y]]
+Coordinates: TypeAlias = np.ndarray
+"""Array[float, [x,y]]"""
 
 
 @attrs.define
