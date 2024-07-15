@@ -14,9 +14,7 @@ __all__ = ['Segment',
 
 # TODO add example doc
 class Segment:
-    """Segment container class
-    Adapted from fklab-python-core.fklab.segments.segment.py
-    """
+    """Segment container class"""
 
     def __init__(self,
                  data: Segment | np.ndarray,
@@ -115,16 +113,9 @@ class Segment:
 def check_segments(x: np.ndarray, copy=False) -> np.ndarray:
     """Convert to segment array.
 
-    Parameters
-    ----------
-    x : 1d array-like or (n,2) array-like
-    copy : bool
-        the output will always be a copy of the input
-
-    Returns
-    -------
-    (n,2) array
-
+    :param x: 1d array-like or (n,2) array-like
+    :param copy: the output will always be a copy of the input
+    :return: (n,2) array
     """
     try:
         x = np.array(x, copy=copy)
@@ -152,12 +143,10 @@ def check_segments(x: np.ndarray, copy=False) -> np.ndarray:
     return x
 
 
-# ===== #
-
-
 def mean_over_elements(input_array: np.ndarray,
                        indices_or_sections: np.ndarray) -> np.ndarray:
     """
+    Take mean over elements
 
     :param input_array: input 1d array
     :param indices_or_sections: accumulative index for doing averaging foreach
@@ -172,4 +161,14 @@ def mean_over_elements(input_array: np.ndarray,
 
 
 def grouped_iter(it: ArrayLike | Iterable, n: int) -> zip:
+    """
+    Groups elements from the input iterable into tuples of length n
+
+    >>> list(grouped_iter([1, 2, 3, 4, 5, 6], 2))
+    [(1, 2), (3, 4), (5, 6)]
+
+    :param it: input iterable to be grouped.
+    :param n: number of elements per group
+    :return: An iterator over tuples of length n
+    """
     return zip(*[iter(it)] * n)
