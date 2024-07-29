@@ -10,7 +10,6 @@ neuralib.wrapper
     
     neuralib.wrapper.deeplabcut
     neuralib.wrapper.facemap
-    neuralib.wrapper.rastermap
 
 
 .. toctree::
@@ -18,5 +17,3 @@ neuralib.wrapper
     :caption: Notebook Demo
 
     ../notebooks/example_facemap
-    ../notebooks/example_rastermap_2p
-    ../notebooks/example_rastermap_wfield

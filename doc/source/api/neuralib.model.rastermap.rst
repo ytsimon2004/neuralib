@@ -1,14 +1,14 @@
-neuralib.wrapper.rastermap
-==========================
+neuralib.model.rastermap
+========================
 
-.. automodule:: neuralib.wrapper.rastermap
+.. automodule:: neuralib.model.rastermap
    :members:
    
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
     
-    neuralib.wrapper.rastermap.core
+    neuralib.model.rastermap.core
 
 
 .. toctree::
