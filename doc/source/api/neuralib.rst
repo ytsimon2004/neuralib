@@ -17,7 +17,7 @@ neuralib package
     neuralib.tools
     neuralib.typing
     neuralib.util
-    neuralib.wrapper
+    neuralib.tracking
 
 Utilities Modules
 -----------------
@@ -38,12 +38,12 @@ Utilities Modules
     :maxdepth: 1
     :caption: Notebook Demo
 
+    ../notebooks/example_slice_view
+    ../notebooks/example_ibl_plot
+    ../notebooks/example_neuralib_plot
+
     ../notebooks/example_calimg
 
     ../notebooks/example_facemap
     ../notebooks/example_rastermap_2p
     ../notebooks/example_rastermap_wfield
-
-    ../notebooks/example_slice_view
-    ../notebooks/example_ibl_plot
-    ../notebooks/example_neuralib_plot

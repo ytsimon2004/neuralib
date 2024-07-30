@@ -97,14 +97,12 @@ model
 
 
 
-wrapper
-^^^^^^^
+tracking
+^^^^^^^^^^
 
-- Module for other open-source tools wrapper
+  - ``neuralib.tracking.deeplabcut``: Result parser for `DeepLabCut <https://github.com/DeepLabCut/DeepLabCut>`_
 
-  - ``neuralib.wrapper.deeplabcut``: Result parser for `DeepLabCut <https://github.com/DeepLabCut/DeepLabCut>`_
-
-  - ``neuralib.wrapper.facemap``: Result parser for `facemap <https://github.com/MouseLand/facemap>`_
+  - ``neuralib.tracking.facemap``: Result parser for `facemap <https://github.com/MouseLand/facemap>`_
 
 
 Utilities Modules

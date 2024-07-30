@@ -7,8 +7,8 @@ from matplotlib.colors import Normalize
 
 from neuralib.plot import plot_figure
 from neuralib.plot.colormap import get_customized_cmap
+from neuralib.tracking.facemap import FaceMapResult
 from neuralib.typing import ArrayLikeStr, PathLike
-from neuralib.wrapper.facemap import FaceMapResult
 
 __all__ = ['plot_facemap_keypoints',
            'plot_cmap_time_series']
