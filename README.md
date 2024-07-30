@@ -49,14 +49,19 @@
   - `neuralib.segmentation.stardist`: Result Parser and batch running
     for [stardist](https://github.com/stardist/stardist)
 
-## wrapper
+## model
+
+- `neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
+
+- `neuralib.model.rastermap`: Run and result parser for [rastermap](https://github.com/MouseLand/rastermap)
+
+## tracking
 
 - Module for other open-source tools wrapper
-  - `neuralib.wrapper.deeplabcut`: Result parser for [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
+  - `neuralib.tracking.deeplabcut`: Result parser for [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
 
-  - `neuralib.wrapper.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
+  - `neuralib.tracking.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
 
-  - `neuralib.wrapper.rastermap`: Run and result parser for [rastermap](https://github.com/MouseLand/rastermap)
 
 ## Utilities Modules
 
