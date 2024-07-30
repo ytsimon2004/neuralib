@@ -1,22 +1,19 @@
-neuralib.wrapper
-================
+neuralib.model.rastermap
+========================
 
-.. automodule:: neuralib.wrapper
+.. automodule:: neuralib.model.rastermap
    :members:
    
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
     
-    neuralib.wrapper.deeplabcut
-    neuralib.wrapper.facemap
-    neuralib.wrapper.rastermap
+    neuralib.model.rastermap.core
 
 
 .. toctree::
     :maxdepth: 1
     :caption: Notebook Demo
 
-    ../notebooks/example_facemap
     ../notebooks/example_rastermap_2p
     ../notebooks/example_rastermap_wfield

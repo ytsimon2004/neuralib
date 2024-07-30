@@ -33,6 +33,8 @@ Handle the different naming/category with allenccf registration result
 
 **BRAIN STRUCTURES TREE**
 
+- Seealso :func:`~neuralib.atlas.plot.plot_structure_tree()`
+
 ::
 
     root (997)

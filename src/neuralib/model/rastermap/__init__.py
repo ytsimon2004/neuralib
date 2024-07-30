@@ -1,5 +1,5 @@
 """
-RasterMap Wrapper
+RasterMap
 =================
 
 .. seealso:: `<https://github.com/MouseLand/rastermap>`_
@@ -23,8 +23,8 @@ Example of 2P dataset pipeline
     from rastermap import Rastermap, rastermap
 
     from neuralib.plot import plot_figure, ax_merge
-    from neuralib.util.util_type import PathLike
-    from neuralib.wrapper.rastermap import RasterOptions, RasterMapResult, UserCluster
+    from neuralib.typing import PathLike
+    from neuralib.model.rastermap import RasterOptions, RasterMapResult, UserCluster
 
 
 **1. Prepare container data input for rastermap**
@@ -181,7 +181,7 @@ Example of Wfield imaging dataset pipeline
     from scipy.stats import zscore
 
     from neuralib.plot import plot_figure, ax_merge
-    from neuralib.util.util_type import PathLike
+    from neuralib.typing import PathLike
 
 
     @dataclasses.dataclass

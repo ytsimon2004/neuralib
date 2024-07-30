@@ -10,8 +10,8 @@ from matplotlib.axes import Axes
 from scipy.ndimage import gaussian_filter1d
 
 from neuralib.plot.colormap import insert_colorbar
-from neuralib.typing import PathLike, DataFrame
 from neuralib.typing import ArrayLike
+from neuralib.typing import PathLike, DataFrame
 from neuralib.util.util_verbose import fprint
 
 __all__ = [
@@ -328,6 +328,8 @@ def plot_grid_subplots(data: np.ndarray | list[np.ndarray],
                        plot_func: Callable | str, *,
                        dtype: Literal['xy', 'img'],
                        hide_axis: bool = True,
+                       sharex: bool = False,
+                       sharey: bool = False,
                        output: PathLike | None = None,
                        **kwargs) -> None:
     r"""
@@ -350,6 +352,8 @@ def plot_grid_subplots(data: np.ndarray | list[np.ndarray],
         it should be a valid method name of a matplotlib Axes object
     :param dtype: {'xy', 'img'}. Type of data. 'xy' for (x, y) coordinate data, 'img' for image data
     :param hide_axis: If True, hides the axes of the subplots
+    :param sharex: sharex acrross grid plots
+    :param sharey: sharey acrross grid plots
     :param output: Path to save the plot image. If None, displays the plot.
     :param kwargs: Additional keyword arguments passed to the plotting function ``plot_func``
     :return:
@@ -358,7 +362,7 @@ def plot_grid_subplots(data: np.ndarray | list[np.ndarray],
     n_rows = np.ceil(n_images / images_per_row).astype(int)
     n_cols = min(images_per_row, n_images)
 
-    _, ax = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), squeeze=False)
+    _, ax = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), squeeze=False, sharex=sharex, sharey=sharey)
 
     for i in range(n_rows * n_cols):
         r, c = divmod(i, images_per_row)

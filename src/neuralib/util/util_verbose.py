@@ -118,7 +118,6 @@ def print_load(file: Union[str, Path], verb='LOAD') -> Path:
 
     :param file: file path
     :param verb: default 'LOAD'
-    :param color: verb color
     :return: *file*
     """
     global _PREV_LOAD_FILE

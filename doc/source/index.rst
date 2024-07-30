@@ -1,8 +1,3 @@
-.. NeuraLib documentation master file, created by
-   sphinx-quickstart on Fri Mar 29 16:52:36 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to NeuraLib's documentation!
 ====================================
 
@@ -93,16 +88,21 @@ segmentation
 
   - ``neuralib.segmentation.stardist``: Result parser and batch running for `stardist <https://github.com/stardist/stardist>`_
 
-wrapper
-^^^^^^^
 
-- Module for other open-source tools wrapper
+model
+^^^^^^
+   - ``neuralib.model.bayes_decoding``: Position decoding using population neuronal activity
 
-  - ``neuralib.wrapper.deeplabcut``: Result parser for `DeepLabCut <https://github.com/DeepLabCut/DeepLabCut>`_
+   - ``neuralib.model.rastermap``: Run and result parser for `rastermap <https://github.com/MouseLand/rastermap>`_
 
-  - ``neuralib.wrapper.facemap``: Result parser for `facemap <https://github.com/MouseLand/facemap>`_
 
-  - ``neuralib.wrapper.rastermap``: Run and result parser for `rastermap <https://github.com/MouseLand/rastermap>`_
+
+tracking
+^^^^^^^^^^
+
+  - ``neuralib.tracking.deeplabcut``: Result parser for `DeepLabCut <https://github.com/DeepLabCut/DeepLabCut>`_
+
+  - ``neuralib.tracking.facemap``: Result parser for `facemap <https://github.com/MouseLand/facemap>`_
 
 
 Utilities Modules

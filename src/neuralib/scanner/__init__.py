@@ -5,8 +5,10 @@ Confocal Scanner
 - This module provide the reading and parsing the Zeiss confocal dataset,
 currently support .lsm & .czi format.
 
+
 - Use for batch processing/analysis, or other api integration.
 (i.e., batch cell segmentation, manually stitching...)
+
 
 - For general image visualization, **Zen/Fiji/ImageJ** are recommended
 

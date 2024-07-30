@@ -16,7 +16,6 @@ neuralib.util
     neuralib.util.io
     neuralib.util.json
     neuralib.util.profile_test
-    neuralib.util.segement
     neuralib.util.table
     neuralib.util.tqdm
     neuralib.util.util_verbose

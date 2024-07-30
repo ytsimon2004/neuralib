@@ -27,6 +27,7 @@ CAMERA_ANGLE_TYPE = Literal['sagittal', 'sagittal2', 'frontal', 'top', 'top_side
 SHADER_STYLE_TYPE = Literal['metallic', 'cartoon', 'plastic', 'shiny', 'glossy']
 
 RoiType: TypeAlias = list[Union[list[np.ndarray], np.ndarray]]
+"""RoiType for rendering points"""
 
 Logger = setup_clogger(caller_name=Path(__file__).name)
 

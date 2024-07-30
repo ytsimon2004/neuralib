@@ -1,7 +1,7 @@
 import numpy as np
 from numba import jit
 
-from neuralib.util.segement import Segment
+from neuralib.signal.segement import Segment
 
 __all__ = ['compute_velocity',
            'remove_jumps',

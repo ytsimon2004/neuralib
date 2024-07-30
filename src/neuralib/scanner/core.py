@@ -29,8 +29,11 @@ ZEISS_LSM_CHANNELS_ORDER = ['Blues', 'Reds', 'Greens']
 
 ZPROJ_TYPE = Literal['avg', 'max', 'min', 'std', 'median']
 
-SceneIdx: TypeAlias = int  # 0-base scan position
+SceneIdx: TypeAlias = int
+"""0-base scan position"""
+
 DimCode = NewType('DIMCODE', str)
+"""Dimension string code"""
 
 
 class AbstractConfocalScanner(metaclass=abc.ABCMeta):

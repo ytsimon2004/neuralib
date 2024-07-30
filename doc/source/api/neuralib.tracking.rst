@@ -1,15 +1,15 @@
-neuralib.wrapper.facemap
-========================
+neuralib.tracking
+=================
 
-.. automodule:: neuralib.wrapper.facemap
+.. automodule:: neuralib.tracking
    :members:
    
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
     
-    neuralib.wrapper.facemap.core
-    neuralib.wrapper.facemap.plot
+    neuralib.tracking.deeplabcut
+    neuralib.tracking.facemap
 
 
 .. toctree::

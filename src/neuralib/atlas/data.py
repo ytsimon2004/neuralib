@@ -8,10 +8,11 @@ import nrrd
 import numpy as np
 import pandas as pd
 import polars as pl
+from brainglobe_atlasapi import BrainGlobeAtlas
 
+from neuralib.typing import PathLike
 from neuralib.util.io import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
 from neuralib.util.tqdm import download_with_tqdm
-from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = [
@@ -22,6 +23,8 @@ __all__ = [
     'load_structure_tree',
     #
     'load_allensdk_annotation',
+    #
+    'load_bg_structure_tree'
 
 ]
 
@@ -185,3 +188,31 @@ def load_allensdk_annotation(resolution: int = 10,
         mcapi.download_annotation_volume(version, resolution, file)
 
     return nrrd.read(file)[0]
+
+
+# =========================== #
+# BrainGlobeAtlas Data Source #
+# =========================== #
+
+def load_bg_structure_tree(source: str = 'allen_mouse_10um',
+                           check_latest: bool = True,
+                           parse: bool = False) -> pl.DataFrame:
+    """
+    Load structure dataframe or dict from `brainglobe_atlasapi`
+
+    :param source: allen source name
+    :param check_latest: if check the brainglobe api latest version
+    :param parse: whether parse the child and parent in the same row
+    :return:
+    """
+    file = BrainGlobeAtlas(source, check_latest=check_latest).root_dir / 'structures.csv'
+    df = pl.read_csv(file)
+
+    if parse:
+        name = df.select(pl.col('acronym').alias('names'), pl.col('id'), pl.col('parent_structure_id').cast(int))
+        join_df = name.join(name, left_on='parent_structure_id', right_on='id')
+        parent_child = join_df.select(pl.col('names'), pl.col('names_right').alias('parents'))
+
+        return parent_child
+    else:
+        return df
