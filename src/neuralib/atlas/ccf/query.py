@@ -5,7 +5,7 @@ import polars as pl
 from typing_extensions import Self, Final, final
 
 from neuralib.atlas.ccf.classifier import supply_overlap_dataframe
-from neuralib.atlas.type import Source, Area
+from neuralib.atlas.typing import Source, Area
 from neuralib.atlas.util import get_margin_merge_level
 from neuralib.util.util_verbose import fprint
 

@@ -10,7 +10,7 @@ import polars as pl
 
 from neuralib.atlas.data import load_structure_tree
 from neuralib.atlas.map import NUM_MERGE_LAYER
-from neuralib.atlas.type import Source, HEMISPHERE_TYPE
+from neuralib.atlas.typing import Source, HEMISPHERE_TYPE
 from neuralib.typing import DataFrame
 from neuralib.util.util_verbose import fprint
 
@@ -66,9 +66,9 @@ def iter_source_coordinates(
     :param file: parsed csv file after
     :param only_areas: only show rois in region(s)
     :param region_col: if None, auto infer, and check the lowest merge level contain all the regions specified
-    :param hemisphere
+    :param hemisphere: which brain hemisphere
     :param to_brainrender: convert the coordinates to brain render
-    :param to_um
+    :param to_um: unit to um
     :param ret_order: whether specify the source generator order
     :return: Iterable of :class:`SourceCoordinates`
     """
@@ -138,13 +138,10 @@ def roi_points_converter(dat: DataFrame | np.ndarray,
     convert coordinates of `allenccf` roi points from parsed dataframe
 
     :param dat: Dataframe with 'AP_location', 'DV_location', 'ML_location' headers.
-            Or numpy array with (N, 3), or (3,)
+            Or numpy array with `Array[float, [N, 3]]` or `Array[float, 3]`
     :param to_brainrender: coordinates to `brainrender`
-    :param to_um:
-
-    :return (N, 3),
-        N: number of roi
-        3: ap, dv, ml
+    :param to_um: unit to um
+    :return: `Array[float, [N, 3]]`, N: number of roi; 3: AP, DV, ML
     """
     if isinstance(dat, pd.DataFrame):
         dat = pl.from_pandas(dat)

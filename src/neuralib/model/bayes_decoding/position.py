@@ -25,11 +25,11 @@ def place_bayes(fr: np.ndarray,
         https://github.com/buzsakilab/buzcode/blob/master/analysis/positionDecoding/placeBayes.m
 
 
-    :param fr: firing rate 2D array. (T, N)
-    :param rate_map: firing rate template. (X, N)
+    :param fr: firing rate 2D array. `Array[float, [T, N]]`
+    :param rate_map: firing rate template. `Array[float, [X, N]]`
     :param spatial_bin_size: spatial bin size in cm
 
-    :return: matrix of posterior probabilities. (T, X)
+    :return: matrix of posterior probabilities. `Array[float, [T, X]]`
     """
     overflow = sys.float_info.min
 

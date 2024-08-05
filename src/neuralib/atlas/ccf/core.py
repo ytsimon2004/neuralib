@@ -10,7 +10,7 @@ import polars as pl
 from scipy.io import loadmat
 from scipy.io.matlab import MatlabOpaque
 
-from neuralib.atlas.type import HEMISPHERE_TYPE
+from neuralib.atlas.typing import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, load_slice_view
 from neuralib.typing import PathLike

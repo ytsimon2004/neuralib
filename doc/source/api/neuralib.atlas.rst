@@ -15,7 +15,7 @@ neuralib.atlas
     neuralib.atlas.ibl
     neuralib.atlas.map
     neuralib.atlas.plot
-    neuralib.atlas.type
+    neuralib.atlas.typing
     neuralib.atlas.util
     neuralib.atlas.view
 

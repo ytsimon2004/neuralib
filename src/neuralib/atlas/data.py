@@ -54,7 +54,7 @@ def load_ccf_annotation(output_dir: PathLike | None = None) -> np.ndarray:
         https://github.com/cortex-lab/allenCCF
 
     :param output_dir: output directory for caching
-    :return:
+    :return: Array[float, [AP, DV, ML]]
     """
     if output_dir is None:
         output_dir = CCF_CACHE_DIRECTORY
@@ -79,7 +79,7 @@ def load_ccf_template(output_dir: PathLike | None = None) -> np.ndarray:
         https://github.com/cortex-lab/allenCCF
 
     :param output_dir: output directory for caching
-    :return:
+    :return: Array[float, [AP, DV, ML]]
     """
     if output_dir is None:
         output_dir = CCF_CACHE_DIRECTORY
@@ -171,7 +171,7 @@ def load_allensdk_annotation(resolution: int = 10,
 
     :param resolution: volume resolution in um. default is 10 um
     :param output_dir: output directory for caching
-    :return:
+    :return: Array[float, [AP, DV, ML]]
     """
     if output_dir is None:
         output_dir = ALLEN_SDK_DIRECTORY

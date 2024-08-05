@@ -8,8 +8,8 @@ from iblatlas.atlas import AllenAtlas
 from iblatlas.regions import BrainRegions
 from matplotlib.axes import Axes
 
+from neuralib.typing import ArrayLike, PathLike, ArrayLikeStr
 from neuralib.util.io import IBL_CACHE_DIRECTORY
-from neuralib.typing import ArrayLike, PathLike
 
 __all__ = [
     #
@@ -67,7 +67,7 @@ class IBLAtlasPlotWrapper(AllenAtlas):
 
     def plot_scalar_on_slice(
             self,
-            regions: ArrayLike, *,
+            regions: ArrayLikeStr, *,
             values: ArrayLike | None = None,
             coord: int = -570,
             plane: IBL_PLANE_TYPE = 'coronal',
@@ -92,13 +92,13 @@ class IBLAtlasPlotWrapper(AllenAtlas):
 
         .. seealso:: `<https://int-brain-lab.github.io/iblenv/notebooks_external/atlas_plotting_scalar_on_slice.html>`_
 
-        :param regions:
-        :param values:
+        :param regions: ArrayLike[str, R]
+        :param values: ArrayLike[float, R]
         :param coord:
-        :param plane:
-        :param mapping:
-        :param hemisphere:
-        :param background:
+        :param plane: ``IBL_PLANE_TYPE``. {'coronal', 'sagittal', 'horizontal', 'top'}
+        :param mapping: ``IBL_MAPPING_TYPE``. {'Allen', 'Beryl', 'Cosmos', 'Swanson'}
+        :param hemisphere: ``HEMISPHERE_TYPE``. {'left', 'right', 'both'}
+        :param background: ``IBL_BG_TYPE``. {'image', 'boundary'}
         :param cmap:
         :param clevels:
         :param show_cbar:

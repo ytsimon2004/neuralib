@@ -13,7 +13,7 @@ __all__ = ['plot_sunburst_acronym',
 
 def plot_sunburst_acronym(output: PathLike | None = None):
     """
-    plot allen brain structure tree interactive plot
+    Plot allen brain structure tree interactive plot
 
     :param output: figure output path, otherwise, render interactively
     :return:
@@ -35,7 +35,7 @@ def plot_sunburst_acronym(output: PathLike | None = None):
 
 
 def plot_structure_tree(output: PathLike | None = None) -> None:
-    """show tree for the brain structure
+    """Show tree for the brain structure
 
     :param output: output file txt. print if None
     """

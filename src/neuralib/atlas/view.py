@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import math
-from typing import Final, Union, Tuple
+from typing import Final, Union, ClassVar
 
 import attrs
 import numpy as np
@@ -27,14 +27,14 @@ __all__ = [
 def load_slice_view(source: DATA_SOURCE_TYPE,
                     plane_type: PLANE_TYPE, *,
                     output_dir: PathLike | None = None,
-                    allen_annotation_res: int = 10) -> 'AbstractSliceView':
+                    allen_annotation_res: int = 10) -> AbstractSliceView:
     """
     Load the mouse brain slice view
 
-    :param source: {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
-    :param plane_type: {'coronal', 'sagittal', 'transverse'}
-    :param output_dir: output directory for caching
-    :param allen_annotation_res: volume resolution in um. default is 10 um
+    :param source: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
+    :param plane_type: ``PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
+    :param output_dir: Output directory for caching
+    :param allen_annotation_res: Volume resolution in um. default is 10 um
     :return: :class:`AbstractSliceView`
     """
     if source == 'ccf_annotation':
@@ -53,17 +53,41 @@ def load_slice_view(source: DATA_SOURCE_TYPE,
 
 
 class AbstractSliceView(metaclass=abc.ABCMeta):
+    """
+    SliceView ABC for different `plane type`
+
+    `Dimension parameters`:
+
+        AP = anterior-posterior
+
+        DV = dorsal-ventral
+
+        ML = medial-lateral
+
+        W = view width
+
+        H = view height
+    """
+    REFERENCE_FROM: ClassVar[str] = ''
+    """reference from which axis"""
+
     source_type: Final[DATA_SOURCE_TYPE]
+    """``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}"""
+
     plane_type: Final[PLANE_TYPE]
+    """`PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}"""
+
     resolution: Final[int]
     """um/pixel"""
+
     reference: Final[np.ndarray]
-    """(AP, DV, ML)"""
+    """Array[float, [AP, DV, ML]]"""
 
     grid_x: Final[np.ndarray]
-    grid_y: Final[np.ndarray]
+    """Array[int, [W, H]]"""
 
-    reference_verbose: str = ''
+    grid_y: Final[np.ndarray]
+    """Array[int, [W, H]]"""
 
     def __new__(cls, source_type: DATA_SOURCE_TYPE,
                 plane: PLANE_TYPE,
@@ -76,7 +100,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         elif plane == 'transverse':
             return object.__new__(TransverseSliceView)
         else:
-            raise ValueError('')
+            raise ValueError(f'invalid plane: {plane}')
 
     def __init__(self, source_type: DATA_SOURCE_TYPE,
                  plane: PLANE_TYPE,
@@ -84,10 +108,10 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
                  reference: np.ndarray):
         """
 
-        :param source_type:
-        :param plane:
-        :param resolution:
-        :param reference: (AP, DV, ML)
+        :param source_type: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
+        :param plane: `PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
+        :param resolution: um/pixel
+        :param reference: Array[float, [AP, DV, ML]]
         """
         self.source_type = source_type
         self.plane_type = plane
@@ -161,7 +185,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def project_index(self) -> Tuple[int, int, int]:
+    def project_index(self) -> tuple[int, int, int]:
         """plane(p), x, y of index order in (AP, DV, ML)
 
         :return: (p, x, y)
@@ -219,7 +243,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
 
 
 class CoronalSliceView(AbstractSliceView):
-    reference_verbose = 'AP'
+    REFERENCE_FROM: ClassVar[str] = 'AP'
 
     @property
     def n_planes(self) -> int:
@@ -235,15 +259,15 @@ class CoronalSliceView(AbstractSliceView):
 
     @property
     def reference_point(self) -> int:
-        return self.bregma[0]
+        return int(self.bregma[0])
 
     @property
-    def project_index(self) -> Tuple[int, int, int]:
+    def project_index(self) -> tuple[int, int, int]:
         return 0, 2, 1
 
 
 class SagittalSliceView(AbstractSliceView):
-    reference_verbose = 'ML'
+    REFERENCE_FROM: ClassVar[str] = 'ML'
 
     @property
     def n_planes(self) -> int:
@@ -259,7 +283,7 @@ class SagittalSliceView(AbstractSliceView):
 
     @property
     def reference_point(self) -> int:
-        return self.bregma[2]
+        return int(self.bregma[2])
 
     @property
     def project_index(self) -> tuple[int, int, int]:
@@ -267,7 +291,7 @@ class SagittalSliceView(AbstractSliceView):
 
 
 class TransverseSliceView(AbstractSliceView):
-    reference_verbose = 'DV'
+    REFERENCE_FROM: ClassVar[str] = 'DV'
 
     @property
     def n_planes(self) -> int:
@@ -283,7 +307,7 @@ class TransverseSliceView(AbstractSliceView):
 
     @property
     def reference_point(self) -> int:
-        return self.bregma[1]
+        return int(self.bregma[1])
 
     @property
     def project_index(self) -> tuple[int, int, int]:
@@ -292,13 +316,25 @@ class TransverseSliceView(AbstractSliceView):
 
 @attrs.define
 class SlicePlane:
-    """2D Wrapper class of ``SliceView`` for specific plane"""
-    slice_index: int  # anchor index
-    ax: int  # anchor x
-    ay: int  # anchor y
-    dw: int  # in um
+    """2D Wrapper for a specific plane"""
+
+    slice_index: int
+    """anchor index"""
+
+    ax: int
+    """anchor x"""
+
+    ay: int
+    """anchor y"""
+
+    dw: int
+    """dw in um"""
+
     dh: int
+    """dh in um"""
+
     view: AbstractSliceView
+    """``AbstractSliceView``"""
 
     @property
     def image(self) -> np.ndarray:
@@ -382,7 +418,7 @@ class SlicePlane:
 
     unit: str = None
 
-    def _get_xy_range(self, to_um=True) -> tuple[float, float, float, float]:
+    def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
         if to_um:
             x0 = -self.view.width_mm / 2 * 1000
             x1 = self.view.width_mm / 2 * 1000
@@ -464,7 +500,7 @@ class SlicePlane:
             ax.figure.colorbar(im_view)
         #
         if with_title:
-            ax.set_title(f'{self.view.reference_verbose}: {self.reference_value} mm')
+            ax.set_title(f'{self.view.REFERENCE_FROM}: {self.reference_value} mm')
 
         ax.set(xlabel=self.unit, ylabel=self.unit)
 

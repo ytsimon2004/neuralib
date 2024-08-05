@@ -10,6 +10,7 @@ neuralib.bokeh_model
     
     neuralib.bokeh_model.base
     neuralib.bokeh_model.example
+    neuralib.bokeh_model.examples
     neuralib.bokeh_model.example_multi
     neuralib.bokeh_model.tool
     neuralib.bokeh_model.util

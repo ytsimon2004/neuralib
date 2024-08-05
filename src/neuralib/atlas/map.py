@@ -883,8 +883,8 @@ from typing import Literal
 
 from typing_extensions import TypeAlias
 
-from neuralib.atlas.type import Area, MergeLevel
 from neuralib.typing import Series
+from .typing import Area, MergeLevel
 
 __all__ = ['NUM_MERGE_LAYER',
            'MERGE_REGION_LV4',

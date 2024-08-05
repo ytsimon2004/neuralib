@@ -34,18 +34,19 @@ class RoisReconstructor(BrainReconstructor):
         help='if None, auto infer, and check the lowest merge level contain all the regions specified'
     )
 
-    def load_merge_points(self, rois: np.ndarray = None) -> RoiType:
+    def load_merge_points(self, default_rois: np.ndarray = None) -> RoiType:
         """
         load from 2dccf pipeline, with different channels of fluorescence labelled points
 
-        :param rois: (N', 3) with xyz(ap, dv, ml). i.e., prelocate roi, reference points ...
+        :param default_rois: Array with xyz(ap, dv, ml). `Array[float, [N, 3]]`.
+            i.e., prelocate roi, reference points ...
         :return:
         """
         ret = []
-        if rois is not None:
-            if rois.shape[1] != 3:
+        if default_rois is not None:
+            if default_rois.shape[1] != 3:
                 raise ValueError('')
-            ret.append(rois)
+            ret.append(default_rois)
 
         if self.csv_file is not None:
             iter_coords = iter_source_coordinates(self.csv_file,

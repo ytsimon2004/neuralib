@@ -11,7 +11,7 @@ from typing_extensions import TypeAlias
 
 from neuralib.argp import AbstractParser, argument, str_tuple_type
 from neuralib.atlas.brainrender.util import get_color
-from neuralib.atlas.type import Source
+from neuralib.atlas.typing import Source
 from neuralib.atlas.util import roi_points_converter
 from neuralib.util.color_logging import setup_clogger
 

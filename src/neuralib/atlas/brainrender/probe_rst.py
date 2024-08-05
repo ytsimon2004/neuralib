@@ -94,7 +94,7 @@ class ProbeReconstructor(BrainReconstructor):
         rst: 'ProbeReconstructor'
         """`ProbeReconstructor`"""
         shanks: list[np.ndarray]
-        """len: S, each shape: (P, 3) with ap, dv, ml"""
+        """length S of Array[float, [P, 3]], with ap, dv, ml"""
 
         def __post_init__(self):
             assert len(self.shanks) == self.rst.number_shanks
@@ -104,7 +104,7 @@ class ProbeReconstructor(BrainReconstructor):
             return len(self.shanks)
 
         def __getitem__(self, idx: int) -> np.ndarray:
-            """get a shank array (P, 3)"""
+            """get a shank array. `Array[float, [P, 3]]`"""
             return self.shanks[idx]
 
         def with_theoretical(self, interval: int = 250) -> Self:
@@ -195,7 +195,7 @@ class ProbeReconstructor(BrainReconstructor):
         """
         determine if the probe points are in the brain
 
-        :param shank: (N', 3)
+        :param shank: `Array[float, [P, 3]]`
         :return:
         """
         brain = self.get_atlas_brain_globe()
@@ -216,7 +216,7 @@ class ProbeReconstructor(BrainReconstructor):
         """
         crop the probe after doing the extension
 
-        :param shank: (N', 3)
+        :param shank: `Array[float, [P, 3]]`
         :param distance: depth of insertion (might with an angle, in um). mostly records during the implantation
                     use the depth value that used while implantation to cutoff the bottom line.
         :param dv_value: if None, plot the probe if its in the brain
@@ -243,7 +243,7 @@ class ProbeReconstructor(BrainReconstructor):
         """
         probe extension using extrapolation and interpolation
 
-        :param shank: (2, 3), (points, (ap,dv,ml))
+        :param shank: `Array[float, [2, 3]]`, 2: start and end points; 3: AP,DV,ML
         :param ext_depth: depth in um, if None, only do the interpolation of the labelled points
         :return: extended shank
         """
@@ -264,7 +264,7 @@ def _calc_shank_length_diff(shank: np.ndarray,
     """
     use the vector of the probe, then calculate the unit vector
 
-    :param shank: (N', 3)
+    :param shank: `Array[float, [P, 3]]`
     :param shank_interval: distance (um) relative to the specific shank. e.g., NeuroPixel 2.0 = 250 * x
     :return: unit vector
     """

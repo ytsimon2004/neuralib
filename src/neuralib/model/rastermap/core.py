@@ -7,6 +7,7 @@ import attrs
 import numpy as np
 from typing_extensions import Self
 
+from neuralib.typing import PathLike
 from neuralib.util.util_verbose import fprint
 
 __all__ = ['UserCluster',
@@ -16,14 +17,14 @@ __all__ = ['UserCluster',
 
 class UserCluster(TypedDict, total=False):
     """GUI selected clusters"""
-
     ids: np.ndarray
-    """neuronal ids"""
+    """neuronal ids. Array[int, N]"""
     slice: slice
     """binned neurons range"""
     binsize: int
     """neuron bins"""
     color: np.ndarray
+    """color. Array[float, 4]"""
 
 
 class RasterOptions(TypedDict, total=False):
@@ -67,23 +68,28 @@ class RasterMapResult:
     """
 
     filename: str
-    """neural activity filename (N, T)"""
+    """neural activity numpy file. `Array[float, [N, T]]`"""
+
     save_path: str
     """filename for the rastermap result save"""
+
     isort: np.ndarray
-    """(N,)"""
+    """`Array[int, N]`"""
+
     embedding: np.ndarray
-    """(N,1)"""
+    """`Array[float, [N, 1]]`"""
+
     ops: RasterOptions
-    """`RasterOptions`"""
+    """``RasterOptions``"""
+
     user_clusters: list[UserCluster] = attrs.field(default=attrs.Factory(list))
-    """list of clusters `UserCluster`"""
+    """list of clusters ``UserCluster``"""
 
     super_neurons: np.ndarray | None = attrs.field(default=None)
-    """super neuron activity (C, T)"""
+    """super neuron activity. `Array[float, [C, T]]`"""
 
     @classmethod
-    def load(cls, path: Path) -> Self:
+    def load(cls, path: PathLike) -> Self:
         """
         Load the results from rastermap output
 
@@ -120,5 +126,5 @@ class RasterMapResult:
 
     @property
     def n_super(self) -> int:
-        """n_clusters"""
+        """number of clusters"""
         return len(self.super_neurons)

@@ -1,6 +1,6 @@
 """
 Get basic GPU info table and verbose
----------------
+--------------------------------------
 
 - cuda driver (Windows)
 - metal backend support (MacOS)
