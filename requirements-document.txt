@@ -1,5 +1,6 @@
 sphinx
 nbsphinx
+sphinx-toolbox
 sphinx-rtd-theme
 
 # build

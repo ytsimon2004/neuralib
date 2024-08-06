@@ -15,7 +15,8 @@ author = 'Yu-Ting Wei'
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
-              'nbsphinx']
+              'nbsphinx',
+              'sphinx_toolbox.more_autodoc.autotypeddict']
 
 templates_path = ['_templates']
 exclude_patterns = []
