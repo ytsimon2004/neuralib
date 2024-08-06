@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-from typing import Literal, TypedDict, final
+from typing import Literal, TypedDict, final, Annotated
 
 import attrs
 import numpy as np
@@ -198,33 +198,37 @@ class Suite2PResult:
         N: number of neurons
 
         F: number pf frames
+
+        W: image width
+
+        H: image height
     """
     directory: Path
-    """directory contain all the s2p output files"""
+    """Directory contain all the s2p output files"""
 
     F: np.ndarray
-    """transient activity 2D array ``(N, F)``"""
+    """Transient activity 2D array. `Array[float, [N, F]]`"""
 
     FNeu: np.ndarray
-    """neuropil activity 2D array ``(N, F)``"""
+    """Neuropil activity 2D array. `Array[float, [N, F]]`"""
 
     spks: np.ndarray
-    """deconvolved activity 2D array ``(N, F)``"""
+    """Deconvolved activity 2D array. `Array[float, [N, F]]`"""
 
-    stat: NDArray[Suite2pRoiStat]
-    """GUI imaging after registration, i.e., x, ypixel ...: np.ndarray with shape: ``(N, )``"""
+    stat: Annotated[NDArray[Suite2pRoiStat], 'N']
+    """GUI imaging after registration, i.e., x, ypixel., etc. `Array[float, N]`"""
 
     ops: Suite2pGUIOptions
     """GUI options"""
 
     iscell: np.ndarray
-    """cell probability for each ROI ``(N, 2)``"""
+    """Cell probability for each ROI. `Array[float, [N, 2]]`"""
 
     redcell: np.ndarray | None
-    """red cell probability 2D array ``(N, 2)``"""
+    """Red cell probability 2D array. `Array[float, [N, 2]]`"""
 
     redcell_threshold: float | None
-    """red cell probability threshold"""
+    """Red cell probability threshold"""
 
     runtime_frate_check: float | None = attrs.field(default=None)
     """If not None, check frame rate lower bound"""
@@ -361,7 +365,7 @@ class Suite2PResult:
 
     @property
     def cell_prob(self) -> np.ndarray:
-        """probability that the ROI is a cell based on the default classifier"""
+        """probability that the ROI is a cell based on the default classifier. `Array[float, N]`"""
         return self.iscell[:, 1]
 
     @property
@@ -374,7 +378,7 @@ class Suite2PResult:
 
     @property
     def red_cell_prob(self) -> np.ndarray | None:
-        """red cell probability"""
+        """red cell probability, `Array[float, N]`"""
         if self.redcell is None:
             return None
         return self.redcell[:, 1]
@@ -421,12 +425,12 @@ class Suite2PResult:
 
     @property
     def image_mean(self) -> np.ndarray:
-        """mean image for chan0(1st)"""
+        """mean image for chan0(1st). `Array[float, [H, W]]`"""
         return self.ops['meanImg'].T
 
     @property
     def image_mean_ch2(self) -> np.ndarray:
-        """mean image for chan1(2nd)"""
+        """mean image for chan1(2nd). `Array[float, [H, W]]`"""
         return self.ops['meanImg_chan2'].T
 
     @property
@@ -436,30 +440,32 @@ class Suite2PResult:
 
     @property
     def rigid_x_offsets(self) -> np.ndarray:
-        """x-shifts of recording at each timepoint (F, )"""
+        """x-shifts of recording at each timepoint. `Array[float, F]`"""
         return self.ops['xoff']
 
     @property
     def rigid_y_offsets(self) -> np.ndarray:
-        """y-shifts of recording at each timepoint (F, )"""
+        """y-shifts of recording at each timepoint. `Array[float, F]`"""
         return self.ops['yoff']
 
     @property
     def rigid_xy_offset(self) -> np.ndarray:
-        """peak of phase correlation between frame and reference image at each timepoint"""
+        """peak of phase correlation between frame and reference image at each timepoint. `Array[float, F]`"""
         return self.ops['corrXY']
 
     @property
     def nonrigid_x_offsets(self) -> np.ndarray:
-        """(frames, block_size)"""
+        """(frames, block_size). `Array[float, F]`"""
         return self.ops['xoff1']
 
     @property
     def nonrigid_y_offsets(self) -> np.ndarray:
+        """`Array[float, F]`"""
         return self.ops['yoff1']
 
     @property
     def nonrigid_xy_offsets(self) -> np.ndarray:
+        """`Array[float, F]`"""
         return self.ops['corrXY1']
 
     @classmethod
@@ -467,13 +473,13 @@ class Suite2PResult:
                                  directory: Path,
                                  cell_prob: float | None = 0.5) -> int:
         """
-        load number of neuron based on iscell.npy
+        Load number of neuron based on iscell.npy
 
         :param directory: directory contains the iscell.npy
         :param cell_prob: cell probability,
                     bool type: use the binary criteria in GUI output
                     float type: value in ``iscell[:, 1]``
-        :return:
+        :return: Number of neurons
         """
         iscell = np.load(directory / 'iscell.npy', allow_pickle=True)
         if cell_prob is None:
@@ -500,28 +506,37 @@ def get_s2p_coords(s2p: Suite2PResult,
     Get the suite2p coordinates of all cells.
 
     :param s2p: ``Suite2PResult``
-    :param neuron_list: neuron index or index list
+    :param neuron_list: neuron index or index list/arr. If None, then load all neurons
     :param plane_index: optic plane index
-    :param factor: pixel to mm
+    :param factor: pixel to mm factor
     :return: :class:`~neuralib.calimg.cellular_cords.CellularCoordinates`
     """
+    if neuron_list is None:
+        neuron_list = np.arange(s2p.n_neurons)
 
-    xpix = []
-    ypix = []
+    n_neurons = len(neuron_list)
+    xpix = np.zeros(n_neurons)
+    ypix = np.zeros(n_neurons)
+
     for i, n in enumerate(neuron_list):
-        xpix.append(np.mean(s2p.stat[i]['xpix']))
-        ypix.append(np.mean(s2p.stat[i]['ypix']))
-
-    xpix = np.array(xpix)
-    ypix = np.array(ypix)
+        xpix[i] = np.mean(s2p.stat[i]['xpix'])
+        ypix[i] = np.mean(s2p.stat[i]['ypix'])
 
     xcord = xpix * factor / 1000  # ap
     ycord = ypix * factor / 1000  # ml
+
+    if isinstance(neuron_list, int):
+        src_plane_index = plane_index
+    elif isinstance(neuron_list, (list, np.ndarray, slice)):
+        src_plane_index = np.full_like(neuron_list, plane_index)
+    else:
+        raise TypeError('')
 
     return CellularCoordinates(
         np.array(neuron_list),
         xcord,
         ycord,
         plane_index=plane_index,
-        unit='mm'
+        unit='mm',
+        source_plane_index=src_plane_index
     )

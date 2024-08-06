@@ -15,23 +15,48 @@ __all__ = ['CellularCoordinates']
 @typing.final
 @attrs.define
 class CellularCoordinates:
-    """Container with coordinates information (in mm) for each ROIs"""
+    """Container with coordinates information (in mm) for each ROIs
+
+    `Dimension parameters`:
+
+        N: number of neurons
+
+        P: number of plane types
+
+    """
 
     neuron_idx: np.ndarray
-    """neuron index"""
-    ap: np.ndarray
-    """anterior posterior coordinates (default in mm)"""
-    ml: np.ndarray
-    """medial lateral coordinates (default in mm)"""
+    """neuron index. `Array[float, N]`"""
 
-    #
+    ap: np.ndarray
+    """anterior posterior coordinates (default in mm). `Array[float, N]`"""
+
+    ml: np.ndarray
+    """medial lateral coordinates (default in mm). `Array[float, N]`"""
+
     plane_index: int | np.ndarray | None = attrs.field(default=None, kw_only=True)
-    """optic plane index. i.e., used for depth analysis"""
+    """optic plane index. i.e., used for depth analysis. If array type, `Array[int, P]`"""
+
+    source_plane_index: np.ndarray | None = attrs.field(default=None, kw_only=True)
+    """neuron's corresponding image plane. `Array[float, N]`"""
 
     value: np.ndarray | None = attrs.field(default=None, kw_only=True)
-    """metric (i.e., used in topographical analysis)"""
+    """metric (i.e., used in topographical analysis). `Array[float, N]` """
 
     unit: Literal['mm', 'um'] = attrs.field(default='mm', kw_only=True, validator=attrs.validators.in_(('mm', 'um')))
+    """unit of the coordinates. `{'mm', 'um'}` """
+
+    @source_plane_index.validator
+    def check(self, attribute, value):
+        if self.source_plane_index is not None:
+            if isinstance(self.plane_index, int):
+                if np.any(value != self.plane_index):
+                    raise RuntimeError('invalid source plane index')
+            elif isinstance(self.plane_index, np.ndarray):
+                if np.any([v not in self.plane_index for v in value]):
+                    raise RuntimeError('invalid source plane index')
+            else:
+                raise TypeError(f'{attribute} type error')
 
     def to_um(self) -> Self:
         """unit from mm to um"""
@@ -49,7 +74,7 @@ class CellularCoordinates:
         """
         assign ``value`` for ``CellularCoordinates``
 
-        :param value: value array for the corresponding coordinates
+        :param value: value array for the corresponding coordinates. `Array[float, N]`
         :return:
         """
 
@@ -59,7 +84,7 @@ class CellularCoordinates:
     def with_selection(self, mask: np.ndarray) -> Self:
         """masking for cell selection
 
-        :param mask: numpy bool array
+        :param mask: numpy bool array. `Array[bool, N]`
         """
         return attrs.evolve(
             self,
@@ -106,8 +131,8 @@ class CellularCoordinates:
         """
         calculate the values for x axis rotation
 
-        :param x: coordinate x (N,)
-        :param y: coordinate Y (N,)
+        :param x: coordinate x. `Array[float, N]`
+        :param y: coordinate Y. `Array[float, N]`
         :param deg: rotation degree
         :return: value to be subtracted. dx (N,) and dy (N,)
         """

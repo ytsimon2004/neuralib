@@ -8,13 +8,13 @@ from typing_extensions import TypeAlias, Self
 __all__ = ['ObjectiveFov']
 
 Coordinates: TypeAlias = np.ndarray
-"""Array[float, [x,y]]"""
+"""Array[float, 2] in XY"""
 
 
 @attrs.define
 class ObjectiveFov:
     """
-    Class for 2P Field Of View coordinates (``Coordinates``: Array[float, [x,y]])
+    Class for 2P Field Of View coordinates
 
     Use IBL coordinates space ::
 
@@ -30,13 +30,13 @@ class ObjectiveFov:
     region_name: str
     """FOV name"""
     am: Coordinates
-    """anteromedial (default in mm)"""
+    """anteromedial (default in mm). `Array[float, 2]` in XY"""
     pm: Coordinates
-    """posteromedial (default in mm)"""
+    """posteromedial (default in mm). `Array[float, 2]` in XY"""
     al: Coordinates
-    """anterolateral (default in mm)"""
+    """anterolateral (default in mm). `Array[float, 2]` in XY"""
     pl: Coordinates
-    """posterolateral (default in mm)"""
+    """posterolateral (default in mm). `Array[float, 2]` in XY"""
 
     #
     rotation_angle_ml: float = attrs.field(default=0, kw_only=True)

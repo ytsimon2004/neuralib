@@ -36,7 +36,7 @@ class SBXViewer:
     """:class:`~neuralib.calimg.scanbox.core.SBXInfo`"""
 
     sbx_map: sbxreader.sbx_memmap
-    """(F, P, C, W, H)"""
+    """`Array[float, [F, P, C, W, H]]`"""
 
     def __init__(self, directory: PathLike):
         """

@@ -18,7 +18,7 @@ def get_soma_pixel(s2p: Suite2PResult,
     The mask value equals to the neuron's id + 1.
 
     :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
-    :param neuron_ids: index ROIs array or bool mask array
+    :param neuron_ids: index ROIs array or bool mask array. `Array[int|bool, N]`
     :param color_diff: whether show color difference across neurons
     :param include_overlap_pixel: if taking overlap area into account
     :return: 2d imaging array, shape: (xpix, ypix)
@@ -58,11 +58,11 @@ def plot_soma_center(ax: Axes,
 
     :param ax: :class:`matplotlib.axes.Axes`
     :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
-    :param neuron_ids: index ROIs array or bool mask array
+    :param neuron_ids: index ROIs array or bool mask array. `Array[int|bool, N]`
     :param invert_xy: If invert the FOV xy pixel
     :param with_index: whether plot the index ROI index nearby
     :param font_size: font size of the text
-    :param kwargs: pass to plt.scatter()
+    :param kwargs: additional args to ``plt.scatter()``
     """
     if neuron_ids is None:
         n_neuron = s2p.stat.shape[0]

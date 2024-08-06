@@ -33,7 +33,7 @@ def get_neuron_signal(s2p: Suite2PResult,
     Select neuronal signals for analysis. For single cell (F,) OR multiple cells (N, F)
 
     :param s2p: suite 2p result
-    :param n: neuron index or index array
+    :param n: neuron index (`int`) or index arraylike (`Array[int, N]`)
     :param signal_type: signal type. :data:`~neuralib.calimg.suite2p.core.SIGNAL_TYPE` {'df_f', 'spks'}
     :param normalize: 01 normalization for each neuron
     :param dff: normalize to the baseline fluorescence changed (dF/F)
@@ -116,15 +116,15 @@ class DFFSignal(NamedTuple):
     s2p: Suite2PResult
     """Suite2PResult"""
     f: np.ndarray
-    """fluorescence. (F,) | (N, F)"""
+    """Fluorescence intensity. `Array[float, F | [N,F]]`"""
     fneu: np.ndarray
-    """neuropil. (F,) | (N, F)"""
+    """Neuropil intensity. (F,) | (N, F)"""
     fcorr: np.ndarray
-    """f used for dff calculation, could be either corrected by fneu. (F,) | (N, F)"""
+    """Fluorescence corrected by fneu that used for dff calculation. `Array[float, F | [N,F]]`"""
     f0: np.ndarray
-    """f0. (F,) | (N, F)"""
+    """Background Fluorescence. `Array[float, F | [N,F]]`"""
     dff: np.ndarray
-    """dff after f0 normalization. (F,) | (N, F)"""
+    """dff after f0 normalization. `Array[float, F | [N,F]]`"""
 
     @property
     def dff_baseline(self) -> np.ndarray:
@@ -133,7 +133,7 @@ class DFFSignal(NamedTuple):
 
     @property
     def baseline_fluctuation(self) -> np.ndarray:
-        """get the fluctuation of the fneu signal (F,) | (N, F).
+        """get the fluctuation of the fneu signal. `Array[float, F | [N,F]]`
 
         Perhaps not fully corrected with physiological reason.
         **used to get the baseline std (i.e., trial reliability metric)**
@@ -143,7 +143,7 @@ class DFFSignal(NamedTuple):
         return 100 * ((fneu_corr - fneu_bas) / fneu_bas)
 
     def oasis_dcnv(self) -> np.ndarray:
-        """spike deconvolution"""
+        """spike deconvolution. `Array[float, F | [N,F]]`"""
         f = self.dff.astype(np.float32)  # (T,)
         v = w = l = s = np.zeros_like(f, dtype=np.float32)
         t = np.zeros_like(f, dtype=np.int64)
@@ -159,14 +159,13 @@ def dff_signal(f: np.ndarray,
     """
     df_f signal normalization container
 
-    :param f: neuron signal (F)
-    :param fneu: neuropil signal
-    :param s2p: Suite2PResult
+    :param f: Fluorescence intensity. `Array[float, F | [N,F]]`
+    :param fneu: Neuropil intensity. `Array[float, F | [N,F]]`
+    :param s2p: ``Suite2PResult``
     :param correct_neuropil: whether do the subtraction using neuropil
-    :param method:
+    :param method: {'maximin', 'constant', 'constant_prctile'}
 
-    :return:
-        DFFSignal
+    :return: DFFSignal
     """
 
     fcorr = f - 0.7 * fneu if correct_neuropil else f
@@ -319,18 +318,18 @@ def _oasis(fcorr: np.ndarray,
 def sync_s2p_rigevent(image_time: np.ndarray,
                       s2p: Suite2PResult,
                       plane: int | None = 0) -> np.ndarray:
-    """
-    Check if the registered frame number is consistent in .riglog,
-    then do the alignment to make the shape the same
+    r"""
 
-    * ASSUME both recordings are sync
+    Do the alignment to make the shape the same in hardware pulses `(P,)` & suite2p output files `(F,)`
 
-    * ASSUME sequential scanning pattern. i.e., 0, 1, 2, 3 ETL order
+    \* ASSUME both recordings are sync
 
-    :param image_time: riglog image event
+    \* ASSUME sequential scanning pattern. i.e., 0, 1, 2, 3 ETL scanning order
+
+    :param image_time: imaging time hardware pulses. `Array[float, P]`
     :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
     :param plane: number of optical plane
-    :return: image_time: with same len as s2p results
+    :return: image_time: with same len as s2p results `Array[float, F]`
     """
     n_plane = s2p.n_plane
     image_fr = s2p.fs
