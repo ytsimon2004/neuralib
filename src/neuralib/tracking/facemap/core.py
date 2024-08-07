@@ -10,7 +10,7 @@ from typing_extensions import TypeAlias, Self
 
 from neuralib.typing import PathLike
 from neuralib.util.cli_args import CliArgs
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 from neuralib.util.utils import uglob
 
 __all__ = [

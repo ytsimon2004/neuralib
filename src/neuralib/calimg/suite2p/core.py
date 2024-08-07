@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 
 from neuralib.calimg.cellular import CellularCoordinates
 from neuralib.typing import PathLike
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'SIGNAL_TYPE',

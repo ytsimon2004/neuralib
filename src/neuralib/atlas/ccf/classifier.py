@@ -571,7 +571,7 @@ class RoiClassifiedNormTable:
         )
 
         if verbose:
-            from neuralib.util.util_verbose import printdf
+            from neuralib.util.verbose import printdf
             printdf(df)
 
         return df

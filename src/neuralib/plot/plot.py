@@ -12,7 +12,7 @@ from scipy.ndimage import gaussian_filter1d
 from neuralib.plot.colormap import insert_colorbar
 from neuralib.typing import ArrayLike
 from neuralib.typing import PathLike, DataFrame
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'plot_2d_dots',

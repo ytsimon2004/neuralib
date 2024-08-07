@@ -13,7 +13,7 @@ from brainglobe_atlasapi import BrainGlobeAtlas
 from neuralib.typing import PathLike
 from neuralib.util.io import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
 from neuralib.util.tqdm import download_with_tqdm
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'DATA_SOURCE_TYPE',

@@ -9,7 +9,7 @@ from neuralib.segmentation.base import AbstractSegmentationOption
 from neuralib.segmentation.cellpose.core import AbstractCellPoseOption, CPOSE_MODEL
 from neuralib.util.cli_args import CliArgs
 from neuralib.util.gpu import check_mps_available
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = ['CellPoseSubprocOption']
 

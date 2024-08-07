@@ -12,7 +12,7 @@ from neuralib.atlas.data import load_structure_tree
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.typing import Source, HEMISPHERE_TYPE
 from neuralib.typing import DataFrame
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'ALLEN_CCF_10um_BREGMA',

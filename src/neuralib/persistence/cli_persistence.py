@@ -17,7 +17,7 @@ from neuralib.persistence import (
     PersistenceHandler,
     AutoIncFieldNotResolvedError
 )
-from neuralib.util.util_verbose import fprint, print_load, print_save
+from neuralib.util.verbose import fprint, print_load, print_save
 
 __all__ = ['PersistenceOptions',
            'get_options_and_cache']

@@ -9,7 +9,7 @@ import polars as pl
 from typing_extensions import TypeAlias, Self, Literal
 
 from neuralib.typing import PathLike, DataFrame
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'SpreadSheetName',

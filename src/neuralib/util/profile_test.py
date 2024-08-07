@@ -3,7 +3,7 @@ import os
 
 import psutil
 
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = ['profile_test']
 

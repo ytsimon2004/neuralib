@@ -11,7 +11,7 @@ from typing_extensions import Self
 from neuralib.argp import argument, as_argument
 from neuralib.segmentation.base import AbstractSegmentationOption
 from neuralib.typing import PathLike
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = ['CPOSE_MODEL',
            'AbstractSegmentationOption',

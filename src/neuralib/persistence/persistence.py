@@ -139,7 +139,7 @@ import numpy as np
 
 from neuralib.util.func import create_fn
 from neuralib.typing import is_iterable
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'field',

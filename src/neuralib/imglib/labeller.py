@@ -68,7 +68,7 @@ from typing_extensions import Self
 from neuralib.util.csv import csv_header
 from neuralib.util.util_cv2 import get_keymapping, KeyMapping, find_key_from_value
 from neuralib.typing import PathLike
-from neuralib.util.util_verbose import fprint
+from neuralib.util.verbose import fprint
 
 __all__ = ['SequenceLabeller']
 
@@ -242,7 +242,7 @@ class SequenceLabeller:
 
     def load_note(self):
         """read image-related notes from file"""
-        from neuralib.util.util_verbose import printdf
+        from neuralib.util.verbose import printdf
 
         df = pl.read_csv(self.output, dtypes={'filename': pl.Utf8})
         printdf(df)
