@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import warnings
 
 __all__ = ['deprecated_class',
-           'deprecated_func']
+           'deprecated_func',
+           'deprecated_aliases']
 
 
 def deprecated_class(*,
@@ -101,5 +103,51 @@ def deprecated_func(*,
             _deprecated_func.__doc__ = "DEPRECATED. " + f.__doc__
 
         return _deprecated_func
+
+    return _decorator
+
+
+def deprecated_aliases(aliases: dict[str, str]):
+    """
+    Decorator to handle deprecated argument names and map them to new argument names.
+
+    This decorator allows you to support old argument names while transitioning to new ones.
+    It will raise a ``DeprecationWarning`` if the old argument name is used and will automatically
+    map the value to the new argument name.
+
+    :param aliases: Dictionary mapping `old argument names` to `new argument names`.
+    :return: Decorated function with support for deprecated argument names.
+
+    :raises RuntimeError: If a new argument name does not exist in the function's signature.
+    :raises ValueError: If both old and new argument names are provided simultaneously.
+    """
+
+    def _decorator(f):
+        sig = inspect.signature(f)
+
+        @functools.wraps(f)
+        def _wrapper(*args, **kwargs):
+            for old_arg, new_arg in aliases.items():
+
+                if new_arg not in sig.parameters:
+                    raise RuntimeError(f'New argument: {new_arg} is not in the function arg.')
+
+                if new_arg in kwargs:
+                    raise ValueError(f'Cannot specify both {old_arg} and {new_arg} at the same time')
+
+                if old_arg in kwargs:
+                    warnings.warn(
+                        f'{old_arg} is deprecated and will be removed in future version. Use {new_arg} instead',
+                        DeprecationWarning,
+                        stacklevel=2
+                    )
+
+                    # If the new argument is not already in kwargs, move the value from the old argument
+                    if new_arg not in kwargs:
+                        kwargs[new_arg] = kwargs.pop(old_arg)
+
+            return f(*args, **kwargs)
+
+        return _wrapper
 
     return _decorator

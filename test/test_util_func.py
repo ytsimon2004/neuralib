@@ -1,6 +1,8 @@
 import unittest
 
-from neuralib.util.deprecation import deprecated_class, deprecated_func
+import numpy as np
+
+from neuralib.util.deprecation import deprecated_class, deprecated_func, deprecated_aliases
 
 
 class TestUtilFunc(unittest.TestCase):
@@ -62,3 +64,30 @@ class TestUtilFunc(unittest.TestCase):
 
         self.assertIn('test_deprecate is deprecated and will be removed in a future release: v1.0.0. '
                       'Please use new() instead.', str(warns.warning))
+
+    def test_deprecate_aliases(self):
+        @deprecated_aliases(aliases={'old': 'new'})
+        def test(new: np.ndarray):
+            return np.max(new)
+
+        with self.assertWarns(DeprecationWarning) as warns:
+            ret = test(old=np.array([1, 2, 3, 4, 5]))
+
+        self.assertIn('old is deprecated and will be removed in future version. Use new instead', str(warns.warning))
+        self.assertEqual(ret, 5)
+
+    def test_deprecate_aliases_runtime_err(self):
+        @deprecated_aliases(aliases={'old': 'new_arg'})
+        def test(new: np.ndarray):
+            return np.max(new)
+
+        with self.assertRaises(RuntimeError) as err:
+            test()
+
+    def test_deprecate_aliases_value_err(self):
+        @deprecated_aliases(aliases={'old': 'new'})
+        def test(new: np.ndarray):
+            return np.max(new)
+
+        with self.assertRaises(ValueError) as err:
+            test(new=np.array([1, 2, 3]), old=np.array([1, 2, 3]))

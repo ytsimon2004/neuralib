@@ -2,29 +2,38 @@ from __future__ import annotations
 
 import numpy as np
 
+from neuralib.util.deprecation import deprecated_aliases
+
 __all__ = ['interp_timestamp',
            'interp1d_nan']
 
 
-def interp_timestamp(event: np.ndarray,
+@deprecated_aliases(aliases={'event': 'timestamp'})
+def interp_timestamp(timestamp: np.ndarray,
                      t0: float,
                      t1: float,
                      sampling_rate: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Create interpolated time and value(01) array from event timestamp
 
-    :param event: Array of event timestamps in seconds
+    `Dimension parameters`:
+
+        T = number of timestamp
+
+        N' = number of interpolated sample points
+
+    :param timestamp: Array of event timestamps in seconds. `Array[float, T]`
     :param t0: Start time in seconds
     :param t1: End time in seconds
     :param sampling_rate: Sampling rate in Hz
-    :return: Tuple of time array and event array
+    :return: Tuple of time array (`Array[float, N']`) and event array (`Array[float, N']`)
     """
 
     n = int((t1 - t0) * sampling_rate)
     tt = np.linspace(t0, t1, num=n)
 
     sig = np.zeros(n, dtype=np.int8)
-    indices = ((event - t0) * sampling_rate).astype(int)
+    indices = ((timestamp - t0) * sampling_rate).astype(int)
     indices = indices[(indices >= 0) & (indices < n)]
     sig[indices] = 1
 
@@ -35,8 +44,8 @@ def interp1d_nan(arr: np.ndarray) -> np.ndarray:
     """
     Interpolates missing values (NaNs) in a 1-dimensional NumPy array.
 
-    :param arr: Input array with potential NaNs
-    :return: Array with NaNs interpolated
+    :param arr: Input array with potential NaNs. `Array[float, N]`
+    :return: Array with NaNs interpolated. `Array[float, N]`
     """
     n = len(arr)
     x = np.arange(n)
