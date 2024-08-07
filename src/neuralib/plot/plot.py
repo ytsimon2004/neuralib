@@ -31,7 +31,7 @@ __all__ = [
 def plot_2d_dots(ax: Axes,
                  x: ArrayLike,
                  y: ArrayLike,
-                 size: ArrayLike, *,
+                 size: np.ndarray, *,
                  with_color: bool = False,
                  with_legends: bool = True,
                  size_type: Literal['area', 'radius'] = 'radius',
@@ -40,10 +40,16 @@ def plot_2d_dots(ax: Axes,
     """
     Plot values as 2D dots
 
+    `Dimension parameters`:
+
+        X = number of x label
+
+        Y = number of y label
+
     :param ax: ``Axes``
-    :param x: string values (X,)
-    :param y: string values (Y,)
-    :param size: size of the dots (Y, X)
+    :param x: string values. `ArrayLike[str, X]`
+    :param y: string values. `ArrayLike[str, X]`
+    :param size: size of the dots. `Array(float, [Y, X]]`
     :param with_color: `size` domain as colormap
     :param with_legends: show the value scaling as legend
     :param size_type: whether the value corresponding to circle radius or surface area.
@@ -71,19 +77,18 @@ def plot_2d_dots(ax: Axes,
         ax.scatter(x.ravel(), y.ravel(), s=s, c='k', clip_on=False, **kwargs)
 
     if with_legends:
-        ax_size_legend(ax, size, func)
+        _ax_size_legend(ax, size, func)
 
 
-def ax_size_legend(ax: Axes,
-                   value: list[int] | np.ndarray,
-                   f: Callable[[float], float] = None):
+def _ax_size_legend(ax: Axes,
+                    value: list[int] | np.ndarray,
+                    f: Callable[[float], float] = None):
     """
-    add the label and legend of the size in scatter plot
+    add the label and legend of the size in scatter plot. TODO as int legend
 
     :param ax: ``Axes``
     :param value: values reflect to size
     :param f: amplified callable
-    :return:
     """
     if f is None:
         f = lambda it: (it ** 2) * 3000
@@ -94,6 +99,7 @@ def ax_size_legend(ax: Axes,
         ax.scatter([], [], s=f(s), c='k', label=str(s))
 
     h, l = plt.gca().get_legend_handles_labels()
+
     plt.legend(h[1:], l[1:], labelspacing=1.2, title="value", borderpad=1,
                frameon=True, framealpha=0.6, edgecolor="k", facecolor="w")
 
@@ -114,14 +120,18 @@ def plot_regression_cc(ax: Axes,
     """
     Regression to see the relationship between x and y
 
+    `Dimension parameters`:
+
+        N = number of sample points
+
     :param ax: ``Axes``
-    :param x: numerical array x
-    :param y: numerical array x
+    :param x: numerical array. `Array[float, N]`
+    :param y: numerical array. `Array[float, N]`
     :param order: order of the polynomial to fit when calculating the residuals.
     :param bins: number of bins
     :param show_cc: show correlation coefficient
     :param bin_func: Literal['median', 'mean']. default is median
-    :param kwargs: passed to ``ax.set``
+    :param kwargs: additional args passed to ``ax.set``
     :return:
     """
     import seaborn as sns
@@ -154,8 +164,8 @@ def _hist_line_plot(ax,
     """
     average or pickup the median of the y value in certain bins
     :param ax: ``Axes``
-    :param x: (N, )
-    :param y: (N, )
+    :param x: `Array[float, N]`
+    :param y: `Array[float, N]`
     :param bins:
     :param bin_func
     :return:
@@ -212,9 +222,9 @@ def plot_histogram_cutoff(ax: Axes,
     Plot the histogram with a cutoff value
 
     :param ax: ``Axes``
-    :param value: (N,) 1d array
+    :param value: 1d array. `Array[float, N]`
     :param cutoff: cutoff (threshold) value for the certain value, >= represents pass
-    :param mask: (N,) mask for value. i.e., cell selection
+    :param mask: mask for value. i.e., cell selection. `Array[bool, N]`
     :param kwargs: passed to ``ax.set``
     """
     if value.ndim != 1:
@@ -226,7 +236,6 @@ def plot_histogram_cutoff(ax: Axes,
     if cutoff > np.max(value) or cutoff < np.min(value):
         fprint(f'{cutoff} should be within {np.min(value)} and {np.max(value)}', vtype='warning')
 
-    # ax.hist(value, 50, density=True, color='grey')
     sns.histplot(value, bins=30, kde=True, ax=ax, color='grey', stat='percent', element='step')
     ax.axvline(cutoff, color='r', linestyle='--', zorder=1)
     ax.set(**kwargs)
@@ -241,11 +250,15 @@ def plot_joint_scatter_histogram(x: np.ndarray,
     """
     plot the linear correlation scatter and histogram between two variables
 
-    :param x: numerical array x
-    :param y: numerical array y
+    `Dimension parameters`:
+
+        N = number of sample points
+
+    :param x: numerical array x. `Array[float, N]`
+    :param y: numerical array y. `Array[float, N]`
     :param show_cc: if show correlation coefficient
     :param output: fig save output
-    :param kwargs: pass through ``ax.set()``
+    :param kwargs: additional args pass through ``ax.set()``
     :return:
     """
 

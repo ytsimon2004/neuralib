@@ -53,7 +53,7 @@ def plot_venn(ax: Axes,
     three classified population venn diagram, and calculate the chance level
 
     :param ax: ``Axes``
-    :param vhandler: VennHandler
+    :param vhandler: ``VennHandler``
     :param msg: msg show in title
     :param labels: label inside the venn
     :param show_msg: show fraction message

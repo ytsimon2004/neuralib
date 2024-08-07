@@ -140,12 +140,12 @@ class AxesExtendHelper:
         """
         ax.set(aspect=1)
         if mode in ('both', 'x'):
-            self.ax_x = ax.inset_axes([0, 1.05, 1, 0.25], sharex=ax)
+            self.ax_x = ax.inset_axes((0, 1.05, 1, 0.25), sharex=ax)
         else:
             self.ax_x = None
 
         if mode in ('both', 'y'):
-            self.ax_y = ax.inset_axes([1.05, 0, 0.25, 1], sharey=ax)
+            self.ax_y = ax.inset_axes((1.05, 0, 0.25, 1), sharey=ax)
         else:
             self.ax_y = None
 
@@ -159,7 +159,6 @@ class AxesExtendHelper:
         :param values: histogram x axis
         :param bins: number of bins
         :param kwargs: additional arguments passed to ``Axes.hist()``
-        :return:
         """
         if self.ax_x is not None:
             self.ax_x.hist(values, bins, **kwargs)

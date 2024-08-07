@@ -18,9 +18,9 @@ def plot_scatter_animation(x: np.ndarray,
     r"""
     Plot xy scatter animation with given time points
 
-    :param x: x loc (T, )
-    :param y: y loc (T, )
-    :param t: time array in sec (T, )
+    :param x: x loc. `Array[float, T]`
+    :param y: y loc. `Array[float, T]`
+    :param t: time array in sec. `Array[float, T]`
     :param size: size of the scatter
     :param step: step run per datapoint
     :param output: output for animation. i.e., \*.gif

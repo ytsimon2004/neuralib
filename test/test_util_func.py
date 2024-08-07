@@ -1,5 +1,7 @@
 import unittest
 
+from neuralib.util.deprecation import deprecated_class, deprecated_func
+
 
 class TestUtilFunc(unittest.TestCase):
 
@@ -36,3 +38,27 @@ class TestUtilFunc(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             key_from_value(dy, 100)
+
+    def test_deprecate_class(self):
+        @deprecated_class(new_class='B', remarks='TEST REMARKS', removal_version='v0.0.10')
+        class A:
+            ...
+
+        with self.assertWarns(DeprecationWarning) as warns:
+            A()
+
+        self.assertIn('A is deprecated and will be removed in a future release: v0.0.10. Please use B instead.',
+                      str(warns.warning))
+
+        self.assertIn('TEST REMARKS', str(warns.warning))
+
+    def test_deprecate_function(self):
+        @deprecated_func(new_function='new()', removal_version='v1.0.0')
+        def test_deprecate():
+            ...
+
+        with self.assertWarns(DeprecationWarning) as warns:
+            test_deprecate()
+
+        self.assertIn('test_deprecate is deprecated and will be removed in a future release: v1.0.0. '
+                      'Please use new() instead.', str(warns.warning))

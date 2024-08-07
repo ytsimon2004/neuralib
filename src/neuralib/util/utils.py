@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import re
 from pathlib import Path
 from typing import TypeVar
@@ -12,7 +11,6 @@ __all__ = ['uglob',
            'glob_re',
            'joinn',
            'ensure_dir',
-           'future_deprecate',
            'key_from_value']
 
 
@@ -79,47 +77,6 @@ def ensure_dir(p: PathLike, verbose: bool = True) -> None:
 def joinn(sep: str, *part: str | None) -> str:
     """join not-None str"""
     return sep.join(str(it) for it in part if it is not None)
-
-
-def future_deprecate(f=None, *,
-                     reason: str | None = None,
-                     removal_version: str = None):
-    """Mark deprecated functions.
-
-    :param f: The function to be deprecated
-    :param reason: The reason why the function is deprecated
-    :param removal_version: Optional version or date when the function is planned to be removed
-    :return:
-    """
-    if reason is None:
-        reason = 'This function is deprecated and may be removed in future versions.'
-
-    if removal_version is not None:
-        reason += f' Scheduled for removal in version {removal_version}.'
-
-    def _deprecated(f):
-        warned = False
-
-        @functools.wraps(f)
-        def _deprecated_func(*args, **kwargs):
-            nonlocal warned
-            if not warned:
-                fprint(f'use Deprecated function {f.__name__} : {reason}', vtype='warning')
-                warned = True
-
-            return f(*args, **kwargs)
-
-        if f.__doc__ is None:
-            _deprecated_func.__doc__ = "DEPRECATED."
-        else:
-            _deprecated_func.__doc__ = "DEPRECATED. " + f.__doc__
-
-        return _deprecated_func
-
-    if f is None:
-        return _deprecated
-    else:
-        return _deprecated(f)
 
 
 # ============================== #

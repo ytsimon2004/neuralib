@@ -149,7 +149,6 @@ def print_save(file: Union[str, Path], verb='SAVE') -> Path:
 
     :param file: file path
     :param verb: default 'SAVE'
-    :param color: verb color
     :return: *file*
     """
     global _PREV_SAVE_FILE
