@@ -30,7 +30,7 @@ class CellPoseAPIOption(AbstractCellPoseOption):
                                             chan2_restore=True)
 
     def eval(self) -> CellPoseEvalResult:
-        img = self.load_gray_scale()
+        img = self.raw_image()
         channel_choose = [int(self.chan_seg), int(self.chan_nuclear)]
         model = self.get_model()
         masks, flows, styles, imgs_dn = model.eval(img,
