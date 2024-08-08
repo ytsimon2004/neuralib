@@ -8,7 +8,7 @@ __all__ = ['interp_timestamp',
            'interp1d_nan']
 
 
-@deprecated_aliases(aliases={'event': 'timestamp'})
+@deprecated_aliases(event='timestamp')
 def interp_timestamp(timestamp: np.ndarray,
                      t0: float,
                      t1: float,

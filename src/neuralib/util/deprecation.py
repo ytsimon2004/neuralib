@@ -107,7 +107,7 @@ def deprecated_func(*,
     return _decorator
 
 
-def deprecated_aliases(aliases: dict[str, str]):
+def deprecated_aliases(**aliases: str):
     """
     Mark deprecated argument names and map them to new argument names in a function
 
@@ -115,7 +115,7 @@ def deprecated_aliases(aliases: dict[str, str]):
     It will raise a ``DeprecationWarning`` if the old argument name is used and will automatically
     map the value to the new argument name.
 
-    :param aliases: Dictionary mapping `old argument names` to `new argument names`.
+    :param aliases: mapping of `old argument names` to `new argument names`.
     :return: Decorated function with support for deprecated argument names.
 
     :raises RuntimeError: If a new argument name does not exist in the function's signature.

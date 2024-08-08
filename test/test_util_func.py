@@ -66,7 +66,7 @@ class TestUtilFunc(unittest.TestCase):
                       'Please use new() instead.', str(warns.warning))
 
     def test_deprecate_aliases(self):
-        @deprecated_aliases(aliases={'old': 'new'})
+        @deprecated_aliases(old='new')
         def test(new: np.ndarray):
             return np.max(new)
 
@@ -77,7 +77,7 @@ class TestUtilFunc(unittest.TestCase):
         self.assertEqual(ret, 5)
 
     def test_deprecate_aliases_runtime_err(self):
-        @deprecated_aliases(aliases={'old': 'new_arg'})
+        @deprecated_aliases(old='new_arg')
         def test(new: np.ndarray):
             return np.max(new)
 
@@ -85,7 +85,7 @@ class TestUtilFunc(unittest.TestCase):
             test()
 
     def test_deprecate_aliases_value_err(self):
-        @deprecated_aliases(aliases={'old': 'new'})
+        @deprecated_aliases(old='new')
         def test(new: np.ndarray):
             return np.max(new)
 
