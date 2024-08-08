@@ -13,7 +13,7 @@ def deprecated_class(*,
                      new_class: str | None = None,
                      remarks: str | None = None,
                      removal_version: str | None = None):
-    """A decorator to mark a class as deprecated and suggest using a new class
+    """Mark deprecated class
 
     :param new_class: The renamed new class
     :param remarks: Further remarks to be shown
@@ -109,7 +109,7 @@ def deprecated_func(*,
 
 def deprecated_aliases(aliases: dict[str, str]):
     """
-    Decorator to handle deprecated argument names and map them to new argument names.
+    Mark deprecated argument names and map them to new argument names in a function
 
     This decorator allows you to support old argument names while transitioning to new ones.
     It will raise a ``DeprecationWarning`` if the old argument name is used and will automatically

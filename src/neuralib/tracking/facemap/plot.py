@@ -18,16 +18,15 @@ def plot_facemap_keypoints(fmap: FaceMapResult,
                            frame_interval: tuple[int, int],
                            keypoints: str | ArrayLikeStr | None = None,
                            outlier_filter: bool = True,
-                           output: PathLike | None = None):
+                           output: PathLike | None = None) -> None:
     """
     Plot all the keypoints
 
     :param fmap: :class:`~neuralib.wrapper.facemap.core.FaceMapResult`
     :param frame_interval: frame interval (start/end) for the plot
-    :param keypoints: a keypoint name Or multiple keypoints. If None, then show all the keypoints
+    :param keypoints: a keypoint name or multiple keypoints. If None, then show all the keypoints
     :param outlier_filter: remove jump and do the interpolation
     :param output: output file. Show the fig if None
-    :return:
     """
     if keypoints is None:
         kps = fmap.keypoints
@@ -63,15 +62,14 @@ def plot_cmap_time_series(x: np.ndarray,
     """
     Plots a scatter plot with a colorbar
 
-    :param x: X-axis values
-    :param y: Y-axis values
+    :param x: X-axis values. `Array[float, T]`
+    :param y: Y-axis values. `Array[float, T]`
     :param cmap: Colormap to use
     :param ax: ``matplotlib.axes.Axes``
     :param with_color_bar: if show the colorbar
     :param color_bar_label: color bar label
     :param output: Output file path to save the plot
     :param kwargs: pass through ``ax.scatter()``
-    :return:
     """
     if x.size != y.size:
         raise ValueError('size xy inconsistent')

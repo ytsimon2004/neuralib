@@ -10,8 +10,8 @@ from typing_extensions import TypeAlias, Self
 
 from neuralib.typing import PathLike
 from neuralib.util.cli_args import CliArgs
-from neuralib.util.verbose import fprint
 from neuralib.util.utils import uglob
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'FACEMAP_TRACK_TYPE',
@@ -27,22 +27,24 @@ FACEMAP_TRACK_TYPE = Literal['keypoints', 'pupil']
 
 class PupilDict(TypedDict):
     """
+    Pupil data dict
+
     `Dimension parameters`:
 
         F: number pf frames
     """
     area: np.ndarray
-    """(F,)"""
+    """`Array[float, F]`"""
     com: np.ndarray
-    """center of maze (F, 2)"""
+    """center of maze in XY. `Array[float, [F, 2]]`"""
     axdir: np.ndarray
-    """(F, 2, 2)"""
+    """`Array[float, [F, 2, 2]]`"""
     axlen: np.ndarray
-    """(F, 2)"""
+    """`Array[float, [F, 2]]`"""
     area_smooth: np.ndarray
-    """(F,)"""
+    """`Array[float, F]`"""
     com_smooth: np.ndarray
-    """(F, 2)"""
+    """`Array[float, [F, 2]]`"""
 
 
 class RoiDict(TypedDict, total=False):
@@ -259,20 +261,20 @@ class FaceMapResult:
         raise NotImplementedError('')
 
     def get_pupil_area(self) -> np.ndarray:
-        """pupil area (F, )"""
+        """pupil area. `Array[float, F]`"""
         return self.get_pupil_tracking()['area_smooth']
 
     def get_pupil_center_of_mass(self) -> np.ndarray:
-        """center of mass of pupil tracking (F, 2)"""
-        return self.get_pupil_tracking()['com']
+        """center of mass of pupil tracking. `Array[float, [F, 2]]`"""
+        return self.get_pupil_tracking()['com_smooth']
 
     def get_pupil_location_movement(self) -> np.ndarray:
-        """Calculate the Euclidean distance from the origin for each point in a 2D array"""
+        """Calculate the Euclidean distance from the origin for each point in a 2D array. `Array[float, F]`"""
         com = self.get_pupil_center_of_mass()
         return np.sqrt(np.sum(com ** 2, axis=1))
 
     def get_eye_blink(self) -> np.ndarray:
-        """eye blinking array (F, )"""
+        """eye blinking array. `Array[float, F]`"""
         ret = self.svd['blink']
         if len(ret) == 1:
             return ret[0]
@@ -334,7 +336,7 @@ class FaceMapResult:
         :param with_outlier_filter:
         :param to_zscore:
         :param kwargs: pass through :meth:`~KeyPointTrack.with_outlier_filter()`
-        :return: (K, F, 2)
+        :return: keypoint in XY. `Array[float, [K, F, 2]]`
         """
         if keypoint is not None:
             kps = self.get(keypoint)
@@ -370,15 +372,15 @@ class KeyPointTrack:
     name: KeyPoint
     """name of keypoint"""
     x: np.ndarray
-    """x loc (F,)"""
+    """x loc. `Array[float, F]`"""
     y: np.ndarray
-    """y loc (F,)"""
+    """y loc. `Array[float, F]`"""
     likelihood: np.ndarray
-    """tracking likelihood (F,)"""
+    """tracking likelihood. `Array[float, F]`"""
 
     @property
     def mean_xy(self) -> np.ndarray:
-        """mean x y loc"""
+        """mean x y loc. `Array[float, F]`"""
         return (self.x + self.y) / 2
 
     def with_outlier_filter(
