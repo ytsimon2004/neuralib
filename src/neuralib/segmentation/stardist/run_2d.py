@@ -9,7 +9,7 @@ from stardist.models import StarDist2D
 from typing_extensions import Self
 
 from neuralib.argp import argument, as_argument
-from neuralib.segmentation._base import AbstractSegmentationOption
+from neuralib.segmentation.base import AbstractSegmentationOption
 from neuralib.typing import PathLike
 from neuralib.util.color_logging import setup_clogger, LOGGING_IO_LEVEL
 
@@ -115,7 +115,7 @@ class StarDistResult:
 
     def get_index_value(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        leverage the la
+        Get labelled pixel index and its value.
 
         :return: `Array[int, [P, 2]]` and `Array[float, P]`
         """
@@ -157,47 +157,67 @@ class RunStarDist2DOptions(AbstractSegmentationOption):
         else:
             self.eval()
 
-    @property
-    def output_file(self) -> Path:
-        return self.file.with_suffix('.npz')
+    @staticmethod
+    def output_file(filepath: Path) -> Path:
+        """
+        Get output save path
+
+        :param filepath: filepath for image
+        :return: output save path
+        """
+        return filepath.with_suffix('.npz')
 
     def eval(self, **kwargs) -> None:
         model = StarDist2D.from_pretrained(self.model)
-        img = self.raw_image() if self.no_normalize else self.normalize_image()  # TODO proc batch mode
-        labels, detail = model.predict_instances(img, prob_thresh=self.prob_thresh, **kwargs)
+
+        if self.file_mode:
+            image = self.raw_image() if self.no_normalize else self.normalize_image()
+            self._eval(self.file, image, model)
+
+        elif self.batch_mode:
+            iter_image = self.foreach_raw_image() if self.no_normalize else self.foreach_normalize_image()
+            for name, image in iter_image:
+                self._eval(name, image, model)
+
+    def _eval(self, filename: Path, image: np.ndarray, model: StarDist2D, **kwargs):
+        labels, detail = model.predict_instances(image, prob_thresh=self.prob_thresh, **kwargs)
 
         labels = labels.astype(np.float_)
         labels[labels == 0] = np.nan
 
         res = StarDistResult(
-            self.file.name,
+            filename.name,
             labels,
             detail['coord'],
             detail['prob']
         ).with_probability(self.prob_thresh)
 
-        res.savez(self.output_file)
+        res.savez(self.output_file(filename))
 
+    # noinspection PyTypeChecker
     def launch_napari(self, with_widget: bool = False):
         """
         Launch napari viewer for stardist results
 
         :param with_widget: If True, launch also with the starDist widget (required package ``stardist-napari``)
         """
-        if not self.output_file.exists() or self.force_re_eval:
+        file = self.output_file(self.file)
+        if not file.exists() or self.force_re_eval:
             self.eval()
 
-        res = StarDistResult.load(self.output_file)
+        res = StarDistResult.load(file)
 
         viewer = napari.Viewer()
         viewer.add_image(self.raw_image(), name='raw')
-        viewer.add_image(self.normalize_image(), name='normalized')
+        if not self.no_normalize:
+            viewer.add_image(self.normalize_image(), name='normalized')
         viewer.add_image(res.labels, name='labels', colormap='cyan', opacity=0.5)
         viewer.add_points(res.point, face_color='red')
 
         if with_widget:
             viewer.window.add_plugin_dock_widget("stardist-napari", "StarDist")
 
+        Logger.log('Launch napari!')
         napari.run()
 
 

@@ -5,7 +5,7 @@ from typing import Literal
 import torch.cuda
 
 from neuralib.argp import argument, as_argument
-from neuralib.segmentation._base import AbstractSegmentationOption
+from neuralib.segmentation.base import AbstractSegmentationOption
 from neuralib.segmentation.cellpose.core import AbstractCellPoseOption, CPOSE_MODEL
 from neuralib.util.cli_args import CliArgs
 from neuralib.util.gpu import check_mps_available

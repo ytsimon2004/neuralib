@@ -18,6 +18,7 @@ sbxreader
 # segmentation
 cellpose==3.0.5
 stardist
+csbdeep
 napari
 
 # wrapper
