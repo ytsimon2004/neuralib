@@ -69,7 +69,6 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
 
         :return: `Array[float, [H, W]]`
         """
-
         img = self.raw_image()
 
         return normalize(img, clip=True)
@@ -96,6 +95,16 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def eval(self) -> None:
         """eval the model in single file or batch files, and save the results"""
+        pass
+
+    @abc.abstractmethod
+    def output_file(self, filepath: Path) -> Path:
+        """
+        Get output save path
+
+        :param filepath: filepath for image
+        :return: output save path
+        """
         pass
 
     @abc.abstractmethod

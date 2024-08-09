@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal
+from typing import Literal, final
 
 import attrs
 import napari
@@ -19,6 +19,7 @@ Logger = setup_clogger(caller_name=Path(__file__).name)
 __all__ = ['StarDistResult']
 
 
+@final
 @attrs.define
 class StarDistResult:
     """
@@ -26,7 +27,7 @@ class StarDistResult:
 
     `Dimension parameters`:
 
-        N = Number of all cell
+        N = Number of segmented cell
 
         E = Number of polygons edge
 
@@ -47,7 +48,7 @@ class StarDistResult:
     """Coordinates. `Array[float, [N, 2, E]]`"""
 
     prob: np.ndarray
-    """Detected probablity. `Array[float, N]`"""
+    """Detected probability. `Array[float, N]`"""
 
     point: np.ndarray = attrs.field(init=False)
     """Coordinates to points by simple XY average. `Array[float, [N, 2]]`"""
@@ -136,7 +137,7 @@ class StarDistResult:
         return attrs.evolve(self, cord=self.cord[m], prob=self.prob[m])
 
 
-class RunStarDist2DOptions(AbstractSegmentationOption):
+class StarDist2DOptions(AbstractSegmentationOption):
     DESCRIPTION = 'Run the Stardist model for segmentation'
 
     model: STARDIST_MODEL = as_argument(AbstractSegmentationOption.model).with_options(
@@ -157,8 +158,7 @@ class RunStarDist2DOptions(AbstractSegmentationOption):
         else:
             self.eval()
 
-    @staticmethod
-    def output_file(filepath: Path) -> Path:
+    def output_file(self, filepath: Path) -> Path:
         """
         Get output save path
 
@@ -222,4 +222,4 @@ class RunStarDist2DOptions(AbstractSegmentationOption):
 
 
 if __name__ == '__main__':
-    RunStarDist2DOptions().main()
+    StarDist2DOptions().main()

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TypedDict, Literal, Union, Optional, final, Any
 
 import attrs
+import cellpose.gui.gui
 import cv2
 import napari
 import numpy as np
@@ -19,7 +20,7 @@ __all__ = ['CPOSE_MODEL',
            'CellPoseEvalResult']
 
 
-class ChannelDict(TypedDict):
+class ChannelDict(TypedDict, total=False):
     none: int
     gray: int
     red: int
@@ -27,7 +28,7 @@ class ChannelDict(TypedDict):
     blue: int
 
 
-DEFAULT_CHANNEL_DICT: ChannelDict = {
+CELLPOSE_CHANNEL_DICT: ChannelDict = {
     'none': -1,
     'gray': 0,
     'red': 1,
@@ -43,54 +44,58 @@ class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
 
     model: CPOSE_MODEL = as_argument(AbstractSegmentationOption.model).with_options(default='cyto3')
 
-    chan_seg: str = argument(
+    chan_seg: int = argument(
         '-C', '--chan',
-        help=f'channel for segmentation default:{DEFAULT_CHANNEL_DICT}'
+        default=CELLPOSE_CHANNEL_DICT['gray'],
+        help=f'channel for segmentation default:{CELLPOSE_CHANNEL_DICT}'
     )
 
-    chan_nuclear: str = argument(
-        '-N', '--chan-nuclear',
-        default=DEFAULT_CHANNEL_DICT['blue'],
+    chan_nuclear: int = argument(
+        '-N', '-nuclear',
+        default=CELLPOSE_CHANNEL_DICT['gray'],
         help='nuclear channel'
     )
 
     diameter: int = argument(
-        '-D', '--diameter',
+        '--diameter',
         default=7,
         help='diameter for each neuron (number of each pixel)'
     )
 
-    cellpose_gui: bool = argument(
-        '--cpose-gui',
-        help='launch_cellpose_gui for the analyzed result'
+    cellpose_view: bool = argument(
+        '--cp', '--cpose',
+        help='launch cellpose gui for the analyzed result'
     )
 
-    @property
-    def seg_result(self) -> Path:
-        if not self.file.is_file():
-            raise ValueError(f'{self.file} must be a file')
-        return self.file.with_name(self.file.stem + '_seg').with_suffix('.npy')
-
-    @abc.abstractmethod
-    def eval(self) -> Optional['CellPoseEvalResult']:
-        pass
+    def output_file(self, filepath: Path) -> Path:
+        return filepath.with_name(filepath.stem + '_seg').with_suffix('.npy')
 
     # noinspection PyTypeChecker
     def launch_napari(self):
-        res = CellPoseEvalResult.load(self.seg_result)
+        file = self.output_file(self.file)
+        if not file.exists() or self.force_re_eval:
+            self.eval()
+
+        res = CellPoseEvalResult.load(file)
 
         viewer = napari.Viewer()
-        viewer.add_image(res.image, name='raw', colormap='cyan')
-        viewer.add_image(res.masks, name='mask', opacity=0.5, colormap='red')
-        viewer.add_image(res.outlines, name='outline', opacity=0.5)
+        viewer.add_image(res.image, name='image', colormap='cyan')
+        viewer.add_image(res.nan_masks(), name='mask', colormap='red', opacity=0.5)
+        viewer.add_image(res.nan_outlines(), name='outline', opacity=0.5)
 
         napari.run()
 
     def launch_cellpose_gui(self):
-        """FIXME AttributeError: 'MainW' object has no attribute 'load_3D'. Cellpose version 3.0.5
+        """AttributeError: 'MainW' object has no attribute 'load_3D'. Cellpose version 3.0.10.
+
+        TODO open issue in cellpose -> move ``load_3D`` instance attribute to line above ``io._load_image()`` in ``MainW.__init__()``
         """
-        from cellpose.gui.gui import run
-        run(str(self.seg_result))
+
+        file = self.output_file(self.file)
+        if not file.exists() or self.force_re_eval:
+            self.eval()
+
+        cellpose.gui.gui.run(image=str(self.file))  # finding seg result in the same dir
 
 
 # ========== #
@@ -114,17 +119,39 @@ class NormParams(TypedDict):
 @final
 @attrs.define
 class CellPoseEvalResult:
-    # inputs
+    """
+    Cellpose results
+
+    `Dimension parameters`:
+
+        N = Number of segmented cell
+
+        W = Image width
+
+        H = Image height
+    """
+
+    # ====== #
+    # Inputs #
+    # ====== #
+
     filename: str
     """image file name"""
+
     image: Union[np.ndarray, list[np.ndarray]]
+    """image array"""
+
     diameter: float
     """neuronal diameter"""
-    chan_choose: list[int]
-    """[chan_neg, chan_nuclear]"""
 
-    # result
-    masks: list[np.ndarray] = attrs.Factory(list)
+    chan_choose: list[int]
+    """[chan_seg, chan_nuclear]"""
+
+    # ======= #
+    # Results #
+    # ======= #
+
+    masks: np.ndarray
     """each pixel in the image is assigned to an ROI (H, W)
     list of 2D arrays, labelled image, where 0=no masks; 1,2,...=mask labels
     """
@@ -169,9 +196,10 @@ class CellPoseEvalResult:
 
     # Overwrite while calling save
     outlines: np.ndarray = attrs.field(default=np.array([]), kw_only=True)
-    """outlines of ROIs (H, W)"""
+    """outlines of ROIs. `Array[float, [H, W]]`"""
+
     ismanual: np.ndarray = attrs.field(default=np.array([]), kw_only=True)
-    """whether or not mask k was manually drawn or computed by the cellpose algorithm. bool array (N, )"""
+    """whether or not mask k was manually drawn or computed by the cellpose algorithm. `Array[bool, N]`"""
 
     @classmethod
     def load(cls, seg_file: PathLike) -> Self:
@@ -203,3 +231,17 @@ class CellPoseEvalResult:
                            imgs_restore=self.img_restore,
                            restore_type=self.restore,
                            ratio=self.ratio)
+
+    def nan_masks(self) -> np.ndarray:
+        """value 0 in ``masks`` to nan"""
+        masks = self.masks.copy().astype(np.float_)
+        masks[masks == 0] = np.nan
+
+        return masks
+
+    def nan_outlines(self) -> np.ndarray:
+        """value 0 in ``outlines`` to nan"""
+        outlines = self.outlines.copy().astype(np.float_)
+        outlines[outlines == 0] = np.nan
+
+        return outlines

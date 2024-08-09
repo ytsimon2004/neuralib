@@ -47,12 +47,12 @@ def setup_logger() -> logging.Logger:
     return logging.getLogger()
 
 
-def setup_clogger(level: int | str = 10,
+def setup_clogger(level: int | str = 11,
                   caller_name: str | None = None) -> logging.Logger:
     """
     Return a logger with a default ColoredFormatter.
 
-    :param level: default level = 10 (DEBUG level)
+    :param level: default level = 11. If want to show in DEBUG level, use 10
     :param caller_name: show the name <Path name, Script name, ...> if needed
     :return:
     """

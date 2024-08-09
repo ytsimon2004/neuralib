@@ -29,6 +29,7 @@ from neuralib.util.table import rich_data_frame_table
 
 __all__ = [
     'print_gpu_table',
+    'gpu_enable',
     'check_mps_available',
     'check_nvidia_cuda_available'
 ]
@@ -107,11 +108,20 @@ def _get_gpu_mac() -> GPUInfoMac:
     return ret
 
 
+def gpu_enable() -> bool:
+    system = platform.system()
+    if system in ('win32', 'Windows', 'Linux'):
+        return check_nvidia_cuda_available()
+    elif system == 'Darwin':
+        return check_mps_available()
+
+
 def print_gpu_table() -> None:
-    if platform.system() in ('win32', 'Windows'):
+    system = platform.system()
+    if system in ('win32', 'Windows', 'Linux'):
         info = _get_gpu_windows()
         check_nvidia_cuda_available()
-    elif platform.system() == 'Darwin':
+    elif system == 'Darwin':
         info = _get_gpu_mac()
         check_mps_available()
     else:

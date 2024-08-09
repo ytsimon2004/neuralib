@@ -1,7 +1,10 @@
+from pathlib import Path
 from typing import ClassVar
 
+import numpy as np
 from cellpose import denoise
 
+from neuralib.util.gpu import gpu_enable
 from .core import AbstractCellPoseOption, CellPoseEvalResult
 
 __all__ = ['CellPoseEvalResult']
@@ -14,40 +17,52 @@ class CellPoseAPIOption(AbstractCellPoseOption):
     RESTORE_RATIO: ClassVar[float] = 1.0
 
     def run(self):
-        if self.seg_result.exists():
-            if self.napari_view:
-                self.launch_napari()
-            elif self.cellpose_gui:
-                self.launch_cellpose_gui()
+        if self.napari_view:
+            self.launch_napari()
+        elif self.cellpose_view:
+            self.launch_cellpose_gui()
         else:
-            res = self.eval()
-            res.save_seg_file()
+            self.eval()
 
-    def get_model(self) -> denoise.CellposeDenoiseModel:
-        return denoise.CellposeDenoiseModel(gpu=True,
-                                            model_type=self.model,
-                                            restore_type=self.RESTORE_TYPE,
-                                            chan2_restore=True)
+    def eval(self):
+        if self.file_mode:
+            img = self.raw_image() if self.no_normalize else self.normalize_image()
+            self._eval(self.file, img)
 
-    def eval(self) -> CellPoseEvalResult:
-        img = self.raw_image()
-        channel_choose = [int(self.chan_seg), int(self.chan_nuclear)]
-        model = self.get_model()
-        masks, flows, styles, imgs_dn = model.eval(img,
-                                                   channels=channel_choose,
-                                                   diameter=self.diameter)
-        return CellPoseEvalResult(
-            str(self.file.with_suffix('')),
-            img,
+        elif self.batch_mode:
+            iter_image = self.foreach_raw_image() if self.no_normalize else self.foreach_normalize_image()
+            for name, img in iter_image:
+                self._eval(name, img)
+
+    def _eval(self, filename: Path, image: np.ndarray):
+        channel_choose = [self.chan_seg, self.chan_nuclear]
+        model = denoise.CellposeDenoiseModel(
+            gpu=True if gpu_enable() else False,
+            model_type=self.model,
+            restore_type=self.RESTORE_TYPE,
+            chan2_restore=True
+        )
+
+        masks, flows, styles, imgs_dn = model.eval(
+            image,
+            channels=channel_choose,
+            diameter=self.diameter
+        )
+
+        ret = CellPoseEvalResult(
+            filename.name,
+            image,
             self.diameter,
             channel_choose,
             masks,
             flows,
             styles,
             img_restore=imgs_dn,
-            restore_type=self.RESTORE_TYPE,
+            restore=self.RESTORE_TYPE,
             ratio=self.RESTORE_RATIO
         )
+
+        ret.save_seg_file()
 
 
 if __name__ == '__main__':
