@@ -67,12 +67,12 @@ class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
         help='launch cellpose gui for the analyzed result'
     )
 
-    def output_file(self, filepath: Path) -> Path:
+    def seg_output(self, filepath: Path) -> Path:
         return filepath.with_name(filepath.stem + '_seg').with_suffix('.npy')
 
     # noinspection PyTypeChecker
     def launch_napari(self):
-        file = self.output_file(self.file)
+        file = self.seg_output(self.file)
         if not file.exists() or self.force_re_eval:
             self.eval()
 
@@ -91,7 +91,7 @@ class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
         TODO open issue in cellpose -> move ``load_3D`` instance attribute to line above ``io._load_image()`` in ``MainW.__init__()``
         """
 
-        file = self.output_file(self.file)
+        file = self.seg_output(self.file)
         if not file.exists() or self.force_re_eval:
             self.eval()
 
@@ -218,6 +218,7 @@ class CellPoseEvalResult:
         return cls(**res, image=image)
 
     def save_seg_file(self) -> None:
+        """save as ``*_seg.npy` file`"""
         from cellpose.io import masks_flows_to_seg
 
         if not isinstance(self.image, list):
@@ -232,6 +233,23 @@ class CellPoseEvalResult:
                            restore_type=self.restore,
                            ratio=self.ratio)
 
+    def save_roi(self, output_file: PathLike) -> None:
+        """Save as imageJ ``.roi`` file.
+        CHECKOUT native BUG: `<https://github.com/MouseLand/cellpose/issues/969>`_
+        """
+        from roifile import ImagejRoi, ROI_TYPE, ROI_OPTIONS
+
+        points = np.fliplr(self.points)  # XY rotate in .roi format
+        roi = ImagejRoi(
+            roitype=ROI_TYPE.POINT,
+            options=ROI_OPTIONS.PROMPT_BEFORE_DELETING | ROI_OPTIONS.SUB_PIXEL_RESOLUTION,
+            n_coordinates=self.points.shape[0],
+            integer_coordinates=points,
+            subpixel_coordinates=points
+        )
+
+        roi.tofile(output_file)
+
     def nan_masks(self) -> np.ndarray:
         """value 0 in ``masks`` to nan"""
         masks = self.masks.copy().astype(np.float_)
@@ -245,3 +263,18 @@ class CellPoseEvalResult:
         outlines[outlines == 0] = np.nan
 
         return outlines
+
+    @property
+    def points(self) -> np.ndarray:
+        """Calculate center of each segmented area in pixel. `Array[int, N]`"""
+        labels = np.unique(self.masks)
+        labels = labels[labels != 0]  # remove background
+
+        n_neurons = len(labels)
+        centers = np.zeros((n_neurons, 2))
+        for i, label in enumerate(labels):
+            segment_coords = np.argwhere(self.masks == label)
+            center = segment_coords.mean(axis=0)
+            centers[i] = center
+
+        return np.round(centers).astype(int)

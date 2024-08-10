@@ -34,7 +34,7 @@ class CellPoseAPIOption(AbstractCellPoseOption):
             for name, img in iter_image:
                 self._eval(name, img)
 
-    def _eval(self, filename: Path, image: np.ndarray):
+    def _eval(self, filepath: Path, image: np.ndarray):
         channel_choose = [self.chan_seg, self.chan_nuclear]
         model = denoise.CellposeDenoiseModel(
             gpu=True if gpu_enable() else False,
@@ -50,7 +50,7 @@ class CellPoseAPIOption(AbstractCellPoseOption):
         )
 
         ret = CellPoseEvalResult(
-            filename.name,
+            filepath.name,
             image,
             self.diameter,
             channel_choose,
@@ -63,6 +63,9 @@ class CellPoseAPIOption(AbstractCellPoseOption):
         )
 
         ret.save_seg_file()
+
+        if self.save_ij_roi:
+            ret.save_roi(self.ij_roi_output(filepath))
 
 
 if __name__ == '__main__':

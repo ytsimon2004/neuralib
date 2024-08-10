@@ -19,11 +19,12 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
     directory_suffix: str = argument('--suffix', default='.tif',
                                      choices=['.tif', '.tiff', '.png'],
                                      help='suffix in batch mode')
-    model: str = argument('-M', '--model', metavar='MODEL', help='which pretrained model')
-    napari_view: bool = argument('--napari', help='view in napari')
-
-    no_normalize: bool = argument('--no-norm', help='NOT DO Percentile-based image normalization for eval')
+    save_ij_roi: bool = argument('--ij-roi', help='if save also the imageJ/Fiji compatible .roi file')
     force_re_eval: bool = argument('--force-eval', '--re', help='force re-evaluate the result')
+
+    model: str = argument('-M', '--model', metavar='MODEL', help='which pretrained model')
+    no_normalize: bool = argument('--no-norm', help='NOT DO Percentile-based image normalization for eval')
+    napari_view: bool = argument('--napari', help='view in napari')
 
     def post_parsing(self):
         """check args is valid"""
@@ -93,18 +94,27 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
             yield name, normalize(raw, clip=True)
 
     @abc.abstractmethod
-    def eval(self) -> None:
-        """eval the model in single file or batch files, and save the results"""
-        pass
-
-    @abc.abstractmethod
-    def output_file(self, filepath: Path) -> Path:
+    def seg_output(self, filepath: Path) -> Path:
         """
-        Get output save path
+        Get segmented output save path
 
         :param filepath: filepath for image
-        :return: output save path
+        :return: segmented output save path
         """
+        pass
+
+    def ij_roi_output(self, filepath: Path) -> Path:
+        """
+        Get imageJ/Fiji ``.roi`` output save path
+
+        :param filepath: filepath for image
+        :return: ij roi output save path
+        """
+        return filepath.with_suffix('.roi')
+
+    @abc.abstractmethod
+    def eval(self) -> None:
+        """eval the model in single file or batch files, and save the results"""
         pass
 
     @abc.abstractmethod

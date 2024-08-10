@@ -19,6 +19,7 @@ sbxreader
 cellpose==3.0.5
 stardist
 csbdeep
+roifile
 napari
 
 # wrapper

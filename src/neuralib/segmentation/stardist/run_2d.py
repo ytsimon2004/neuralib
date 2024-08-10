@@ -44,23 +44,23 @@ class StarDistResult:
     labels: np.ndarray
     """Image with label. `Array[float, [H, W]]`"""
 
-    cord: np.ndarray
+    cords: np.ndarray
     """Coordinates. `Array[float, [N, 2, E]]`"""
 
     prob: np.ndarray
     """Detected probability. `Array[float, N]`"""
 
-    point: np.ndarray = attrs.field(init=False)
+    points: np.ndarray = attrs.field(init=False)
     """Coordinates to points by simple XY average. `Array[float, [N, 2]]`"""
 
     def __attrs_post_init__(self):
-        p = np.zeros((self.cord.shape[0], 2))
-        for i, c in enumerate(self.cord):
+        p = np.zeros((self.cords.shape[0], 2))
+        for i, c in enumerate(self.cords):
             x_mean = np.mean(c[0, :])
             y_mean = np.mean(c[1, :])
             p[i, 0] = x_mean
             p[i, 1] = y_mean
-        self.point = p
+        self.points = p
 
     @classmethod
     def load(cls, file: PathLike) -> Self:
@@ -69,7 +69,7 @@ class StarDistResult:
         return cls(
             filename=dat['filename'],
             labels=cls._reconstruct_labels_from_index_value(dat),
-            cord=dat['cord'],
+            cords=dat['cord'],
             prob=dat['prob'],
         )
 
@@ -105,14 +105,29 @@ class StarDistResult:
 
         np.savez(output_file,
                  filename=self.filename,
-                 cord=self.cord,
+                 cord=self.cords,
                  prob=self.prob,
-                 point=self.point,
+                 point=self.points,
                  shape=shape,
                  index=index,
                  value=value)
 
         Logger.log(LOGGING_IO_LEVEL, f'save stardist results to {output_file}')
+
+    def save_roi(self, output_file: PathLike) -> None:
+        """Save as imageJ ``.roi`` file"""
+        from roifile import ImagejRoi, ROI_TYPE, ROI_OPTIONS
+
+        points = np.fliplr(self.points)  # XY rotate in .roi format
+        roi = ImagejRoi(
+            roitype=ROI_TYPE.POINT,
+            options=ROI_OPTIONS.PROMPT_BEFORE_DELETING | ROI_OPTIONS.SUB_PIXEL_RESOLUTION,
+            n_coordinates=self.points.shape[0],
+            integer_coordinates=points,
+            subpixel_coordinates=points
+        )
+
+        roi.tofile(output_file)
 
     def get_index_value(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -134,7 +149,7 @@ class StarDistResult:
 
     def with_probability(self, threshold: float) -> Self:
         m = self.prob >= threshold
-        return attrs.evolve(self, cord=self.cord[m], prob=self.prob[m])
+        return attrs.evolve(self, cord=self.cords[m], prob=self.prob[m])
 
 
 class StarDist2DOptions(AbstractSegmentationOption):
@@ -158,7 +173,7 @@ class StarDist2DOptions(AbstractSegmentationOption):
         else:
             self.eval()
 
-    def output_file(self, filepath: Path) -> Path:
+    def seg_output(self, filepath: Path) -> Path:
         """
         Get output save path
 
@@ -179,20 +194,23 @@ class StarDist2DOptions(AbstractSegmentationOption):
             for name, image in iter_image:
                 self._eval(name, image, model)
 
-    def _eval(self, filename: Path, image: np.ndarray, model: StarDist2D, **kwargs):
+    def _eval(self, filepath: Path, image: np.ndarray, model: StarDist2D, **kwargs):
         labels, detail = model.predict_instances(image, prob_thresh=self.prob_thresh, **kwargs)
 
         labels = labels.astype(np.float_)
         labels[labels == 0] = np.nan
 
         res = StarDistResult(
-            filename.name,
+            filepath.name,
             labels,
             detail['coord'],
             detail['prob']
         ).with_probability(self.prob_thresh)
 
-        res.savez(self.output_file(filename))
+        res.savez(self.seg_output(filepath))
+
+        if self.save_ij_roi:
+            res.save_roi(self.ij_roi_output(filepath))
 
     # noinspection PyTypeChecker
     def launch_napari(self, with_widget: bool = False):
@@ -201,7 +219,7 @@ class StarDist2DOptions(AbstractSegmentationOption):
 
         :param with_widget: If True, launch also with the starDist widget (required package ``stardist-napari``)
         """
-        file = self.output_file(self.file)
+        file = self.seg_output(self.file)
         if not file.exists() or self.force_re_eval:
             self.eval()
 
@@ -212,7 +230,7 @@ class StarDist2DOptions(AbstractSegmentationOption):
         if not self.no_normalize:
             viewer.add_image(self.normalize_image(), name='normalized')
         viewer.add_image(res.labels, name='labels', colormap='cyan', opacity=0.5)
-        viewer.add_points(res.point, face_color='red')
+        viewer.add_points(res.points, face_color='red')
 
         if with_widget:
             viewer.window.add_plugin_dock_widget("stardist-napari", "StarDist")

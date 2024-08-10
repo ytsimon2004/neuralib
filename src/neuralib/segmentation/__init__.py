@@ -14,9 +14,4 @@ Design mainly for quick visualization of results and batch processing (i.e., who
 If only small amount of images, **the native GUI are recommended**.
 
 
-TODO
------
-
-- [ ] Fiji ``.roi`` dat converter
-
 """
