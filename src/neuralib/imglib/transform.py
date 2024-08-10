@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import cv2
 import numpy as np
 
-__all__ = ['affine_transform']
+__all__ = ['affine_transform',
+           'apply_transformation']
 
 
 def affine_transform(src: np.ndarray) -> np.ndarray:
@@ -32,3 +35,22 @@ def affine_transform(src: np.ndarray) -> np.ndarray:
     warp_dst = cv2.warpAffine(src, mat, (src.shape[1], src.shape[0]))
 
     return warp_dst
+
+
+def apply_transformation(img: np.ndarray,
+                         trans_mtx: np.ndarray,
+                         **kwargs) -> np.ndarray:
+    """
+    2D image transform
+
+    :param img: image array
+    :param trans_mtx: Transformation matrix. `Array[float, [3, 3]]`
+    :param kwargs: additional arguments pass to ``cv2.warpPerspective()``
+    :return:
+    """
+    height, width, _ = img.shape
+
+    if trans_mtx.shape != (3, 3):
+        raise ValueError(f'invalid transformation shape: {trans_mtx.shape}')
+
+    return cv2.warpPerspective(img, trans_mtx, (width, height), **kwargs)

@@ -484,7 +484,7 @@ class SlicePlane:
             ann_img = load_slice_view('ccf_annotation',
                                       self.view.plane_type,
                                       allen_annotation_res=self.view.resolution).plane(self.plane_offset)
-            ann = ImageProcFactory(ann_img).covert_grey_scale().edge_detection(10, 0).image
+            ann = ImageProcFactory(ann_img).cvt_gray().edge_detection(10, 0).image
 
             ann = ann.astype(float)
             ann[ann <= 10] = np.nan

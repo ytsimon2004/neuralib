@@ -21,7 +21,7 @@ def read_sequences(avi_file: str | PathLike,
 
     :param avi_file: Path to the AVI file.
     :param grey_scale: Whether to convert frames to grayscale.
-    :return: (F, W, H, <3>) sequences array
+    :return: Sequences array. `Array[float, [F, W, H]|[F, W, H, 3]]`
     """
     cap = cv2.VideoCapture(str(avi_file))
     if not cap.isOpened():
@@ -69,7 +69,7 @@ def read_pdf(file: PathLike,
 
             `<https://stackoverflow.com/questions/53481088/poppler-in-path-for-pdf2image>`_
     :param kwargs: pass through `convert_from_path`
-    :return: image array
+    :return: Image array
     """
     from pdf2image import convert_from_path
     from pdf2image.exceptions import PDFInfoNotInstalledError
@@ -100,12 +100,12 @@ def tif_to_gif(image_file: PathLike,
     imageio.mimsave(output_path, frames, fps=fps)
 
 
-def write_avi(file_path: str, frames: np.ndarray, fps: int = 30.0):
+def write_avi(file_path: str, frames: np.ndarray, fps: int = 30.0) -> None:
     """
     Write a sequence of frames to an AVI file.
 
     :param file_path: The path where the AVI file will be saved.
-    :param frames: A NumPy array of shape (F, H, W, 3) containing the frames.
+    :param frames: `Array[float, [F, W, H]|[F, W, H, 3]]` containing the frames.
     :param fps: The frames per second (frame rate) of the output video.
     """
     if not file_path.endswith('avi'):

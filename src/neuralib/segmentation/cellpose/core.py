@@ -218,7 +218,7 @@ class CellPoseEvalResult:
         return cls(**res, image=image)
 
     def save_seg_file(self) -> None:
-        """save as ``*_seg.npy` file`"""
+        """Save as ``seg.npy`` file`"""
         from cellpose.io import masks_flows_to_seg
 
         if not isinstance(self.image, list):

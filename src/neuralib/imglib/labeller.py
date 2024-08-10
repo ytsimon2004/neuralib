@@ -18,11 +18,11 @@ Load sequences from a directory
 
 See help::
 
-    python labeller.py -h
+    python -m neuralib.imglib.labeller -h
 
 Example::
 
-    python labeller.py -D <DIR>
+    python neuralib.imglib.labeller -D <DIR>
 
 
 - Use API call
@@ -65,9 +65,9 @@ from tifffile import tifffile
 from tqdm import tqdm
 from typing_extensions import Self
 
+from neuralib.typing import PathLike
 from neuralib.util.csv import csv_header
 from neuralib.util.util_cv2 import get_keymapping, KeyMapping, find_key_from_value
-from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
 
 __all__ = ['SequenceLabeller']
@@ -80,7 +80,7 @@ class FrameInfo:
     filename: str
     """name of the an image/frame"""
     image: np.ndarray
-    """(H, W, <3>)"""
+    """`Array[float, [H, W]|[H, W, 3])`"""
     notes: str | None = attrs.field(default=None)
     """notes for the image"""
 

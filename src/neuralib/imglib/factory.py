@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar, final, Literal
+from typing import final, Literal
 
 import attrs
 import cv2
@@ -13,46 +13,31 @@ __all__ = [
     'ImageProcFactory',
     'IMAGE_CHANNEL_TYPE',
     #
-    'apply_transformation',
-    'detect_feature'
+    'recover_overexposure',
 ]
 
-T = TypeVar('T')
 IMAGE_CHANNEL_TYPE = Literal['red', 'green', 'blue', 'r', 'g', 'b']
 
 
 @final
 @attrs.define(repr=False)
-class ImageProcFactory(Generic[T]):
+class ImageProcFactory:
     """Factory for basic imaging processing"""
-
     image: np.ndarray
-    """(H, W, 4 | 3) or (H, W)"""
-
-    color_type: T | None = attrs.field(init=False, default=None)
-    """image color type"""
-
-    def __repr__(self):
-        shape = self.image.shape
-        ctype = self.color_type
-        return f'Shape: {shape}, color: {ctype}'
-
-    def __attrs_post_init__(self):
-        if self.image.ndim == 2:
-            self.color_type = 'GrayScale'
-        elif self.image.ndim == 3:
-            c = self.image.shape[2]
-            if c == 3:
-                self.color_type = 'RGB'
-            elif c == 4:
-                self.color_type = 'RGBA'
-
-        assert self.color_type is not None, 'color type could not be inferred'
+    """image array. `Array[float, [H, W]|[H, W, 3]|[H, W, 4]]`"""
 
     @classmethod
     def load(cls, file: PathLike,
              to_rgba: bool | None = None,
              to_rgb: bool | None = True) -> Self:
+        """
+        Load the image file
+
+        :param file: filepath of the image
+        :param to_rgba: convert to RGBA colorscale
+        :param to_rgb: convert to RGB colorscale
+        :return:
+        """
 
         img = cv2.imread(str(file))
 
@@ -67,17 +52,22 @@ class ImageProcFactory(Generic[T]):
 
     @property
     def height(self) -> int:
+        """image height `H`"""
         return self.image.shape[0]
 
     @property
     def width(self) -> int:
+        """image width `W`"""
         return self.image.shape[1]
 
-    def with_channel(self, channel: IMAGE_CHANNEL_TYPE) -> Self:
-        """select rgb channel"""
+    def select_channel(self, channel: IMAGE_CHANNEL_TYPE) -> Self:
+        """Select `RGB` channel
 
-        if self.color_type not in ('RGBA', 'RGB'):
-            raise TypeError(f'{self.color_type} not able to split channel')
+        :param channel: {red', 'green', 'blue', 'r', 'g', 'b'}
+        """
+
+        if self.image.ndim < 3:
+            raise TypeError('shape invalid for splitting channel')
 
         if channel in ('r', 'red'):
             img = cv2.split(self.image)[0]
@@ -91,11 +81,11 @@ class ImageProcFactory(Generic[T]):
         return attrs.evolve(self, image=img)
 
     def view_2d(self, flip: bool = True) -> Self:
-        """view image as 2d array (H, W)"""
-        if self.color_type == 'RGBA':
+        """view `RGB` or `RGBA` image as 2d array. `Array[float, [H, W]]`"""
+        if self.image.shape[2] == 4:
             w, h, _ = self.image.shape
             img = self.image.view(dtype=np.uint32).reshape((w, h))
-        elif self.color_type == 'RGB':
+        elif self.image.shape[2] == 3:
             r = self.image[:, :, 0]
             g = self.image[:, :, 1]
             b = self.image[:, :, 2]
@@ -112,12 +102,17 @@ class ImageProcFactory(Generic[T]):
     # ============= #
     # Basic Process #
     # ============= #
-    def covert_grey_scale(self) -> Self:
-        if self.color_type == 'GrayScale':
+
+    def cvt_gray(self) -> Self:
+        """convert to grayscale"""
+        if self.image.ndim == 2:
             return attrs.evolve(self, image=np.uint8(self.image))
+        elif self.image.shape[2] == 3:
+            return attrs.evolve(self, image=cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY))
+        elif self.image.shape[2] == 4:
+            return attrs.evolve(self, image=(cv2.cvtColor(self.image, cv2.COLOR_RGBA2GRAY)))
         else:
-            img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            return attrs.evolve(self, image=img)
+            raise RuntimeError('')
 
     def gaussian_blur(self, ksize: int, sigma: int) -> Self:
         img = cv2.GaussianBlur(self.image, (ksize, ksize), sigmaX=sigma, sigmaY=sigma)
@@ -126,7 +121,7 @@ class ImageProcFactory(Generic[T]):
     def edge_detection(self,
                        lower_threshold: int = 30,
                        upper_threshold: int = 150) -> Self:
-        grey_img = self.covert_grey_scale().image
+        grey_img = self.cvt_gray().image
         img = cv2.Canny(grey_img, lower_threshold, upper_threshold)
         return attrs.evolve(self, image=img)
 
@@ -134,9 +129,13 @@ class ImageProcFactory(Generic[T]):
         _, img = cv2.threshold(self.image, threshold, 255, cv2.THRESH_BINARY)
         return attrs.evolve(self, image=img)
 
-    def de_noise(self) -> Self:
-        gray_img = self.covert_grey_scale().image
-        return attrs.evolve(self, image=de_noise(gray_img))
+    def de_noise(self, h: int = 10, temp_win_size: int = 7, search_win_size: int = 21) -> Self:
+        gray_img = self.cvt_gray().image
+        dn = cv2.fastNlMeansDenoising(gray_img,
+                                      h=h,
+                                      templateWindowSize=temp_win_size,
+                                      searchWindowSize=search_win_size)
+        return attrs.evolve(self, image=dn)
 
     def local_maxima_image(self, channel: IMAGE_CHANNEL_TYPE, **kwargs) -> Self:
         """
@@ -144,32 +143,15 @@ class ImageProcFactory(Generic[T]):
         i.e., used in roi selection of the neuron before counting
 
         :param channel: color of image
-        :return:
-            (H, W) 2d array
+        :return: `Array[float, [H, W]]`
         """
         from skimage.morphology import local_maxima
 
-        image = self.with_channel(channel).image
+        image = self.select_channel(channel).image
         if np.sum(image) == 0:
             return attrs.evolve(self, image=np.zeros_like(image, dtype=np.uint8))
         else:
             return attrs.evolve(self, image=local_maxima(image, **kwargs))
-
-
-def de_noise(gray_img: np.ndarray) -> np.ndarray:
-    # https://stackoverflow.com/questions/62042172/how-to-remove-noise-in-image-opencv-python
-    blur = cv2.GaussianBlur(gray_img, (3, 3), sigmaX=30, sigmaY=30)
-    divide = cv2.divide(gray_img, blur, scale=255)
-    # otsu threshold
-    thresh = cv2.threshold(divide, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
-    # apply morphology
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-
-    cv2.imwrite("test.jpg", thresh)
-
-    return thresh
 
 
 def recover_overexposure(img: np.ndarray,
@@ -178,29 +160,3 @@ def recover_overexposure(img: np.ndarray,
     """recover saturated fluorescence image"""
     proc = cv2.addWeighted(img, alpha, np.zeros_like(img), beta, 0.0)
     return proc
-
-
-def apply_transformation(img: np.ndarray,
-                         trans_mtx: np.ndarray,
-                         **kwargs) -> np.ndarray:
-    """2D image transform"""
-
-    height, width, _ = img.shape
-
-    if trans_mtx.shape != (3, 3):
-        raise ValueError(f'invalid transformation shape: {trans_mtx.shape}')
-
-    return cv2.warpPerspective(img, trans_mtx, (width, height), **kwargs)
-
-
-def detect_feature(img: np.ndarray,
-                   filter_type: str = 'ORB') -> tuple[np.ndarray, np.ndarray]:
-    if filter_type == 'ORB':
-        f = cv2.ORB_create()
-    elif filter_type == 'SIFT':
-        f = cv2.SIFT_create()
-    else:
-        raise NotImplementedError('')
-    keypoints, descriptors = f.detectAndCompute(img, None)
-
-    return keypoints, descriptors
