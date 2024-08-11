@@ -75,8 +75,6 @@
 
 - `neuralib.plot`: Module for general plotting purpose
 
-- `neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
-
 - `neuralib.imglib`: Image processing library (under DEV)
 
 - `neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write

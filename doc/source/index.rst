@@ -129,8 +129,6 @@ Utilities Modules
 
 - :mod:`neuralib.plot`:Module for general plotting purpose
 
-- :mod:`neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
-
 - :mod:`neuralib.imglib`:Image processing library
 
 - :mod:`neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write

@@ -2,12 +2,12 @@
 Get basic GPU info table and verbose
 --------------------------------------
 
-- cuda driver (Windows)
+- cuda driver (Windows/Linux)
 - metal backend support (MacOS)
 
 .. code-block:: python
 
-    from neuralib.util.gpu import setup_clogger
+    from neuralib.util.gpu import print_gpu_table
     print_gpu_table()
 
 
