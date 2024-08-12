@@ -4,7 +4,7 @@ from typing import ClassVar
 import numpy as np
 from cellpose import denoise
 
-from neuralib.util.gpu import gpu_enable
+from neuralib.util.gpu import gpu_available
 from .core import AbstractCellPoseOption, CellPoseEvalResult
 
 __all__ = ['CellPoseEvalResult']
@@ -37,7 +37,7 @@ class CellPoseAPIOption(AbstractCellPoseOption):
     def _eval(self, filepath: Path, image: np.ndarray):
         channel_choose = [self.chan_seg, self.chan_nuclear]
         model = denoise.CellposeDenoiseModel(
-            gpu=True if gpu_enable() else False,
+            gpu=True if gpu_available(backend='torch') else False,
             model_type=self.model,
             restore_type=self.RESTORE_TYPE,
             chan2_restore=True

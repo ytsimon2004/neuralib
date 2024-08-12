@@ -1,10 +1,8 @@
 import subprocess
 
-import torch.cuda
-
 from neuralib.segmentation.cellpose.core import AbstractCellPoseOption
 from neuralib.util.cli_args import CliArgs
-from neuralib.util.gpu import check_mps_available
+from neuralib.util.gpu import check_mps_available, check_nvidia_cuda_available
 from neuralib.util.verbose import fprint
 
 __all__ = ['CellPoseSubprocOption']
@@ -45,7 +43,7 @@ class CellPoseSubprocOption(AbstractCellPoseOption):
             ret.extend(CliArgs('--no_norm').as_command())
 
         #
-        if torch.cuda.is_available() or check_mps_available():
+        if check_nvidia_cuda_available(backend='torch') or check_mps_available(backend='torch'):
             ret.extend(CliArgs('--use_gpu').as_command())
 
             if check_mps_available():
