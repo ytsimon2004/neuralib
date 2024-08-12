@@ -8,7 +8,6 @@ anytree
 # scanner
 xmltodict
 aicspylibczi
-roifile==2022.3.18
 
 # calimg
 scanimage-tiff-reader
@@ -22,29 +21,29 @@ csbdeep
 roifile
 napari
 
-# wrapper
-facemap
+# model
 rastermap
+
+# track
+facemap
 neuropop
 
 # gui
 bokeh>=3.3.0
 
-# GPUs
+# gpu
 torch
 tensorflow
 
-# profile
+# profile/resource
 memory_profiler
 psutil
-
-# jit
 numba
 
-# image io
+# imglib
 pdf2image
 imageio
 
-# others
+# tools
 slackclient
 gspread
