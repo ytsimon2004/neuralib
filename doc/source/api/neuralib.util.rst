@@ -15,7 +15,6 @@ neuralib.util
     neuralib.util.func
     neuralib.util.gpu
     neuralib.util.io
-    neuralib.util.json
     neuralib.util.profile_test
     neuralib.util.table
     neuralib.util.tqdm

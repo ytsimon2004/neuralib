@@ -9,6 +9,7 @@ neuralib package
     neuralib.bokeh_model
     neuralib.calimg
     neuralib.imglib
+    neuralib.io
     neuralib.model
     neuralib.plot
     neuralib.signal

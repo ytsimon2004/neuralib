@@ -5,7 +5,7 @@ from typing import ClassVar
 import polars as pl
 import polars.testing
 
-from neuralib.util.csv import csv_header
+from neuralib.io import csv_header
 
 
 class TestCSVContextManager(unittest.TestCase):

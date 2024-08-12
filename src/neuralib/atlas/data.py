@@ -10,8 +10,8 @@ import pandas as pd
 import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
 
+from neuralib.io.core import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
 from neuralib.typing import PathLike
-from neuralib.util.io import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
 from neuralib.util.tqdm import download_with_tqdm
 from neuralib.util.verbose import fprint
 

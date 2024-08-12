@@ -8,8 +8,8 @@ from iblatlas.atlas import AllenAtlas
 from iblatlas.regions import BrainRegions
 from matplotlib.axes import Axes
 
+from neuralib.io.core import IBL_CACHE_DIRECTORY
 from neuralib.typing import ArrayLike, PathLike, ArrayLikeStr
-from neuralib.util.io import IBL_CACHE_DIRECTORY
 
 __all__ = [
     #

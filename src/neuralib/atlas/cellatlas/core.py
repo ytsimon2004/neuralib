@@ -8,7 +8,7 @@ import pandas as pd
 import polars as pl
 
 from neuralib.atlas.data import load_structure_tree
-from neuralib.util.io import ATLAS_CACHE_DIRECTORY
+from neuralib.io.core import ATLAS_CACHE_DIRECTORY
 from neuralib.util.verbose import fprint
 
 __all__ = ['CellAtlas']
