@@ -69,7 +69,7 @@ class StarDistResult:
         return cls(
             filename=dat['filename'],
             labels=cls._reconstruct_labels_from_index_value(dat),
-            cords=dat['cord'],
+            cords=dat['cords'],
             prob=dat['prob'],
         )
 
@@ -105,9 +105,9 @@ class StarDistResult:
 
         np.savez(output_file,
                  filename=self.filename,
-                 cord=self.cords,
+                 cords=self.cords,
                  prob=self.prob,
-                 point=self.points,
+                 points=self.points,
                  shape=shape,
                  index=index,
                  value=value)
@@ -149,7 +149,7 @@ class StarDistResult:
 
     def with_probability(self, threshold: float) -> Self:
         m = self.prob >= threshold
-        return attrs.evolve(self, cord=self.cords[m], prob=self.prob[m])
+        return attrs.evolve(self, cords=self.cords[m], prob=self.prob[m])
 
 
 class StarDist2DOptions(AbstractSegmentationOption):
@@ -229,13 +229,13 @@ class StarDist2DOptions(AbstractSegmentationOption):
         viewer.add_image(self.raw_image(), name='raw')
         if not self.no_normalize:
             viewer.add_image(self.normalize_image(), name='normalized')
-        viewer.add_image(res.labels, name='labels', colormap='cyan', opacity=0.5)
+        viewer.add_image(res.labels, name='labels', colormap='hsv', opacity=0.5)
         viewer.add_points(res.points, face_color='red')
 
         if with_widget:
             viewer.window.add_plugin_dock_widget("stardist-napari", "StarDist")
 
-        Logger.log('Launch napari!')
+        Logger.info('Launch napari!')
         napari.run()
 
 

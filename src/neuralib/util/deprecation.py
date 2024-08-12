@@ -67,12 +67,6 @@ def deprecated_func(*,
     :param remarks: The reason why the function is deprecated
     :param removal_version: Optional version or date when the function is planned to be removed
     """
-    if remarks is None:
-        remarks = 'This function is deprecated and may be removed in future versions.'
-
-    if removal_version is not None:
-        remarks += f' Scheduled for removal in version {removal_version}.'
-
     def _decorator(f):
 
         @functools.wraps(f)
@@ -87,6 +81,7 @@ def deprecated_func(*,
                 msg += f' Please use {new_function} instead.'
 
             if remarks is not None:
+                print(f'{remarks=}')
                 msg += f' NOTE: {remarks}.'
 
             warnings.warn(
