@@ -7,7 +7,8 @@ neuralib.io
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
-    
+
+    neuralib.io.core
     neuralib.io.csv
     neuralib.io.json
 

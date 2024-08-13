@@ -34,7 +34,7 @@ __all__ = [
 RUN_BACKEND = Literal['tensorflow', 'torch']
 
 
-def gpu_available(backend: RUN_BACKEND, check_smi: bool = False) -> bool:
+def gpu_available(backend: RUN_BACKEND, *, check_smi: bool = False) -> bool:
     """
 
     :param backend: {'torch', 'tensorflow'}
@@ -120,6 +120,8 @@ def check_nvidia_cuda_available(backend: RUN_BACKEND,
     Checks if the GPU driver reacts and otherwise raises a custom error.
     Useful to check before long GPU-dependent processes.
 
+    :param backend: {'torch', 'tensorflow'}
+    :param check_smi: check if ``nvidia-smi`` is runnable
     """
 
     if check_smi:
@@ -157,7 +159,7 @@ def check_nvidia_cuda_available(backend: RUN_BACKEND,
 
 
 # ====== #
-# Mac Os #
+# Mac OS #
 # ====== #
 
 
@@ -204,10 +206,11 @@ def _get_gpu_mac(backend: RUN_BACKEND) -> GPUInfoMac:
 
 
 def check_mps_available(backend: RUN_BACKEND) -> bool:
-    """Check if metal is available
+    """
+    Check if metal is available
 
     :param backend: {'torch', 'tensorflow'}
-    :return bool
+    :return: bool
     """
     is_available = True
 

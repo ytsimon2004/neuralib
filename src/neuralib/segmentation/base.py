@@ -19,7 +19,7 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
     directory_suffix: str = argument('--suffix', default='.tif',
                                      choices=['.tif', '.tiff', '.png'],
                                      help='suffix in batch mode')
-    save_ij_roi: bool = argument('--ij-roi', help='if save also the imageJ/Fiji compatible .roi file')
+    save_ij_roi: bool = argument('--ij-roi', '--roi', help='if save also the imageJ/Fiji compatible .roi file')
     force_re_eval: bool = argument('--force-eval', '--re', help='force re-evaluate the result')
 
     model: str = argument('-M', '--model', metavar='MODEL', help='which pretrained model')

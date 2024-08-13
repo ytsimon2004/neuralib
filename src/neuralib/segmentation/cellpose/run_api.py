@@ -62,7 +62,7 @@ class CellPoseAPIOption(AbstractCellPoseOption):
             ratio=self.RESTORE_RATIO
         )
 
-        ret.save_seg_file()
+        ret.save_seg_file(str(filepath))
 
         if self.save_ij_roi:
             ret.save_roi(self.ij_roi_output(filepath))
