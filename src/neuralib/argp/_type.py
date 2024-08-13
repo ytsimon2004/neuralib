@@ -2,6 +2,7 @@ from typing import TypeVar, Callable, Union
 
 __all__ = [
     'try_int_type',
+    'try_float_type',
     'int_tuple_type',
     'str_tuple_type',
     'float_tuple_type',
@@ -83,5 +84,14 @@ def try_int_type(arg: str) -> Union[int, str, None]:
         return None
     try:
         return int(arg)
+    except ValueError:
+        return arg
+
+
+def try_float_type(arg: str) -> Union[float, str, None]:
+    if len(arg) == 0:
+        return
+    try:
+        return float(arg)
     except ValueError:
         return arg
