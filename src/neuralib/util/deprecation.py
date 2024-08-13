@@ -81,7 +81,6 @@ def deprecated_func(*,
                 msg += f' Please use {new_function} instead.'
 
             if remarks is not None:
-                print(f'{remarks=}')
                 msg += f' NOTE: {remarks}.'
 
             warnings.warn(
