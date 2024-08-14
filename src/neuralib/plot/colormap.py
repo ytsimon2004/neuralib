@@ -105,6 +105,3 @@ def insert_colorbar(ax: Axes, im, **kwargs) -> ColorbarBase:
 
     return ax.figure.colorbar(im, cax=cax, **kwargs)
 
-
-if __name__ == '__main__':
-    ColorMapper('viridis', 20)

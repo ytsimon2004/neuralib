@@ -7,6 +7,7 @@ from typing import Literal, ContextManager
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from numpy.typing import NDArray
 
 __all__ = ['plot_figure',
            'ax_set_default_style',
@@ -30,7 +31,7 @@ def plot_figure(output: Path | None,
                 dpi: int | None = None,
                 use_default_style: bool = True,
                 tight_layout: bool = True,
-                **kwargs) -> ContextManager[Axes]:
+                **kwargs) -> ContextManager[Axes] | ContextManager[NDArray[Axes]]:
     """
     Context manager for creating and saving a matplotlib figure
 
@@ -63,18 +64,27 @@ def plot_figure(output: Path | None,
     if use_default_style:
         if isinstance(ax, np.ndarray):
             for _ax in ax.ravel():
-                ax_set_default_style(_ax, set_square=set_square, set_equal_scale=set_equal_scale)
+                ax_set_default_style(_ax)
         else:
-            ax_set_default_style(ax, set_square=set_square, set_equal_scale=set_equal_scale)
+            ax_set_default_style(ax)
+
     #
     try:
         yield ax
     except Exception as e:
         raise RuntimeError(f'An error occurred while plotting {e}')
     else:
+
+        if set_square:
+            ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
+
+        if set_equal_scale:
+            ax.set_aspect('equal')
+
         if output is None:
             if tight_layout:
                 plt.tight_layout()
+
             plt.show()
         else:
             while True:
@@ -106,15 +116,10 @@ def _mplrc_set():  # TODO read from rc file with plt.rc_context()
     plt.rcParams['font.sans-serif'] = "Arial"
 
 
-def ax_set_default_style(ax: Axes,
-                         set_square=False,
-                         set_equal_scale=False):
+def ax_set_default_style(ax: Axes):
     """
 
     :param ax: ``Axes``
-    :param set_square:
-    :param set_equal_scale:
-    :return:
     """
     if 'polar' in ax.spines.keys():
         pass
@@ -125,12 +130,6 @@ def ax_set_default_style(ax: Axes,
         ax.yaxis.set_tick_params(width=1)
         for axis in ['bottom', 'left']:
             ax.spines[axis].set_linewidth(1)
-
-    if set_square:
-        ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
-
-    if set_equal_scale:
-        ax.set_aspect('equal')
 
 
 # ========= #

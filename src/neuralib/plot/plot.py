@@ -3,24 +3,28 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, Callable
 
+import matplotlib.colors as mcolors
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from scipy.ndimage import gaussian_filter1d
 
+from neuralib.plot._dotplot import DotPlot
 from neuralib.plot.colormap import insert_colorbar
 from neuralib.typing import ArrayLike
 from neuralib.typing import PathLike, DataFrame
+from neuralib.util.deprecation import deprecated_aliases, deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = [
+    'dotplot',
     'plot_2d_dots',
     'plot_regression_cc',
     'plot_joint_scatter_histogram',
     'plot_histogram_cutoff',
     'plot_half_violin_box_dot',
-    'plot_grid_subplots'
+    'plot_grid_subplots',
 ]
 
 
@@ -28,10 +32,79 @@ __all__ = [
 # Dots plot #
 # ========= #
 
+def dotplot(xlabel: ArrayLike,
+            ylabel: ArrayLike,
+            values: np.ndarray,
+            *,
+            scale: Literal['area', 'radius'] = 'radius',
+            max_marker_size: float | None = None,
+            size_title: str | None = None,
+            size_legend_num: int | None = None,
+            size_legend_as_int: bool = True,
+            with_color: bool = False,
+            cmap: mcolors.Colormap = 'Reds',
+            colorbar_title: str | None = None,
+            norm: mcolors.Normalize | None = None,
+            cbar_vmin: float | None = None,
+            cbar_vmax: float | None = None,
+            figure_title: str | None = None,
+            figure_output: PathLike | None = None,
+            ax: Axes | None = None,
+            **kwargs):
+    """
+     Plot values as 2D dots
+
+    `Dimension parameters`:
+
+        X = number of x label
+
+        Y = number of y label
+
+    :param xlabel: String arraylike. `ArrayLike[str, X]`
+    :param ylabel: String arraylike. `ArrayLike[str, X]`
+    :param values: 2D value array. `ArrayLike[str, [X, Y]]`
+    :param scale: Dot size representation. {'area', 'radius'}
+    :param max_marker_size: Marker size for the max value
+    :param size_title: Size_title in the size legend
+    :param size_legend_num: Number of legend to be shown
+    :param size_legend_as_int: Size legend show only `Int`
+    :param with_color: If dot with colormap
+    :param cmap: ``Colormap``
+    :param colorbar_title: Title of the colorbar
+    :param norm: Colorbar Normalize
+    :param cbar_vmin: Value min for the colorbar
+    :param cbar_vmax: Value nax for the colorbar
+    :param figure_title: Figure title
+    :param figure_output: Figure save output path
+    :param ax: If existing axes ``Axes``
+    :param kwargs: additional arguments to ``ax.scatter()``
+    """
+
+    dp = DotPlot(xlabel, ylabel, values,
+                 scale=scale,
+                 max_marker_size=max_marker_size,
+                 size_title=size_title,
+                 size_legend_num=size_legend_num,
+                 size_legend_as_int=size_legend_as_int,
+                 with_color=with_color,
+                 cmap=cmap,
+                 colorbar_title=colorbar_title,
+                 norm=norm,
+                 cbar_vmin=cbar_vmin,
+                 cbar_vmax=cbar_vmax,
+                 figure_title=figure_title,
+                 figure_output=figure_output,
+                 ax=ax)
+
+    dp.plot(**kwargs)
+
+
+@deprecated_aliases(x='xlabel', y='ylabel', size='values')
+@deprecated_func(new_function='neuralib.plot.dotplot()', removal_version='0.3.0')
 def plot_2d_dots(ax: Axes,
-                 x: ArrayLike,
-                 y: ArrayLike,
-                 size: np.ndarray, *,
+                 xlabel: ArrayLike,
+                 ylabel: ArrayLike,
+                 values: np.ndarray, *,
                  with_color: bool = False,
                  with_legends: bool = True,
                  size_type: Literal['area', 'radius'] = 'radius',
@@ -47,9 +120,9 @@ def plot_2d_dots(ax: Axes,
         Y = number of y label
 
     :param ax: ``Axes``
-    :param x: string values. `ArrayLike[str, X]`
-    :param y: string values. `ArrayLike[str, X]`
-    :param size: size of the dots. `Array(float, [Y, X]]`
+    :param xlabel: string values. `ArrayLike[str, X]`
+    :param ylabel: string values. `ArrayLike[str, X]`
+    :param values: size of the dots. `Array(float, [X, Y]]`
     :param with_color: `size` domain as colormap
     :param with_legends: show the value scaling as legend
     :param size_type: whether the value corresponding to circle radius or surface area.
@@ -57,8 +130,8 @@ def plot_2d_dots(ax: Axes,
     :param kwargs: passed to ``ax.scatter()``
     :return:
     """
-    size = np.array([size]).flatten()
-    x, y = np.meshgrid(x, y, indexing='ij')
+    values = np.array([values]).flatten()
+    xlabel, ylabel = np.meshgrid(xlabel, ylabel, indexing='ij')
     #
     if size_type == 'radius':
         func = lambda it: it ** 2 * size_factor
@@ -67,22 +140,22 @@ def plot_2d_dots(ax: Axes,
     else:
         raise ValueError('')
 
-    s = func(size)
+    s = func(values)
     #
     if with_color:
-        im = ax.scatter(x.ravel(), y.ravel(), s=s, c=size, cmap='viridis', clip_on=False,
+        im = ax.scatter(xlabel.ravel(), ylabel.ravel(), s=s, c=values, cmap='viridis', clip_on=False,
                         vmin=0, vmax=1, **kwargs)
         insert_colorbar(ax, im)
     else:
-        ax.scatter(x.ravel(), y.ravel(), s=s, c='k', clip_on=False, **kwargs)
+        ax.scatter(xlabel.ravel(), ylabel.ravel(), s=s, c='k', clip_on=False, **kwargs)
 
     if with_legends:
-        _ax_size_legend(ax, size, func)
+        _ax_size_legend(ax, values, func)
 
 
 def _ax_size_legend(ax: Axes,
                     value: list[int] | np.ndarray,
-                    f: Callable[[float], float] = None):
+                    f: Callable[[float], float]):
     """
     add the label and legend of the size in scatter plot. TODO as int legend
 
@@ -90,9 +163,6 @@ def _ax_size_legend(ax: Axes,
     :param value: values reflect to size
     :param f: amplified callable
     """
-    if f is None:
-        f = lambda it: (it ** 2) * 3000
-
     vsize = np.linspace(0, np.max(value), num=5)
 
     for s in vsize:
@@ -101,7 +171,7 @@ def _ax_size_legend(ax: Axes,
     h, l = plt.gca().get_legend_handles_labels()
 
     plt.legend(h[1:], l[1:], labelspacing=1.2, title="value", borderpad=1,
-               frameon=True, framealpha=0.6, edgecolor="k", facecolor="w")
+               frameon=True, framealpha=0.6, edgecolor="k", facecolor="w", loc='right')
 
 
 # ========== #
