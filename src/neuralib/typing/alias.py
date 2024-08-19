@@ -13,7 +13,7 @@ from numpy.typing import NDArray
 __all__ = [
     'ArrayLike',
     'ArrayLikeStr',
-    'AxesArrayLike',
+    'AxesArray',
     #
     'PathLike',
     #
@@ -33,8 +33,8 @@ ArrayLike = Union[NDArray[T], list[T], tuple[T, ...], pd.Series, pl.Series]
 ArrayLikeStr = Union[NDArray[np.str_], list[str], tuple[str, ...], pd.Series, pl.Series]
 """Alias for array-like objects of strings, including numpy arrays, lists, tuples, and series"""
 
-AxesArrayLike = Union[np.ndarray, list[Axes]]
-"""Alias for array-like objects of matplotlib Axes"""
+AxesArray = Union[np.ndarray, list[Axes]]
+"""Alias for matplotlib Axes numpy array"""
 
 # ==== #
 # Path #

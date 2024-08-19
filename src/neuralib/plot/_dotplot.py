@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, ClassVar, Final
+from typing import Literal, ClassVar
 
 import matplotlib.colorbar
 import matplotlib.colors as mcolors
@@ -46,10 +46,8 @@ class DotPlot:
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.values = values
-        self._min_value: Final[float] = np.min(values)
-        self._max_value: Final[float] = np.max(values)
 
-        self._validate_init()
+        self._check_isinstance()
 
         # size
         self.scale = scale
@@ -62,8 +60,8 @@ class DotPlot:
         self.with_color = with_color
         self.colorbar_title = colorbar_title or DotPlot.DEFAULT_COLOR_TITLE
         self.cmap = cmap
-        self.cbar_vmin = cbar_vmin or self._min_value
-        self.cbar_vmax = cbar_vmax or self._max_value
+        self.cbar_vmin = cbar_vmin or np.min(values)
+        self.cbar_vmax = cbar_vmax or np.max(values)
         self.norm = norm or self._default_norm()
 
         # figure
@@ -71,7 +69,7 @@ class DotPlot:
         self.figure_output = figure_output
         self.ax = ax
 
-    def _validate_init(self):
+    def _check_isinstance(self):
         x = np.array(self.xlabel)
         y = np.array(self.ylabel)
 
@@ -88,11 +86,12 @@ class DotPlot:
             raise ValueError('shape inconsistent')
 
     def _default_norm(self) -> mcolors.Normalize:
+        """default cbar norm"""
         return mcolors.Normalize(vmin=self.cbar_vmin, vmax=self.cbar_vmax)
 
     @property
     def scaling_factor(self) -> float:
-        max_value = self._max_value
+        max_value = np.max(self.values)
         if self.scale == 'radius':
             max_value **= 2
         return self.max_marker_size / max_value
@@ -127,9 +126,8 @@ class DotPlot:
                            c=values,
                            cmap=self.cmap,
                            clip_on=False,
-                           vmin=self.cbar_vmin,
-                           vmax=self.cbar_vmax,
-                           edgecolor='k',
+                           norm=self.norm,
+                           edgecolor='gray',
                            **kwargs)
 
                 ax_cbar = _ax[6, 3]
@@ -150,9 +148,36 @@ class DotPlot:
             if self.figure_title is not None:
                 ax.set_title(self.figure_title)
 
+    def _plot_ax(self, x, y, values, **kwargs):
+        """Plot wit existing Axes"""
+        if self.with_color:
+            im = self.ax.scatter(x.ravel(), y.ravel(),
+                                 s=self.size,
+                                 c=values,
+                                 cmap=self.cmap,
+                                 clip_on=False,
+                                 norm=self.norm,
+                                 edgecolor='gray',
+                                 **kwargs)
+
+            cbar = self.ax.figure.colorbar(im)
+            cbar.ax.set_ylabel(self.colorbar_title)
+
+        else:
+            self.ax.scatter(x.ravel(), y.ravel(),
+                            s=self.size,
+                            c='k',
+                            clip_on=False,
+                            **kwargs)
+
+        if self.figure_title is not None:
+            self.ax.set_title(self.figure_title)
+
+        self._plot_size_legend(self.ax)
+
     def _plot_size_legend(self, size_ax: Axes):
         values = np.round(
-            np.linspace(self._min_value, self._max_value, num=self.size_legend_num), 2
+            np.linspace(self.norm.vmin, self.norm.vmax, num=self.size_legend_num), 2
         )
 
         if self.size_as_int:
@@ -189,31 +214,3 @@ class DotPlot:
         cbar_ax.set_title(self.colorbar_title, fontsize="small")
 
         cbar_ax.xaxis.set_tick_params(labelsize="small")
-
-    def _plot_ax(self, x, y, values, **kwargs):
-        """Plot wit existing Axes"""
-        if self.with_color:
-            im = self.ax.scatter(x.ravel(), y.ravel(),
-                                 s=self.size,
-                                 c=values,
-                                 cmap=self.cmap,
-                                 clip_on=False,
-                                 vmin=self.cbar_vmin,
-                                 vmax=self.cbar_vmax,
-                                 edgecolor='k',
-                                 **kwargs)
-
-            cbar = self.ax.figure.colorbar(im)
-            cbar.ax.set_ylabel(self.colorbar_title)
-
-        else:
-            self.ax.scatter(x.ravel(), y.ravel(),
-                            s=self.size,
-                            c='k',
-                            clip_on=False,
-                            **kwargs)
-
-        if self.figure_title is not None:
-            self.ax.set_title(self.figure_title)
-
-        self._plot_size_legend(self.ax)

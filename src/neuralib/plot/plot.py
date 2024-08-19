@@ -12,7 +12,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from neuralib.plot._dotplot import DotPlot
 from neuralib.plot.colormap import insert_colorbar
-from neuralib.typing import ArrayLike
+from neuralib.typing import ArrayLike, ArrayLikeStr
 from neuralib.typing import PathLike, DataFrame
 from neuralib.util.deprecation import deprecated_aliases, deprecated_func
 from neuralib.util.verbose import fprint
@@ -32,8 +32,8 @@ __all__ = [
 # Dots plot #
 # ========= #
 
-def dotplot(xlabel: ArrayLike,
-            ylabel: ArrayLike,
+def dotplot(xlabel: ArrayLikeStr,
+            ylabel: ArrayLikeStr,
             values: np.ndarray,
             *,
             scale: Literal['area', 'radius'] = 'radius',
@@ -52,7 +52,7 @@ def dotplot(xlabel: ArrayLike,
             ax: Axes | None = None,
             **kwargs):
     """
-     Plot values as 2D dots
+     Plot values as dots, with the option also in colormap
 
     `Dimension parameters`:
 
