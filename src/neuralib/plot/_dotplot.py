@@ -47,7 +47,7 @@ class DotPlot:
         self.ylabel = ylabel
         self.values = values
 
-        self._check_isinstance()
+        self._check_instance()
 
         # size
         self.scale = scale
@@ -69,7 +69,7 @@ class DotPlot:
         self.figure_output = figure_output
         self.ax = ax
 
-    def _check_isinstance(self):
+    def _check_instance(self):
         x = np.array(self.xlabel)
         y = np.array(self.ylabel)
 

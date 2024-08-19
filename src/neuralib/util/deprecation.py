@@ -28,10 +28,10 @@ def deprecated_class(*,
             msg = f'{cls.__qualname__} is deprecated and will be removed in a future release'
 
             if removal_version is not None:
-                msg += f': {removal_version}.'
+                msg += f'(after version {removal_version}).'
 
             if new_class is not None:
-                msg += f' Please use {new_class} instead.'
+                msg += f' Please use "{new_class}" instead.'
 
             if remarks is not None:
                 msg += f' NOTE: {remarks}.'
@@ -67,6 +67,7 @@ def deprecated_func(*,
     :param remarks: The reason why the function is deprecated
     :param removal_version: Optional version or date when the function is planned to be removed
     """
+
     def _decorator(f):
 
         @functools.wraps(f)
@@ -75,10 +76,10 @@ def deprecated_func(*,
             msg = f'{f.__qualname__} is deprecated and will be removed in a future release'
 
             if removal_version is not None:
-                msg += f': {removal_version}.'
+                msg += f'(after version {removal_version}).'
 
             if new_function is not None:
-                msg += f' Please use {new_function} instead.'
+                msg += f' Please use "{new_function}" instead.'
 
             if remarks is not None:
                 msg += f' NOTE: {remarks}.'
@@ -126,12 +127,12 @@ def deprecated_aliases(**aliases: str):
                 if new_arg not in sig.parameters:
                     raise RuntimeError(f'New argument: {new_arg} is not in the function arg.')
 
-                if new_arg in kwargs:
+                if new_arg in kwargs and old_arg in kwargs:
                     raise ValueError(f'Cannot specify both {old_arg} and {new_arg} at the same time')
 
                 if old_arg in kwargs:
                     warnings.warn(
-                        f'{old_arg} is deprecated and will be removed in future version. Use {new_arg} instead',
+                        f'"{old_arg}" is deprecated and will be removed in future version. Use "{new_arg}" instead',
                         DeprecationWarning,
                         stacklevel=2
                     )

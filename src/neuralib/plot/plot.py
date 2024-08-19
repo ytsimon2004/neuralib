@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal, Callable
+from typing import Literal, Callable, Sequence
 
 import matplotlib.colors as mcolors
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-from scipy.ndimage import gaussian_filter1d
+from scipy.stats import pearsonr
 
 from neuralib.plot._dotplot import DotPlot
 from neuralib.plot.colormap import insert_colorbar
@@ -20,11 +20,11 @@ from neuralib.util.verbose import fprint
 __all__ = [
     'dotplot',
     'plot_2d_dots',
-    'plot_regression_cc',
-    'plot_joint_scatter_histogram',
-    'plot_histogram_cutoff',
-    'plot_half_violin_box_dot',
-    'plot_grid_subplots',
+    'scatter_binx_plot',
+    'scatter_histogram',
+    'hist_cutoff',
+    'violin_boxplot',
+    'grid_subplots',
 ]
 
 
@@ -100,7 +100,7 @@ def dotplot(xlabel: ArrayLikeStr,
 
 
 @deprecated_aliases(x='xlabel', y='ylabel', size='values')
-@deprecated_func(new_function='neuralib.plot.dotplot()', removal_version='0.3.0')
+@deprecated_func(new_function='neuralib.plot.dotplot()', removal_version='0.3')
 def plot_2d_dots(ax: Axes,
                  xlabel: ArrayLike,
                  ylabel: ArrayLike,
@@ -157,7 +157,7 @@ def _ax_size_legend(ax: Axes,
                     value: list[int] | np.ndarray,
                     f: Callable[[float], float]):
     """
-    add the label and legend of the size in scatter plot. TODO as int legend
+    add the label and legend of the size in scatter plot.
 
     :param ax: ``Axes``
     :param value: values reflect to size
@@ -178,15 +178,21 @@ def _ax_size_legend(ax: Axes,
 # Regression #
 # ========== #
 
+@deprecated_func(new_function='scatter_binx_plot()', removal_version='0.3')
+def plot_regression_cc(*args, **kwargs):
+    scatter_binx_plot(*args, **kwargs)
 
-def plot_regression_cc(ax: Axes,
-                       x: np.ndarray,
-                       y: np.ndarray,
-                       order: int = 1,
-                       show_cc: bool = True,
-                       bins: int = 10,
-                       bin_func: Literal['median', 'mean'] = 'median',
-                       **kwargs):
+
+@deprecated_aliases(show_cc='linear_reg')
+def scatter_binx_plot(ax: Axes,
+                      x: np.ndarray,
+                      y: np.ndarray,
+                      bins: int | Sequence[float] | str = 10,
+                      *,
+                      order: int = 1,
+                      linear_reg: bool = True,
+                      bin_func: Literal['median', 'mean'] = 'median',
+                      **kwargs):
     """
     Regression to see the relationship between x and y
 
@@ -195,87 +201,69 @@ def plot_regression_cc(ax: Axes,
         N = number of sample points
 
     :param ax: ``Axes``
-    :param x: numerical array. `Array[float, N]`
-    :param y: numerical array. `Array[float, N]`
-    :param order: order of the polynomial to fit when calculating the residuals.
-    :param bins: number of bins
-    :param show_cc: show correlation coefficient
+    :param x: Numerical array. `Array[float, N]`
+    :param y: Numerical array. `Array[float, N]`
+    :param bins: passed to ``numpy.histogram()``
+    :param order: If order is greater than `1`, use numpy.polyfit to estimate a polynomial regression
+    :param linear_reg: Show linear correlation coefficient
     :param bin_func: Literal['median', 'mean']. default is median
     :param kwargs: additional args passed to ``ax.set``
     :return:
     """
     import seaborn as sns
 
-    sns.regplot(x=x, y=y, ax=ax, order=order,
-                scatter_kws={
-                    'alpha': 0.5,
-                    'color': 'grey',
-                    's': 8,
-                    'edgecolors': 'none'
-                },
-                line_kws={
-                    'color': 'black'
-                })
+    sns.regplot(
+        x=x,
+        y=y,
+        order=order,
+        scatter_kws={'alpha': 0.5,
+                     'color': 'grey',
+                     's': 8,
+                     'edgecolors': 'none'},
+        line_kws={'color': 'black'},
+        ax=ax
+    )
     _hist_line_plot(ax, x, y, bins, bin_func=bin_func)
 
     ax.set(**kwargs)
     ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
 
-    if show_cc:
-        cc = calculate_cc(x, y)
+    if linear_reg:
+        cc = pearsonr(x, y)[0]
         ax.set_title(f'r = {round(cc, 4)}', fontstyle='italic')
 
 
 def _hist_line_plot(ax,
                     x: np.ndarray,
                     y: np.ndarray,
-                    bins: int = 20,
+                    bins: int | Sequence[float] | str = 20,
                     bin_func: Literal['median', 'mean'] = 'median'):
     """
     average or pickup the median of the y value in certain bins
     :param ax: ``Axes``
     :param x: `Array[float, N]`
     :param y: `Array[float, N]`
-    :param bins:
+    :param bins:  passed to ``numpy.histogram()``
     :param bin_func
     :return:
     """
 
+    hist, edg = np.histogram(x, weights=y, bins=bins)
+
     if bin_func == 'mean':
-        a, edg = np.histogram(x, weights=y, bins=bins)
         n = np.histogram(x, bins)[0]  # (B, )
-
-        weights = np.divide(a, n, out=np.zeros_like(a, dtype=float), where=n != 0)  # avoid true divide
-        weights = gaussian_filter1d(weights, 1)
-
-        x = edg[:-1] + np.median(np.diff(edg)) / 2  # alignment
-        ax.plot(x, weights, 'r--', alpha=0.5)
-
+        bin_values = np.divide(hist, n, out=np.zeros_like(hist, dtype=float), where=n != 0)  # avoid true divide
     elif bin_func == 'median':
-        counts, edg = np.histogram(x, weights=y, bins=bins)
-
-        medians = []
-        for i in range(len(counts)):
+        bin_values = []
+        for i in range(len(hist)):
             bin_data = y[(x >= edg[i]) & (x < edg[i + 1])]
             median_val = np.nanmedian(bin_data)
-            medians.append(median_val)
-
-        x = edg[:-1] + np.median(np.diff(edg)) / 2  # alignment
-        ax.plot(x, medians, 'r--', alpha=0.5)
-
+            bin_values.append(median_val)
     else:
         raise ValueError(f'{bin_func}')
 
-
-def calculate_cc(x: np.ndarray, y: np.ndarray) -> float:
-    from scipy.stats import pearsonr
-    try:
-        cc = pearsonr(x, y)[0]
-    except ValueError as e:
-        print('input shape ERROR:', x.shape, y.shape)
-        raise e
-
-    return cc
+    x = edg[:-1] + np.median(np.diff(edg)) / 2  # alignment
+    ax.plot(x, bin_values, 'r--', alpha=0.5)
 
 
 # ====== #
@@ -283,40 +271,50 @@ def calculate_cc(x: np.ndarray, y: np.ndarray) -> float:
 # ====== #
 
 
-def plot_histogram_cutoff(ax: Axes,
-                          value: ArrayLike,
-                          cutoff: float,
-                          mask: np.ndarray | None = None,
-                          **kwargs) -> None:
+def hist_cutoff(ax: Axes,
+                values: np.ndarray,
+                cutoff: float,
+                bins: int = 30,
+                *,
+                mask: np.ndarray | None = None,
+                **kwargs) -> None:
     """
     Plot the histogram with a cutoff value
 
     :param ax: ``Axes``
-    :param value: 1d array. `Array[float, N]`
+    :param values: 1d array. `Array[float, N]`
     :param cutoff: cutoff (threshold) value for the certain value, >= represents pass
+    :param bins: passed to ``numpy.histogram()``
     :param mask: mask for value. i.e., cell selection. `Array[bool, N]`
     :param kwargs: passed to ``ax.set``
     """
-    if value.ndim != 1:
+    if values.ndim != 1:
         raise ValueError('value must be 1d array')
 
     if mask is not None:
-        value = value[mask]
+        values = values[mask]
 
-    if cutoff > np.max(value) or cutoff < np.min(value):
-        fprint(f'{cutoff} should be within {np.min(value)} and {np.max(value)}', vtype='warning')
+    if cutoff > np.max(values) or cutoff < np.min(values):
+        fprint(f'{cutoff} should be within {np.min(values)} and {np.max(values)}', vtype='warning')
 
-    sns.histplot(value, bins=30, kde=True, ax=ax, color='grey', stat='percent', element='step')
+    sns.histplot(values, bins=bins, kde=True, color='grey', stat='percent', element='step', ax=ax)
     ax.axvline(cutoff, color='r', linestyle='--', zorder=1)
     ax.set(**kwargs)
-    ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
 
 
-def plot_joint_scatter_histogram(x: np.ndarray,
-                                 y: np.ndarray,
-                                 show_cc: bool = True,
-                                 output: Path | None = None,
-                                 **kwargs):
+@deprecated_func(new_function='scatter_histogram()', removal_version='0.3')
+def plot_joint_scatter_histogram(*args, **kwargs):
+    scatter_histogram(*args, **kwargs)
+
+
+@deprecated_aliases(show_cc='linear_reg')
+def scatter_histogram(x: np.ndarray,
+                      y: np.ndarray,
+                      bins: int | Sequence[float] | str = 15,
+                      *,
+                      linear_reg: bool = True,
+                      output: Path | None = None,
+                      **kwargs):
     """
     plot the linear correlation scatter and histogram between two variables
 
@@ -326,8 +324,9 @@ def plot_joint_scatter_histogram(x: np.ndarray,
 
     :param x: numerical array x. `Array[float, N]`
     :param y: numerical array y. `Array[float, N]`
-    :param show_cc: if show correlation coefficient
-    :param output: fig save output
+    :param bins: passed to ``numpy.histogram()``
+    :param linear_reg: If show correlation coefficient
+    :param output: Figure save output
     :param kwargs: additional args pass through ``ax.set()``
     :return:
     """
@@ -335,14 +334,20 @@ def plot_joint_scatter_histogram(x: np.ndarray,
     sns.set(style='white', font_scale=1.2)
 
     g = sns.JointGrid(x=x, y=y, height=5)
-    g = g.plot_joint(sns.regplot, color='grey')
-    g = g.plot_marginals(sns.histplot, kde=False, bins=12, color='grey')
+
+    if linear_reg:
+        g.plot_joint(sns.regplot, color='grey')
+    else:
+        g.plot_joint(sns.scatterplot, color='grey')
+
+    g = g.plot_marginals(sns.histplot, kde=False, bins=bins, color='grey')
 
     ax = g.ax_joint
     ax.set(**kwargs)
 
-    if show_cc:
-        cc = calculate_cc(x, y)
+    #
+    if linear_reg:
+        cc = pearsonr(x, y)[0]
         ax.text(0.5, 0.8, f'r = {round(cc, 4)}', fontstyle='italic',
                 horizontalalignment='center',
                 verticalalignment='center',
@@ -354,13 +359,18 @@ def plot_joint_scatter_histogram(x: np.ndarray,
         plt.show()
 
 
-def plot_half_violin_box_dot(ax: Axes,
-                             data: DataFrame | dict | list[np.ndarray],
-                             x: str | None = None,
-                             y: str | None = None,
-                             hue: str | None = None,
-                             output: PathLike | None = None,
-                             **kwargs) -> None:
+@deprecated_func(new_function='violin_boxplot()', removal_version='0.3')
+def plot_half_violin_box_dot(*args, **kwargs):
+    violin_boxplot(*args, **kwargs)
+
+
+def violin_boxplot(ax: Axes,
+                   data: DataFrame | dict | list[np.ndarray],
+                   x: str | None = None,
+                   y: str | None = None,
+                   hue: str | None = None,
+                   output: PathLike | None = None,
+                   **kwargs) -> None:
     """
     Plot the data with half violin together with boxes and dots
 
@@ -406,27 +416,32 @@ def plot_half_violin_box_dot(ax: Axes,
         plt.savefig(output)
 
 
-def plot_grid_subplots(data: np.ndarray | list[np.ndarray],
-                       images_per_row: int,
-                       plot_func: Callable | str, *,
-                       dtype: Literal['xy', 'img'],
-                       hide_axis: bool = True,
-                       sharex: bool = False,
-                       sharey: bool = False,
-                       output: PathLike | None = None,
-                       **kwargs) -> None:
+@deprecated_func(new_function='grid_subplots()', removal_version='0.3')
+def plot_grid_subplots(*args, **kwargs):
+    grid_subplots(*args, **kwargs)
+
+
+def grid_subplots(data: np.ndarray | list[np.ndarray],
+                  images_per_row: int,
+                  plot_func: Callable | str, *,
+                  dtype: Literal['xy', 'img'],
+                  hide_axis: bool = True,
+                  sharex: bool = False,
+                  sharey: bool = False,
+                  output: PathLike | None = None,
+                  **kwargs) -> None:
     r"""
     Plots a sequence of subplots in a grid format
 
     Example for plot xy grid::
 
         >>> data = np.random.sample((30, 10, 2))
-        >>> plot_grid_subplots(data, 5, 'plot', dtype='xy')
+        >>> grid_subplots(data, 5, 'plot', dtype='xy')
 
     Example for plot img array grid ::
 
         >>> data = np.random.sample((30, 10, 10))
-        >>> plot_grid_subplots(data, 5, 'imshow', dtype='img', cmap='gray')
+        >>> grid_subplots(data, 5, 'imshow', dtype='img', cmap='gray')
 
     :param data: 3D Array containing the data to be plotted. For 'xy' dtype, the shape must be (N, (\*, 2)).
         For 'img' dtype, the shape must be (N, (\*img)). Accepted also list of 2D array different size
