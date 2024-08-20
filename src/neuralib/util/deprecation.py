@@ -10,12 +10,12 @@ __all__ = ['deprecated_class',
 
 
 def deprecated_class(*,
-                     new_class: str | None = None,
+                     new: str | None = None,
                      remarks: str | None = None,
                      removal_version: str | None = None):
     """Mark deprecated class
 
-    :param new_class: The renamed new class
+    :param new: The renamed new usage
     :param remarks: Further remarks to be shown
     :param removal_version: Optional version or date when the function is planned to be removed
     """
@@ -30,8 +30,8 @@ def deprecated_class(*,
             if removal_version is not None:
                 msg += f'(after version {removal_version}).'
 
-            if new_class is not None:
-                msg += f' Please use "{new_class}" instead.'
+            if new is not None:
+                msg += f' Please use "{new}" instead.'
 
             if remarks is not None:
                 msg += f' NOTE: {remarks}.'
@@ -58,12 +58,12 @@ def deprecated_class(*,
 
 
 def deprecated_func(*,
-                    new_function: str | None = None,
+                    new: str | None = None,
                     remarks: str | None = None,
                     removal_version: str = None):
     """Mark deprecated functions.
 
-    :param new_function: The renamed new function
+    :param new: The renamed new usage
     :param remarks: The reason why the function is deprecated
     :param removal_version: Optional version or date when the function is planned to be removed
     """
@@ -78,8 +78,8 @@ def deprecated_func(*,
             if removal_version is not None:
                 msg += f'(after version {removal_version}).'
 
-            if new_function is not None:
-                msg += f' Please use "{new_function}" instead.'
+            if new is not None:
+                msg += f' Please use "{new}" instead.'
 
             if remarks is not None:
                 msg += f' NOTE: {remarks}.'

@@ -68,7 +68,7 @@ class DiscreteColorMapper:
             return color
 
 
-@deprecated_class(new_class='DiscreteColorMapper')
+@deprecated_class(new='DiscreteColorMapper', removal_version='0.3')
 class ColorMapper(DiscreteColorMapper):
     """Deprecated: Use DiscreteColorMapper instead."""
     pass

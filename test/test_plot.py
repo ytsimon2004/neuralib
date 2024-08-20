@@ -1,8 +1,6 @@
 import numpy as np
-from matplotlib import pyplot as plt
 
-from neuralib.plot import plot_figure, dotplot
-from neuralib.plot._test import scattermap
+from neuralib.plot import plot_figure, dotplot, VennDiagram
 from neuralib.plot.tools import AxesExtendHelper
 
 
@@ -52,6 +50,10 @@ def test_axes_extend_helper_bar():
         helper.ybar(y, np.mean(img, axis=1), align='center')
 
 
+# ================= #
+# Other Plots Usage #
+# ================= #
+
 def test_dotplot():
     xlabel = ['animal_A', 'animal_B', 'animal_C']
     ylabel = ['VISam', 'VISp', 'VISpm', 'VISpor', 'VISl', 'VISal', 'VISli', 'VISpl']
@@ -78,28 +80,24 @@ def test_dotplot_ax():
         ax.plot([1, 2, 3])
 
 
-def test_seaborn_dot():
-    values = np.array([
-        [35.33418476, 22.90336313, 16.85823755, 13.40996169, 3.53341848, 5.57684121, 1.8305662, 0.55342699],
-        [25.14484357, 27.5202781, 26.36152955, 7.24217845, 5.79374276, 1.76709154, 3.47624565, 2.69409038],
-        [43.33418476, 5.90336313, 12.85823755, 23.40996169, 1.53341848, 7.57684121, 2.8305662, 0.55342699],
-    ])
+def test_venn2():
+    subsets = {'setA': 10, 'setB': 20}
+    vd = VennDiagram(subsets, colors=('pink', 'palegreen'))
+    vd.add_intersection('setA & setB', 5)
+    vd.add_total(100)
+    vd.plot()
 
-    ax = scattermap(values, marker_size=values * 10, square=False, cmap="Reds",
-                    cbar_kws={"label": "Color data"},
-                    yticklabels=['animal_A', 'animal_B', 'animal_C'],
-                    xticklabels=['VISam', 'VISp', 'VISpm', 'VISpor', 'VISl', 'VISal', 'VISli', 'VISpl'])
 
-    mk_size = np.max(values) * 10
-
-    ax.scatter(-1, -1, label=f"{np.amax(values):0.1f}", marker="o", c="r", s=mk_size)
-    ax.scatter(-1, -1, label=f"{np.mean(values):0.1f}", marker="o", c="r", s=mk_size * 0.5)
-    ax.scatter(-1, -1, label=f"{np.amin(values[np.nonzero(values)]):0.1f}", marker="o", c="r", s=mk_size * 0.1)
-    ax.legend(loc="upper left", bbox_to_anchor=(0.97, -0.05))
-
-    ax.text(10.65, 11, "Size data", rotation=90, fontsize="medium")
-    plt.show()
+def test_venn3():
+    subsets = {'setA': 20, 'setB': 100, 'setC': 50}
+    vd = VennDiagram(subsets)
+    vd.add_intersection('setA & setB', 10)
+    vd.add_intersection('setB & setC', 10)
+    vd.add_intersection('setA & setC', 10)
+    vd.add_intersection('setA & setB & setC', 2)
+    vd.add_total(200)
+    vd.plot()
 
 
 if __name__ == '__main__':
-    test_dotplot_ax()
+    test_venn3()

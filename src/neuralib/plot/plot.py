@@ -100,7 +100,7 @@ def dotplot(xlabel: ArrayLikeStr,
 
 
 @deprecated_aliases(x='xlabel', y='ylabel', size='values')
-@deprecated_func(new_function='neuralib.plot.dotplot()', removal_version='0.3')
+@deprecated_func(new='neuralib.plot.dotplot()', removal_version='0.3')
 def plot_2d_dots(ax: Axes,
                  xlabel: ArrayLike,
                  ylabel: ArrayLike,
@@ -178,7 +178,7 @@ def _ax_size_legend(ax: Axes,
 # Regression #
 # ========== #
 
-@deprecated_func(new_function='scatter_binx_plot()', removal_version='0.3')
+@deprecated_func(new='scatter_binx_plot()', removal_version='0.3')
 def plot_regression_cc(*args, **kwargs):
     scatter_binx_plot(*args, **kwargs)
 
@@ -302,7 +302,7 @@ def hist_cutoff(ax: Axes,
     ax.set(**kwargs)
 
 
-@deprecated_func(new_function='scatter_histogram()', removal_version='0.3')
+@deprecated_func(new='scatter_histogram()', removal_version='0.3')
 def plot_joint_scatter_histogram(*args, **kwargs):
     scatter_histogram(*args, **kwargs)
 
@@ -359,7 +359,7 @@ def scatter_histogram(x: np.ndarray,
         plt.show()
 
 
-@deprecated_func(new_function='violin_boxplot()', removal_version='0.3')
+@deprecated_func(new='violin_boxplot()', removal_version='0.3')
 def plot_half_violin_box_dot(*args, **kwargs):
     violin_boxplot(*args, **kwargs)
 
@@ -416,7 +416,7 @@ def violin_boxplot(ax: Axes,
         plt.savefig(output)
 
 
-@deprecated_func(new_function='grid_subplots()', removal_version='0.3')
+@deprecated_func(new='grid_subplots()', removal_version='0.3')
 def plot_grid_subplots(*args, **kwargs):
     grid_subplots(*args, **kwargs)
 

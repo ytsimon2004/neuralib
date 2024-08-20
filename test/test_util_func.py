@@ -42,7 +42,7 @@ class TestUtilFunc(unittest.TestCase):
             key_from_value(dy, 100)
 
     def test_deprecate_class(self):
-        @deprecated_class(new_class='B', remarks='TEST REMARKS', removal_version='v0.0.10')
+        @deprecated_class(new='B', remarks='TEST REMARKS', removal_version='v0.0.10')
         class A:
             ...
 
@@ -55,7 +55,7 @@ class TestUtilFunc(unittest.TestCase):
         self.assertIn('TEST REMARKS', str(warns.warning))
 
     def test_deprecate_function(self):
-        @deprecated_func(new_function='new()', removal_version='v1.0.0')
+        @deprecated_func(new='new()', removal_version='v1.0.0')
         def test_deprecate():
             ...
 
