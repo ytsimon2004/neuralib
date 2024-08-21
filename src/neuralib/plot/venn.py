@@ -159,9 +159,12 @@ class VennDiagram:
 
         return {**source, **inter}
 
-    def add_total(self, number):
-        """add total numbers"""
-        self.total = number
+    def add_total(self, value: int):
+        """
+        Add total value to the venn diagram
+        :param value: value to be added
+        """
+        self.total = value
 
     def add_intersection(self, group: str, value: int):
         """
@@ -169,7 +172,6 @@ class VennDiagram:
 
         :param group: i.e., `a & b`
         :param value: value of the intersection
-        :return:
         """
 
         src = [g.strip() for g in group.split('&')]

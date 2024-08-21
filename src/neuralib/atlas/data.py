@@ -181,7 +181,15 @@ def load_allensdk_annotation(resolution: int = 10,
     file = output_dir / f'annotation_{resolution}.nrrd'
 
     if not file.exists():
-        from allensdk.api.queries.mouse_connectivity_api import MouseConnectivityApi
+        try:
+            from allensdk.api.queries.mouse_connectivity_api import MouseConnectivityApi
+        except ImportError as e:
+            fprint(
+                'Build error from project.toml. Please manually install using "pip install allensdk --no-deps"',
+                vtype='error'
+            )
+            raise e
+
         mcapi = MouseConnectivityApi()
         version = MouseConnectivityApi.CCF_VERSION_DEFAULT
 

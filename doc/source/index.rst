@@ -17,15 +17,48 @@ API Reference
    api/neuralib.rst
 
 
+Release Notes
+---------------
+
+- Checkout `Release notes <https://github.com/ytsimon2004/neuralib/releases>`_
+
 
 Installation
 -----------------------
 
+Install common dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- First run for the common dependencies
+
 .. code-block:: console
 
-   pip install neura-library
+    pip install neura-library
 
-- Checkout `Release notes <https://github.com/ytsimon2004/neuralib/releases>`_
+
+Install all dependencies:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+    pip install neural-library[all]
+
+Install the minimal required dependencies according to usage purpose:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
+
+- Example of using ``atlas`` module:
+
+.. code-block:: console
+
+    pip install neural-library[atlas]
+
+- Example of using ``segmentation`` module:
+
+.. code-block:: console
+
+    pip install neural-library[segmentation]
 
 
 

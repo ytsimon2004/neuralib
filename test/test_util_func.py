@@ -49,7 +49,8 @@ class TestUtilFunc(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as warns:
             A()
 
-        self.assertIn('A is deprecated and will be removed in a future release: v0.0.10. Please use B instead.',
+        self.assertIn(
+            'TestUtilFunc.test_deprecate_class.<locals>.A is deprecated and will be removed in a future release(after version v0.0.10). Please use "B" instead. NOTE: TEST REMARKS.',
                       str(warns.warning))
 
         self.assertIn('TEST REMARKS', str(warns.warning))
@@ -62,8 +63,10 @@ class TestUtilFunc(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as warns:
             test_deprecate()
 
-        self.assertIn('test_deprecate is deprecated and will be removed in a future release: v1.0.0. '
-                      'Please use new() instead.', str(warns.warning))
+        self.assertIn(
+            'TestUtilFunc.test_deprecate_function.<locals>.test_deprecate is deprecated and will be removed in a future release(after version v1.0.0). Please use "new()" instead.',
+            str(warns.warning)
+        )
 
     def test_deprecate_aliases(self):
         @deprecated_aliases(old='new')
@@ -73,7 +76,8 @@ class TestUtilFunc(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as warns:
             ret = test(old=np.array([1, 2, 3, 4, 5]))
 
-        self.assertIn('old is deprecated and will be removed in future version. Use new instead', str(warns.warning))
+        self.assertIn('"old" is deprecated and will be removed in future version. Use "new" instead',
+                      str(warns.warning))
         self.assertEqual(ret, 5)
 
     def test_deprecate_aliases_runtime_err(self):
@@ -91,3 +95,7 @@ class TestUtilFunc(unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             test(new=np.array([1, 2, 3]), old=np.array([1, 2, 3]))
+
+
+if __name__ == '__main__':
+    unittest.main()

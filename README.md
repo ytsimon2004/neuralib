@@ -1,4 +1,3 @@
-
 # neuralib
 
 [![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
@@ -10,12 +9,22 @@
 
 ## See the [Documentation ](https://neuralib.readthedocs.io/en/latest/index.html) and [Examples](doc/source/notebooks)
 
+## Checkout [Release notes](https://github.com/ytsimon2004/neuralib/releases)
 
 # Installation
 
-- `pip install neura-library` in your conda env with Python ~= 3.9.0
-- Checkout [Release notes](https://github.com/ytsimon2004/neuralib/releases)
-- According to purpose, install the optional package [requirements-optional.txt](requirements-optional.txt)
+- First, install common dependencies in the conda env with Python~=3.9.0 (for common dependencies)
+    - `pip install neura-library`
+
+- Install all dependencies using
+    - `pip install neural-library[all]`
+
+- Install the minimal required dependencies according to usage purpose . For example:
+  - Choices
+    in `[]`: `atlas`, `scanner`, `calimg`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
+    `all`
+  - Use `atlas` module: `pip install neural-library[atlas]`
+  - Use `segmentation` module: `pip install neural-library[segmentation]`
 
 ----------------------------
 
@@ -24,30 +33,30 @@
 ## atlas
 
 - Module for whole brain, slice view visualization and rois classification
-  - `neuralib.atlas.ccf`: Customized hierarchical classification for the mouse brain atlas
-  - `neuralib.atlas.brainrender`: cli-based wrapper for [brainrender](https://github.com/brainglobe/brainrender)
-  - `neuralib.atlas.cellatlas`: Volume and cell types counts for each brain region, refer
-    to [Cell Atlas](https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/)
-  - `neuralib.atlas.ibl`: Slice view plotting wrapper
-    for [ibllib](https://github.com/int-brain-lab/ibllib?tab=readme-ov-file)
-    and [iblatlas](https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html)
+    - `neuralib.atlas.ccf`: Customized hierarchical classification for the mouse brain atlas
+    - `neuralib.atlas.brainrender`: cli-based wrapper for [brainrender](https://github.com/brainglobe/brainrender)
+    - `neuralib.atlas.cellatlas`: Volume and cell types counts for each brain region, refer
+      to [Cell Atlas](https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/)
+    - `neuralib.atlas.ibl`: Slice view plotting wrapper
+      for [ibllib](https://github.com/int-brain-lab/ibllib?tab=readme-ov-file)
+      and [iblatlas](https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html)
 
 ## calimg
 
 - Module for 2photon calcium imaging acquisition and result parsing
-  - `neuralib.calimg.scan_image`: Data acquired from [ScanImage](https://www.mbfbioscience.com/products/scanimage/) (
-    under
-    DEV)
-  - `neuralib.calimg.scanbox`: Data acquired from [Scanbox](https://scanbox.org/tag/two-photon/)
-  - `neuralib.calimg.suite2p`:  Result parser for [suite2p](https://github.com/MouseLand/suite2p)
+    - `neuralib.calimg.scan_image`: Data acquired from [ScanImage](https://www.mbfbioscience.com/products/scanimage/) (
+      under
+      DEV)
+    - `neuralib.calimg.scanbox`: Data acquired from [Scanbox](https://scanbox.org/tag/two-photon/)
+    - `neuralib.calimg.suite2p`:  Result parser for [suite2p](https://github.com/MouseLand/suite2p)
 
 ## segmentation
 
 - Module for neuronal segmentation
-  - `neuralib.segmentation.cellpose`: Result Parser and batch running
-    for [cellpose](https://github.com/MouseLand/cellpose)
-  - `neuralib.segmentation.stardist`: Result Parser and batch running
-    for [stardist](https://github.com/stardist/stardist)
+    - `neuralib.segmentation.cellpose`: Result Parser and batch running
+      for [cellpose](https://github.com/MouseLand/cellpose)
+    - `neuralib.segmentation.stardist`: Result Parser and batch running
+      for [stardist](https://github.com/stardist/stardist)
 
 ## model
 
@@ -58,10 +67,9 @@
 ## tracking
 
 - Module for other open-source tools wrapper
-  - `neuralib.tracking.deeplabcut`: Result parser for [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
+    - `neuralib.tracking.deeplabcut`: Result parser for [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)
 
-  - `neuralib.tracking.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
-
+    - `neuralib.tracking.facemap`: Result parser for [facemap](https://github.com/MouseLand/facemap)
 
 ## Utilities Modules
 

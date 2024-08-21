@@ -20,7 +20,108 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-dynamic = ['dependencies']
+dependencies = [
+    "attrs",
+    "colorama",
+    "colorlog",
+    "matplotlib",
+    "seaborn",
+    "numpy>=1.26.0, <2.0",
+    "scipy",
+    "scikit-image",
+    "pandas",
+    "polars>=1.0.0",
+    "pyarrow",
+    "tifffile",
+    "opencv-python>=4.8.0.76",
+    "tqdm",
+    "requests",
+    "rich",
+    "typing_extensions"
+]
+
+
+
+[project.optional-dependencies]
+atlas = [
+    #    "allensdk"  # matplotlib build error, thus use pip install allensdk if needed
+    "brainrender",
+    "iblatlas",
+    "anytree",
+    "plotly",
+]
+
+scanner = [
+    "xmltodict",
+    "aicspylibczi"
+]
+
+calimg = [
+    "scanimage-tiff-reader",
+    "suite2p",
+    "sbxreader"
+]
+
+segmentation = [
+    "pyqt6",
+    "pyqtgraph",
+    "cellpose",
+    "stardist",
+    "csbdeep",
+    "roifile",
+    "napari"
+]
+
+model = [
+    "rastermap"
+]
+
+track = [
+    "facemap"
+]
+
+gpu = [
+    "torch",
+    "tensorflow",
+    "psutil"
+]
+
+profile = [
+    "memory_profiler",
+    "numba"
+]
+
+imagelib = [
+    "pdf2image",
+    "imageio"  # gif usage
+]
+
+tools = [
+    "slackclient",
+    "gspread"
+]
+
+all = [
+    "bokeh",
+    "neura-library[atlas]",
+    "neura-library[calimg]",
+    "neura-library[model]",
+    "neura-library[segmentation]",
+    "neura-library[model]",
+    "neura-library[profile]",
+    "neura-library[imagelib]",
+    "neura-library[tools]",
+]
+
+
+doc = [
+    #    "pandoc",  # use conda install pandoc
+    "sphinx",
+    "nbsphinx",
+    "sphinx-toolbox",
+    "sphinx-rtd-theme",
+    "neura-library[all]",
+]
 
 [project.urls]
 Homepage = "https://github.com/ytsimon2004/neuralib"
@@ -28,13 +129,6 @@ Documentation = "https://neuralib.readthedocs.io/en/latest/index.html"
 Repository = "https://github.com/ytsimon2004/neuralib"
 Issues = "https://github.com/ytsimon2004/neuralib/issues"
 
-
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
-
-[tool.setuptools.dynamic.optional-dependencies]
-opt = { file = ["requirements-optional.txt"] }
-doc = { file = ["requirements-document.txt"] }
 
 [build-system]
 build-backend = "setuptools.build_meta"
