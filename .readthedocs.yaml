@@ -7,11 +7,10 @@ build:
 
 python:
   install:
-    - requirements: requirements.txt
-    - requirements: requirements-optional.txt
-    - requirements: requirements-document.txt
     - method: pip
       path: .
+      extra_requirements:
+        - doc
 
 sphinx:
   configuration: doc/source/conf.py

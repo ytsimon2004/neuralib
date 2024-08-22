@@ -104,10 +104,12 @@ tools = [
 all = [
     "bokeh",
     "neura-library[atlas]",
+    "neura-library[scanner]",
     "neura-library[calimg]",
-    "neura-library[model]",
     "neura-library[segmentation]",
     "neura-library[model]",
+    "neura-library[track]",
+    "neura-library[gpu]",
     "neura-library[profile]",
     "neura-library[imagelib]",
     "neura-library[tools]",
