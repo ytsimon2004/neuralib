@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Union, Any, get_args
+from typing import Union, Any, get_args, Final, Literal
 
 import gspread
 import numpy as np
 import pandas as pd
 import polars as pl
-from typing_extensions import TypeAlias, Self, Literal
+from typing_extensions import TypeAlias, Self
 
 from neuralib.typing import PathLike, DataFrame
 from neuralib.util.verbose import fprint
@@ -38,40 +38,52 @@ VALUE_RENDER_OPT = Literal['FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA']
 class GoogleWorkSheet:
 
     def __init__(self, worksheet: gspread.Worksheet,
-                 index_col_name: str = 'Data'):
+                 primary_key: str | tuple[str, ...] = 'Data'):
         """
 
-        :param worksheet:
-        :param index_col_name: index column name (field for the table index. i.e., column for animal/experimental ID)
+        :param worksheet: ``gspread.Worksheet``
+        :param primary_key: Primary key of the worksheet.
+
+            If str type, it must be one of the column name.
+
+            If tuple str type, the primary key is join using "_" per row
         """
         self._worksheet = worksheet
         self._headers = tuple(self._worksheet.row_values(1))
 
-        if index_col_name not in self._headers:
-            raise ValueError(f'col not found: {index_col_name}')
-        self._index_col_name = index_col_name
+        if isinstance(primary_key, str) and primary_key not in self._headers:
+            raise ValueError(f'col not found: {primary_key}')
+        elif isinstance(primary_key, (str, tuple)):
+            self.primary_key: Final[str, tuple[str, ...]] = primary_key
+        else:
+            raise TypeError(f'{primary_key}')
 
     @classmethod
     def of(cls,
            name: SpreadSheetName,
            page: WorkPageName,
            service_account_path: PathLike,
-           index_col_name: str = 'Data') -> Self:
+           primary_key: str | tuple[str, ...] = 'Data') -> Self:
         """
         Get a worksheet from spreadsheet
 
         :param name: ``SpreadSheetName``
         :param page: ``WorkPageName``
         :param service_account_path: The path to the service account json file
-        :param index_col_name: index column name (field for the table index. i.e., column for animal/experimental ID)
-        :return:
+        :param primary_key: Primary key of the worksheet.
+
+            If str type, it must be one of the column name.
+
+            If tuple str type, the primary key is join using "_" per row
+
+        :return: ``GoogleWorkSheet``
         """
         sh = GoogleSpreadSheet(name, service_account_path)
 
         if page not in sh:
             raise ValueError(f'{page} not found in spreadsheet: {name}')
 
-        return sh.get_worksheet(page, index_col_name)
+        return sh.get_worksheet(page, primary_key)
 
     @property
     def title(self) -> WorkPageName:
@@ -84,9 +96,24 @@ class GoogleWorkSheet:
         return list(self._headers)
 
     @property
-    def index_value(self) -> list[str]:
-        """index_value of the worksheet (i.e., primary key)"""
-        return self.values(self._index_col_name)
+    def primary_key_list(self) -> list[str]:
+        """list of primary key of the worksheet"""
+        primary = self.primary_key
+        if isinstance(primary, str):
+            return self.values(primary)
+        elif isinstance(primary, tuple):
+            ks = [self.values(p) for p in primary]
+
+            if len(set(list(map(len, ks)))) != 1:
+                print(set(list(map(len, ks))))
+                raise RuntimeError(f'primary key cannot join properly due to different len in col: {self.primary_key}')
+
+            return [
+                '_'.join([str(it) for it in j])
+                for j in (list(zip(*ks)))
+            ]
+        else:
+            raise TypeError(f'{self.primary_key}')
 
     def get_range_value(self, a1_range_notation: str) -> list[Any]:
         """get values from range notation. i.e., `B1:S1` to get the list of content.
@@ -98,6 +125,7 @@ class GoogleWorkSheet:
         return [it.value for it in range_values]
 
     def values(self, head: str) -> list[Any]:
+        """get list of value from header"""
         col = self._col(head)
         return list(self._worksheet.col_values(col)[1:])
 
@@ -113,13 +141,13 @@ class GoogleWorkSheet:
         if isinstance(data, int):
             return data + 2  # skip header row + one-base
         elif isinstance(data, str):
-            return self.index_value.index(data) + 2
+            return self.primary_key_list.index(data) + 2
         elif isinstance(data, list):
             if len(data) == 0:
                 return []
             return [self._row(it) for it in data]
         elif isinstance(data, (slice, np.ndarray)):
-            return np.arange(len(self.index_value))[data] + 2
+            return np.arange(len(self.primary_key_list))[data] + 2
 
         raise TypeError()
 
@@ -131,10 +159,19 @@ class GoogleWorkSheet:
         """get row in col indices"""
         return self._row(data), self._col(head)
 
-    def get_cell(self, data: DataIndex,
+    # noinspection PyTypeChecker
+    def get_cell(self,
+                 data: DataIndex,
                  head: str,
                  value_render_option: VALUE_RENDER_OPT = 'FORMATTED_VALUE'):
-        # noinspection PyProtectedMember
+        """
+        Get data from a cell
+
+        :param data: ``DataIndex``
+        :param head: header name
+        :param value_render_option: ``VALUE_RENDER_OPT``: {'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'}
+        :return:
+        """
         if value_render_option not in get_args(VALUE_RENDER_OPT):
             raise ValueError('')
 
@@ -147,11 +184,14 @@ class GoogleWorkSheet:
         else:
             return [self._worksheet.cell(it, col, value_render_option=value_render_option).value for it in row]
 
-    def update_cell(self, data: DataIndex, head: str, value: Union[list[str], str]):
+    def update_cell(self, data: DataIndex,
+                    head: str,
+                    value: list[str] | str):
         """
+        Update value in a cell
 
-        :param data:
-        :param head:
+        :param data: ``DataIndex``
+        :param head: header name
         :param value: value to be updated. str type if single field
         :return:
         """
@@ -159,7 +199,7 @@ class GoogleWorkSheet:
 
         row, col = self._rowcol(data, head)
         if row is None:
-            if len(value) != len(self.index_value):
+            if len(value) != len(self.primary_key_list):
                 raise ValueError()
 
             data = []
@@ -184,15 +224,19 @@ class GoogleWorkSheet:
             self._worksheet.batch_update(data)
 
     def clear(self):
+        """Clears all cells in the worksheet"""
         self._worksheet.clear()
 
     def update(self, range_name, values=None, **kwargs):
+        """Sets values in a cell range of the sheet"""
         self._worksheet.update(range_name, values, **kwargs)
 
     def to_pandas(self) -> pd.DataFrame:
+        """Worksheet to pandas dataframe"""
         return pd.DataFrame(self._worksheet.get_all_records())
 
     def to_polars(self) -> pl.DataFrame:
+        """Worksheet to polar dataframe"""
         return pl.DataFrame(self._worksheet.get_all_records(), nan_to_null=True)
 
 
@@ -268,17 +312,17 @@ class GoogleSpreadSheet:
         return [it.title for it in self._worksheets]
 
     def has_worksheet(self, title: WorkPageName) -> bool:
-        """if has the worksheet, implement also in ``__contains__()``"""
+        """If has the worksheet, implement also in ``__contains__()``"""
         for w in self._worksheets:
             if w.title == title:
                 return True
         return False
 
-    def get_worksheet(self, title: WorkPageName, index_col_name: str = 'Data') -> GoogleWorkSheet:
-        """get the worksheet. implement also in ``__get_item__()``"""
+    def get_worksheet(self, title: WorkPageName, primary_key: str = 'Data') -> GoogleWorkSheet:
+        """Get the worksheet. implement also in ``__get_item__()``"""
         for w in self._worksheets:
             if w.title == title:
-                return GoogleWorkSheet(w, index_col_name)
+                return GoogleWorkSheet(w, primary_key)
         raise ValueError()
 
 

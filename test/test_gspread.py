@@ -1,13 +1,15 @@
 import unittest
+from datetime import datetime
 
 import gspread
 import numpy as np
 
 from neuralib.tools.gspread import *
+from neuralib.typing import PathLike
 
 # replace the following for testing
-CFG_FILE = ...  # config filepath for gspread token (i.e., service_account.json)
-EMAIL_ADDRESS = ...  # your email address
+CFG_FILE: PathLike = ...  # config filepath for gspread token (i.e., service_account.json)
+EMAIL_ADDRESS: str = ...  # your email address
 
 
 class TestSpreadSheet(unittest.TestCase):
@@ -55,6 +57,22 @@ class TestWorkSheetCust(unittest.TestCase):
     def test_title(self):
         self.assertEqual('apcls_tac', self.ws.title)
 
+    def test_tuple_primary_key_list(self):
+        self.ws.primary_key = ('Data', 'region')  # ad-hoc
+        primary = self.ws.primary_key_list
+        expect = ['210315_YW006_aRSC', '210401_YW006_aRSC', '210402_YW006_pRSC', '210409_YW006_pRSC',
+                  '210402_YW008_aRSC', '210407_YW008_pRSC', '210409_YW008_pRSC', '210416_YW008_aRSC',
+                  '210604_YW010_aRSC', '210610_YW010_pRSC', '#210513_YW017_aRSC', '210514_YW017_pRSC',
+                  '210519_YW017_aRSC', '211202_YW022_aRSC', '211209_YW022_pRSC', '211203_YW032_aRSC',
+                  '211208_YW032_pRSC', '211202_YW033_aRSC', '211208_YW033_pRSC', '221018_YW048_aRSC',
+                  '221019_YW048_pRSC', '#TODO_', '# BACKUP_', '211029_YW022_aRSC', '## TBA_', '210514_YW018_aRSC',
+                  '210518_YW018_aRSC', '210526_YW018_aRSC', '####_', '220518_YW040_pRSC', '220520_YW040_aRSC',
+                  '220526_YW040_', '# test_123']
+
+        self.assertListEqual(primary, expect)
+
+        self.ws.primary_key = 'Data'  # ad-hoc, rollback
+
     def test_headers(self):
         expect = [
             'Data', 'region', 'pair_wise_group', 'dark end', 'ch2_num', 'depth', 'n_planes',
@@ -68,8 +86,8 @@ class TestWorkSheetCust(unittest.TestCase):
                   '210519_YW017', '211202_YW022', '211209_YW022', '211203_YW032', '211208_YW032', '211202_YW033',
                   '211208_YW033', '221018_YW048', '221019_YW048', '#TODO', '# BACKUP', '211029_YW022', '## TBA',
                   '210514_YW018', '210518_YW018', '210526_YW018', '####', '220518_YW040', '220520_YW040',
-                  '220526_YW040']
-        self.assertListEqual(self.ws.index_value, expect)
+                  '220526_YW040', '# test']
+        self.assertListEqual(self.ws.primary_key_list, expect)
 
     def test_get_range_value(self):
         region_a1 = 'B3:B5'
@@ -103,6 +121,14 @@ class TestWorkSheetCust(unittest.TestCase):
 
         f = self.ws.get_cell(data='# test', head='pair_wise_group', value_render_option='FORMULA')
         self.assertEqual(f, '=100/200')
+
+    def test_update_cell(self):
+        time = datetime.today().strftime('%y-%m-%d %H:%M')
+        exp = f'UPDATE_{time}'
+        self.ws.update_cell(data='211029_YW022', head='pair_wise_group', value=exp)
+
+        res = self.ws.get_cell(data='211029_YW022', head='pair_wise_group')
+        self.assertEqual(res, exp)
 
 
 if __name__ == '__main__':
