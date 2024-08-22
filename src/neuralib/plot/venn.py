@@ -95,12 +95,11 @@ class VennDiagram:
                  subsets: dict[str, int],
                  *,
                  colors: tuple[str, ...] | None = None,
-                 output: PathLike | None = None,
                  ax: Axes | None = None,
                  **kwargs):
         """
 
-        :param subsets: Dictionary of set name and its value
+        :param subsets: Dictionary of set label and its value
         :param colors: colors of each venn
         :param ax: ``Axes``
         :param kwargs: additional args passed to ``matplotlib_venn.venn2()`` or ``matplotlib_venn.venn3()``
@@ -112,8 +111,9 @@ class VennDiagram:
         self._intersections: dict[str, int] = {}
 
         # fig
+        if colors is not None and len(colors) != len(self):
+            raise ValueError('length of colors need to be the same as length of subset label')
         self.colors = colors or VennDiagram.DEFAULT_COLORS
-        self.output = output
         self.ax = ax
 
         self.kwargs = kwargs
@@ -263,11 +263,19 @@ class VennDiagram:
         self.ax.set_xticks([])
         self.ax.set_yticks([])
 
-        #
-        if self.output is None:
-            plt.show()
-        else:
-            plt.savefig(self.output)
+    @staticmethod
+    def show():
+        """Show figure"""
+        plt.show()
+
+    @staticmethod
+    def savefig(output: PathLike):
+        """
+        Save figure
+
+        :param output: fig output
+        """
+        plt.savefig(output)
 
     @property
     def title(self) -> str:
@@ -279,17 +287,19 @@ class VennDiagram:
 
         return '\n'.join(ret)
 
+    # noinspection PyTypeChecker
     def _venn2(self):
         """subsets = (a, b, a&b)"""
         from matplotlib_venn import venn2
         subsets = list(self.subsets.values()) + [self.get_intersection(*self.labels)]
 
-        venn2(subsets=subsets,
+        venn2(subsets=tuple(subsets),
               set_labels=self.labels,
-              set_colors=self.colors,
+              set_colors=self.colors[:2],
               ax=self.ax,
               **self.kwargs)
 
+    # noinspection PyTypeChecker
     def _venn3(self):
         """subsets = (a, b, a&b, c, a&c, b&c, a&b&c)"""
         from matplotlib_venn import venn3

@@ -86,6 +86,7 @@ def test_venn2():
     vd.add_intersection('setA & setB', 5)
     vd.add_total(100)
     vd.plot()
+    vd.show()
 
 
 def test_venn3():
@@ -97,7 +98,8 @@ def test_venn3():
     vd.add_intersection('setA & setB & setC', 2)
     vd.add_total(200)
     vd.plot()
+    vd.show()
 
 
 if __name__ == '__main__':
-    test_venn3()
+    test_venn2()
