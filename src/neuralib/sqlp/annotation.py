@@ -180,7 +180,7 @@ def check(field: str = None):
     """
 
     def _decorator(f):
-        setattr(f, '_sql_check', (field,))
+        setattr(f, '_sql_check', (field, ))
         return f
 
     return _decorator

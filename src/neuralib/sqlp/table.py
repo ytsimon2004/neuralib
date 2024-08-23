@@ -88,10 +88,20 @@ class Field(NamedTuple):
 
     def get_annotation(self, annotation_type: type[T]) -> T | None:
         for a in self.annotated:
-            if isinstance(a, annotation_type):
+            if a == annotation_type or isinstance(a, annotation_type):
                 return a
         return None
 
+    @typing.overload
+    def __call__(self, data: type) -> SqlField:
+        pass
+
+    @typing.overload
+    def __call__(self, data: Any) -> Any:
+        pass
+
+    def __call__(self, data):
+        return getattr(data, self.name)
 
 class Table(Generic[T], metaclass=abc.ABCMeta):
     """
@@ -105,22 +115,13 @@ class Table(Generic[T], metaclass=abc.ABCMeta):
     """name of the table."""
 
     @abc.abstractmethod
-    def table_seq(self, instance: T) -> tuple[Any, ...]:
+    def table_seq(self, instance: T, fields: list[str] = None) -> tuple[Any, ...]:
         """
         cast an instance as a tuple as SQL parameters.
 
         :param instance:
+        :param fields:
         :return:
-        """
-        pass
-
-    @abc.abstractmethod
-    def table_dict(self, instance: T, *, sql_type: bool = True) -> dict[str, Any]:
-        """
-        cast an instance cast as dict as SQL parameters.
-
-        :param instance:
-        :param sql_type: cast value as SQL type
         """
         pass
 
@@ -218,6 +219,14 @@ class ForeignConstraint(NamedTuple):
     on_update: FOREIGN_POLICY
     on_delete: FOREIGN_POLICY
 
+    @property
+    def table_name(self) -> str:
+        return table_name(self.table)
+
+    @property
+    def foreign_table_name(self) -> str:
+        return table_name(self.foreign_table)
+
 
 class CheckConstraint(NamedTuple):
     """SQL check constraint"""
@@ -226,8 +235,10 @@ class CheckConstraint(NamedTuple):
 
     table: type
     """associated table"""
-    field: Optional[str]
+
+    field: str | None
     """associated field's name."""
+
     expression: SqlExpr
     """checking expression"""
 

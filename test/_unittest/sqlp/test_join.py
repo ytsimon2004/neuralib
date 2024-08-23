@@ -20,9 +20,11 @@ class JoinTest(SqlTestCase):
             albums
         INNER JOIN artists
             ON artists.ArtistId = albums.ArtistId;
-        """, sqlp.select_from(Albums.Title, Artists.Name)
-                               .join(Artists, by='inner')
-                               .on(Artists.ArtistId == Albums.ArtistId))
+        """, sqlp.select_from(
+            Albums.Title, Artists.Name
+        ).join(
+            Artists.ArtistId == Albums.ArtistId, by='inner'
+        ))
 
     def test_inner_join_on_foreign_constraint(self):
         self.assertSqlExeEqual("""\
@@ -32,7 +34,7 @@ class JoinTest(SqlTestCase):
         FROM
             albums
         INNER JOIN artists USING (ArtistId);
-        """, sqlp.select_from(Albums.Title, Artists.Name).join(Artists, by='inner').by(Albums._artists))
+        """, sqlp.select_from(Albums.Title, Artists.Name).join(Albums._artists, by='inner'))
 
     def test_join_alias(self):
         l = sqlp.alias(Albums, 'l')
@@ -46,9 +48,7 @@ class JoinTest(SqlTestCase):
             albums l
         INNER JOIN artists r ON
             r.ArtistId = l.ArtistId;
-        """, sqlp.select_from(l.Title, r.Name)
-                               .join(r, by='inner')
-                               .on(r.ArtistId == l.ArtistId))
+        """, sqlp.select_from(l.Title, r.Name).join(r.ArtistId == l.ArtistId, by='inner'))
 
     def test_join_using(self):
         self.assertSqlExeEqual("""\
@@ -59,8 +59,7 @@ class JoinTest(SqlTestCase):
            albums
         INNER JOIN artists USING(ArtistId);
         """, sqlp.select_from(Albums.Title, Artists.Name)
-                               .join(Artists, by='inner')
-                               .using(Artists.ArtistId))
+                               .join(Artists.ArtistId, by='inner'))
 
     def test_left_join(self):
         self.assertSqlExeEqual("""\
@@ -73,8 +72,7 @@ class JoinTest(SqlTestCase):
             artists.ArtistId = albums.ArtistId
         ORDER BY Name;
         """, sqlp.select_from(Artists.Name, Albums.Title)
-                               .join(Albums, by='left')
-                               .on(Artists.ArtistId == Albums.ArtistId)
+                               .join(Artists.ArtistId == Albums.ArtistId, by='left')
                                .order_by(Artists.Name))
 
     def test_left_join_using(self):
@@ -87,8 +85,7 @@ class JoinTest(SqlTestCase):
         LEFT JOIN albums USING (ArtistId)
         ORDER BY Name;
         """, sqlp.select_from(Artists.Name, Albums.Title)
-                               .join(Albums, by='left')
-                               .using(Artists.ArtistId)
+                               .join(Albums.ArtistId, by='left')
                                .order_by(Artists.Name))
 
     def test_left_join_with_where(self):
@@ -103,8 +100,7 @@ class JoinTest(SqlTestCase):
         WHERE Title IS NULL
         ORDER BY Name;
         """, sqlp.select_from(Artists.Name, Albums.Title)
-                               .join(Albums, by='left')
-                               .on(Artists.ArtistId == Albums.ArtistId)
+                               .join(Artists.ArtistId == Albums.ArtistId, by='left')
                                .where(sqlp.is_null(Albums.Title))
                                .order_by(Artists.Name))
 
@@ -124,8 +120,7 @@ class InnerJoinTest(SqlTestCase):
             tracks
         INNER JOIN albums ON albums.albumid = tracks.albumid;
         """, sqlp.select_from(Tracks.TrackId, Tracks.Name, Albums.Title)
-                               .join(Albums, by='inner')
-                               .on(Albums.AlbumId == Tracks.AlbumId))
+                               .join(Albums.AlbumId == Tracks.AlbumId, by='inner'))
 
     def test_inner_join_show_case(self):
         self.assertSqlExeEqual("""\
@@ -144,7 +139,7 @@ class InnerJoinTest(SqlTestCase):
             Tracks.AlbumId @ 'album_id_tracks',
             Albums.AlbumId @ 'album_id_albums',
             Albums.Title
-        ).join(Albums, by='inner').on(Albums.AlbumId == Tracks.AlbumId))
+        ).join(Albums.AlbumId == Tracks.AlbumId, by='inner'))
 
     def test_join_multiple(self):
         self.assertSqlExeEqual("""\
@@ -162,10 +157,10 @@ class InnerJoinTest(SqlTestCase):
             Tracks.Name @ 'track',
             Albums.Title @ 'album',
             Artists.Name @ 'artist'
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
-        ).join(Artists, by='inner').on(
-            Artists.ArtistId == Albums.ArtistId
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
+        ).join(
+            Artists.ArtistId == Albums.ArtistId, by='inner'
         ))
 
     def test_join_multiple_where(self):
@@ -186,10 +181,10 @@ class InnerJoinTest(SqlTestCase):
             Tracks.Name @ 'Track',
             Albums.Title @ 'Album',
             Artists.Name @ 'Artist'
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
-        ).join(Artists, by='inner').on(
-            Artists.ArtistId == Albums.ArtistId
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
+        ).join(
+            Artists.ArtistId == Albums.ArtistId, by='inner'
         ).where(Artists.ArtistId == 10))
 
 
@@ -210,7 +205,7 @@ class LeftJoinTest(SqlTestCase):
         ORDER BY
            AlbumId;
         """, sqlp.select_from(Artists.ArtistId, Albums.AlbumId)
-                               .join(Albums, by='left').on(Albums.ArtistId == Artists.ArtistId)
+                               .join(Albums.ArtistId == Artists.ArtistId, by='left')
                                .order_by(Albums.AlbumId))
 
     def test_left_join_where(self):
@@ -225,7 +220,7 @@ class LeftJoinTest(SqlTestCase):
         WHERE
             AlbumId IS NULL;
         """, sqlp.select_from(Artists.ArtistId, Albums.AlbumId)
-                               .join(Albums, by='left').on(Albums.ArtistId == Artists.ArtistId)
+                               .join(Albums.ArtistId == Artists.ArtistId, by='left')
                                .where(sqlp.is_null(Albums.AlbumId)))
 
 
@@ -305,7 +300,7 @@ class OuterJoinTest(SqlTestCase):
         FROM dogs
         FULL OUTER JOIN cats
             ON dogs.color = cats.color;
-        """, sqlp.select_from(Dogs).join(Cats, by='full outer').on(Dogs.color == Cats.color))
+        """, sqlp.select_from(Dogs).join(Dogs.color == Cats.color, by='full outer'))
 
 
 class SelfJoinTest(SqlTestCase):
@@ -326,7 +321,7 @@ class SelfJoinTest(SqlTestCase):
             (manager := sqlp.concat(m.FirstName, ' ', m.LastName) @ 'Manager'),
             sqlp.concat(e.FirstName, ' ', e.LastName) @ 'Direct report',
             from_table=e
-        ).join(m, by='inner').on(m.EmployeeId == e.ReportsTo).order_by(manager))
+        ).join(m, m.EmployeeId == e.ReportsTo, by='inner').order_by(manager))
 
     def test_self_join_by_foreign_constraint(self):
         e = sqlp.alias(Employees, 'e')
@@ -341,7 +336,7 @@ class SelfJoinTest(SqlTestCase):
             (manager := sqlp.concat(m.FirstName, ' ', m.LastName) @ 'Manager'),
             sqlp.concat(e.FirstName, ' ', e.LastName) @ 'Direct report',
             from_table=e
-        ).join(m, by='inner').by(Employees._report_to).order_by(manager))
+        ).join(m, Employees._report_to, by='inner').order_by(manager))
 
     def test_self_join_example2(self):
         e1 = sqlp.alias(Employees, 'e1')
@@ -360,9 +355,11 @@ class SelfJoinTest(SqlTestCase):
             e1.City,
             sqlp.concat(e1.FirstName, ' ', e1.LastName) @ 'fullname',
             distinct=True
-        ).join(e2, by='inner').on(
+        ).join(
+            e2,
             e2.City == e1.City,
-            (e1.FirstName != e2.FirstName) & (e1.LastName != e2.LastName)
+            (e1.FirstName != e2.FirstName) & (e1.LastName != e2.LastName),
+            by='inner'
         ).order_by(e1.City))
 
 
@@ -412,8 +409,8 @@ class GroupByTest(SqlTestCase):
             Tracks.AlbumId,
             Albums.Title,
             sqlp.count(Tracks.TrackId)
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
         ).group_by(Tracks.AlbumId))
 
     def test_group_by_having(self):
@@ -430,8 +427,8 @@ class GroupByTest(SqlTestCase):
         HAVING COUNT(trackid) > 15;
         """, sqlp.select_from(
             Tracks.AlbumId, Albums.Title, sqlp.count(Tracks.TrackId)
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
         ).group_by(Tracks.AlbumId).having(
             sqlp.count(Tracks.TrackId) > 15
         ))
@@ -471,8 +468,8 @@ class GroupByTest(SqlTestCase):
             sqlp.min(Tracks.Milliseconds),
             sqlp.max(Tracks.Milliseconds),
             sqlp.round(sqlp.avg(Tracks.Milliseconds), 2)
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
         ).group_by(Tracks.AlbumId))
 
     def test_group_by_multiple_columns(self):
@@ -566,8 +563,8 @@ class HavingTest(SqlTestCase):
             Tracks.AlbumId,
             Albums.Title,
             (length := sqlp.sum(Tracks.Milliseconds) @ 'length')
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
         ).group_by(Tracks.AlbumId).having(
             length > 60000000
         ))
@@ -840,6 +837,31 @@ class ExistTest(SqlTestCase):
             sqlp.exists(sqlp.select_from(1, from_table=Invoices).where(Invoices.CustomerId == Customers.CustomerId))
         ).order_by(Customers.FirstName, Customers.LastName))
 
+    def test_exists_table(self):
+        self.assertSqlExeEqual("""\
+        SELECT
+            CustomerId,
+            FirstName,
+            LastName,
+            Company
+        FROM
+            Customers c
+        WHERE
+            EXISTS (
+                SELECT 
+                    1 
+                FROM 
+                    Invoices
+                WHERE 
+                    CustomerId = c.CustomerId
+            )
+        ORDER BY
+            FirstName,
+            LastName; 
+        """, sqlp.select_from(Customers.CustomerId, Customers.FirstName, Customers.LastName, Customers.Company).where(
+            sqlp.exists(Invoices, Invoices.CustomerId == Customers.CustomerId)
+        ).order_by(Customers.FirstName, Customers.LastName))
+
     def test_use_in_replace_exists(self):
         self.assertSqlExeEqual("""\
         SELECT
@@ -881,6 +903,26 @@ class ExistTest(SqlTestCase):
         ORDER BY Name;
         """, sqlp.select_from(Artists).where(
             ~sqlp.exists(sqlp.select_from(1, from_table=Albums).where(Albums.ArtistId == Artists.ArtistId))
+        ).order_by(Artists.Name))
+
+    def test_not_exists_table(self):
+        self.assertSqlExeEqual("""\
+        SELECT
+           *
+        FROM
+           Artists a
+        WHERE
+           NOT EXISTS(
+              SELECT
+                 1
+              FROM
+                 Albums
+              WHERE
+                 ArtistId = a.ArtistId
+           )
+        ORDER BY Name;
+        """, sqlp.select_from(Artists).where(
+            ~sqlp.exists(Albums, Albums.ArtistId == Artists.ArtistId)
         ).order_by(Artists.Name))
 
 

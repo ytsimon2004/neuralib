@@ -8,6 +8,7 @@ from typing import overload, Any, TYPE_CHECKING, Literal, ContextManager, TypeVa
 
 from typing_extensions import Self
 
+from .annotation import CURRENT_TIMESTAMP, CURRENT_DATE, CURRENT_TIME
 from .table import Field
 
 if TYPE_CHECKING:
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     'SqlExpr',
-    'wrap', 'wrap_seq',
+    'wrap', 'wrap_seq', 'use_table_first', 'use_table',
     'SqlLiteral', 'SqlPlaceHolder', 'SqlField', 'SqlAlias', 'SqlAliasField', 'SqlSubQuery',
     'SqlOper', 'SqlOrderOper', 'SqlCastOper', 'SqlCompareOper', 'SqlUnaryOper', 'SqlBinaryOper', 'SqlFuncOper',
     'SqlVarArgOper', 'SqlConcatOper', 'SqlExistsOper', 'SqlAggregateFunc', 'SqlWindowDef', 'SqlWindowFunc',
@@ -23,10 +24,61 @@ __all__ = [
 ]
 
 
+class SqlStatBuilder:
+    def __init__(self):
+        self.stat = []
+        self.para = []
+        self._deparameter: bool | Literal['repr'] = False
+
+    def build(self) -> str:
+        """build a SQL statement."""
+        return ' '.join(self.stat)
+
+    def add(self, stat: str | list[str] | SqlStat) -> Self:
+        """
+        Add SQL token.
+        """
+        from .stat import SqlStat
+
+        if isinstance(stat, SqlStat):
+            is_init_stat = len(self.stat) == 0
+            if not is_init_stat:
+                self.stat.append('(')
+
+            elements = list(stat._stat)
+            if is_init_stat:
+                while len(elements) and isinstance(elements[0], SqlCteExpr):
+                    if len(self.stat) == 0:
+                        self.stat.append('WITH')
+                    else:
+                        self.stat.append(',')
+                    elements.pop(0).__sql_stat__(self)
+
+            for element in elements:
+                self.add(element)
+
+            if not is_init_stat:
+                self.stat.append(')')
+
+        elif isinstance(stat, str):
+            self.stat.append(stat)
+
+        elif isinstance(stat, (tuple, list)):
+            self.stat.extend(stat)
+
+        elif isinstance(stat, SqlExpr):
+            stat.__sql_stat__(self)
+
+        else:
+            raise TypeError(f'{type(stat).__name__}: {repr(stat)}')
+
+        return self
+
+
 class SqlExpr(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         pass
 
     def __matmul__(self, other: str) -> SqlAlias[Self]:
@@ -43,10 +95,10 @@ class SqlExpr(metaclass=abc.ABCMeta):
         return SqlCompareOper('!=', self, wrap(other))
 
     def is_null(self) -> SqlCompareOper:
-        return SqlCompareOper('IS', self, wrap(None))
+        return SqlCompareOper('IS', self, SqlLiteral.SQL_NULL)
 
     def is_not_null(self) -> SqlCompareOper:
-        return SqlCompareOper('IS NOT', self, wrap(None))
+        return SqlCompareOper('IS NOT', self, SqlLiteral.SQL_NULL)
 
     def like(self, value: str) -> SqlCompareOper:
         if value is not None and not isinstance(value, str):
@@ -209,13 +261,13 @@ class SqlExpr(metaclass=abc.ABCMeta):
 
     def cast(self, t: type) -> SqlExpr:
         if t in (bool,):
-            return SqlBinaryOper('CAST', self, 'BOOLEAN')
+            return SqlCastOper('BOOLEAN', self)
         elif t in (int,):
-            return SqlBinaryOper('CAST', self, 'INT')
+            return SqlCastOper('INT', self)
         elif t in (float,):
-            return SqlBinaryOper('CAST', self, 'FLOAT')
+            return SqlCastOper('FLOAT', self)
         elif t in (str,):
-            return SqlBinaryOper('CAST', self, 'TEXT')
+            return SqlCastOper('TEXT', self)
         else:
             raise TypeError()
 
@@ -229,27 +281,38 @@ def wrap(other: Any) -> SqlExpr:
         return SqlLiteral.SQL_TRUE
     elif other is False:
         return SqlLiteral.SQL_FALSE
+    elif other is CURRENT_TIMESTAMP:
+        return SqlLiteral('CURRENT_TIMESTAMP')
+    elif other is CURRENT_TIME:
+        return SqlLiteral('CURRENT_TIME')
+    elif other is CURRENT_DATE:
+        return SqlLiteral('CURRENT_DATE')
     elif isinstance(other, str) and other.startswith(':'):
         return SqlLiteral(other)
-    elif isinstance(other, (int, float, str)):
+    elif isinstance(other, (int, float)):
+        return SqlLiteral(repr(other))
+    elif isinstance(other, str):
         return SqlPlaceHolder(other)
+    elif isinstance(other, Field):
+        return SqlField(other)
     elif isinstance(other, SqlExpr):
         return other
     elif isinstance(other, SqlStat):
         return SqlSubQuery(other)
+    elif isinstance(other, datetime.datetime):
+        return SqlLiteral(repr(other.strftime('%Y-%m-%d %H:%M:%S.%f')))
     elif isinstance(other, datetime.date):
         return SqlLiteral(repr(other.strftime('%Y-%m-%d')))
-    elif isinstance(other, datetime.datetime):
-        return SqlLiteral(repr(other.strftime('%Y-%m-%d %H:%M:%S')))
     else:
-        raise TypeError(repr(other))
+        # delay error raising
+        return SqlError(TypeError(repr(other)))
 
 
 def wrap_seq(*other) -> list[SqlExpr]:
     return list(map(wrap, other))
 
 
-def sql_join(stat: SqlStat, sep: str, exprs: Iterable[SqlExpr]):
+def sql_join(stat: SqlStatBuilder, sep: str, exprs: Iterable[SqlExpr]):
     first = True
     for expr in exprs:
         if not first:
@@ -260,28 +323,72 @@ def sql_join(stat: SqlStat, sep: str, exprs: Iterable[SqlExpr]):
         expr.__sql_stat__(stat)
 
 
-def sql_join_set(stat: SqlStat, sep: str, exprs: Iterable[Union[bool, SqlCompareOper]]):
-    first = True
-    for expr in exprs:
-        if not first:
-            stat.add(sep)
-        else:
-            first = False
+def use_table_first(expr: SqlExpr) -> type | None:
+    if isinstance(expr, SqlField):
+        return expr.table
+    elif isinstance(expr, SqlAlias) and isinstance(table := expr._value, type):
+        return table
+    elif isinstance(expr, SqlAlias) and isinstance(expr := expr._value, SqlExpr):
+        return use_table_first(expr)
+    elif isinstance(expr, SqlAliasField) and isinstance(table := expr.table, type):
+        return table
+    elif isinstance(expr, SqlExistsOper):
+        return expr.stat.table
+    elif isinstance(expr, (SqlCompareOper, SqlBinaryOper)):
+        return use_table_first(expr.left) or use_table_first(expr.right)
+    elif isinstance(expr, (SqlUnaryOper, SqlCastOper)):
+        return use_table_first(expr.right)
+    elif isinstance(expr, (SqlVarArgOper, SqlConcatOper, SqlFuncOper)):
+        for arg in expr.args:
+            if (ret := use_table_first(arg)) is not None:
+                return ret
+    return None
 
-        if isinstance(expr, SqlCompareOper) and expr.oper == '=' and isinstance(expr.left, SqlField):
-            field = expr.left.field
-            if isinstance(expr.right, SqlPlaceHolder):
-                stat.add([field.name, '=', '?'], expr.right.value)
-            elif isinstance(expr.right, SqlLiteral):
-                stat.add([field.name, '=', '?'], expr.right.value)
-            elif isinstance(expr.right, SqlExpr):
-                stat.add([field.name, '=', '('])
-                expr.right.__sql_stat__(stat)
-                stat.add(')')
-            else:
-                raise TypeError(repr(expr))
-        else:
-            raise TypeError(repr(expr))
+
+def use_table(expr: SqlExpr, self: list[type | SqlAlias]) -> type | SqlAlias[type] | None:
+    use_self = []
+    for t in self:
+        if isinstance(t, type):
+            use_self.append(t)
+        elif isinstance(t, SqlAlias) and isinstance(table := t._value, type):
+            use_self.append(table)
+
+    return _use_table(expr, use_self)
+
+
+def _use_table(expr: SqlExpr, self: list[type]) -> type | SqlAlias[type] | None:
+    if isinstance(expr, SqlField) and isinstance(field := expr.field, Field):
+        table = field.table
+        return table if table not in self else None
+    elif isinstance(expr, SqlAlias) and isinstance(table := expr._value, type):
+        return expr if table not in self else None
+    elif isinstance(expr, SqlAliasField) and isinstance(table := expr.table, type):
+        name = expr.name
+        return SqlAlias(table, name) if table not in self else None
+    elif isinstance(expr, SqlAlias) and isinstance(expr := expr._value, SqlExpr):
+        return _use_table(expr, self)
+    elif isinstance(expr, (SqlCompareOper, SqlBinaryOper)):
+        return _use_table(expr.left, self) or _use_table(expr.right, self)
+    elif isinstance(expr, (SqlUnaryOper, SqlCastOper)):
+        return _use_table(expr.right, self)
+    elif isinstance(expr, (SqlVarArgOper, SqlConcatOper, SqlFuncOper)):
+        for arg in expr.args:
+            if (ret := _use_table(arg, self)) is not None:
+                return ret
+    return None
+
+
+class SqlError(SqlExpr):
+    __slots__ = 'error',
+
+    def __init__(self, error: BaseException):
+        self.error = error
+
+    def __sql_stat__(self, stat: SqlStatBuilder):
+        raise self.error
+
+    def __repr__(self):
+        return repr(self.error)
 
 
 class SqlLiteral(SqlExpr):
@@ -294,7 +401,7 @@ class SqlLiteral(SqlExpr):
     def __init__(self, value: str):
         self.value = value
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.value)
 
     def __repr__(self):
@@ -312,14 +419,41 @@ class SqlPlaceHolder(SqlExpr):
     def __init__(self, value):
         self.value = value
 
-    def __sql_stat__(self, stat: SqlStat):
-        stat.add('?', self.value)
+    def __sql_stat__(self, stat: SqlStatBuilder):
+        if isinstance(self.value, SqlError):
+            self.value.__sql_stat__(stat)
+
+        if stat._deparameter is True:
+            stat.add(repr(self.value))
+        elif stat._deparameter == 'repr':
+            stat.add(f'?({repr(self.value)})')
+        else:
+            stat.add('?')
+            stat.para.append(self.value)
+
 
     def __repr__(self):
         return f'?=[{self.value}]'
 
 
-E = TypeVar('E', bound=SqlExpr)
+class SqlRemovePlaceHolder(SqlExpr):
+    __slots__ = 'expr', 'mode'
+
+    def __init__(self, expr: SqlExpr, *, mode: bool | Literal['repr'] = True):
+        self.expr = expr
+        self.mode = mode
+
+    def __sql_stat__(self, stat: SqlStatBuilder):
+        old = stat._deparameter
+        stat._deparameter = self.mode
+        self.expr.__sql_stat__(stat)
+        stat._deparameter = old
+
+    def __repr__(self):
+        return repr(self.expr)
+
+
+E = TypeVar('E')
 
 
 class SqlAlias(SqlExpr, Generic[E]):
@@ -329,7 +463,7 @@ class SqlAlias(SqlExpr, Generic[E]):
         self._value = value
         self._name = name
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self._name)
 
     def __getattr__(self, item: str) -> SqlAliasField:
@@ -342,24 +476,31 @@ class SqlAlias(SqlExpr, Generic[E]):
         else:
             raise TypeError(f'{self._value}.{item}')
 
+    def __str__(self):
+        if isinstance(self._value, type):
+            from .table import table_name
+            return f"Alias[{table_name(self._value)} AS {self._name}]"
+        else:
+            return f"Alias[... AS {self._name}]"
+
+    __repr__ = __str__
+
 
 class SqlAliasField(SqlExpr):
     __slots__ = 'table', 'name', 'attr'
-    __match_args__ = 'table', 'name', 'attr'
 
     def __init__(self, table: Union[type, SqlStat, SqlCteExpr], name: str, attr: str):
         self.table = table
         self.name = name
         self.attr = attr
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(f'{self.name}.{self.attr}')
 
     def __str__(self):
         return f'{self.name}.{self.attr}'
 
-    def __repr__(self):
-        return f'{self.name}.{self.attr}'
+    __repr__ = __str__
 
 
 class SqlField(SqlExpr):
@@ -368,7 +509,7 @@ class SqlField(SqlExpr):
     def __init__(self, field: Field):
         self.field = field
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(f'{self.table_name}.{self.field.name}')
 
     @property
@@ -383,8 +524,10 @@ class SqlField(SqlExpr):
     def name(self) -> str:
         return self.field.name
 
-    def __repr__(self):
+    def __str__(self):
         return f'{self.field.table_name}.{self.field.name}'
+
+    __repr__ = __str__
 
 
 class SqlSubQuery(SqlExpr):
@@ -396,8 +539,11 @@ class SqlSubQuery(SqlExpr):
         self.stat = stat
         stat._connection = None
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.stat)
+
+    def __str__(self):
+        return '(...)'
 
     def __repr__(self):
         return '(' + self.stat.build() + ')'
@@ -418,7 +564,7 @@ class SqlCompareOper(SqlOper):
         self.left = left
         self.right = right
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         if self.oper in ('IN', 'NOT IN'):
             self.left.__sql_stat__(stat)
             stat.add(self.oper)
@@ -460,8 +606,11 @@ class SqlCompareOper(SqlOper):
             stat.add(self.oper)
             self.right.__sql_stat__(stat)
 
+    def __str__(self):
+        return '(' + str(self.left) + ' ' + self.oper + ' ' + str(self.right) + ')'
+
     def __repr__(self):
-        return '(' + repr(self.left) + self.oper + repr(self.right) + ')'
+        return '(' + repr(self.left) + ' ' + self.oper + ' ' + repr(self.right) + ')'
 
     def __invert__(self) -> SqlCompareOper:
         return self.not_()
@@ -494,6 +643,12 @@ class SqlCompareOper(SqlOper):
         else:
             raise TypeError(f'{self.oper} not support NOT')
 
+    @classmethod
+    def as_set_expr(cls, expr: SqlCompareOper) -> SqlCompareOper:
+        if isinstance(expr, SqlCompareOper) and expr.oper == '=' and isinstance(field := expr.left, SqlField):
+            return SqlLiteral(field.name) == expr.right
+        raise TypeError(repr(expr))
+
 
 class SqlUnaryOper(SqlOper):
     __slots__ = 'oper', 'right'
@@ -502,7 +657,7 @@ class SqlUnaryOper(SqlOper):
         super().__init__(oper)
         self.right = right
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.oper)
         self.right.__sql_stat__(stat)
 
@@ -517,7 +672,7 @@ class SqlCastOper(SqlOper):
         super().__init__(oper)
         self.right = right
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(['CAST', '('])
         self.right.__sql_stat__(stat)
         stat.add(['AS', self.oper, ')'])
@@ -533,7 +688,7 @@ class SqlOrderOper(SqlOper):
         super().__init__(oper)
         self.right = right
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         self.right.__sql_stat__(stat)
         stat.add(self.oper)
 
@@ -565,7 +720,7 @@ class SqlBinaryOper(SqlOper):
         self.left = left
         self.right = right
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         self.left.__sql_stat__(stat)
         stat.add(self.oper)
         self.right.__sql_stat__(stat)
@@ -581,7 +736,7 @@ class SqlVarArgOper(SqlOper):
         super().__init__(oper)
         self.args = args
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         if self.oper in ('NOT AND', 'NOT OR'):
             stat.add(['NOT', '('])
             self.not_().__sql_stat__(stat)
@@ -594,6 +749,8 @@ class SqlVarArgOper(SqlOper):
             raise ValueError()
 
     def __repr__(self):
+        if self.oper == ',':
+            return ','.join(map(repr, self.args))
         return self.oper + '(' + ','.join(map(repr, self.args)) + ')'
 
     def __invert__(self) -> SqlVarArgOper:
@@ -630,7 +787,7 @@ class SqlConcatOper(SqlOper):
         self.oper = oper
         self.args = args
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         sql_join(stat, self.oper, self.args)
 
     def __repr__(self):
@@ -644,7 +801,7 @@ class SqlFuncOper(SqlOper):
         super().__init__(oper)
         self.args = [wrap(it) for it in args]
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.oper)
 
         if len(self.args):
@@ -665,8 +822,9 @@ class SqlExistsOper(SqlOper):
     def __init__(self, oper: Literal['EXISTS', 'NOT EXISTS'], stat: SqlStat):
         super().__init__(oper)
         self.stat = stat
+        stat._connection = None
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.oper)
         stat.add(self.stat)
 
@@ -686,7 +844,7 @@ class SqlAggregateFunc(SqlFuncOper):
         self._where: Optional[SqlVarArgOper] = None
         self._distinct = False
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.oper)
 
         stat.add('(')
@@ -719,7 +877,7 @@ class SqlWindowDef(SqlExpr):
         self._order_by: Optional[list[SqlExpr]] = None
         self._frame_spec: SqlWindowFrame = None
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add('(')
         if (p := self._partition) is not None:
             stat.add('PARTITION BY')
@@ -761,14 +919,13 @@ class SqlWindowDef(SqlExpr):
 class SqlWindowFrame:
     class Spec:
         __slots__ = 'kind', 'expr'
-        __match_args__ = 'kind', 'expr'
 
         def __init__(self, kind: Literal['UNBOUNDED PRECEDING', 'CURRENT ROW', 'PRECEDING', 'FOLLOWING'],
                      expr: SqlExpr = None):
             self.kind = kind
             self.expr = expr
 
-        def __sql_stat__(self, stat: SqlStat):
+        def __sql_stat__(self, stat: SqlStatBuilder):
             if self.kind in ('UNBOUNDED PRECEDING', 'CURRENT ROW'):
                 stat.add(self.kind)
             elif self.kind in ('PRECEDING', 'FOLLOWING'):
@@ -782,7 +939,7 @@ class SqlWindowFrame:
         self._specs = []
         self._exclude = None
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self._on)
 
         spec = self._specs[-1]
@@ -836,7 +993,7 @@ class SqlWindowFunc(SqlAggregateFunc):
         SqlAggregateFunc.__init__(self, oper, *args)
         self._over: Union[str, SqlWindowDef, None] = None
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         super().__sql_stat__(stat)
 
         if self._over is not None:
@@ -848,12 +1005,10 @@ class SqlWindowFunc(SqlAggregateFunc):
                     self._over.__sql_stat__(stat)
                 elif isinstance(self._over.name, str):
                     stat.add(self._over.name)
-                    stat.window_def(self._over)
                 else:
                     raise TypeError()
             elif isinstance(self._over, SqlAlias) and isinstance(self._over._value, SqlWindowDef):
                 stat.add(self._over._name)
-                stat.window_def(self._over._value)
             else:
                 raise TypeError()
 
@@ -885,13 +1040,12 @@ class SqlCaseExpr(SqlExpr):
     """https://www.sqlite.org/lang_expr.html#the_case_expression"""
 
     __slots__ = 'expr', 'cases'
-    __match_args__ = 'expr', 'cases'
 
     def __init__(self, expr: SqlExpr = None):
         self.expr: Optional[SqlExpr] = expr
         self.cases: list[tuple[Optional[SqlExpr], SqlExpr]] = []
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add('CASE')
         if self.expr is not None:
             self.expr.__sql_stat__(stat)
@@ -950,6 +1104,6 @@ class SqlCteExpr(SqlExpr):
     def __getattr__(self, item) -> SqlAliasField:
         return SqlAliasField(self, self._name, item)
 
-    def __sql_stat__(self, stat: SqlStat):
+    def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(['WITH', self._name, 'AS'])
         stat.add(self._select)

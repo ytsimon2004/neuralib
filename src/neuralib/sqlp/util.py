@@ -4,7 +4,7 @@ import datetime
 import operator
 import re
 from pathlib import Path
-from typing import TypeVar, Iterable, overload, TYPE_CHECKING, Any
+from typing import TypeVar, Iterable, overload, TYPE_CHECKING, Any, cast
 
 from neuralib.util.table import rich_table
 from .expr import SqlExpr, SqlField
@@ -235,11 +235,11 @@ def infer_in(x: T, v: T | str | list[str] | slice | range) -> SqlExpr | None:
     if isinstance(v, SqlExpr):
         return v
 
-    if isinstance(v, str):
-        return infer_eq(x, v)
+    if isinstance(v, (list, tuple)):
+        return x.contains(v)
     if isinstance(v, (range, slice)):
         return x.between(v)
-    return x.contains(v)
+    return infer_eq(x, v)
 
 
 def resolve_field_type(f_type: type) -> tuple[type, type, bool]:
@@ -266,6 +266,7 @@ def resolve_field_type(f_type: type) -> tuple[type, type, bool]:
     :return: (raw_type, sql_type, not_null)
     """
     import typing
+    import types
 
     sql_type = f_type
     o = typing.get_origin(f_type)
@@ -385,7 +386,7 @@ def pull_foreign(target: type[T], foreign: V) -> Cursor[T]:
     from .stat_start import select_from
 
     if (constraint := table_foreign_field(target, type(foreign))) is None:
-        raise RuntimeError(f'not a foreign constraint')
+        raise RuntimeError('not a foreign constraint')
 
     # SELECT * FROM T
     # WHERE AND*([T.field == v.field for field in constraint])

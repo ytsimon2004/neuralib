@@ -31,10 +31,7 @@ class SqlTestCase(unittest.TestCase):
 
     def assertSqlExeEqual(self, raw_sql: str, stat: SqlStat[T], parameter=()) -> list[T]:
         connection = self.connection
-        connection._debug = False
         r1 = connection.execute(raw_sql, parameter).fetchall()
-        connection._debug = True
         r2 = connection.execute(stat, parameter).fetchall()
-        connection._debug = False
         self.assertListEqual(r1, r2)
         return r2

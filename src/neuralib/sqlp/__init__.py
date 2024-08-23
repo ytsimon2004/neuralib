@@ -16,5 +16,6 @@ from .func_date import *
 from .func_stat import *
 from .func_win import *
 from .literal import *
+from .stat import Cursor
 from .stat_start import *
 from .table_nt import *

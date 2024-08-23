@@ -594,10 +594,10 @@ class CteTest(SqlTestCase):
             c.CustomerId,
             sqlp.concat(c.FirstName, ' ', c.LastName) @ 'customer_name',
             sqlp.round(sqlp.sum(ii.UnitPrice * ii.Quantity), 2) @ 'total_sales'
-        ).join(i, by='inner').on(
-            c.CustomerId == i.CustomerId
-        ).join(ii, by='inner').on(
-            i.InvoiceId == ii.InvoiceId
+        ).join(
+            c.CustomerId == i.CustomerId, by='inner'
+        ).join(
+            i.InvoiceId == ii.InvoiceId, by='inner'
         ).group_by(c.CustomerId))
 
         self.assertSqlExeEqual("""\
@@ -630,7 +630,11 @@ class CteTest(SqlTestCase):
             c.CustomerId,
             sqlp.concat(c.FirstName, ' ', c.LastName) @ 'customer_name',
             sqlp.round(sqlp.sum(ii.UnitPrice * ii.Quantity), 2) @ 'total_sales'
-        ).join(i, by='inner').by(Invoices._customer).join(ii, by='inner').by(Invoice_Items._invoices).group_by(c.CustomerId))
+        ).join(
+            i, Invoices._customer, by='inner'
+        ).join(
+            ii, Invoice_Items._invoices, by='inner'
+        ).group_by(c.CustomerId))
 
         self.assertSqlExeEqual("""\
         WITH customer_sales AS (
@@ -668,10 +672,10 @@ class CteTest(SqlTestCase):
             c.CustomerId,
             sqlp.concat(c.FirstName, ' ', c.LastName) @ 'customer_name',
             sqlp.round(sqlp.sum(ii.UnitPrice * ii.Quantity), 2) @ 'total_sales'
-        ).join(i, by='inner').on(
-            c.CustomerId == i.CustomerId
-        ).join(ii, by='inner').on(
-            i.InvoiceId == ii.InvoiceId
+        ).join(
+            c.CustomerId == i.CustomerId, by='inner'
+        ).join(
+            i.InvoiceId == ii.InvoiceId, by='inner'
         ).group_by(c.CustomerId))
 
         self.assertSqlExeEqual("""\

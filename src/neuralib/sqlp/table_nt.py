@@ -90,26 +90,18 @@ class NamedTupleTable(Table[T], typing.Generic[T]):
                     self._unique.append(constraint)
                     setattr(attr_value, '_sql_unique', constraint)
             elif isinstance(attr_value, property):
-                attr_value.fget._sql_owner = table_type
+                setattr(table_type, attr, setup_table_property(attr_value, table_type))
 
     @property
     def table_name(self) -> str:
         return self.table_type.__name__
 
-    def table_seq(self, instance: T) -> tuple[typing.Any, ...]:
+    def table_seq(self, instance: T, fields: list[str] = None) -> tuple[typing.Any, ...]:
         _args = []
         for field, arg in zip(self._fields, instance):
-            _args.append(cast_to_sql(field.raw_type, field.sql_type, arg))
+            if field is None or field.name in fields:
+                _args.append(cast_to_sql(field.raw_type, field.sql_type, arg))
         return tuple(_args)
-
-    def table_dict(self, instance: T, *, sql_type: bool = True) -> dict[str, typing.Any]:
-        ret = {}
-        for field, arg in zip(self._fields, instance):
-            if sql_type:
-                ret[field.name] = cast_to_sql(field.raw_type, field.sql_type, arg)
-            else:
-                ret[field.name] = arg
-        return ret
 
     def table_new(self, *args) -> T:
         _args = []
@@ -152,3 +144,25 @@ class TableFieldDescriptor:
         return self.__field.name
 
 
+def setup_table_property(prop: property, table_type: type) -> property:
+    getter = wrap_property_getter(prop.fget, table_type)
+    setter = prop.fset
+    deleter = prop.fdel
+    return property(getter, setter, deleter)
+
+
+def wrap_property_getter(getter, table_type: type):
+    from .expr import SqlExpr
+
+    @functools.wraps(getter)
+    def getter_wrapper(self):
+        if isinstance(self, type):
+            return getter(self)
+
+        ret = getter(self)
+        if isinstance(ret, SqlExpr):
+            ret = ret.__sql_eval__(self)
+        return ret
+
+    getter_wrapper._sql_owner = table_type
+    return getter_wrapper

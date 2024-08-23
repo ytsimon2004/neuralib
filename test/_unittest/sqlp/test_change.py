@@ -561,7 +561,6 @@ class ReturningTest(ChangeTest):
         print(ret)
 
     def test_insert_return_all(self):
-        # TODO only support return one data
         self.assertSqlExeEqual("""\
         INSERT INTO books (title, isbn, release_date) 
         VALUES

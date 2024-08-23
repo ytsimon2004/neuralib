@@ -84,6 +84,7 @@ def unixepoch(t, *m) -> expr.SqlExpr:
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
+@as_func_expr
 def strftime(fmt: LiteralString, t, *m) -> expr.SqlExpr:
     """
 
@@ -94,7 +95,7 @@ def strftime(fmt: LiteralString, t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    return expr.SqlFuncOper('STRFTIME', expr.SqlLiteral(repr(fmt)), t, *m)
+    pass
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal

@@ -5,7 +5,7 @@ from typing import overload, Any, TypeVar, Optional, Union
 
 from .annotation import *
 from .expr import *
-from .expr import sql_join_set
+from .expr import use_table_first, SqlRemovePlaceHolder
 from .literal import UPDATE_POLICY
 from .stat import *
 from .table import *
@@ -84,7 +84,7 @@ def select_from(*args, distinct: bool = False,
 
     join other tables
 
-    >>> select_from(A.a, B.b).join(B).on(A.c == B.c).build() # doctest: SKIP
+    >>> select_from(A.a, B.b).join(A.c == B.c).build() # doctest: SKIP
     SELECT A.a, B.b FROM A JOIN B ON A.c = B.c
 
     **features supporting**
@@ -114,16 +114,14 @@ def select_from(*args, distinct: bool = False,
     if distinct:
         pre_stat.append('DISTINCT')
 
-    if len(args) == 0:
-        raise RuntimeError()
-    elif len(args) == 1 and isinstance(table := args[0], type):
+    if len(args) == 1 and isinstance(table := args[0], type):
         self = SqlSelectStat(table)
         self._involved.append(table)
         self.add(pre_stat)
         self.add('*')
     elif len(args) == 1 and isinstance(table := args[0], SqlCteExpr):
         self = SqlSelectStat(None)
-        table.__sql_stat__(self)
+        self.add(table)
         self.add(pre_stat)
         self.add('*')
 
@@ -144,7 +142,7 @@ def select_from(*args, distinct: bool = False,
             self._involved.append(table)
         elif isinstance(table, SqlCteExpr):
             self = SqlSelectStat(None)
-            table.__sql_stat__(self)
+            self.add(table)
         else:
             self = SqlSelectStat(None)
 
@@ -156,52 +154,43 @@ def select_from(*args, distinct: bool = False,
 
             if isinstance(field, SqlField):
                 self.add(f'{field.table_name}.{field.name}')
-            elif isinstance(field, SqlAlias) and isinstance(field._value, SqlField):
-                name = field._name
-                field = field._value
-                self.add([f'{field.table_name}.{field.name}', 'AS', repr(name)])
-            elif isinstance(field, SqlAlias) and isinstance(field._value, SqlExpr):
-                field._value.__sql_stat__(self)
+            elif isinstance(field, SqlAlias) and isinstance(_field := field._value, SqlField):
+                self.add([f'{_field.table_name}.{_field.name}', 'AS', repr(field._name)])
+            elif isinstance(field, SqlAlias) and isinstance(expr := field._value, SqlExpr):
+                self.add(expr)
                 self.add(['AS', repr(field._name)])
             elif isinstance(field, SqlAliasField):
-                field.__sql_stat__(self)
+                self.add(field)
             elif isinstance(field, SqlFuncOper):
-                field.__sql_stat__(self)
+                self.add(field)
             elif isinstance(field, SqlLiteral):
-                field.__sql_stat__(self)
+                self.add(field)
             elif isinstance(field, SqlExpr):
-                field.__sql_stat__(self)
+                self.add(field)
             else:
+                self.drop()
                 raise TypeError('SELECT ' + repr(field))
 
-    self.add('FROM')
-    if isinstance(table, str):
-        self.add(table)
-    elif isinstance(table, type):
-        self.add(table_name(table))
-    elif isinstance(table, SqlStat):
-        self.add('(')
-        self.add(table)
-        self.add(')')
-    elif isinstance(table, SqlAlias) and isinstance(table._value, type):
-        self.add([table_name(table._value), table._name])
-    elif isinstance(table, SqlAlias) and isinstance(table._value, SqlSubQuery):
-        self.add('(')
-        self.add(table._value.stat)
-        self.add([')', 'AS', repr(table._name)])
-    elif isinstance(table, SqlCteExpr):
-        self.add(table._name)
-    else:
-        raise TypeError('FROM ' + repr(table))
-
-    if len(self._window_defs):
-        self.add('WINDOW')
-        for i, (name, window) in enumerate(self._window_defs.items()):
-            if i > 0:
-                self.add(',')
-
-            self.add([name, 'AS'])
-            window.__sql_stat__(self)
+    with self:
+        self.add('FROM')
+        if isinstance(table, str):
+            self.add(table)
+        elif isinstance(table, type):
+            self.add(table_name(table))
+        elif isinstance(table, SqlStat):
+            self.add('(')
+            self.add(table)
+            self.add(')')
+        elif isinstance(table, SqlAlias) and isinstance(_table := table._value, type):
+            self.add([table_name(_table), table._name])
+        elif isinstance(table, SqlAlias) and isinstance(subq := table._value, SqlSubQuery):
+            self.add('(')
+            self.add(subq.stat)
+            self.add([')', 'AS', repr(table._name)])
+        elif isinstance(table, SqlCteExpr):
+            self.add(table._name)
+        else:
+            raise TypeError('FROM ' + repr(table))
 
     return self
 
@@ -216,32 +205,39 @@ def select_from_fields(*args) -> tuple[Union[type, SqlAlias, None], list[SqlExpr
         if isinstance(arg, (int, float, bool, str)):
             fields.append(SqlLiteral(repr(arg)))
 
+        elif isinstance(arg, Field):
+            if table is None:
+                table = arg.table
+
+            fields.append(SqlField(arg))
+
         elif isinstance(arg, SqlField):
             if table is None:
                 table = arg.table
 
             fields.append(arg)
+
         elif isinstance(arg, SqlAlias) and isinstance(arg._value, SqlField):
             if table is None:
                 table = arg._value.table
 
             fields.append(arg)
 
-        elif isinstance(arg, SqlAliasField) and isinstance(arg.table, type):
+        elif isinstance(arg, SqlAliasField) and isinstance(field_table:=arg.table, type):
             if table is None:
-                table = SqlAlias(arg.table, arg.name)
+                table = SqlAlias(field_table, arg.name)
 
             fields.append(arg)
-        elif isinstance(arg, SqlAliasField) and isinstance(arg.table, SqlCteExpr):
+
+        elif isinstance(arg, SqlAliasField) and isinstance(cte := arg.table, SqlCteExpr):
             if table is None:
-                table = arg.table
+                table = cte
 
             fields.append(arg)
 
         elif isinstance(arg, SqlExpr):
-            expr_table = use_table(arg)
             if table is None:
-                table = expr_table
+                table =  use_table_first(arg)
 
             fields.append(arg)
 
@@ -260,40 +256,6 @@ def select_from_fields(*args) -> tuple[Union[type, SqlAlias, None], list[SqlExpr
             raise TypeError(repr(arg))
 
     return table, fields
-
-
-def use_table(expr: SqlExpr) -> Optional[type]:
-    if isinstance(expr, SqlField):
-        return expr.field.table
-    elif isinstance(expr, SqlAlias):
-        if isinstance(expr._value, type):
-            return expr._value
-        elif isinstance(expr._value, SqlExpr):
-            return use_table(expr._value)
-    elif isinstance(expr, SqlExistsOper):
-        return expr.stat.table
-    elif isinstance(expr, SqlCompareOper):
-        return use_table(expr.left) or use_table(expr.right)
-    elif isinstance(expr, SqlUnaryOper):
-        return use_table(expr.right)
-    elif isinstance(expr, SqlCastOper):
-        return use_table(expr.right)
-    elif isinstance(expr, SqlBinaryOper):
-        return use_table(expr.left) or use_table(expr.right)
-    elif isinstance(expr, SqlVarArgOper):
-        for arg in expr.args:
-            if (ret := use_table(arg)) is not None:
-                return ret
-    elif isinstance(expr, SqlConcatOper):
-        for arg in expr.args:
-            if (ret := use_table(arg)) is not None:
-                return ret
-    elif isinstance(expr, SqlFuncOper):
-        for arg in expr.args:
-            if (ret := use_table(arg)) is not None:
-                return ret
-
-    return None
 
 
 @overload
@@ -345,9 +307,7 @@ def insert_into(*args, policy: UPDATE_POLICY = None, named=False) -> SqlInsertSt
     :param named:
     :return:
     """
-    if len(args) == 0:
-        raise RuntimeError()
-    elif len(args) == 1 and isinstance(args[0], type):
+    if len(args) == 1 and isinstance(args[0], type):
         self = SqlInsertStat((table := args[0]), named=named)
     else:
         table, fields = select_from_fields(*args)
@@ -364,18 +324,19 @@ def insert_into(*args, policy: UPDATE_POLICY = None, named=False) -> SqlInsertSt
 
         self = SqlInsertStat(table, fields, named=named)
 
-    self.add('INSERT')
-    if policy is not None:
-        self.add(['OR', policy.upper()])
-    self.add(['INTO', table_name(table)])
-    if self._fields is not None:
-        self.add('(')
-        for i, field in enumerate(self._fields):
-            if i > 0:
-                self.add(',')
-            self.add(field)
-        self.add(')')
-    return self
+    with self:
+        self.add('INSERT')
+        if policy is not None:
+            self.add(['OR', policy.upper()])
+        self.add(['INTO', table_name(table)])
+        if self._fields is not None:
+            self.add('(')
+            for i, field in enumerate(self._fields):
+                if i > 0:
+                    self.add(',')
+                self.add(field)
+            self.add(')')
+        return self
 
 
 @overload
@@ -419,19 +380,21 @@ def update(table: type[T], *args: Union[bool, SqlCompareOper], **kwargs) -> SqlU
     :param kwargs:
     :return:
     """
-    self = SqlUpdateStat(table)
-    self.add(['UPDATE', table_name(table), 'SET'])
+    with SqlUpdateStat(table) as self:
+        self.add(['UPDATE', table_name(table), 'SET'])
 
-    if len(args):
-        sql_join_set(self, ',', args)
-        self.add(',')
+        if len(args):
+            for arg in args:
+                self.add(SqlCompareOper.as_set_expr(arg))
+                self.add(',')
 
-    for term, value in kwargs.items():
-        table_field(table, term)
-        self.add([term, '=', '?', ','], value)
-    self._stat.pop()
+        for term, value in kwargs.items():
+            table_field(table, term)
+            self.add(SqlLiteral(term) == value)
+            self.add(',')
+        self._stat.pop()
 
-    return self
+        return self
 
 
 def delete_from(table: type[T]) -> SqlDeleteStat[T]:
@@ -458,9 +421,9 @@ def delete_from(table: type[T]) -> SqlDeleteStat[T]:
     :param table:
     :return:
     """
-    self = SqlDeleteStat(table)
-    self.add(['DELETE', 'FROM', table_name(table)])
-    return self
+    with SqlDeleteStat(table) as self:
+        self.add(['DELETE', 'FROM', table_name(table)])
+        return self
 
 
 def create_table(table: type[T], *, if_not_exists=True) -> SqlStat[T]:
@@ -504,53 +467,53 @@ def create_table(table: type[T], *, if_not_exists=True) -> SqlStat[T]:
     :param table:
     :return:
     """
-    self = SqlStat(table)
-    self.add(['CREATE', 'TABLE'])
-    if if_not_exists:
-        self.add('IF NOT EXISTS')
-    self.add(table_name(table))
-    self.add('(')
+    with SqlStat(table) as self:
+        self.add(['CREATE', 'TABLE'])
+        if if_not_exists:
+            self.add('IF NOT EXISTS')
+        self.add(table_name(table))
+        self.add('(')
 
-    n_primary_key = len(primary_keys := table_primary_fields(table))
+        n_primary_key = len(primary_keys := table_primary_fields(table))
 
-    for i, field in enumerate(table_fields(table)):
-        if n_primary_key == 1 and field.is_primary:
-            column_def(self, field, field.get_primary())
-        else:
-            column_def(self, field)
-        self.add(',')
-
-    if n_primary_key > 1:
-        self.add(['PRIMARY KEY', '(', ' , '.join([it.name for it in primary_keys]), ')'])
-        for it in primary_keys:
-            if (conflict := it.get_primary().conflict) is not None:
-                self.add(['ON CONFLICT', conflict.upper()])
-                break
-        self.add(',')
-
-    for unique in table_unique_fields(table):
-        if len(unique.fields) > 1:
-            self.add(['UNIQUE', '(', ' , '.join(unique.fields), ')'])
-            if (conflict := unique.conflict) is not None:
-                self.add(['ON CONFLICT', conflict.upper()])
+        for i, field in enumerate(table_fields(table)):
+            if n_primary_key == 1 and field.is_primary:
+                column_def(self, field, field.get_primary())
+            else:
+                column_def(self, field)
             self.add(',')
 
-    for foreign_key in table_foreign_fields(table):
-        foreign_constraint(self, foreign_key)
-        self.add(',')
+        if n_primary_key > 1:
+            self.add(['PRIMARY KEY', '(', ' , '.join([it.name for it in primary_keys]), ')'])
+            for it in primary_keys:
+                if (conflict := it.get_primary().conflict) is not None:
+                    self.add(['ON CONFLICT', conflict.upper()])
+                    break
+            self.add(',')
 
-    if (check := table_check_field(table, None)) is not None:
-        check_constraint(self, check)
-        self.add(',')
+        for unique in table_unique_fields(table):
+            if len(unique.fields) > 1:
+                self.add(['UNIQUE', '(', ' , '.join(unique.fields), ')'])
+                if (conflict := unique.conflict) is not None:
+                    self.add(['ON CONFLICT', conflict.upper()])
+                self.add(',')
 
-    self._stat.pop()
-    self.add(')')
+        for foreign_key in table_foreign_fields(table):
+            foreign_constraint(self, foreign_key)
+            self.add(',')
 
-    return self
+        if (check := table_check_field(table, None)) is not None:
+            check_constraint(self, check)
+            self.add(',')
+
+        self._stat.pop()
+        self.add(')')
+
+        return self
 
 
 def column_def(self: SqlStat, field: Field, primary: PRIMARY = None):
-    self.add(field.name)
+    self.add(f"[{field.name}]")
 
     if field.sql_type == Any:
         pass
@@ -595,13 +558,13 @@ def column_def(self: SqlStat, field: Field, primary: PRIMARY = None):
     if field.f_value is missing:
         pass
     elif field.f_value is None:
-        self.add(f'DEFAULT NULL')
+        self.add('DEFAULT NULL')
     elif field.f_value == CURRENT_DATE:
-        self.add(f'DEFAULT CURRENT_DATE')
+        self.add('DEFAULT CURRENT_DATE')
     elif field.f_value == CURRENT_TIME:
-        self.add(f'DEFAULT CURRENT_TIME')
+        self.add('DEFAULT CURRENT_TIME')
     elif field.f_value == CURRENT_TIMESTAMP:
-        self.add(f'DEFAULT CURRENT_TIMESTAMP')
+        self.add('DEFAULT CURRENT_TIMESTAMP')
     else:
         self.add(f'DEFAULT {repr(field.f_value)}')
 
@@ -628,6 +591,6 @@ def foreign_constraint(self: SqlStat, foreign: ForeignConstraint):
 def check_constraint(self: SqlStat, check: CheckConstraint):
     self._deparameter = True
     self.add(['CHECK', '('])
-    check.expression.__sql_stat__(self)
+    self.add(SqlRemovePlaceHolder(check.expression))
     self.add(')')
     self._deparameter = False

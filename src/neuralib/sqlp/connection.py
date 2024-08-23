@@ -23,7 +23,7 @@ class Connection:
     """
 
     def __init__(self, filename: Union[str, Path] = ':memory:', *,
-                 debug=False):
+                 debug: bool = False):
         """
         :param filename: sqlite database filepath. use in-memory database by default.
         :param debug: print statement when executing.
@@ -82,7 +82,7 @@ class Connection:
             raise TypeError()
         results = self.execute('SELECT sql FROM sqlite_master WHERE type = "table" AND name = ?', [name]).fetchone()
         if results is None:
-            raise RuntimeError(f'table {table} not found')
+            raise ValueError(f'table {table} not found')
         return results[0]
 
     # ======= #
@@ -105,9 +105,9 @@ class Connection:
         """
         if isinstance(stat, SqlStat):
             stat._connection = None
+            stat, _parameter = stat.build()
             if len(parameter) == 0:
-                parameter = stat._para
-            stat = stat.build()
+                parameter = _parameter
 
         if self._debug:
             print(repr(stat))
@@ -133,7 +133,7 @@ class Connection:
         """
         if isinstance(stat, SqlStat):
             stat._connection = None
-            stat = stat.build()
+            stat, _ = stat.build()
 
         if self._debug:
             print(repr(stat))
@@ -166,7 +166,7 @@ class Connection:
                     script.append(_stat)
                 elif isinstance(_stat, SqlStat):
                     _stat._connection = None
-                    script.append(_stat.build())
+                    script.append(_stat.build()[0])
                 else:
                     raise TypeError()
 

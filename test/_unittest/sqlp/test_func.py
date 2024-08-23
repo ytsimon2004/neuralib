@@ -106,9 +106,7 @@ class FuncAvgExampleTest(SqlTestCase):
             Albums.Title,
             sqlp.round(sqlp.avg(Tracks.Milliseconds), 2) @ 'avg_length',
             from_table=Tracks
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
-        ).group_by(Tracks.AlbumId))
+        ).join(Albums.AlbumId == Tracks.AlbumId, by='inner').group_by(Tracks.AlbumId))
 
     def test_avg_join_having(self):
         self.assertSqlExeEqual("""\
@@ -128,9 +126,11 @@ class FuncAvgExampleTest(SqlTestCase):
             Albums.Title,
             (avg_length := sqlp.round(sqlp.avg(Tracks.Milliseconds), 2) @ 'avg_length'),
             from_table=Tracks
-        ).join(Albums, by='inner').on(
-            Albums.AlbumId == Tracks.AlbumId
-        ).group_by(Tracks.AlbumId).having(
+        ).join(
+            Albums.AlbumId == Tracks.AlbumId, by='inner'
+        ).group_by(
+            Tracks.AlbumId
+        ).having(
             sqlp.between(avg_length, 100000, 200000)
         ))
 
@@ -232,8 +232,8 @@ class FuncCountExampleTest(SqlTestCase):
             Tracks.AlbumId,
             Albums.Title,
             sqlp.count()
-        ).join(Albums, by='inner').on(
-            Tracks.AlbumId == Albums.AlbumId
+        ).join(
+            Tracks.AlbumId == Albums.AlbumId, by='inner'
         ).group_by(
             Tracks.AlbumId
         ).having(
@@ -350,9 +350,7 @@ class FuncSumTest(SqlTestCase):
            title;
         """, sqlp.select_from(
             Tracks.AlbumId, Albums.Title, sqlp.sum(Tracks.Milliseconds)
-        ).join(Albums, by='inner').by(
-            Tracks._albums
-        ).group_by(
+        ).join(Tracks._albums, by='inner').group_by(
             Tracks.AlbumId, Albums.Title
         ))
 
@@ -372,9 +370,7 @@ class FuncSumTest(SqlTestCase):
            SUM(milliseconds) > 1000000;
         """, sqlp.select_from(
             Tracks.AlbumId, Albums.Title, sqlp.sum(Tracks.Milliseconds)
-        ).join(Albums, by='inner').by(
-            Tracks._albums
-        ).group_by(
+        ).join(Tracks._albums, by='inner').group_by(
             Tracks.AlbumId, Albums.Title
         ).having(
             sqlp.sum(Tracks.Milliseconds) > 1000000

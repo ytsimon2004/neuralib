@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import abc
 import functools
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Optional, Literal
+from typing import Optional, Literal, TYPE_CHECKING
 
 import polars as pl
 
 from neuralib.argp import AbstractParser, argument
-from .connection import Connection
+
+if TYPE_CHECKING:
+    from .connection import Connection
 
 __all__ = ['Database', 'transaction']
 
@@ -69,6 +73,7 @@ class Database(metaclass=abc.ABCMeta):
         else:
             database_file.parent.mkdir(exist_ok=True)
 
+        from .connection import Connection
         ret = Connection(database_file, debug=self.sqlp_debug_mode)
         cls = type(self)
         if getattr(cls, '__first_connect_init', True):
@@ -89,7 +94,7 @@ class CliDatabase(Database, AbstractParser):
 
     sqlp_debug_mode: bool = argument('--debug')
 
-    DB_FILE: str = argument('-d', '--database', metavar='FILE')
+    DB_FILE: str = argument('-d', '--database', metavar='FILE', default=None)
     DB_STAT: list[str] = argument(metavar='STATS', nargs='*', action='extend')
     list_table: str = argument('--table', metavar='NAME', default=None, const='', nargs='?')
     from_file: bool = argument('-f', '--file')
@@ -99,7 +104,7 @@ class CliDatabase(Database, AbstractParser):
     USAGE = """\
 %(prog)s -d FILE --table [NAME]
 %(prog)s -d FILE STAT ...
-%(prog)s -d FILE --file SCRIPT
+%(prog)s -d FILE --file SCRIPT ...
 %(prog)s -d FILE --action=(import|export) --table NAME FILE
 """
 
@@ -111,6 +116,8 @@ class CliDatabase(Database, AbstractParser):
     def database_file(self) -> Optional[Path]:
         if self.database is not None:
             return self.database.database_file
+        if self.DB_FILE is None:
+            return None
         return Path(self.DB_FILE)
 
     @property
@@ -179,8 +186,7 @@ class CliDatabase(Database, AbstractParser):
             raise ValueError(f'unknown action={self.action}')
 
     def run_script(self):
-        if len(self.DB_STAT) > 1:
-            raise RuntimeError(f'too many arguments : {self.DB_STAT[1:]}')
+        args = list(self.DB_STAT[1:])
 
         with self.open_connection() as connection:
             stat = []
@@ -189,14 +195,42 @@ class CliDatabase(Database, AbstractParser):
                 for line in file:
                     stat.append(line)
 
-                    if ';' in line:
-                        result = connection.execute(''.join(stat))
+                    if line.partition('--')[0].rstrip().endswith(';'):
+                        result = self._execute_script(connection, ''.join(stat), args)
                         stat = []
                         self._print_result(connection, result)
 
             if len(stat):
-                result = connection.execute(''.join(stat))
+                result = self._execute_script(connection, ''.join(stat), args)
                 self._print_result(connection, result)
+
+            if len(args):
+                raise RuntimeError(f'remaining {args=}')
+
+    def _execute_script(self, connection, script: str, args: list[str]) -> sqlite3.Cursor:
+        try:
+            result = connection.execute(script, parameter=args)
+            args.clear()
+            return result
+        except RuntimeError as e:
+            if not isinstance(ex := e.__cause__, sqlite3.ProgrammingError):
+                raise
+
+                # sqlite3.ProgrammingError: Incorrect number of bindings supplied. The current statement uses 5, and there are 6 supplied.
+            message: str = ex.args[0]
+            m = re.search(r'The current statement uses (\d+), and there are (\d+) supplied.', message)
+            if m is None:
+                raise
+
+            need = int(m.group(1))
+            total = int(m.group(2))
+            if total != len(args):
+                raise
+
+        take = args[:need]
+        result = connection.execute(script, parameter=take)
+        del args[:need]
+        return result
 
     def run_statement(self):
         with self.open_connection() as connection:

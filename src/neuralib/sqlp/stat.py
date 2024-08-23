@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import sqlite3
 import warnings
 from collections.abc import Iterator
@@ -9,7 +10,7 @@ import polars as pl
 from typing_extensions import Self
 
 from .expr import *
-from .expr import sql_join_set
+from .expr import SqlStatBuilder, SqlRemovePlaceHolder
 from .table import *
 
 if TYPE_CHECKING:
@@ -28,42 +29,58 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 
+def catch_error(f=None, *, attr: str = None):
+    def _catch_error_decorator(f):
+        @functools.wraps(f)
+        def _catch_error(self, *args, **kwargs):
+            if attr is None:
+                stat: SqlStat = self
+            else:
+                stat = getattr(self, attr)
+
+            with stat:
+                return f(self, *args, **kwargs)
+
+        return _catch_error
+
+    if f is None:
+        return _catch_error_decorator
+    else:
+        return _catch_error_decorator(f)
+
 class SqlStat(Generic[T]):
     """Abstract SQL statement."""
 
     def __init__(self, table: Optional[type[T]]):
         self.table = table
-        self._stat: list[str] = []
-        self._para: list[Any] = []
-        self._deparameter = False
+        self._stat: list[Any] = []
 
         from .connection import get_connection_context
         self._connection: Optional[Connection] = get_connection_context()
-        # connection will be set to None when following situation happen:
-        # * after submit()
-        # * __del__() call submit()
-        # * as a subquery be used by other statement.
-        # TODO ...
 
-    def build(self) -> str:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_val is not None:
+            self.drop()
+
+    def build(self) -> tuple[str, list]:
         """build a SQL statement."""
-        ret = ' '.join(self._stat)
+        builder = SqlStatBuilder()
+        builder.add(self)
         self._stat = None
-        return ret
+        return builder.build(), builder.para
 
     def __str__(self) -> str:
         table = table_name(self.table) if self.table is not None else '...'
         return f'{type(Self).__name__}[{table}]'
 
     def __repr__(self) -> str:
-        ret = []
-        par = list(self._para)
-        for value in self._stat:
-            if value == '?':
-                ret.append(f'?({repr(par.pop(0))})')
-            else:
-                ret.append(value)
-        return ' '.join(ret)
+        builder = SqlStatBuilder()
+        builder._deparameter = 'repr'
+        builder.add(self)
+        return builder.build()
 
     def submit(self) -> Cursor[T]:
         """
@@ -79,57 +96,31 @@ class SqlStat(Generic[T]):
         self._connection = None
         return ret
 
+    def drop(self):
+        self._connection = None
+        self._stat = None
+
     def __del__(self):
         # check connection and auto_commit,
         # make SqlStat auto submit itself when nobody is referring to it,
         # so users do need to explict call submit() for every statements.
+        # FIXME error raised during statement constructing should be aware
         if self._connection is not None and self._stat is not None and len(self._stat) > 0:
             try:
                 self.submit()
             except BaseException as e:
                 warnings.warn(repr(e))
 
-    @overload
-    def add(self, stat: SqlStat) -> Self:
-        pass
-
-    @overload
-    def add(self, stat: Union[str, list[str]], *para) -> Self:
-        pass
-
-    def add(self, stat, *para) -> Self:
+    def add(self, stat) -> Self:
         """
         Add SQL token.
         """
         if self._stat is None:
             raise RuntimeError("Statement is closed.")
 
+        self._stat.append(stat)
         if isinstance(stat, SqlStat):
-            self._stat.append('(')
-            self._stat.extend(stat._stat)
-            self._stat.append(')')
-            self._para.extend(stat._para)
             stat._connection = None
-        elif isinstance(stat, (tuple, list)):
-            if self._deparameter:
-                para = list(para)
-                for _stat in stat:
-                    if _stat == '?':
-                        self._stat.append(repr(para.pop(0)))
-                    else:
-                        self._stat.append(_stat)
-            else:
-                self._stat.extend(stat)
-                self._para.extend(para)
-        else:
-            if self._deparameter:
-                if stat == '?':
-                    self._stat.append(repr(para[0]))
-                else:
-                    self._stat.append(stat)
-            else:
-                self._stat.append(stat)
-                self._para.extend(para)
 
         return self
 
@@ -145,19 +136,20 @@ class Cursor(Generic[T]):
     def __init__(self, connection: Connection, cursor: sqlite3.Cursor, table: type[T] = None):
         self._connection = connection
         self._cursor = cursor
-        self._table = table
 
-        header = cursor.description
-        self.headers: list[str] = [it[0] for it in header] if header is not None else []
-        """headers of return"""
-
-        self._table_cls = None
         if table is not None:
             from .table import table_class
             try:
-                self._table_cls = table_class(table)
+                table_cls = table_class(table)
             except AttributeError:
                 pass
+            else:
+                cursor.row_factory = lambda _, row: table_cls.table_new(*row)
+
+    @property
+    def headers(self) -> list[str]:
+        header = self._cursor.description
+        return [it[0] for it in header] if header is not None else []
 
     def __del__(self):
         self._cursor.close()
@@ -172,19 +164,11 @@ class Cursor(Generic[T]):
         if (ret := self._cursor.fetchone()) is None:
             return None
 
-        if self._table_cls is not None:
-            return self._table_cls.table_new(*ret)
-
         return ret
 
     def __iter__(self) -> Iterator[T]:
         """iterate the results."""
-        table_cls = self._table_cls
-        for a in self._cursor:
-            if table_cls is not None:
-                yield table_cls.table_new(*a)
-            else:
-                yield a
+        yield from iter(self._cursor)
 
     def fetch_polars(self) -> pl.DataFrame:
         return pl.DataFrame(list(self._cursor), schema=self.headers)
@@ -193,7 +177,8 @@ class Cursor(Generic[T]):
 class SqlWhereStat:
     """statement with **WHERE** support."""
 
-    def where(self, *expr: Union[bool, SqlCompareOper, SqlExpr, Any, None]) -> Self:
+    @catch_error
+    def where(self, *expr: Union[bool, SqlCompareOper, SqlExpr, None]) -> Self:
         """
         ``WHERE`` clause: https://www.sqlite.org/lang_select.html#whereclause
 
@@ -211,7 +196,7 @@ class SqlWhereStat:
         if len(expr):
             from .func_stat import and_
             zelf.add('WHERE')
-            and_(*expr).__sql_stat__(zelf)
+            zelf.add(and_(*expr))
         return self
 
 
@@ -224,6 +209,7 @@ class SqlLimitStat:
     def limit(self, row_count: int, offset: int) -> Self:
         pass
 
+    @catch_error
     def limit(self, *args: int) -> Self:
         """
         ``LIMIT``: https://www.sqlite.org/lang_select.html#limitoffset
@@ -252,6 +238,7 @@ class SqlLimitStat:
             raise TypeError()
         return self
 
+    @catch_error
     def order_by(self, *by: Union[int, str, SqlExpr, Any]) -> Self:
         """
         ``ORDER BY``: https://www.sqlite.org/lang_select.html#orderby
@@ -282,12 +269,14 @@ class SqlLimitStat:
                 fields.append(SqlLiteral(str(it)))
             elif isinstance(it, str):
                 fields.append(SqlLiteral(it))
+            elif isinstance(it, SqlAlias):
+                fields.append(SqlLiteral(it._name))
             elif isinstance(it, SqlExpr):
                 fields.append(it)
             else:
                 fields.append(wrap(it))
 
-        SqlConcatOper(fields, ',').__sql_stat__(zelf)
+        zelf.add(SqlConcatOper(fields, ','))
 
         return self
 
@@ -298,7 +287,6 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
     def __init__(self, table: Optional[type[T]]):
         super().__init__(table)
         self._involved: list[Union[type, SqlAlias[type]]] = []
-        self._window_defs: dict[str, SqlWindowDef] = {}
 
     def __matmul__(self, other: str) -> SqlAlias[SqlSubQuery]:
         """wrap itself as a subquery with an alias name."""
@@ -320,43 +308,67 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         """submit and fetch all as a polar dataframe."""
         return self.submit().fetch_polars()
 
-    def window_def(self, *windows: Union[SqlWindowDef, SqlAlias[SqlWindowDef]], **window_ks: SqlWindowDef) -> Self:
+    @catch_error
+    def windows(self, *windows: Union[SqlWindowDef, SqlAlias[SqlWindowDef]], **window_ks: SqlWindowDef) -> Self:
         """
         define windows.
 
         """
-        if (defs := self._window_defs) is None:
-            raise RuntimeError('not a select statement')
+        if len(windows) == 0 and len(window_ks) == 0:
+            return self
+
+        self.add('WINDOW')
 
         for window in windows:
             if isinstance(window, SqlWindowDef):
                 if window.name is None:
                     raise RuntimeError('?? AS ' + repr(window))
-                defs[window.name] = window
+                self.add([window.name, 'AS'])
+                self.add(window)
             elif isinstance(window, SqlAlias) and isinstance(window._value, SqlWindowDef):
-                defs[window.name] = window._value
+                self.add([window.name, 'AS'])
+                self.add(window)
             else:
                 raise TypeError()
 
-        defs.update(window_ks)
+            self.add(',')
+
+        for name, window in window_ks.items():
+            self.add([name, 'AS'])
+            self.add(window)
+            self.add(',')
+        self._stat.pop()
+
         return self
 
+    BY = Literal['left', 'right', 'inner', 'full outer', 'cross']
+
     @overload
-    def join(self, table: Union[type[S], SqlSelectStat[S], SqlAlias[S]], *,
-             by: Literal['left', 'right', 'inner', 'full outer'] = None) -> SqlJoinStat:
+    def join(self, constraint: Union[Callable, ForeignConstraint], *, by: BY = None) -> SqlSelectStat[tuple]:
         pass
 
     @overload
-    def join(self, table: Union[type[S], SqlSelectStat[S], SqlAlias[S]], *,
-             by: Literal['cross']) -> SqlSelectStat[tuple]:
+    def join(self, table: Union[type[S], SqlAlias[S]],
+             constraint: Union[Callable, ForeignConstraint], *,
+             by: BY = None) -> SqlSelectStat[tuple]:
         pass
 
-    def join(self, table: Union[type[S], SqlSelectStat[S], SqlAlias[S]], *,
-             by: Literal['left', 'right', 'inner', 'full outer', 'cross'] = None):
+    @overload
+    def join(self, table: Union[type[S], SqlSelectStat[S], SqlAlias[S], SqlCteExpr],
+             *field: Union[bool, Any],
+             by: BY = None) -> SqlSelectStat[tuple]:
+        pass
+
+    @overload
+    def join(self, *field: bool | Any, by: BY = None) -> SqlSelectStat[tuple]:
+        pass
+
+    @catch_error
+    def join(self, *args, by: BY = None) -> SqlSelectStat[tuple]:
         """
         ``JOIN`` https://www.sqlite.org/lang_select.html#strange_join_names
 
-        >>> select_from(A.a, B.b).join(B).on(A.a == B.a) # doctest: SKIP
+        >>> select_from(A.a, B.b).join(A.a == B.a) # doctest: SKIP
         SELECT A.a, B.b FROM A
         JOIN B ON A.a = B.a
 
@@ -364,33 +376,180 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         if by is not None:
             self.add(by.upper())
         self.add('JOIN')
-
-        if isinstance(table, type):
-            self.add(table_name(table))
-            that = [table]
-        elif isinstance(table, SqlSelectStat):
-            self.add(table)
-            that = []
-        elif isinstance(table, SqlAlias) and isinstance(that_table := table._value, type):
-            self.add(table_name(that_table))
-            self.add(table._name)
-            that = [table]
-        elif isinstance(table, SqlAlias) and isinstance(table._value, SqlSubQuery) and isinstance(table._value.stat, SqlSelectStat):
-            self.add(table._value.stat)
-            self.add('AS')
-            self.add(table._name)
-            that = []
-        else:
-            raise TypeError(f'JOIN {table}')
-
         self.table = None
 
-        if by == 'cross':
-            self._involved.extend(that)
-            return self
+        if len(args) == 2 and isinstance(table := args[0], type) and (callable(constraint := args[1]) or isinstance(constraint, ForeignConstraint)):
+            if not isinstance(constraint, ForeignConstraint):
+                if (constraint := table_foreign_field(constraint)) is None:
+                    raise RuntimeError('not a foreign constraint')
+            self.__join_foreign(constraint, table)
 
-        return SqlJoinStat(self, that)
+        elif len(args) > 1 and isinstance(table := args[0], type):
+            self.__join(table, *args[1:])
 
+        elif len(args) > 1 and isinstance(expr := args[0], SqlCteExpr):
+            self._stat.insert(0, expr)
+            self.__join(expr, *args[1:])
+
+        elif len(args) > 1 and isinstance(stat := args[0], SqlSelectStat):
+            self.add(stat)
+            self.__join(None, *args[1:])
+
+        elif len(args) == 2 and isinstance(table := args[0], SqlAlias) and (callable(constraint := args[1]) or isinstance(constraint, ForeignConstraint)):
+            if not isinstance(constraint, ForeignConstraint):
+                if (constraint := table_foreign_field(constraint)) is None:
+                    raise RuntimeError('not a foreign constraint')
+            self.__join_foreign(constraint, table)
+
+        elif len(args) > 1 and isinstance(table := args[0], SqlAlias) and isinstance(table._value, type) and isinstance(table._name, str):
+            self.__join(table, *args[1:])
+
+        elif len(args) > 1 and isinstance(table := args[0], SqlAlias) and isinstance(expr := table._value, SqlCteExpr) and isinstance(table._name, str):
+            self._stat.insert(0, expr)
+            self.__join(table, *args[1:])
+
+        elif len(args) > 1 and isinstance(table := args[0], SqlAlias) \
+                and isinstance(subq := table._value, SqlSubQuery) \
+                and isinstance(name := table._name, str) \
+                and isinstance(stat := subq.stat, SqlSelectStat):
+            self.add(stat)
+            self.add('AS')
+            self.add(name)
+            self.__join(None, *args[1:])
+
+        elif len(args) == 1 and isinstance(constraint := args[0], ForeignConstraint):
+            self.__join_foreign(constraint, None)
+
+        elif len(args) == 1 and callable(constraint := args[0]):
+            if (constraint := table_foreign_field(constraint)) is None:
+                raise RuntimeError('not a foreign constraint')
+            self.__join_foreign(constraint, None)
+
+        else:
+            table = None
+            for field in args:
+                if table is None and isinstance(field, SqlExpr):
+                    table = use_table(field, self._involved)
+            if table is None:
+                raise RuntimeError('no join table')
+            self.__join(table, *args)
+
+        return self
+
+    def __join(self, right: Union[type, SqlAlias, SqlCteExpr, None], *fields):
+        if right is None:
+            pass
+        elif isinstance(right, type):
+            self.add(table_name(right))
+        elif isinstance(right, SqlCteExpr):
+            self.add(right._name)
+        elif isinstance(right, SqlAlias) and isinstance(table := right._value, type):
+            self.add(table_name(table))
+            self.add(right._name)
+        elif isinstance(right, SqlAlias) and isinstance(expr := right._value, SqlCteExpr):
+            self.add(expr._select)
+            self.add(right._name)
+        else:
+            raise TypeError(f'JOIN {right}')
+
+        if len(fields):
+            if any([isinstance(it, SqlCompareOper) for it in fields]):
+                self.__join_on(*fields)
+            else:
+                self.__join_use(*fields)
+
+        self._involved.append(right)
+
+    def __join_use(self, *fields):
+        self.add(['USING', '('])
+
+        for field in fields:
+            if isinstance(field, str):
+                self.add(repr(field))
+            if isinstance(field, Field):
+                self.add(field.name)
+            if isinstance(field, SqlField):
+                self.add(field.name)
+            else:
+                raise TypeError('USING ' + repr(field))
+            self.add(',')
+
+        self._stat.pop()
+        self.add(')')
+
+    def __join_on(self, *exprs: bool | SqlExpr):
+        self.add('ON')
+        from .func_stat import and_
+        self.add(and_(*exprs))
+
+    def __join_foreign(self, constraint: ForeignConstraint, right: type | SqlAlias | None):
+        this = that = None
+
+        for _this in self._involved:
+            if isinstance(_this, type) and _this == constraint.table:
+                this = constraint.table_name
+                if right is None:
+                    right = constraint.foreign_table
+                break
+            elif isinstance(_this, type) and _this == constraint.foreign_table:
+                that = constraint.table_name
+                if right is None:
+                    right = constraint.table
+                break
+            elif isinstance(_this, SqlAlias) and isinstance(table := _this._value, type) and table == constraint.table:
+                this = _this._name
+                if right is None:
+                    right = constraint.foreign_table
+                break
+            elif isinstance(_this, SqlAlias) and isinstance(table := _this._value, type) and table == constraint.foreign_table:
+                that = _this._name
+                if right is None:
+                    right = constraint.table
+                break
+        else:
+            raise RuntimeError('improper foreign constraint')
+
+        if isinstance(right, type):
+            self.add(table_name(right))
+            if this is None and right == constraint.table:
+                this = _this.__name__
+            if that is None and right == constraint.foreign_table:
+                that = _this.__name__
+        elif isinstance(right, SqlAlias) and isinstance(table := right._value, type):
+            self.add(table_name(table))
+            self.add(right._name)
+
+            if this is None and right == constraint.table:
+                this = right._name
+            if that is None and right == constraint.foreign_table:
+                that = right._name
+        else:
+            raise TypeError(f'JOIN {right}')
+
+        assert this is not None and that is not None
+
+        if constraint.fields == constraint.foreign_fields:
+            self.add(['USING', '('])
+
+            for field in constraint.fields:
+                self.add(field)
+                self.add(',')
+
+            self._stat.pop()
+            self.add(')')
+
+        else:
+            self.add(['ON', '('])
+            for af, bf in zip(constraint.fields, constraint.foreign_fields):
+                self.add([f'{this}.{af} = {that}.{bf}'])
+                self.add('AND')
+
+            self._stat.pop()
+            self.add(')')
+
+        self._involved.append(right)
+
+    @catch_error
     def group_by(self, *by) -> Self:
         """
         ``GROUP BY`` https://www.sqlite.org/lang_select.html#resultset
@@ -411,7 +570,7 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
             elif isinstance(field, SqlAlias):
                 self.add(field._name)
             elif isinstance(field, SqlExpr):
-                field.__sql_stat__(self)
+                self.add(field)
             else:
                 raise TypeError('GROUP BY ' + repr(field))
             self.add(',')
@@ -419,6 +578,7 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         self._stat.pop()
         return self
 
+    @catch_error
     def having(self, *exprs: Union[bool, SqlExpr]) -> Self:
         """
         ``HAVING`` https://www.sqlite.org/lang_select.html#resultset
@@ -428,17 +588,19 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
 
         from .func_stat import and_
         self.add('HAVING')
-        and_(*exprs).__sql_stat__(self)
+        self.add(and_(*exprs))
 
         return self
 
+    @catch_error
     def intersect(self, stat: SqlStat) -> Self:
         """
         ``INTERSECT`` https://www.sqlite.org/lang_select.html#compound_select_statements
         """
         self.add('INTERSECT')
-        self.add(stat._stat, *stat._para)
+        self._stat.extend(stat._stat)
         stat._connection = None
+        stat._stat = None
         return self
 
     def __and__(self, other: SqlStat) -> Self:
@@ -447,6 +609,7 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         """
         return self.intersect(other)
 
+    @catch_error
     def union(self, stat: SqlStat, all=False) -> Self:
         """
         ``UNION`` https://www.sqlite.org/lang_select.html#compound_select_statements
@@ -454,8 +617,9 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         self.add('UNION')
         if all:
             self.add('ALL')
-        self.add(stat._stat, *stat._para)
+        self._stat.extend(stat._stat)
         stat._connection = None
+        stat._stat = None
         return self
 
     def __or__(self, other: SqlStat) -> Self:
@@ -464,13 +628,15 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         """
         return self.union(other)
 
+    @catch_error
     def except_(self, stat: SqlStat) -> Self:
         """
         ``EXCEPT`` https://www.sqlite.org/lang_select.html#compound_select_statements
         """
         self.add('EXCEPT')
-        self.add(stat._stat, *stat._para)
+        self._stat.extend(stat._stat)
         stat._connection = None
+        stat._stat = None
         return self
 
     def __sub__(self, other: SqlStat) -> Self:
@@ -480,121 +646,8 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         return self.except_(other)
 
 
-class SqlJoinStat:
-    def __init__(self, stat: SqlSelectStat[tuple], join: list[Union[type, SqlAlias[type]]]):
-        self._stat = stat
-        self._this = stat._involved
-        self._that = join
-
-    def using(self, *fields) -> SqlSelectStat[tuple]:
-        if len(fields) == 0:
-            raise RuntimeError()
-
-        stat = self._stat
-        stat.add(['USING', '('])
-
-        for field in fields:
-            if isinstance(field, str):
-                stat.add(repr(field))
-            elif isinstance(field, Field):
-                stat.add(field.name)
-            elif isinstance(field, SqlField):
-                stat.add(field.name)
-            else:
-                raise TypeError('USING ' + repr(field))
-            stat.add(',')
-
-        stat._stat.pop()
-        stat.add(')')
-
-        stat._involved.extend(self._that)
-        return stat
-
-    def on(self, *exprs: Union[bool, SqlExpr]) -> SqlSelectStat[tuple]:
-        if len(exprs) == 0:
-            raise RuntimeError()
-
-        self._stat.add('ON')
-        from .func_stat import and_
-        and_(*exprs).__sql_stat__(self._stat)
-
-        self._stat._involved.extend(self._that)
-        return self._stat
-
-    def by(self, constraint: Union[Callable, ForeignConstraint]) -> SqlSelectStat[tuple]:
-        if not isinstance(constraint, ForeignConstraint):
-            if (constraint := table_foreign_field(constraint)) is None:
-                raise RuntimeError('not a foreign constraint')
-
-        stat = self._stat
-
-        if constraint.fields == constraint.foreign_fields:
-            stat.add(['USING', '('])
-
-            for field in constraint.fields:
-                stat.add(field)
-                stat.add(',')
-
-            stat._stat.pop()
-            stat.add(')')
-
-        else:
-            this = that = None
-            for _this in self._this:
-                if isinstance(_this, type):
-                    if _this == constraint.table:
-                        this = _this.__name__
-                        break
-                    elif _this == constraint.foreign_table:
-                        that = _this.__name__
-                        break
-
-                if isinstance(_this, SqlAlias) and (_type := _this._value, type):
-                    if _type == constraint.table:
-                        this = _this._name
-                        break
-                    elif _type == constraint.foreign_table:
-                        that = _this._name
-                        break
-
-                raise TypeError('internal error')
-            else:
-                raise RuntimeError('improper foreign constraint')
-
-            for _that in self._that:
-                if isinstance(_that, type):
-                    if this is None and _that == constraint.table:
-                        this = _this.__name__
-                        break
-                    if that is None and _that == constraint.foreign_table:
-                        that = _this.__name__
-                        break
-                if isinstance(_that, SqlAlias) and isinstance(_type := _that._value, type):
-                    if this is None and _type == constraint.table:
-                        this = _that._name
-                        break
-                    if that is None and _type == constraint.foreign_table:
-                        that = _that._name
-                        break
-                raise TypeError('internal error')
-            else:
-                raise RuntimeError('improper foreign constraint')
-
-            assert this is not None and that is not None
-
-            stat.add(['ON', '('])
-            for af, bf in zip(constraint.fields, constraint.foreign_fields):
-                stat.add([f'{this}.{af} = {that}.{bf}'])
-                stat.add('AND')
-
-            stat._stat.pop()
-            stat.add(')')
-
-        stat._involved.extend(self._that)
-        return stat
-
-
 class SqlReturnStat:
+    @catch_error
     def returning(self, *expr: Union[str, Any]) -> Self:
         zelf = cast(SqlStat, self)
         zelf.add('RETURNING')
@@ -613,9 +666,7 @@ class SqlReturnStat:
                     zelf.add([field.name, 'AS', exp._name])
                     fields.append(exp._name)
                 elif isinstance(exp, SqlAlias) and isinstance(_expr := exp._value, SqlExpr):
-                    zelf._deparameter = True
-                    _expr.__sql_stat__(zelf)
-                    zelf._deparameter = False
+                    zelf.add(SqlRemovePlaceHolder(_expr))
 
                     zelf.add(['AS', exp._name])
                     fields.append(exp._name)
@@ -626,8 +677,10 @@ class SqlReturnStat:
             zelf._stat.pop()
 
             if isinstance(self, SqlInsertStat):
-                self.table = None
+                self._return_table = None
                 self._fields = fields
+            else:
+                self.table = None
 
         return self
 
@@ -636,17 +689,20 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
     def __init__(self, table: type[T], fields: list[str] = None, *, named: bool = False):
         super().__init__(table)
         self._fields = fields
+        self._used_fields: list[str] | None = None
 
         # when
         #   None: `VALUES` set
         #   'DEFAULT': `DEFAULT VALUES` unset
         #   {field->value}: `DEFAULT VALUES` set
         self._values: Union[Literal['DEFAULT'], dict[str, Any], None] = {
-            name: SqlLiteral(f':{name}') if named else SqlLiteral('?')
+            name: SqlLiteral('?')
             for name in table_field_names(table)
         }
         self._named = named
+
         self._returning = False
+        self._return_table = table
 
     @overload
     def select_from(self, table: type[T], *, distinct: bool = False) -> SqlSelectStat[T]:
@@ -657,6 +713,7 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
                     from_table: Union[str, type, SqlAlias, SqlSelectStat] = None) -> SqlSelectStat[tuple]:
         pass
 
+    @catch_error
     def select_from(self, *args, distinct: bool = False,
                     from_table: Union[str, type, SqlAlias, SqlSelectStat] = None) -> SqlSelectStat[T]:
         if isinstance(self._values, str):
@@ -677,6 +734,7 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
 
         return ret
 
+    @catch_error
     def values(self, *args, **kwargs: Union[str, SqlExpr]) -> Self:
         # TODO support direct set values
         if self._values is None or isinstance(self._values, str):
@@ -699,10 +757,13 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
         self._values = 'DEFAULT'
         return self
 
+    @catch_error
     def _set_values(self):
         if isinstance(self._values, str):
             self.add(['DEFAULT', 'VALUES'])
         elif isinstance(self._values, dict):
+            self._use_fields = []
+
             if self._fields is None:
                 fields = list(self._values.keys())
             else:
@@ -715,15 +776,20 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
                 if isinstance(value, (int, float, bool, str)):
                     self.add(repr(value))
                 elif isinstance(value, SqlLiteral):
-                    self.add(value.value)
+                    if value.value == '?':
+                        if self._named:
+                            self.add(f':{field}')
+                        else:
+                            self.add('?')
+                        self._use_fields.append(field)
+                    else:
+                        self.add(value.value)
                 elif isinstance(value, SqlPlaceHolder):
                     self.add(repr(value.value))
                 elif isinstance(value, SqlStat):
                     self.add(value)
                 elif isinstance(value, SqlExpr):
-                    self._deparameter = True
-                    value.__sql_stat__(self)
-                    self._deparameter = False
+                    self.add(SqlRemovePlaceHolder(value))
                 else:
                     raise TypeError(repr(value))
                 self.add(',')
@@ -732,17 +798,19 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
 
         self._values = None
 
+    @catch_error
     def on_conflict(self, *conflict, where: Union[bool, SqlCompareOper] = None) -> SqlUpsertStat[T]:
         self._set_values()
         return SqlUpsertStat(self, *conflict, where=where)
 
+    @catch_error
     def returning(self, *expr: Union[str, SqlExpr]) -> SqlInsertStat[tuple]:
         self._set_values()
         super().returning(*expr)
         self._returning = True
         return self
 
-    def build(self) -> str:
+    def build(self) -> tuple[str, list]:
         self._set_values()
         return super().build()
 
@@ -750,21 +818,23 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
         if (connection := self._connection) is None:
             raise RuntimeError('Do not in a connection context')
 
+        self._set_values()
+
         from .table import table_class
         try:
             table_cls = table_class(self.table)
-        except AttributeError:
+        except AttributeError as e:
             pass
         else:
             if self._named:
                 def mapper(p):
                     if isinstance(p, self.table):
-                        return table_cls.table_dict(p)
+                        return {f: v for f, v in zip(self._use_fields, table_cls.table_seq(p, self._fields))}
                     return dict(p)
             else:
                 def mapper(p):
                     if isinstance(p, self.table):
-                        return table_cls.table_seq(p)
+                        return table_cls.table_seq(p, self._use_fields)
                     return tuple(p)
 
             parameter = list(map(mapper, parameter))
@@ -779,7 +849,7 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
         else:
             cur = connection.execute(self, parameter)
 
-        ret = Cursor(connection, cur, self.table)
+        ret = Cursor(connection, cur, self._return_table)
         self._connection = None
         return ret
 
@@ -821,31 +891,30 @@ class SqlUpsertStat(Generic[T]):
 
             if where is not None:
                 self._stat.add('WHERE')
-                self._stat._deparameter = True
-                where.__sql_stat__(self._stat)
-                self._stat._deparameter = False
+                self._stat.add(SqlRemovePlaceHolder(where))
             self._stat.add(')')
 
+    @catch_error(attr='_stat')
     def do_nothing(self) -> SqlInsertStat[T]:
         self._stat.add(['DO', 'NOTHING'])
         return self._stat
 
+    @catch_error(attr='_stat')
     def do_update(self, *args: Union[bool, SqlCompareOper], where: Union[bool, SqlCompareOper] = None) -> SqlInsertStat[T]:
         self._stat.add(['DO', 'UPDATE', 'SET'])
 
-        self._stat._deparameter = True  # TODO
-        sql_join_set(self._stat, ',', args)
-        self._stat._deparameter = False
+        self._stat.add(SqlRemovePlaceHolder(SqlVarArgOper(',', [
+            SqlCompareOper.as_set_expr(it) for it in args
+        ])))
 
         if where is not None:
             self._stat.add('WHERE')
-            self._stat._deparameter = True
-            where.__sql_stat__(self._stat)
-            self._stat._deparameter = False
+            self._stat.add(SqlRemovePlaceHolder(where))
         return self._stat
 
 
 class SqlUpdateStat(SqlStat[T], SqlWhereStat, SqlLimitStat, SqlReturnStat, Generic[T]):
+    @catch_error
     def from_(self, query: Union[SqlStat, SqlAlias[SqlSubQuery]]) -> Self:
         self.add('FROM')
         if isinstance(query, SqlStat):

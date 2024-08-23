@@ -37,17 +37,17 @@ def wrap(x) -> expr.SqlExpr:
 
 
 @overload
-def alias(x: str, name: str) -> expr.SqlAlias[Any]:
+def alias(x: str, name: str) -> Any:
     pass
 
 
 @overload
-def alias(x: type[T], name: str) -> expr.SqlAlias[T]:
+def alias(x: type[T], name: str) -> type[T]:
     pass
 
 
 @overload
-def alias(x: SqlStat[T], name: str) -> expr.SqlAlias[T]:
+def alias(x: SqlStat[T], name: str) -> type[T]:
     pass
 
 
@@ -88,10 +88,32 @@ def case(x=None) -> expr.SqlCaseExpr:
     return expr.SqlCaseExpr(None if x is None else expr.wrap(x))
 
 
-def exists(x) -> expr.SqlExpr:
-    """https://www.sqlite.org/lang_expr.html#the_exists_operator"""
-    return expr.SqlExistsOper('EXISTS', x)
+@overload
+def exists(x: SqlStat) -> expr.SqlExpr:
+    pass
 
+
+@overload
+def exists(x: type, *where: bool | expr.SqlExpr) -> expr.SqlExpr:
+    pass
+
+
+def exists(x, *where: bool | expr.SqlExpr) -> expr.SqlExpr:
+    """
+
+    https://www.sqlite.org/lang_expr.html#the_exists_operator
+
+    >>> exists(A, A.a == 1) # equivalent below
+    >>> exists(select_from(1, from_table=A).where(A.a == 1))
+
+    :param x:
+    :param where:
+    :return:
+    """
+    if isinstance(x, type):
+        from .stat_start import select_from
+        x = select_from(1, from_table=x).where(*where)
+    return expr.SqlExistsOper('EXISTS', x)
 
 def asc(x) -> expr.SqlExpr:
     """
@@ -314,7 +336,7 @@ def is_not_null(x) -> expr.SqlCompareOper:
     return expr.wrap(x).is_not_null()
 
 
-def excluded(t: type[T]) -> T:
+def excluded(t: type[T]) -> type[T]:
     """https://www.sqlite.org/lang_upsert.html"""
     return expr.SqlAlias(t, 'excluded')
 
@@ -350,4 +372,4 @@ def fields(table: type[T], *,
     if excluded is not None:
         fields = [it for it in fields if it.name not in excluded]
 
-    return tuple([getattr(table, it.name) for it in fields])
+    return tuple([it(table) for it in fields])
