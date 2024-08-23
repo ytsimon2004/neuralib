@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from typing import Annotated, NamedTuple, Optional, Union, TypeVar
 
-from _test import SqlTestCase
-from _tracks import *
+from _unittest.sqlp._test import SqlTestCase
+from _unittest.sqlp._tracks import *
 from neuralib import sqlp
 from neuralib.sqlp import Connection
 from neuralib.sqlp.stat import SqlStat, Cursor

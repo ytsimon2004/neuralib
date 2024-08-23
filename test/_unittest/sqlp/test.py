@@ -2,8 +2,8 @@ import datetime
 import unittest
 from typing import NamedTuple
 
-from _test import SqlTestCase
-from _tracks import *
+from _unittest.sqlp._test import SqlTestCase
+from _unittest.sqlp._tracks import *
 from neuralib import sqlp
 
 
