@@ -76,6 +76,10 @@ model = [
     "rastermap"
 ]
 
+plot = [
+    "matplotlib_venn"
+]
+
 track = [
     "facemap"
 ]
@@ -107,6 +111,7 @@ all = [
     "neura-library[scanner]",
     "neura-library[calimg]",
     "neura-library[segmentation]",
+    "neura-library[plot]",
     "neura-library[model]",
     "neura-library[track]",
     "neura-library[gpu]",
