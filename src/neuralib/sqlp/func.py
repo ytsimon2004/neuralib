@@ -30,52 +30,54 @@ __all__ = [
 T = TypeVar('T')
 N = TypeVar('N', int, float)
 
-# noinspection PyShadowingBuiltins,PyUnusedLocal
+
+# noinspection PyShadowingBuiltins
 @as_func_expr
 def abs(x: N) -> N:
     """https://www.sqlite.org/lang_corefunc.html#abs"""
-    pass
+    import builtins
+    return builtins.abs(x)
 
 
-# noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
 def changes() -> int:
     """https://www.sqlite.org/lang_corefunc.html#changes"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def char(*x) -> str:
     """https://www.sqlite.org/lang_corefunc.html#char"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def coalesce(*x: T) -> T | None:
     """https://www.sqlite.org/lang_corefunc.html#coalesce"""
-    pass
+    for y in x:
+        if y is not None:
+            return y
+    return None
 
 
 # https://www.sqlite.org/lang_corefunc.html#concat by func_stat
 # https://www.sqlite.org/lang_corefunc.html#glob by func_stat
 
-# noinspection PyShadowingBuiltins,PyUnusedLocal
+# noinspection PyShadowingBuiltins
 @as_func_expr
 def format(fmt: LiteralString, *x) -> str:
     """https://www.sqlite.org/lang_corefunc.html#format"""
-    pass
+    return fmt % x
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
 def hex(x: bytes) -> str:
     """https://www.sqlite.org/lang_corefunc.html#hex"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def ifnull(x: T, y: T) -> T:
     """
@@ -84,10 +86,11 @@ def ifnull(x: T, y: T) -> T:
     https://www.sqlite.org/lang_corefunc.html#ifnull
 
     """
-    pass
+    if x is not None:
+        return x
+    return y
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def iif(x, y: T, z: T) -> T:
     """
@@ -95,10 +98,12 @@ def iif(x, y: T, z: T) -> T:
 
     https://www.sqlite.org/lang_corefunc.html#iif
     """
-    pass
+    if x:
+        return y
+    else:
+        return z
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def instr(x: str, y: str) -> int:
     """
@@ -106,65 +111,59 @@ def instr(x: str, y: str) -> int:
 
     https://www.sqlite.org/lang_corefunc.html#instr
     """
-    pass
+    return x.find(y) + 1
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def last_insert_rowid() -> int:
     """https://www.sqlite.org/lang_corefunc.html#last_insert_rowid"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def length(x: str | bytes) -> int:
     """https://www.sqlite.org/lang_corefunc.html#length"""
-    pass
+    return len(x)
 
 
 # https://www.sqlite.org/lang_corefunc.html#like by func_stat
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def likelihood(x: T, y: float) -> T:
     """https://www.sqlite.org/lang_corefunc.html#likelihood"""
-    pass
+    return x
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def likely(x: T) -> T:
     """https://www.sqlite.org/lang_corefunc.html#likely"""
-    pass
+    return x
 
 
 # TODO https://www.sqlite.org/lang_corefunc.html#load_extension
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def lower(x: str) -> str:
     """https://www.sqlite.org/lang_corefunc.html#lower"""
-    pass
+    return x.lower()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def ltrim(x: str, y: str = None) -> str:
     """https://www.sqlite.org/lang_corefunc.html#ltrim"""
-    pass
+    return x.lstrip(y)
 
 
 # noinspection PyShadowingBuiltins
 @overload
 def max(x: N) -> N:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins
 @overload
 def max(x: N, *other: N) -> N:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins
@@ -176,19 +175,24 @@ def max(x, *other):
     if len(other) == 0:
         return expr.SqlAggregateFunc('MAX', x)
     else:
-        return expr.SqlFuncOper('MAX', x, *other)
+        return expr.SqlFuncOper('MAX', _max, x, *other)
+
+
+def _max(*other):
+    import builtins
+    return builtins.max(*other)
 
 
 # noinspection PyShadowingBuiltins
 @overload
 def min(x: N) -> N:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins
 @overload
 def min(x: N, *other: N) -> N:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins
@@ -200,10 +204,14 @@ def min(x, *other):
     if len(other) == 0:
         return expr.SqlAggregateFunc('MIN', x)
     else:
-        return expr.SqlFuncOper('MIN', x, *other)
+        return expr.SqlFuncOper('MIN', _min, x, *other)
 
 
-# noinspection PyUnusedLocal
+def _min(*other):
+    import builtins
+    return builtins.min(*other)
+
+
 @as_func_expr
 def nullif(x: T, y: T) -> T | None:
     """
@@ -211,62 +219,65 @@ def nullif(x: T, y: T) -> T | None:
 
     https://www.sqlite.org/lang_corefunc.html#nullif
     """
-    pass
+    return x if x != y else None
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def octet_length(x: str) -> int:
     """https://www.sqlite.org/lang_corefunc.html#octet_length"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def printf(fmt: LiteralString, *x) -> str:
     """https://www.sqlite.org/lang_corefunc.html#printf"""
-    pass
+    return fmt % x
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def quote(x: str) -> expr.SqlExpr:
     """https://www.sqlite.org/lang_corefunc.html#quote"""
-    pass
+    raise NotImplementedError()
 
 
 @as_func_expr
 def random() -> int:
     """https://www.sqlite.org/lang_corefunc.html#random"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def randomblob(n: int) -> bytes:
     """https://www.sqlite.org/lang_corefunc.html#randomblob"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def replace(x: str, y: str, z: str) -> str:
     """https://www.sqlite.org/lang_corefunc.html#replace"""
-    pass
+    if len(y) == 0:
+        return x
+    else:
+        return x.replace(y, z)
 
 
-# noinspection PyShadowingBuiltins,PyUnusedLocal
+# noinspection PyShadowingBuiltins
 @as_func_expr
 def round(x: float, y: int = None) -> float:
     """https://www.sqlite.org/lang_corefunc.html#round"""
-    pass
+    import builtins
+    if y is None:
+        y = 0
+    return builtins.round(x, y)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def rtrim(x: str, y: str = None) -> str:
     """https://www.sqlite.org/lang_corefunc.html#rtrim"""
-    pass
+    return x.rstrip(y)
 
 
 @overload
@@ -278,11 +289,18 @@ def sign(x: N) -> int:
 def sign(x: Any) -> None:
     pass
 
-# noinspection PyUnusedLocal
+
 @as_func_expr
 def sign(x):
     """https://www.sqlite.org/lang_corefunc.html#sign"""
-    pass
+    if isinstance(x, (int, float)):
+        if x > 0:
+            return 1
+        elif x < 0:
+            return -1
+        else:
+            return 0
+    return None
 
 
 # TODO https://www.sqlite.org/lang_corefunc.html#soundex
@@ -290,301 +308,309 @@ def sign(x):
 # https://www.sqlite.org/lang_corefunc.html#sqlite_compileoption_used by Connection.sqlite_compileoption_used
 # TODO https://www.sqlite.org/lang_corefunc.html#sqlite_offset
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def sqlite_source_id() -> str:
     """https://www.sqlite.org/lang_corefunc.html#sqlite_source_id"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def sqlite_version() -> str:
     """https://www.sqlite.org/lang_corefunc.html#sqlite_version"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def substr(x: str, y: int, z: int = None) -> str:
     """https://www.sqlite.org/lang_corefunc.html#substr"""
-    pass
+    if z is None:
+        if y > 0:
+            return x[y - 1:]
+        else:
+            return x[y:]
+    elif z > 0:
+        if y > 0:
+            return x[y - 1:y + z - 1]
+        else:
+            return x[y:y + z]
+    else:
+        if y > 0:
+            return x[y + z - 1:y - 1]
+        else:
+            return x[y + z:y]
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def total_changes() -> int:
     """https://www.sqlite.org/lang_corefunc.html#total_changes"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def trim(x: str, y: str = None) -> str:
     """https://www.sqlite.org/lang_corefunc.html#trim"""
-    pass
+    return x.strip(y)
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def typeof(x) -> str:
     """https://www.sqlite.org/lang_corefunc.html#typeof"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def unhex(x: str, y=None) -> bytes:
     """https://www.sqlite.org/lang_corefunc.html#unhex"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def unicode(x: str) -> int:
     """https://www.sqlite.org/lang_corefunc.html#unicode"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def unlikely(x: T) -> T:
     """https://www.sqlite.org/lang_corefunc.html#unlikely"""
-    pass
+    return x
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def upper(x: str) -> str:
     """https://www.sqlite.org/lang_corefunc.html#upper"""
-    pass
+    return x.upper()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr
 def zeroblob(n: int) -> bytes:
     """https://www.sqlite.org/lang_corefunc.html#zeroblob"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=expr.SqlAggregateFunc)
 def avg(x) -> float:
     """https://www.sqlite.org/lang_aggfunc.html#avg"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 def count(x=None) -> int:
     """https://www.sqlite.org/lang_aggfunc.html#count"""
-    pass
+    if x is None:
+        return expr.SqlAggregateFunc('COUNT', expr.SqlLiteral('*'))
+    else:
+        return expr.SqlAggregateFunc('COUNT', x)
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=expr.SqlAggregateFunc)
 def group_concat(x, y=None) -> str:
     """https://www.sqlite.org/lang_aggfunc.html#group_concat"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr(func=expr.SqlAggregateFunc)
 def sum(x) -> float:
     """https://www.sqlite.org/lang_aggfunc.html#sumunc"""
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=expr.SqlAggregateFunc)
 def total(x) -> int:
     """https://www.sqlite.org/lang_aggfunc.html#sumunc"""
-    pass
+    raise NotImplementedError()
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def acos(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#acos"""
-    pass
+    import math
+    return math.acos(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def acosh(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#acosh"""
-    pass
+    import math
+    return math.acosh(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def asin(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#asin"""
-    pass
+    import math
+    return math.asin(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def asinh(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#asinh"""
-    pass
+    import math
+    return math.asinh(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def atan(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#atan"""
-    pass
+    import math
+    return math.atan(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def atan2(y: float, x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#atan2"""
-    pass
+    import math
+    return math.atan2(y, x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def atanh(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#atanh"""
-    pass
+    import math
+    return math.atanh(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def ceil(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#ceil"""
-    pass
+    import math
+    return math.ceil(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def cos(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#cos"""
-    pass
+    import math
+    return math.cos(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def cosh(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#cosh"""
-    pass
+    import math
+    return math.cosh(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def degrees(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#degrees"""
-    pass
+    import math
+    return math.degrees(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def exp(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#exp"""
-    pass
+    import math
+    return math.exp(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def floor(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#floor"""
-    pass
+    import math
+    return math.floor(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def ln(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#ln"""
-    pass
+    import math
+    return math.log(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def log2(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#log2"""
-    pass
+    import math
+    return math.log2(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def log10(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#log"""
-    pass
+    import math
+    return math.log10(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def log(b: float, x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#log"""
-    pass
+    import math
+    return math.log(x, b)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def mod(x: float, y: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#mod"""
-    pass
+    return x % y
 
 
 @as_func_expr
 def pi() -> float:
     """https://www.sqlite.org/lang_mathfunc.html#pi"""
-    pass
+    import math
+    return math.pi
 
 
-# noinspection PyShadowingBuiltins,PyUnusedLocal
 @as_func_expr
 def pow(x: float, y: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#pow"""
-    pass
+    import math
+    return math.pow(x, y)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def radians(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#radians"""
-    pass
+    import math
+    return math.radians(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def sin(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#sin"""
-    pass
+    import math
+    return math.sin(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def sinh(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#sinh"""
-    pass
+    import math
+    return math.sinh(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def sqrt(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#sqrt"""
-    pass
+    import math
+    return math.sqrt(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def tan(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#tan"""
-    pass
+    import math
+    return math.tan(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def tanh(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#tanh"""
-    pass
+    import math
+    return math.tanh(x)
 
 
-# noinspection PyUnusedLocal
 @as_func_expr
 def trunc(x: float) -> float:
     """https://www.sqlite.org/lang_mathfunc.html#trunc"""
-    pass
-
+    import math
+    return math.trunc(x)

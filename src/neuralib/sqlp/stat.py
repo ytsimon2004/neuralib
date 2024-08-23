@@ -384,14 +384,14 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
                     raise RuntimeError('not a foreign constraint')
             self.__join_foreign(constraint, table)
 
-        elif len(args) > 1 and isinstance(table := args[0], type):
+        elif len(args) > 0 and isinstance(table := args[0], type):
             self.__join(table, *args[1:])
 
-        elif len(args) > 1 and isinstance(expr := args[0], SqlCteExpr):
+        elif len(args) > 0 and isinstance(expr := args[0], SqlCteExpr):
             self._stat.insert(0, expr)
             self.__join(expr, *args[1:])
 
-        elif len(args) > 1 and isinstance(stat := args[0], SqlSelectStat):
+        elif len(args) > 0 and isinstance(stat := args[0], SqlSelectStat):
             self.add(stat)
             self.__join(None, *args[1:])
 
@@ -401,14 +401,14 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
                     raise RuntimeError('not a foreign constraint')
             self.__join_foreign(constraint, table)
 
-        elif len(args) > 1 and isinstance(table := args[0], SqlAlias) and isinstance(table._value, type) and isinstance(table._name, str):
+        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) and isinstance(table._value, type) and isinstance(table._name, str):
             self.__join(table, *args[1:])
 
-        elif len(args) > 1 and isinstance(table := args[0], SqlAlias) and isinstance(expr := table._value, SqlCteExpr) and isinstance(table._name, str):
+        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) and isinstance(expr := table._value, SqlCteExpr) and isinstance(table._name, str):
             self._stat.insert(0, expr)
             self.__join(table, *args[1:])
 
-        elif len(args) > 1 and isinstance(table := args[0], SqlAlias) \
+        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) \
                 and isinstance(subq := table._value, SqlSubQuery) \
                 and isinstance(name := table._name, str) \
                 and isinstance(stat := subq.stat, SqlSelectStat):

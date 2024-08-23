@@ -1,3 +1,4 @@
+import functools
 import typing
 
 from .annotation import *

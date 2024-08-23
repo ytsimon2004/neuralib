@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     'SqlExpr',
-    'wrap', 'wrap_seq', 'use_table_first', 'use_table',
+    'wrap', 'wrap_seq', 'eval_expr', 'use_table_first', 'use_table',
     'SqlLiteral', 'SqlPlaceHolder', 'SqlField', 'SqlAlias', 'SqlAliasField', 'SqlSubQuery',
     'SqlOper', 'SqlOrderOper', 'SqlCastOper', 'SqlCompareOper', 'SqlUnaryOper', 'SqlBinaryOper', 'SqlFuncOper',
     'SqlVarArgOper', 'SqlConcatOper', 'SqlExistsOper', 'SqlAggregateFunc', 'SqlWindowDef', 'SqlWindowFunc',
@@ -79,6 +79,10 @@ class SqlExpr(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def __sql_stat__(self, stat: SqlStatBuilder):
+        pass
+
+    @abc.abstractmethod
+    def __sql_eval__(self, data):
         pass
 
     def __matmul__(self, other: str) -> SqlAlias[Self]:
@@ -312,6 +316,14 @@ def wrap_seq(*other) -> list[SqlExpr]:
     return list(map(wrap, other))
 
 
+def eval_expr(expr: SqlExpr | Any, data) -> Any:
+    return expr.__sql_eval__(data)
+
+
+def eval_expr_seq(expr: list[SqlExpr | Any], data) -> list[Any]:
+    return [it.__sql_eval__(data) for it in expr]
+
+
 def sql_join(stat: SqlStatBuilder, sep: str, exprs: Iterable[SqlExpr]):
     first = True
     for expr in exprs:
@@ -387,6 +399,9 @@ class SqlError(SqlExpr):
     def __sql_stat__(self, stat: SqlStatBuilder):
         raise self.error
 
+    def __sql_eval__(self, data):
+        raise self.error
+
     def __repr__(self):
         return repr(self.error)
 
@@ -403,6 +418,16 @@ class SqlLiteral(SqlExpr):
 
     def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.value)
+
+    def __sql_eval__(self, data):
+        if self.value == 'NULL':
+            return None
+        elif self.value == 'TRUE':
+            return True
+        elif self.value == 'FALSE':
+            return False
+        else:
+            return eval(self.value)
 
     def __repr__(self):
         return self.value
@@ -431,6 +456,8 @@ class SqlPlaceHolder(SqlExpr):
             stat.add('?')
             stat.para.append(self.value)
 
+    def __sql_eval__(self, data):
+        return self.value
 
     def __repr__(self):
         return f'?=[{self.value}]'
@@ -449,6 +476,9 @@ class SqlRemovePlaceHolder(SqlExpr):
         self.expr.__sql_stat__(stat)
         stat._deparameter = old
 
+    def __sql_eval__(self, data):
+        return self.expr.__sql_eval__(data)
+
     def __repr__(self):
         return repr(self.expr)
 
@@ -465,6 +495,9 @@ class SqlAlias(SqlExpr, Generic[E]):
 
     def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self._name)
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
 
     def __getattr__(self, item: str) -> SqlAliasField:
         if isinstance(self._value, type):
@@ -497,6 +530,9 @@ class SqlAliasField(SqlExpr):
     def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(f'{self.name}.{self.attr}')
 
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
+
     def __str__(self):
         return f'{self.name}.{self.attr}'
 
@@ -511,6 +547,9 @@ class SqlField(SqlExpr):
 
     def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(f'{self.table_name}.{self.field.name}')
+
+    def __sql_eval__(self, data):
+        return getattr(data, self.field.name)
 
     @property
     def table(self) -> type:
@@ -541,6 +580,9 @@ class SqlSubQuery(SqlExpr):
 
     def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.stat)
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
 
     def __str__(self):
         return '(...)'
@@ -606,6 +648,65 @@ class SqlCompareOper(SqlOper):
             stat.add(self.oper)
             self.right.__sql_stat__(stat)
 
+    def __sql_eval__(self, data):
+        if self.oper == '=':
+            return self.left.__sql_eval__(data) == self.right.__sql_eval__(data)
+        elif self.oper == '!=':
+            return self.left.__sql_eval__(data) != self.right.__sql_eval__(data)
+        elif self.oper == '<':
+            return self.left.__sql_eval__(data) < self.right.__sql_eval__(data)
+        elif self.oper == '<=':
+            return self.left.__sql_eval__(data) <= self.right.__sql_eval__(data)
+        elif self.oper == '>':
+            return self.left.__sql_eval__(data) > self.right.__sql_eval__(data)
+        elif self.oper == '>=':
+            return self.left.__sql_eval__(data) >= self.right.__sql_eval__(data)
+        elif self.oper == 'IS':
+            return self.left.__sql_eval__(data) is self.right.__sql_eval__(data)
+        elif self.oper == 'IS NOT':
+            return self.left.__sql_eval__(data) is not self.right.__sql_eval__(data)
+        elif self.oper in ('LIKE', 'NOT LIKE'):
+            import re
+            if not isinstance(text := self.left.__sql_eval__(data), str):
+                raise TypeError()
+            if not isinstance(pattern := self.right.__sql_eval__(data), str):
+                raise TypeError()
+
+            m = re.compile(pattern.replace('%', '.*')).match(text)
+            return (self.oper == 'LIKE') == (m is not None)
+        elif self.oper == 'GLOB':
+            raise NotImplementedError(repr(self))
+        elif self.oper in ('BETWEEN', 'NOT BETWEEN'):
+            value = self.left.__sql_eval__(data)
+
+            if isinstance(self.right, slice) and (self.right.start is None or self.right.stop is None):
+                raise ValueError()
+            elif isinstance(self.right, (slice, range)):
+                result = self.right.start <= value < self.right.stop
+            elif isinstance(self.right, tuple):
+                a, b = self.right
+                if isinstance(a, (datetime.date, datetime.datetime)) and isinstance(b, (datetime.date, datetime.datetime)):
+                    result = a <= value <= b
+                elif isinstance(a, SqlExpr) and isinstance(b, SqlExpr):
+                    a = a.__sql_eval__(data)
+                    b = b.__sql_eval__(data)
+                    result = a <= value <= b
+                else:
+                    raise TypeError()
+
+            return (self.oper == 'BETWEEN') == result
+
+        elif self.oper in ('IN', 'NOT IN'):
+            value = self.left.__sql_eval__(data)
+
+            coll = self.right
+            if isinstance(coll, SqlExpr):
+                coll = self.right.__sql_eval__(data)
+
+            return (self.oper == 'IN') == (value in coll)
+        else:
+            raise NotImplementedError(repr(self))
+
     def __str__(self):
         return '(' + str(self.left) + ' ' + self.oper + ' ' + str(self.right) + ')'
 
@@ -661,6 +762,16 @@ class SqlUnaryOper(SqlOper):
         stat.add(self.oper)
         self.right.__sql_stat__(stat)
 
+    def __sql_eval__(self, data):
+        if self.oper == '~':
+            return not (self.right.__sql_eval__(data))
+        elif self.oper == '+':
+            return +(self.right.__sql_eval__(data))
+        elif self.oper == '-':
+            return -(self.right.__sql_eval__(data))
+        else:
+            raise NotImplementedError(repr(self))
+
     def __repr__(self):
         return '(' + self.oper + repr(self.right) + ')'
 
@@ -677,6 +788,18 @@ class SqlCastOper(SqlOper):
         self.right.__sql_stat__(stat)
         stat.add(['AS', self.oper, ')'])
 
+    def __sql_eval__(self, data):
+        if self.oper == 'BOOLEAN':
+            return bool(data)
+        elif self.oper == 'INT':
+            return int(data)
+        elif self.oper == 'FLOAT':
+            return float(data)
+        elif self.oper == 'TEXT':
+            return str(data)
+        else:
+            raise NotImplementedError(repr(self))
+
     def __repr__(self):
         return 'CAST(' + repr(self.right) + ' AS ' + self.oper + ')'
 
@@ -691,6 +814,9 @@ class SqlOrderOper(SqlOper):
     def __sql_stat__(self, stat: SqlStatBuilder):
         self.right.__sql_stat__(stat)
         stat.add(self.oper)
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
 
     def nulls_first(self) -> Self:
         if self.oper in ('ASC', 'DESC'):
@@ -725,6 +851,24 @@ class SqlBinaryOper(SqlOper):
         stat.add(self.oper)
         self.right.__sql_stat__(stat)
 
+    def __sql_eval__(self, data):
+        if self.oper == '+':
+            return self.left.__sql_eval__(data) + self.right.__sql_eval__(data)
+        elif self.oper == '-':
+            return self.left.__sql_eval__(data) - self.right.__sql_eval__(data)
+        elif self.oper == '*':
+            return self.left.__sql_eval__(data) * self.right.__sql_eval__(data)
+        elif self.oper == '/':
+            return self.left.__sql_eval__(data) / self.right.__sql_eval__(data)
+        elif self.oper == '%':
+            return self.left.__sql_eval__(data) % self.right.__sql_eval__(data)
+        elif self.oper == '<<':
+            return self.left.__sql_eval__(data) << self.right.__sql_eval__(data)
+        elif self.oper == '>>':
+            return self.left.__sql_eval__(data) >> self.right.__sql_eval__(data)
+        else:
+            raise NotImplementedError(repr(self))
+
     def __repr__(self):
         return '(' + repr(self.left) + self.oper + repr(self.right) + ')'
 
@@ -745,8 +889,13 @@ class SqlVarArgOper(SqlOper):
             stat.add('(')
             sql_join(stat, self.oper, self.args)
             stat.add(')')
+        elif self.oper == ',':
+            sql_join(stat, self.oper, self.args)
         else:
-            raise ValueError()
+            raise ValueError(f'oper={self.oper}')
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
 
     def __repr__(self):
         if self.oper == ',':
@@ -790,6 +939,9 @@ class SqlConcatOper(SqlOper):
     def __sql_stat__(self, stat: SqlStatBuilder):
         sql_join(stat, self.oper, self.args)
 
+    def __sql_eval__(self, data):
+        return ''.join(map(str, eval_expr_seq(self.args, data)))
+
     def __repr__(self):
         return '||'.join(map(repr, self.args))
 
@@ -797,9 +949,10 @@ class SqlConcatOper(SqlOper):
 class SqlFuncOper(SqlOper):
     __slots__ = 'oper', 'args'
 
-    def __init__(self, oper: str, *args):
+    def __init__(self, oper: str, func, *args):
         super().__init__(oper)
         self.args = [wrap(it) for it in args]
+        self.func = func
 
     def __sql_stat__(self, stat: SqlStatBuilder):
         stat.add(self.oper)
@@ -810,6 +963,12 @@ class SqlFuncOper(SqlOper):
             stat.add(')')
         else:
             stat.add('()')
+
+    def __sql_eval__(self, data):
+        if self.func is None:
+            raise NotImplementedError()
+
+        return self.func(*eval_expr_seq(self.args, data))
 
     def __repr__(self):
         return self.oper + '(' + ','.join(map(repr, self.args)) + ')'
@@ -828,6 +987,9 @@ class SqlExistsOper(SqlOper):
         stat.add(self.oper)
         stat.add(self.stat)
 
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
+
     def __invert__(self):
         if self.oper == 'EXISTS':
             return SqlExistsOper('NOT EXISTS', self.stat)
@@ -840,7 +1002,7 @@ class SqlExistsOper(SqlOper):
 class SqlAggregateFunc(SqlFuncOper):
 
     def __init__(self, oper: str, *args):
-        super().__init__(oper, *args)
+        super().__init__(oper, None, *args)
         self._where: Optional[SqlVarArgOper] = None
         self._distinct = False
 
@@ -859,6 +1021,9 @@ class SqlAggregateFunc(SqlFuncOper):
             stat.add(['FILTER', '(', 'WHERE'])
             where.__sql_stat__(stat)
             stat.add(')')
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
 
     def distinct(self) -> Self:
         self._distinct = True
@@ -891,6 +1056,9 @@ class SqlWindowDef(SqlExpr):
             spec.__sql_stat__(stat)
 
         stat.add(')')
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
 
     def over(self, *, order_by=None, partition_by=None) -> Self:
         if isinstance(order_by, (tuple, list)):
@@ -1012,6 +1180,9 @@ class SqlWindowFunc(SqlAggregateFunc):
             else:
                 raise TypeError()
 
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
+
     @overload
     def over(self, name: Union[str, SqlWindowDef, SqlAlias[SqlWindowDef]]) -> Self:
         pass
@@ -1061,6 +1232,9 @@ class SqlCaseExpr(SqlExpr):
 
         stat.add('END')
 
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))
+
     def when(self, case, then) -> Self:
         if len(self.cases) and self.cases[-1][0] is None:
             raise RuntimeError('when after else')
@@ -1105,5 +1279,8 @@ class SqlCteExpr(SqlExpr):
         return SqlAliasField(self, self._name, item)
 
     def __sql_stat__(self, stat: SqlStatBuilder):
-        stat.add(['WITH', self._name, 'AS'])
+        stat.add([self._name, 'AS'])
         stat.add(self._select)
+
+    def __sql_eval__(self, data):
+        raise NotImplementedError(repr(self))

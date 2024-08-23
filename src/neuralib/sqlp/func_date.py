@@ -24,7 +24,7 @@ def date(t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
@@ -38,7 +38,7 @@ def time(t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
@@ -52,7 +52,7 @@ def datetime(t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
@@ -66,7 +66,7 @@ def julianday(t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
@@ -80,7 +80,7 @@ def unixepoch(t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
@@ -95,7 +95,7 @@ def strftime(fmt: LiteralString, t, *m) -> expr.SqlExpr:
     :param m: modifier
     :return:
     """
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyShadowingBuiltins,PyUnusedLocal
@@ -109,4 +109,4 @@ def timediff(a, b) -> expr.SqlExpr:
     :param b: time value
     :return:
     """
-    pass
+    raise NotImplementedError()

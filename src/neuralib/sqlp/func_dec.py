@@ -18,7 +18,7 @@ def as_func_expr(f=None, *, func=expr.SqlFuncOper):
         s = inspect.signature(f)
         para = []
         code = []
-        locals = dict(__oper__=func)
+        locals = dict(__oper__=func, __func__=f)
 
         n_none = 0
 
@@ -39,30 +39,35 @@ def as_func_expr(f=None, *, func=expr.SqlFuncOper):
                 code.append(f'{n} = __literal__(repr({n}))')
                 locals['__literal__'] = expr.SqlLiteral
 
+        if func == expr.SqlFuncOper:
+            func_call = '__func__,'
+        else:
+            func_call = ''
+
         if n_none == -1:
             args = ', '.join(para)
-            code .append(f'return __oper__("{func_name}", {args})')
+            code.append(f'return __oper__("{func_name}", {func_call} {args})')
         elif n_none == 0:
             args = ', '.join(para)
-            code.append(f'return __oper__("{func_name}", {args})')
+            code.append(f'return __oper__("{func_name}", {func_call} {args})')
         elif n_none == 1:
             assert isinstance(para[-1], tuple)
             z = para[-1][0]
             code.append(f'if {z} is None:')
             args = ', '.join(para[:-1])
-            code.append(f'  return __oper__("{func_name}", {args})')
+            code.append(f'  return __oper__("{func_name}", {func_call} {args})')
             code.append('else:')
             args = args + ', ' + z
-            code.append(f'  return __oper__("{func_name}", {args})')
+            code.append(f'  return __oper__("{func_name}", {func_call} {args})')
         else:
             args = ', '.join(para[:-n_none])
             for i in range(n_none, 0, -1):
                 assert isinstance(para[-i], tuple)
                 z = para[-i][0]
                 code.append(f'if {z} is None:')
-                code.append(f'  return __oper__("{func_name}", {args})')
+                code.append(f'  return __oper__("{func_name}", {func_call} {args})')
                 args = args + ', ' + z
-            code.append(f'return __oper__("{func_name}", {args})')
+            code.append(f'return __oper__("{func_name}", {func_call} {args})')
 
         ret = create_fn(f.__name__, para, '\n'.join(code), locals=locals)
         return functools.wraps(f)(ret)

@@ -22,60 +22,60 @@ def window_def(name: str = None, *, order_by: list = None, partition_by: list = 
 
 @as_func_expr(func=SqlWindowFunc)
 def row_number() -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 @as_func_expr(func=SqlWindowFunc)
 def rank() -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 @as_func_expr(func=SqlWindowFunc)
 def dense_rank() -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 @as_func_expr(func=SqlWindowFunc)
 def percent_rank() -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 @as_func_expr(func=SqlWindowFunc)
 def cume_dist() -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=SqlWindowFunc)
 def ntile(n: int) -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=SqlWindowFunc)
 def lag(expr, offset: int = None, default=None) -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=SqlWindowFunc)
 def lead(expr, offset: int = None, default=None) -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=SqlWindowFunc)
 def first_value(expr) -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=SqlWindowFunc)
 def last_value(expr) -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
 
 
 # noinspection PyUnusedLocal
 @as_func_expr(func=SqlWindowFunc)
 def nth_value(expr, n: int) -> SqlWindowFunc:
-    pass
+    raise NotImplementedError()
