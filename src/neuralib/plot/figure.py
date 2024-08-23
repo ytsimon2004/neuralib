@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import platform
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal, ContextManager
 
+import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
+
+from neuralib.util.deprecation import deprecated_aliases
 
 __all__ = ['plot_figure',
            'ax_set_default_style',
@@ -22,15 +26,17 @@ MPL_BACKEND_TYPE = Literal[
 ]
 
 
+@deprecated_aliases(ax_default_style='default_style')
 @contextmanager
 def plot_figure(output: Path | None,
                 *args,
                 set_square: bool = False,
                 set_equal_scale: bool = False,
-                win_backend: MPL_BACKEND_TYPE = 'QtCairo',
+                win_backend: MPL_BACKEND_TYPE | None = 'QtCairo',
                 dpi: int | None = None,
-                use_default_style: bool = True,
+                default_style: bool = True,
                 tight_layout: bool = True,
+                font_sans_serif: str | None = 'Arial',
                 **kwargs) -> ContextManager[Axes] | ContextManager[NDArray[Axes]]:
     """
     Context manager for creating and saving a matplotlib figure
@@ -50,18 +56,21 @@ def plot_figure(output: Path | None,
     :param win_backend: Backend to handle backend issues in Windows
         If high resolution image (WXAgg), otherwise keep normal pdf output (WXCario)
     :param dpi: DPI for saving the figure
-    :param use_default_style: If True, apply default style to the axes
+    :param default_style: If True, apply default style to the axes
     :param tight_layout: If True, apply tight layout to the figure
+    :param font_sans_serif: Font style. If None, then use default from mplrc
     :param kwargs: Additional keyword arguments for ``plt.subplots()``
-    :return: A matplotlib Axes object
+    :return: Single or array of matplotlib Axes object
     """
-    _os_handler(win_backend=win_backend)
-    _mplrc_set()
+    if win_backend is not None and platform.system() == 'Windows':
+        matplotlib.use(win_backend)
+
+    if font_sans_serif is not None:
+        plt.rcParams['font.sans-serif'] = font_sans_serif
 
     fig, ax = plt.subplots(*args, **kwargs)
 
-    #
-    if use_default_style:
+    if default_style:
         if isinstance(ax, np.ndarray):
             for _ax in ax.ravel():
                 ax_set_default_style(_ax)
@@ -81,6 +90,7 @@ def plot_figure(output: Path | None,
         if set_equal_scale:
             ax.set_aspect('equal')
 
+        # io
         if output is None:
             if tight_layout:
                 plt.tight_layout()
@@ -93,31 +103,19 @@ def plot_figure(output: Path | None,
 
                 # for batch calling pulse
                 try:
-                    plt.savefig(output, dpi=dpi if dpi is not None else None)
+                    plt.savefig(output, dpi=dpi)
                     break
                 except OSError as e:
-                    print(e)
-                    input('press to continue')
+                    input(f'{repr(e)}! press to continue')
 
     finally:
         plt.clf()
         plt.close('all')
 
 
-def _os_handler(win_backend: MPL_BACKEND_TYPE = 'WXCairo'):
-    import platform
-    import matplotlib as mpl
-
-    if platform.system() == 'Windows':
-        mpl.use(win_backend)
-
-
-def _mplrc_set():  # TODO read from rc file with plt.rc_context()
-    plt.rcParams['font.sans-serif'] = "Arial"
-
-
 def ax_set_default_style(ax: Axes):
     """
+    Default `Axes` style
 
     :param ax: ``Axes``
     """
