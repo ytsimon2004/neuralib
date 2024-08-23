@@ -65,14 +65,6 @@ class ChangeTest(SqlTestCase):
         self.assertListEqual(r1, r2)
         return r2
 
-    @classmethod
-    def is_compiled_with(cls, opt: str) -> bool:
-        return Connection(cls.source_database).sqlite_compileoption_used(opt)
-
-    @classmethod
-    def skip_without_compile_with(cls, opt: str):
-        return unittest.skipIf(not cls.is_compiled_with(opt), f'!{opt}')
-
 
 class InsertTest(ChangeTest):
     """https://www.sqlitetutorial.net/sqlite-insert/"""

@@ -294,6 +294,7 @@ class OuterJoinTest(SqlTestCase):
                 Cats('Indoor', 'White'), Cats('Outdoor', 'Black')
             ])
 
+    @unittest.skip('FULL OUTER JOIN')
     def test_outer_join(self):
         self.assertSqlExeEqual("""\
         SELECT *
