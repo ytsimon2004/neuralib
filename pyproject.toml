@@ -59,7 +59,8 @@ scanner = [
 calimg = [
     "scanimage-tiff-reader",
     "suite2p",
-    "sbxreader"
+    "sbxreader",
+    "tensorflow"  # cascade spike prediction
 ]
 
 segmentation = [

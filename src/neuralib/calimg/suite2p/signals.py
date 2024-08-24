@@ -5,7 +5,8 @@ from typing import Literal, NamedTuple
 import numpy as np
 from scipy.ndimage import gaussian_filter, filters
 
-from neuralib.calimg.suite2p.core import Suite2PResult, SIGNAL_TYPE
+from neuralib.calimg.spikes import oasis_dcnv
+from .core import Suite2PResult, SIGNAL_TYPE
 
 __all__ = [
     'get_neuron_signal',
@@ -151,7 +152,7 @@ class DFFSignal(NamedTuple):
         f = self.dff.astype(np.float32)  # (T,)
         v = w = l = s = np.zeros_like(f, dtype=np.float32)
         t = np.zeros_like(f, dtype=np.int64)
-        _oasis_trace(f, v, w, t, l, self.s2p.indicator_tau, self.s2p.fs)
+        oasis_dcnv(f, v, w, t, l, self.s2p.indicator_tau, self.s2p.fs)
         return s
 
 
@@ -230,94 +231,9 @@ def _maximin_filter(signal: np.ndarray, kernel: float, size: int) -> np.ndarray:
     return baseline
 
 
-def _oasis_trace(fcorr: np.ndarray,
-                 v: np.ndarray,
-                 w: np.ndarray,
-                 t: np.ndarray,
-                 l: np.ndarray,
-                 tau: float,
-                 fs: float) -> np.ndarray:
-    """
-    spike deconvolution on a single neuron
-
-    :param fcorr: neuropil-subtracted, baseline-subtracted fluorescence (N,)
-    :param v:
-    :param w:
-    :param t:
-    :param l:
-    :param tau: timescale of the sensor, used for the deconvolution kernel
-    :param fs: sampling rate per plane
-    :return:
-        (F, ) spks
-    """
-    assert fcorr.ndim == 1
-    total_frame = len(fcorr)
-    g = -1. / (tau * fs)
-
-    frame = 0
-    ip = 0
-
-    ret = np.zeros(total_frame, dtype=np.float32)
-
-    while frame < total_frame:
-        v[ip] = fcorr[frame]
-        w[ip] = 1
-        t[ip] = frame
-        l[ip] = 1
-
-        while ip > 0:
-            if v[ip - 1] * np.exp(g * l[ip - 1]) > v[ip]:
-                # violation of the constraint means merging pools
-                f1 = np.exp(g * l[ip - 1])
-                f2 = np.exp(2 * g * l[ip - 1])
-                wnew = w[ip - 1] + w[ip] * f2
-                v[ip - 1] = (v[ip - 1] * w[ip - 1] + v[ip] * w[ip] * f1) / wnew
-                w[ip - 1] = wnew
-                l[ip - 1] = l[ip - 1] + l[ip]
-                ip -= 1
-            else:
-                break
-        frame += 1
-        ip += 1
-
-    ret[t[1:ip]] = v[1:ip] - v[:ip - 1] * np.exp(g * l[:ip - 1])
-
-    return ret
-
-
-def _oasis(fcorr: np.ndarray,
-           tau: float,
-           fs: float) -> np.ndarray:
-    """
-    Computes non-negative deconvolution. no sparsity constraints
-
-    .. seealso::
-
-        suite2p.extraction.dcnv.preprocess
-
-    :param fcorr: neuropil-subtracted, baseline-subtracted fluorescence, aka, fcorr - f0. (N, F)
-    :param tau:  timescale of the sensor, used for the deconvolution kernel
-    :param fs: sampling rate per plane
-    :return:
-        (N, T) spks
-    """
-    n_neurons, n_frames = fcorr.shape
-    fcorr = fcorr.astype(np.float32)
-    ret = np.zeros((n_neurons, n_frames), dtype=np.float32)
-
-    for n in range(n_neurons):
-        v = np.zeros((n_neurons, n_frames), dtype=np.float32)
-        w = np.zeros((n_neurons, n_frames), dtype=np.float32)
-        l = np.zeros((n_neurons, n_frames), dtype=np.float32)
-        t = np.zeros((n_neurons, n_frames), dtype=np.int64)
-        ret[n] = _oasis_trace(fcorr[n], v[n], w[n], t[n], l[n], tau, fs)
-
-    return ret
-
-
-# ================ #
-# Sync Stimpy file #
-# ================ #
+# ================= #
+# Sync Pulse Number #
+# ================= #
 
 def sync_s2p_rigevent(image_time: np.ndarray,
                       s2p: Suite2PResult,

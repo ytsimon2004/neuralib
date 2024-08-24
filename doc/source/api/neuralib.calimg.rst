@@ -12,6 +12,7 @@ neuralib.calimg
     neuralib.calimg.scanbox
     neuralib.calimg.suite2p
     neuralib.calimg.cellular
+    neuralib.calimg.spikes
     neuralib.calimg.fov
 
 

@@ -10,7 +10,8 @@ __all__ = ['get_soma_pixel',
 
 
 def get_soma_pixel(s2p: Suite2PResult,
-                   neuron_ids: np.ndarray | None = None, *,
+                   neuron_ids: np.ndarray | None = None,
+                   *,
                    color_diff: bool = True,
                    include_overlap_pixel: bool = True) -> np.ndarray:
     """
@@ -49,7 +50,8 @@ def get_soma_pixel(s2p: Suite2PResult,
 
 def plot_soma_center(ax: Axes,
                      s2p: Suite2PResult,
-                     neuron_ids: np.ndarray | None = None, *,
+                     neuron_ids: np.ndarray | None = None,
+                     *,
                      invert_xy: bool = True,
                      with_index: bool = True,
                      font_size: float = 5,
