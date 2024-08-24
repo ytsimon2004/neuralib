@@ -64,14 +64,15 @@ def ensure_dir(p: PathLike, verbose: bool = True) -> None:
     :param verbose: print verbose
     """
     p = Path(p)
-    if not p.is_dir():
-        raise NotADirectoryError(f'not a dir: {p}')
 
     if not p.exists():
         p.mkdir(parents=True)
 
         if verbose:
             fprint(f'create dir {p}', vtype='io')
+
+    if not p.is_dir():
+        raise NotADirectoryError(f'not a dir: {p}')
 
 
 def joinn(sep: str, *part: str | None) -> str:

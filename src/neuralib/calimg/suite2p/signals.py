@@ -23,7 +23,8 @@ BASELINE_METHOD = Literal['maximin', 'constant', 'constant_prctile']
 
 
 def get_neuron_signal(s2p: Suite2PResult,
-                      n: int | np.ndarray | list[int],
+                      n: int | np.ndarray | list[int] | None = None,
+                      *,
                       signal_type: SIGNAL_TYPE = 'df_f',
                       normalize: bool = True,
                       dff: bool = True,
@@ -33,14 +34,17 @@ def get_neuron_signal(s2p: Suite2PResult,
     Select neuronal signals for analysis. For single cell (F,) OR multiple cells (N, F)
 
     :param s2p: suite 2p result
-    :param n: neuron index (`int`) or index arraylike (`Array[int, N]`)
+    :param n: neuron index (`int`) or index arraylike (`Array[int, N]`). If None, then use all neurons
     :param signal_type: signal type. :data:`~neuralib.calimg.suite2p.core.SIGNAL_TYPE` {'df_f', 'spks'}
     :param normalize: 01 normalization for each neuron
     :param dff: normalize to the baseline fluorescence changed (dF/F)
     :param correct_neuropil: do the neuropil correction
     :param method: baseline calculation method {'maximin', 'constant', 'constant_prctile'}
-    :return: tuple with (signal, baseline signal)
+    :return: tuple with (signal, baseline signal). `Array[float, F|[N,F]]`
     """
+    if n is None:
+        n = list(range(s2p.n_neurons))
+
     f = s2p.F[n]
     fneu = s2p.FNeu[n]
 
