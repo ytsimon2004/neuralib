@@ -456,20 +456,20 @@ class CascadeSpikePrediction:
         best_model_for_each_neuron = np.argmin(np.abs(differences), axis=1)
 
         # Use for each noise level the matching model
-        for i, model_noise in enumerate(noise_levels_model):
+        for i, noise_level in enumerate(noise_levels_model):
 
             # select neurons which have this noise level:
             neuron_idx = np.where(best_model_for_each_neuron == i)[0]
             if verbose:
-                print(f'\nPredictions for noise level {model_noise}')
+                print(f'\nPredictions for noise level {noise_level}')
             if len(neuron_idx) == 0:  # no neurons were selected
                 if verbose:
-                    print("\tNo neurons for this noise level: {}")
+                    print(f"\tNo neurons for this noise level: {noise_level}")
                 continue  # jump to next noise level
 
             # load keras models for the given noise level
             models = []
-            for model_path in model_dict[model_noise]:
+            for model_path in model_dict[noise_level]:
                 models.append(tf.keras.models.load_model(model_path))
 
             # select neurons and merge neurons and timepoints into one dimension
