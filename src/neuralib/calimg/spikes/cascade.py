@@ -12,7 +12,22 @@ See also the source example from the authors
 
 - `Calibrated spike inference with Cascade.ipynb <https://colab.research.google.com/github/HelmchenLabSoftware/Cascade/blob/master/Demo%20scripts/Calibrated_spike_inference_with_Cascade.ipynb#scrollTo=cObwxWaB8i3f>`_
 
-- Since this project not yet published in pypi, neuralib provide wrapper usage for Cascade(v1.0)
+- Since the source Cascade project not yet published in pypi, neuralib provide **wrapper usage** for Cascade(v1.0)
+
+
+**Example of usage**
+
+- See available model in :meth:`~neuralib.calimg.spikes.cascade.CascadeSpikePrediction.get_available_models()`
+
+.. code-block:: python
+
+    from neuralib.calimg.spikes.cascade import cascade_predict
+
+    # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
+    dff = ...
+
+     # select your model, predict the spike probability from the dF/F (same shape)
+    spks = cascade_predict(dff, model_type='Global_EXC_30Hz_smoothing100ms')
 
 """
 from __future__ import annotations
