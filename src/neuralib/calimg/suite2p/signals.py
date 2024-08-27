@@ -5,7 +5,6 @@ from typing import Literal, NamedTuple
 import numpy as np
 from scipy.ndimage import gaussian_filter, filters
 
-from neuralib.calimg.spikes import oasis_dcnv
 from .core import Suite2PResult, SIGNAL_TYPE
 
 __all__ = [
@@ -146,14 +145,6 @@ class DFFSignal(NamedTuple):
         fneu_corr = 0.3 * self.fneu
         fneu_bas = calc_signal_baseline(fneu_corr, self.s2p, method='maximin')
         return 100 * ((fneu_corr - fneu_bas) / fneu_bas)
-
-    def oasis_dcnv(self) -> np.ndarray:
-        """spike deconvolution. `Array[float, F | [N,F]]`"""
-        f = self.dff.astype(np.float32)  # (T,)
-        v = w = l = s = np.zeros_like(f, dtype=np.float32)
-        t = np.zeros_like(f, dtype=np.int64)
-        oasis_dcnv(f, v, w, t, l, self.s2p.indicator_tau, self.s2p.fs)
-        return s
 
 
 def dff_signal(f: np.ndarray,

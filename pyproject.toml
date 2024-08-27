@@ -60,7 +60,8 @@ calimg = [
     "scanimage-tiff-reader",
     "suite2p",
     "sbxreader",
-    "tensorflow"  # cascade spike prediction
+    "tensorflow", # cascade spike prediction
+    "numba"  # oasis dcnv batch processing
 ]
 
 segmentation = [
