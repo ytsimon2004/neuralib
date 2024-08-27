@@ -26,7 +26,7 @@ See also the source example from the authors
     # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
     dff = ...
 
-     # select your model, predict the spike probability from the dF/F (same shape)
+    # select your model, predict the spike probability from the dF/F (same shape)
     spks = cascade_predict(dff, model_type='Global_EXC_30Hz_smoothing100ms')
 
 """

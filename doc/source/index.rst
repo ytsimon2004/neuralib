@@ -101,13 +101,13 @@ Open-Source tools API call / data parsing
 
 - Module for whole brain, slice view visualization and rois classification
 
-  - :mod:`neuralib.atlas.ccf`: Customized hierarchical classification for the mouse brain atlas
+    - :mod:`neuralib.atlas.ccf`: Customized hierarchical classification for the mouse brain atlas
 
-  - :mod:`neuralib.atlas.brainrender`: CLI-based wrapper for `brainrender <https://github.com/brainglobe/brainrender>`_
+    - :mod:`neuralib.atlas.brainrender`: CLI-based wrapper for `brainrender <https://github.com/brainglobe/brainrender>`_
 
-  - :mod:`neuralib.atlas.cellatlas`: Volume and cell types counts for each brain region, refer to `Cell Atlas <https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/>`_
+    - :mod:`neuralib.atlas.cellatlas`: Volume and cell types counts for each brain region, refer to `Cell Atlas <https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/>`_
 
-  - :mod:`neuralib.atlas.ibl`: Slice view plotting wrapper for `ibllib <https://github.com/int-brain-lab/ibllib?tab=readme-ov-file>`_ and `iblatlas <https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html>`_
+    - :mod:`neuralib.atlas.ibl`: Slice view plotting wrapper for `ibllib <https://github.com/int-brain-lab/ibllib?tab=readme-ov-file>`_ and `iblatlas <https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html>`_
 
 
 :mod:`neuralib.calimg`
@@ -115,11 +115,13 @@ Open-Source tools API call / data parsing
 
 - Module for 2-photon calcium imaging acquisition and result parsing
 
-  - :mod:`neuralib.calimg.scan_image`: Data acquired from `ScanImage <https://www.mbfbioscience.com/products/scanimage/>`_ (under DEV)
+    - :mod:`neuralib.calimg.scan_image`: Data acquired from `ScanImage <https://www.mbfbioscience.com/products/scanimage/>`_ (under DEV)
 
-  - :mod:`neuralib.calimg.scanbox`: Data acquired from `Scanbox <https://scanbox.org/tag/two-photon/>`_
+    - :mod:`neuralib.calimg.scanbox`: Data acquired from `Scanbox <https://scanbox.org/tag/two-photon/>`_
 
-  - :mod:`neuralib.calimg.suite2p`: Result parser for `suite2p <https://github.com/MouseLand/suite2p>`_
+    - :mod:`neuralib.calimg.suite2p`: Result parser for `suite2p <https://github.com/MouseLand/suite2p>`_
+
+    - :mod:`neuralib.calimg.spikes`: dF/F to spike activity (OASIS/Cascade)
 
 
 :mod:`neuralib.segmentation`
@@ -127,26 +129,26 @@ Open-Source tools API call / data parsing
 
 - Module for neuronal segmentation
 
-  - :mod:`neuralib.segmentation.cellpose`: Result parser and batch running for `cellpose <https://github.com/MouseLand/cellpose>`_
+    - :mod:`neuralib.segmentation.cellpose`: Result parser and batch running for `cellpose <https://github.com/MouseLand/cellpose>`_
 
-  - :mod:`neuralib.segmentation.stardist`: Result parser and batch running for `stardist <https://github.com/stardist/stardist>`_
+    - :mod:`neuralib.segmentation.stardist`: Result parser and batch running for `stardist <https://github.com/stardist/stardist>`_
 
 
 :mod:`neuralib.model`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   - :mod:`neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
+    - :mod:`neuralib.model.bayes_decoding`: Position decoding using population neuronal activity
 
-   - :mod:`neuralib.model.rastermap`: Run and result parser for `rastermap <https://github.com/MouseLand/rastermap>`_
+    - :mod:`neuralib.model.rastermap`: Run and result parser for `rastermap <https://github.com/MouseLand/rastermap>`_
 
 
 
 :mod:`neuralib.tracking`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  - :mod:`neuralib.tracking.deeplabcut`: Result parser for `DeepLabCut <https://github.com/DeepLabCut/DeepLabCut>`_
+    - :mod:`neuralib.tracking.deeplabcut`: Result parser for `DeepLabCut <https://github.com/DeepLabCut/DeepLabCut>`_
 
-  - :mod:`neuralib.tracking.facemap`: Result parser for `facemap <https://github.com/MouseLand/facemap>`_
+    - :mod:`neuralib.tracking.facemap`: Result parser for `facemap <https://github.com/MouseLand/facemap>`_
 
 
 Utilities Modules

@@ -61,6 +61,7 @@ calimg = [
     "suite2p",
     "sbxreader",
     "tensorflow", # cascade spike prediction
+    "ruamel.yaml",
     "numba"  # oasis dcnv batch processing
 ]
 

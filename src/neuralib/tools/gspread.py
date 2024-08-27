@@ -131,7 +131,7 @@ class GoogleWorkSheet:
 
     def _row(self, data: DataIndex) -> Union[None, int, list[int], np.ndarray]:
         """
-        get row(s) index
+        Get row(s) index
 
         :param data: *str: first col value; *int: index
         :return:
@@ -152,11 +152,11 @@ class GoogleWorkSheet:
         raise TypeError()
 
     def _col(self, head: str) -> int:
-        """get column index based on header (one-base)"""
+        """Get column index based on header (one-base)"""
         return self._headers.index(head) + 1
 
     def _rowcol(self, data: DataIndex, head: str) -> tuple[None | int | list[int], int]:
-        """get row in col indices"""
+        """Get row in col indices"""
         return self._row(data), self._col(head)
 
     # noinspection PyTypeChecker
@@ -311,33 +311,35 @@ class GoogleSpreadSheet:
         """list of ``WorkPageName``"""
         return [it.title for it in self._worksheets]
 
-    def has_worksheet(self, title: WorkPageName) -> bool:
+    def has_worksheet(self, page: WorkPageName) -> bool:
         """If has the worksheet, implement also in ``__contains__()``"""
         for w in self._worksheets:
-            if w.title == title:
+            if w.title == page:
                 return True
         return False
 
-    def get_worksheet(self, title: WorkPageName, primary_key: str = 'Data') -> GoogleWorkSheet:
+    def get_worksheet(self, page: WorkPageName, primary_key: str = 'Data') -> GoogleWorkSheet:
         """Get the worksheet. implement also in ``__get_item__()``"""
         for w in self._worksheets:
-            if w.title == title:
+            if w.title == page:
                 return GoogleWorkSheet(w, primary_key)
-        raise ValueError()
+
+        raise ValueError(f'page not found: {page}')
 
 
 # ========= #
 # Utilities #
 # ========= #
 
-def upload_dataframe_to_spreadsheet(df: DataFrame, gspread_name: str, worksheet_name: str) -> None:
+def upload_dataframe_to_spreadsheet(df: DataFrame,
+                                    gspread_name: SpreadSheetName,
+                                    worksheet_name: WorkPageName) -> None:
     """
     Upload a dataframe to a gspread worksheet
 
-    :param df: DataFrame
+    :param df: polars or pandas DataFrame
     :param gspread_name: spreadsheet name
     :param worksheet_name: worksheet name under the spreadsheet
-    :return:
     """
     gs = GoogleSpreadSheet(gspread_name)
     spreadsheet = gs._sheet

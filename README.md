@@ -49,6 +49,7 @@
       DEV)
     - `neuralib.calimg.scanbox`: Data acquired from [Scanbox](https://scanbox.org/tag/two-photon/)
     - `neuralib.calimg.suite2p`:  Result parser for [suite2p](https://github.com/MouseLand/suite2p)
+  - `neuralib.calimg.spike`: dF/F to spike activity (OASIS/Cascade)
 
 ## segmentation
 

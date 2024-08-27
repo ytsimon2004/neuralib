@@ -19,7 +19,22 @@ This script adapted from ``suite2p.suite2p.extraction.dcnv``
 .. seealso:: `<https://github.com/MouseLand/suite2p/blob/main/suite2p/extraction/dcnv.py>`_
 
 
+**Example of usage**
+
+.. code-block:: python
+
+    from neuralib.calimg.spikes.oasis import oasis_dcnv
+
+    # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
+    dff = ...
+
+    tau = 1.5  # time constant of the calcium indicator (ms)
+    fs = 30  # sampling frequency of the calcium imaging data (hz)
+    spks = oasis_dcnv(dff, tau, fs)
+
+
 """
+from __future__ import annotations
 
 import numpy as np
 from numba import njit, prange
@@ -28,15 +43,18 @@ __all__ = ['oasis_dcnv',
            'oasis_matrix']
 
 
-def oasis_dcnv(dff: np.ndarray, batch_size: int, tau: float, fs: float) -> np.ndarray:
+def oasis_dcnv(dff: np.ndarray,
+               tau: float,
+               fs: float,
+               batch_size: int = 300) -> np.ndarray:
     """
     Computes non-negative deconvolution (no sparsity constraints)
 
     :param dff: The observed calcium fluorescence trace in 2D numpy array(multiple neurons)
         or 1D numpy array(single cell). `Array[float, [N, F]|F]`
+    :param tau: The time constant of the calcium indicator in ms
+    :param fs: The sampling frequency of the calcium imaging data in hz
     :param batch_size: number of frames processed per batch
-    :param tau: The time constant of the calcium indicator
-    :param fs: The sampling frequency of the calcium imaging data
     :return: Deconvolved fluorescence. `Array[float, [N,F]|F]`
     """
     dff = dff.astype(np.float32)
@@ -45,6 +63,11 @@ def oasis_dcnv(dff: np.ndarray, batch_size: int, tau: float, fs: float) -> np.nd
         dff = np.expand_dims(dff, 0)
     else:
         n_neurons = dff.shape[0]
+
+    n_frames = dff.shape[1]
+
+    if batch_size > n_frames:
+        batch_size = n_frames
 
     ret = np.zeros(dff.shape, dtype=np.float32)
     for i in range(0, n_neurons, batch_size):

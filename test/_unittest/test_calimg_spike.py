@@ -34,7 +34,7 @@ def test_oasis_spike_batch():
     dff = get_example_dff()
     f = dff.astype(np.float32)
 
-    spks = oasis_dcnv(f, 100, 1.5, 30)
+    spks = oasis_dcnv(f, 1.5, 30)
     plt.plot(dff[NEURON_ID], label='dff')
     plt.plot(spks[NEURON_ID], label='oasis')
     plt.legend()
@@ -45,7 +45,7 @@ def test_oasis_spike_single():
     dff = get_example_dff()[NEURON_ID, :]
     f = dff.astype(np.float32)
 
-    spks = oasis_dcnv(f, 100, 1.5, 30)
+    spks = oasis_dcnv(f, 1.5, 30)
     plt.plot(dff, label='dff')
     plt.plot(spks, label='oasis')
     plt.legend()
