@@ -2,10 +2,13 @@ Welcome to NeuraLib's documentation!
 ====================================
 
 
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+.. contents:: Table of Contents
+   :local:
+   :depth: 2
 
 
 API Reference
@@ -29,21 +32,21 @@ Installation
 Install common dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- First run for the common dependencies
+- First run for the common dependencies (Python>=3.9, but >=3.11 not yet tested)
 
 .. code-block:: console
 
     pip install neura-library
 
 
-Install all dependencies:
+Install all dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
     pip install neural-library[all]
 
-Install the minimal required dependencies according to usage purpose:
+Install the minimal required dependencies according to usage purpose
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
@@ -108,12 +111,9 @@ CLI project.scripts
     ../notebooks/example_neuralib_plot
 
 
-Open-Source tools API call / data parsing
-------------------------------------------
+Modules
+----------
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Module
 
 :mod:`neuralib.atlas`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

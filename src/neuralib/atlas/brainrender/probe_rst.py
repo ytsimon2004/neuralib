@@ -59,12 +59,9 @@ class ProbeReconstructor(BrainReconstructor):
     data: pl.DataFrame
     """sorted data based on plane_type"""
 
-    def post_parsing(self):
-        super().post_parsing()
+    def load(self):
         self.raw = pl.read_csv(self.csv_file)
         self.data = self.infer_probe_index(self.raw)
-
-    def load(self):
         self.dye_label_only = True
         probe_dye = self.get_probe_object().shanks
         probe_dye = np.vstack(probe_dye)

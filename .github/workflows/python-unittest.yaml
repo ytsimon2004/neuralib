@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - dev
-      - py310
+
   pull_request:
     branches:
       - main

@@ -1,12 +1,11 @@
 # neuralib
 
-
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/neura-library)
 [![PyPI version](https://badge.fury.io/py/neura-library.svg)](https://badge.fury.io/py/neura-library)
-[![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/neura-library)
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
+[![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
@@ -16,18 +15,18 @@
 
 # Installation
 
-- First, install common dependencies in the conda env with Python~=3.9.0 (for common dependencies)
+- First, install common dependencies in the conda env with Python>=3.9 (>=3.11 not yet tested)
     - `pip install neura-library`
 
 - Install all dependencies using
     - `pip install neural-library[all]`
 
 - Install the minimal required dependencies according to usage purpose . For example:
-  - Choices
-    in `[]`: `atlas`, `scanner`, `calimg`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
-    `all`
-  - Use `atlas` module: `pip install neural-library[atlas]`
-  - Use `segmentation` module: `pip install neural-library[segmentation]`
+    - Choices
+      in `[]`: `atlas`, `scanner`, `calimg`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
+      `all`
+    - Use `atlas` module: `pip install neural-library[atlas]`
+    - Use `segmentation` module: `pip install neural-library[segmentation]`
 
 - For developer for anyone want to contribute, run also:
     - `pip install neural-library[dev]`
@@ -36,7 +35,7 @@
 
 ----------------------------
 
-# Open-Source tools API call / data parsing
+# Module
 
 ## atlas
 
