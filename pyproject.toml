@@ -12,6 +12,7 @@ readme = "README.md"
 keywords = ["Neuroscience", "visual neuroscience", "cellular imaging", "brain mapping", "spatial navigation"]
 classifiers = [
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Operating System :: OS Independent",

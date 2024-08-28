@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - py310
   pull_request:
     branches:
       - main
@@ -16,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [ "3.9" ]
+        python-version: [ "3.9", "3.10" ]
 
     steps:
       - name: Check out repository code
