@@ -1,9 +1,12 @@
 # neuralib
 
-[![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
+
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/neura-library)
 [![PyPI version](https://badge.fury.io/py/neura-library.svg)](https://badge.fury.io/py/neura-library)
 [![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
+
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
@@ -25,6 +28,11 @@
     `all`
   - Use `atlas` module: `pip install neural-library[atlas]`
   - Use `segmentation` module: `pip install neural-library[segmentation]`
+
+- For developer for anyone want to contribute, run also:
+    - `pip install neural-library[dev]`
+    - Setup pre-commit by: `pre-commit install`
+    - Do dry run `ruff` lint check by: `ruff check .`
 
 ----------------------------
 

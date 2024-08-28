@@ -61,6 +61,25 @@ Install the minimal required dependencies according to usage purpose:
     pip install neural-library[segmentation]
 
 
+Install pre-commit and linter check by developer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+    pip install neural-library[dev]
+
+-  Setup pre-commit by:
+
+.. code-block:: console
+
+    pre-commit install
+
+-  Do dry run ``ruff`` lint check by:
+
+.. code-block:: console
+
+    ruff check .
+
 
 CLI project.scripts
 ---------------------------

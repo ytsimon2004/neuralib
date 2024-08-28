@@ -38,8 +38,6 @@ dependencies = [
     "requests",
     "rich",
     "typing_extensions",
-    'pre-commit',
-    'ruff'
 ]
 
 
@@ -110,6 +108,7 @@ tools = [
     "gspread"
 ]
 
+
 all = [
     "bokeh",
     "neura-library[atlas]",
@@ -126,13 +125,20 @@ all = [
 ]
 
 
+dev = [
+    'pre-commit',
+    'ruff',
+    "neura-library[all]"
+]
+
+
 doc = [
     #    "pandoc",  # use conda install pandoc
     "sphinx",
     "nbsphinx",
     "sphinx-toolbox",
     "sphinx-rtd-theme",
-    "neura-library[all]",
+    "neura-library[all]"
 ]
 
 [project.urls]
