@@ -37,7 +37,9 @@ dependencies = [
     "tqdm",
     "requests",
     "rich",
-    "typing_extensions"
+    "typing_extensions",
+    'pre-commit',
+    'ruff'
 ]
 
 

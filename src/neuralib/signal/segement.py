@@ -69,7 +69,7 @@ class Segment:
             if true, segments of duration 0 are extent to have a minimal duration
 
         """
-        y = np.asarray(y == True, dtype=np.int8).ravel()
+        y = np.where(y, 1, 0).ravel()
 
         if len(y) == 0 or np.all(y == 0):
             return cls(np.zeros((0, 2), dtype=np.int64))

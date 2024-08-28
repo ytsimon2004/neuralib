@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import overload, Any, TypeVar, Optional, Union
+from typing import overload, Any, TypeVar, Union
 
 from .annotation import *
 from .expr import *

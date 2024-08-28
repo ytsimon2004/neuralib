@@ -59,7 +59,6 @@ def send_slack_message(env_file: PathLike,
     """
 
     try:
-        import slack
         from dotenv import load_dotenv
         load_dotenv(dotenv_path=env_file)
 

@@ -132,15 +132,18 @@ def plot_2d_dots(ax: Axes,
     """
     values = np.array([values]).flatten()
     xlabel, ylabel = np.meshgrid(xlabel, ylabel, indexing='ij')
-    #
-    if size_type == 'radius':
-        func = lambda it: it ** 2 * size_factor
-    elif size_type == 'area':
-        func = lambda it: it * size_factor
-    else:
-        raise ValueError('')
 
-    s = func(values)
+    #
+
+    def _func(v):
+        if size_type == 'radius':
+            return v ** 2 * size_factor
+        elif size_type == 'area':
+            return v * size_factor
+        else:
+            raise ValueError('')
+
+    s = _func(values)
     #
     if with_color:
         im = ax.scatter(xlabel.ravel(), ylabel.ravel(), s=s, c=values, cmap='viridis', clip_on=False,
@@ -150,14 +153,14 @@ def plot_2d_dots(ax: Axes,
         ax.scatter(xlabel.ravel(), ylabel.ravel(), s=s, c='k', clip_on=False, **kwargs)
 
     if with_legends:
-        _ax_size_legend(ax, values, func)
+        _ax_size_legend(ax, values, _func)
 
 
 def _ax_size_legend(ax: Axes,
                     value: list[int] | np.ndarray,
                     f: Callable[[float], float]):
     """
-    add the label and legend of the size in scatter plot.
+    add the labels and legend of the size in scatter plot.
 
     :param ax: ``Axes``
     :param value: values reflect to size
@@ -168,9 +171,9 @@ def _ax_size_legend(ax: Axes,
     for s in vsize:
         ax.scatter([], [], s=f(s), c='k', label=str(s))
 
-    h, l = plt.gca().get_legend_handles_labels()
+    handles, labels = plt.gca().get_legend_handles_labels()
 
-    plt.legend(h[1:], l[1:], labelspacing=1.2, title="value", borderpad=1,
+    plt.legend(handles[1:], labels[1:], labelspacing=1.2, title="value", borderpad=1,
                frameon=True, framealpha=0.6, edgecolor="k", facecolor="w", loc='right')
 
 
@@ -369,31 +372,34 @@ def violin_boxplot(ax: Axes,
                    x: str | None = None,
                    y: str | None = None,
                    hue: str | None = None,
+                   scatter_alpha: float = 0.7,
+                   scatter_size: float = 3,
                    output: PathLike | None = None,
                    **kwargs) -> None:
     """
-    Plot the data with half violin together with boxes and dots
+    Plot the data with half violin together with boxes and scatters
 
     :param ax: ``Axes``
     :param data: Dataset for plotting
-    :param x: names of variables in data or vector data: ``x``
-    :param y: names of variables in data or vector data: ``y``
-    :param hue: names of variables in data or vector data: ``hue``
-    :param output: fig save output
-    :param kwargs: pass through ``sns.violinplot``, ``sns.boxplot`` and ``sns.stripplot``
+    :param x: Names of variables in data or vector data: ``x``
+    :param y: Names of variables in data or vector data: ``y``
+    :param hue: Names of variables in data or vector data: ``hue``
+    :param scatter_alpha: Scatter alpha for the ``sns.stripplot()``
+    :param scatter_size: Scatter size for the ``sns.stripplot()``
+    :param output: Fig save output path
+    :param kwargs: Common args pass through ``sns.violinplot()``, ``sns.boxplot()`` and ``sns.stripplot()``
     :return:
     """
-    kws = dict(
+    kwargs = dict(
         ax=ax,
         x=x,
         y=y,
         hue=hue,
         data=data,
-        palette='Set2',
         **kwargs
     )
 
-    sns.violinplot(dodge=False, density_norm="width", inner=None, **kws)
+    sns.violinplot(dodge=False, density_norm="width", inner=None, **kwargs)
 
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
@@ -402,10 +408,18 @@ def violin_boxplot(ax: Axes,
         x0, y0, width, height = bbox.bounds
         violin.set_clip_path(plt.Rectangle((x0, y0), width / 2, height, transform=ax.transData))
 
-    sns.boxplot(saturation=1, showfliers=False, width=0.3, boxprops={'zorder': 3, 'facecolor': 'none'}, **kws)
+    sns.boxplot(saturation=1,
+                showfliers=False,
+                width=0.3,
+                boxprops={'zorder': 3, 'facecolor': 'none'},
+                **kwargs)
 
     old_len_collections = len(ax.collections)
-    sns.stripplot(dodge=False, alpha=0.7, size=3, **kws)
+
+    sns.stripplot(dodge=False,
+                  alpha=scatter_alpha,
+                  size=scatter_size,
+                  **kwargs)
 
     for dots in ax.collections[old_len_collections:]:
         dots.set_offsets(dots.get_offsets() + np.array([0.12, 0]))

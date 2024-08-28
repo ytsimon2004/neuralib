@@ -266,7 +266,6 @@ def resolve_field_type(f_type: type) -> tuple[type, type, bool]:
     :return: (raw_type, sql_type, not_null)
     """
     import typing
-    import types
 
     sql_type = f_type
     o = typing.get_origin(f_type)

@@ -75,9 +75,9 @@ def oasis_dcnv(dff: np.ndarray,
         v = np.zeros(dff.shape, dtype=np.float32)
         w = np.zeros(dff.shape, dtype=np.float32)
         t = np.zeros(dff.shape, dtype=np.int64)
-        l = np.zeros(dff.shape, dtype=np.float32)
+        ll = np.zeros(dff.shape, dtype=np.float32)
         s = np.zeros(dff.shape, dtype=np.float32)
-        oasis_matrix(f, v, w, t, l, s, tau, fs)
+        oasis_matrix(f, v, w, t, ll, s, tau, fs)
         ret[i:i + batch_size] = s
 
     if n_neurons == 1:
@@ -92,7 +92,7 @@ def oasis_matrix(
         v: np.ndarray,
         w: np.ndarray,
         t: np.ndarray,
-        l: np.ndarray,
+        ll: np.ndarray,
         s: np.ndarray,
         tau: float,
         fs: float
@@ -109,7 +109,7 @@ def oasis_matrix(
     :param v: A 1D array that will store the estimated deconvolved signal.
     :param w: A 1D array that tracks the weights for merging steps
     :param t: A 1D array that stores the indices of time steps
-    :param l: A 1D array that tracks the weights for merging steps.
+    :param ll: A 1D array that tracks the weights for merging steps.
     :param s: A 1D array that will store the inferred spikes
     :param tau: The time constant of the calcium indicator
     :param fs: The sampling frequency of the calcium imaging data
@@ -117,11 +117,11 @@ def oasis_matrix(
     """
     n_neurons = dff.shape[0]
     for n in prange(n_neurons):
-        _oasis_trace(dff[n], v[n], w[n], t[n], l[n], s[n], tau, fs)
+        _oasis_trace(dff[n], v[n], w[n], t[n], ll[n], s[n], tau, fs)
 
 
 @njit(cache=True)
-def _oasis_trace(dff, v, w, t, l, s, tau, fs):
+def _oasis_trace(dff, v, w, t, ll, s, tau, fs):
     """single neurons spike deconvolution"""
     nframes = len(dff)
     g = -1. / (tau * fs)
@@ -133,21 +133,21 @@ def _oasis_trace(dff, v, w, t, l, s, tau, fs):
         v[ip] = dff[i]
         w[ip] = 1
         t[ip] = i
-        l[ip] = 1
+        ll[ip] = 1
 
         while ip > 0:
-            if v[ip - 1] * np.exp(g * l[ip - 1]) > v[ip]:
+            if v[ip - 1] * np.exp(g * ll[ip - 1]) > v[ip]:
                 # violation of the constraint means merging pools
-                f1 = np.exp(g * l[ip - 1])
-                f2 = np.exp(2 * g * l[ip - 1])
+                f1 = np.exp(g * ll[ip - 1])
+                f2 = np.exp(2 * g * ll[ip - 1])
                 wnew = w[ip - 1] + w[ip] * f2
                 v[ip - 1] = (v[ip - 1] * w[ip - 1] + v[ip] * w[ip] * f1) / wnew
                 w[ip - 1] = wnew
-                l[ip - 1] = l[ip - 1] + l[ip]
+                ll[ip - 1] = ll[ip - 1] + ll[ip]
                 ip -= 1
             else:
                 break
         i += 1
         ip += 1
 
-    s[t[1:ip]] = v[1:ip] - v[:ip - 1] * np.exp(g * l[:ip - 1])
+    s[t[1:ip]] = v[1:ip] - v[:ip - 1] * np.exp(g * ll[:ip - 1])

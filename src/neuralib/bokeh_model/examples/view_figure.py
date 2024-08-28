@@ -41,7 +41,7 @@ class AnimalFigureView(View):
         if self._figure is None:
             try:
                 self._figure = self.get_arg('figure')[0]
-            except (KeyError, IOError) as e:
+            except (KeyError, IOError):
                 self._figure = 'default'
         return self._figure
 

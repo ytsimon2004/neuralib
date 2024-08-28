@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import typing
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING
 
 from .literal import FOREIGN_POLICY, CONFLICT_POLICY
 
 if TYPE_CHECKING:
-    import datetime
+    pass
 
 __all__ = [
     'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP',

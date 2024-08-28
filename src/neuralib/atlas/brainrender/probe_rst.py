@@ -138,11 +138,12 @@ class ProbeReconstructor(BrainReconstructor):
 
         ext_depth = None if self.dye_label_only else (0, 5000)
 
-        fn = lambda p1, p2: self._shank_extend(np.array([p1, p2]), ext_depth=ext_depth)
+        def _extend(p1, p2):
+            self._shank_extend(np.array([p1, p2]), ext_depth=ext_depth)
 
         ret = []
         for (surface_idx, tip_idx) in grouped_iter(np.arange(n_label_points), 2):
-            ret.append(fn(p[surface_idx], p[tip_idx]))
+            ret.append(_extend(p[surface_idx], p[tip_idx]))
 
         return self.ShanksTrack(self, ret)
 

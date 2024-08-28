@@ -549,7 +549,7 @@ def with_defaults(instance: T) -> T:
         ck = arg.complete_kwargs()
         try:
             value = ck['default']
-        except KeyError as e:
+        except KeyError:
             if 'action' in ck:
                 if ck['action'] == 'store_true':
                     arg.__set__(instance, False)

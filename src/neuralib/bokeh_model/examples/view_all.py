@@ -74,7 +74,7 @@ class AllView(View):
 
     def build_goto_link(self, animal: Optional[str]):
         if animal is None or self.single:
-            self.goto_btn.text = f"""
+            self.goto_btn.text = """
 <a type=button 
     class="bk bk-input"
 >(Select one animal)</a>

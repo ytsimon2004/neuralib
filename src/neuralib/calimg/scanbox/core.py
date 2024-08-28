@@ -135,20 +135,20 @@ class SBXInfo(Generic[T, A]):
     @dataclass(frozen=True)
     class ConfigInfo:
         """attr from config"""
-        agc: 'AgcInfo'
+        agc: 'AgcInfo'  # noqa: F821
         # calibration: np.ndarray
         coord_abs: np.ndarray
         coord_rel: np.ndarray
         frame_times: np.ndarray
         frames: int  # total frames
         host_name: str  # BSTATION6
-        knobby: 'KnobbyInfo'
+        knobby: 'KnobbyInfo'  # noqa: F821
         laser_power: float
         laser_power_perc: str  # 75%
         lines: int  # 528
         magnification: int  # idx from 1 in magnification_list
         magnification_list: np.ndarray
-        objective: 'ObjectiveInfo'  # directly get useful attr `name`
+        objective: 'ObjectiveInfo'  # directly get useful attr `name`  # noqa: F821
         objective_type: int
         pmt0_gain: float  # green channel
         pmt1_gain: float  # red channel
@@ -196,7 +196,7 @@ class SBXInfo(Generic[T, A]):
     @dataclass(frozen=True)
     class KnobbyInfo:
         """attr from info.config.knobby"""
-        pos: 'KnobbyPosInfo'
+        pos: 'KnobbyPosInfo'  # noqa: F821
         schedule: np.ndarray
 
     @classmethod

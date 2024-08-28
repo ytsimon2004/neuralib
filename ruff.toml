@@ -1,0 +1,20 @@
+target-version = "py39"
+extend-exclude = [
+    "test",
+    # annotation module
+    "src/neuralib/argp",
+    "src/neuralib/sqlp",
+    "src/neuralib/persistence"
+]
+
+line-length = 120
+
+[lint]
+ignore = ["F403", "F405"]
+exclude = ["*.ipynb"]
+
+
+[format]  # not run, only recommand
+quote-style = 'single'
+skip-magic-trailing-comma = false
+docstring-code-format = true

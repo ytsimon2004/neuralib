@@ -823,7 +823,7 @@ class SqlInsertStat(SqlStat[T], SqlReturnStat, Generic[T]):
         from .table import table_class
         try:
             table_cls = table_class(self.table)
-        except AttributeError as e:
+        except AttributeError:
             pass
         else:
             if self._named:
