@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Union, Callable
 
 import pandas as pd
 import polars as pl
@@ -13,7 +13,8 @@ from neuralib.typing import DataFrame
 __all__ = ['fprint',
            'printdf',
            'print_load',
-           'print_save']
+           'print_save',
+           'publish_annotation']
 
 _PREV_LOAD_FILE = None
 _PREV_SAVE_FILE = None
@@ -167,3 +168,54 @@ def print_save(file: Union[str, Path], verb='SAVE') -> Path:
 
     _PREV_SAVE_FILE = file
     return file
+
+
+def publish_annotation(level: Literal['main', 'sup', 'appendix', 'test'],
+                       *,
+                       project: str | list[str] | None = None,
+                       figure: str | list[str] | None = None,
+                       caption: str | None = None,
+                       as_doc: bool = False,
+                       as_attributes: bool = True):
+    """
+    Annotation for knowing the class/function using scenario in paper publication
+
+    :param level: {'main', 'sup', 'appendix', 'test'}
+    :param project: Project name or list of project name
+    :param figure: Figure number or list of figure name
+    :param caption: Other caption
+    :param as_doc: As documents, be able to parser the `.. note::` block by ``Sphinx``
+    :param as_attributes: If set info as attributes
+    :return:
+    """
+    valid_levels = ('main', 'sup', 'appendix', 'test')
+    if level not in valid_levels:
+        raise ValueError(f'must be one of the {valid_levels}')
+
+    def decorator(target: type | Callable):
+
+        if as_doc:
+            target.__doc__ += (
+                f'\n\n.. note:: '
+                f'\n\n\t**Publish Annotation**'
+                f'\n\n\tProject: {project}'
+                f'\n\n\tFigure: {figure}'
+                f'\n\n\tLevel: {level} '
+                f'\n\n\tCaption: {caption}'
+            )
+
+        if as_attributes:
+            attrs = ['__publish_level__', '__publish_project__', '__publish_figure__', '__publish_caption__']
+
+            for attr in attrs:
+                if hasattr(target, attr):
+                    raise AttributeError(f"Class {target.__name__} already has an attribute named '{attr}'.")
+
+            target.__publish_level__ = level
+            target.__publish_project__ = project
+            target.__publish_figure__ = figure
+            target.__publish_caption__ = caption
+
+        return target
+
+    return decorator

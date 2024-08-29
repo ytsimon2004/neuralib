@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from neuralib.calimg.spikes.cascade import cascade_predict
 from neuralib.calimg.spikes.oasis import oasis_dcnv
 from neuralib.util.tqdm import download_with_tqdm
+from neuralib.util.verbose import fprint
 
 NEURON_ID = 1
 
@@ -32,6 +33,7 @@ def test_cascade_spike():
 
 def test_oasis_spike_batch():
     dff = get_example_dff()
+    fprint(f'{dff.shape}')
     f = dff.astype(np.float32)
 
     spks = oasis_dcnv(f, 1.5, 30)

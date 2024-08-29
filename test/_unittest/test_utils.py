@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 
 from neuralib.util.deprecation import deprecated_class, deprecated_func, deprecated_aliases
+from neuralib.util.verbose import publish_annotation
 
 
 class TestUtilFunc(unittest.TestCase):
@@ -51,7 +52,7 @@ class TestUtilFunc(unittest.TestCase):
 
         self.assertIn(
             'TestUtilFunc.test_deprecate_class.<locals>.A is deprecated and will be removed in a future release(after version v0.0.10). Please use "B" instead. NOTE: TEST REMARKS.',
-                      str(warns.warning))
+            str(warns.warning))
 
         self.assertIn('TEST REMARKS', str(warns.warning))
 
@@ -95,6 +96,18 @@ class TestUtilFunc(unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             test(new=np.array([1, 2, 3]), old=np.array([1, 2, 3]))
+
+    def test_publish_annotation_instance(self):
+        @publish_annotation('main', as_attributes=True)
+        class Test:
+            pass
+
+        @publish_annotation('sup', figure='fig.S1', as_attributes=True)
+        def test():
+            pass
+
+        self.assertEqual(Test().__publish_level__, 'main')
+        self.assertEqual(test.__publish_figure__, 'fig.S1')
 
 
 if __name__ == '__main__':
