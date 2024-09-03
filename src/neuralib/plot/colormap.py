@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import ColorbarBase
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
@@ -14,8 +15,8 @@ __all__ = [
     'ColorMapper',
     'DiscreteColorMapper',
     'get_customized_cmap',
-    'ax_colorbar',
-    'insert_colorbar'
+    'insert_colorbar',
+    'insert_cyclic_colorbar'
 ]
 
 
@@ -74,7 +75,10 @@ class ColorMapper(DiscreteColorMapper):
     pass
 
 
-def get_customized_cmap(name: str, value: tuple[float, float], numbers: int) -> np.ndarray:
+def get_customized_cmap(name: str,
+                        value: tuple[float, float],
+                        numbers: int,
+                        endpoint: bool = True) -> np.ndarray:
     """
     Generate gradient color map array.
     `N` = number of color
@@ -82,26 +86,75 @@ def get_customized_cmap(name: str, value: tuple[float, float], numbers: int) -> 
     :param name: name of cmap
     :param value: value range, could be 0-1
     :param numbers: `N`
+    :param endpoint: If cyclic colormap, then used `False`
     :return: RGBA. `Array[float, [N, 4]]`
     """
     cmap = plt.get_cmap(name)
-    return cmap(np.linspace(*value, numbers))
+    return cmap(np.linspace(*value, numbers, endpoint=endpoint))
 
 
-def ax_colorbar(ax: Axes, height="25%") -> Axes:
-    return inset_axes(
+def insert_colorbar(ax: Axes, im: ScalarMappable, **kwargs) -> ColorbarBase:
+    """
+    Insert colormap in ``inset_axes``
+
+    :param ax: ``Axes``
+    :param im: ``ScalarMappable``
+    :param kwargs: Additional args pass to ``ax.figure.colorbar``
+    :return:
+    """
+    cax = inset_axes(
         ax,
         width="5%",
-        height=height,
+        height="25%",
         loc='upper left',
         bbox_to_anchor=(1.01, 0., 1, 1),
         bbox_transform=ax.transAxes,
         borderpad=0,
     )
-
-
-def insert_colorbar(ax: Axes, im, **kwargs) -> ColorbarBase:
-    cax = ax_colorbar(ax)
-
     return ax.figure.colorbar(im, cax=cax, **kwargs)
 
+
+def insert_cyclic_colorbar(ax: Axes,
+                           im: ScalarMappable,
+                           *,
+                           num_colors: int = 12,
+                           num_labels: int = 4,
+                           width: float = 0.6,
+                           inner_diameter: float = 0.6,
+                           vmin: float | None = None,
+                           vmax: float | None = None) -> None:
+    """
+    Insert cyclic colormap in ``inset_axes``
+
+    :param ax: ``Axes``
+    :param im: ``ScalarMappable``
+    :param num_colors: Number of color in the cyclic colorbar
+    :param num_labels: Number of labels in the cyclic colorbar
+    :param width: Width of the each color
+    :param inner_diameter: The size of the inner circle
+    :param vmin: Min value of the colormap, qual to ``vmax`` in cyclic data
+    :param vmax: Max value of the colormap, equal to ``vmin`` in cyclic data
+    """
+    polar_ax = ax.inset_axes((1.1, 0.65, 0.4, 0.4), polar=True)
+    theta = np.linspace(0, 2 * np.pi, num_colors, endpoint=False)
+    r1 = np.ones_like(theta)
+    r2 = np.ones_like(theta) * inner_diameter
+    colors = get_customized_cmap(im.cmap.name, (0, 1), num_colors, endpoint=False)
+    polar_ax.bar(theta, r1, color=colors, width=width, bottom=r2)
+
+    # Add labels corresponding to the data values
+    angles = np.linspace(0, 2 * np.pi, num_labels, endpoint=False)
+
+    if vmin is None:
+        vmin = im.norm.vmin
+    if vmax is None:
+        vmax = im.norm.vmax
+    values = np.linspace(vmin, vmax, num_labels, endpoint=False)
+
+    for angle, value in zip(angles, values):
+        polar_ax.text(angle, 2, f'{value:.1f}', horizontalalignment='center', verticalalignment='center')
+
+    polar_ax.set_yticklabels([])
+    polar_ax.set_xticks([])  # remove angle labels
+    polar_ax.grid(False)  # remove the grid
+    polar_ax.set_frame_on(False)

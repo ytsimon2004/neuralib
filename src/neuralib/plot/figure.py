@@ -85,17 +85,25 @@ def plot_figure(output: Path | None,
     else:
 
         if set_square:
-            ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
+            if isinstance(ax, np.ndarray):
+                for _ax in ax.ravel():
+                    _set_square(_ax)
+            else:
+                _set_square(ax)
 
         if set_equal_scale:
-            ax.set_aspect('equal')
+            if isinstance(ax, np.ndarray):
+                for _ax in ax.ravel():
+                    _ax.set_aspect('equal')
+            else:
+                ax.set_aspect('equal')
 
         # io
         if output is None:
             if tight_layout:
                 plt.tight_layout()
-
             plt.show()
+
         else:
             while True:
                 if tight_layout:
@@ -111,6 +119,10 @@ def plot_figure(output: Path | None,
     finally:
         plt.clf()
         plt.close('all')
+
+
+def _set_square(ax: Axes) -> None:
+    ax.set_aspect(1.0 / ax.get_data_ratio(), adjustable='box')
 
 
 def ax_set_default_style(ax: Axes):

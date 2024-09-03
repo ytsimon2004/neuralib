@@ -194,8 +194,10 @@ def publish_annotation(level: Literal['main', 'sup', 'appendix', 'test'],
 
     def decorator(target: type | Callable):
 
+        doc = '' if target.__doc__ is None else target.__doc__
+
         if as_doc:
-            target.__doc__ += (
+            doc += (
                 f'\n\n.. note:: '
                 f'\n\n\t**Publish Annotation**'
                 f'\n\n\tProject: {project}'
@@ -203,6 +205,7 @@ def publish_annotation(level: Literal['main', 'sup', 'appendix', 'test'],
                 f'\n\n\tLevel: {level} '
                 f'\n\n\tCaption: {caption}'
             )
+            target.__doc__ = doc
 
         if as_attributes:
             attrs = ['__publish_level__', '__publish_project__', '__publish_figure__', '__publish_caption__']
