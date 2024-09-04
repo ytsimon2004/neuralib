@@ -139,7 +139,12 @@ def insert_cyclic_colorbar(ax: Axes,
     theta = np.linspace(0, 2 * np.pi, num_colors, endpoint=False)
     r1 = np.ones_like(theta)
     r2 = np.ones_like(theta) * inner_diameter
-    colors = get_customized_cmap(im.cmap.name, (0, 1), num_colors, endpoint=False)
+
+    cmap = im.cmap.name
+    cyclic_cmap = ['twilight', 'twilight_shifted', 'hsv']
+    if cmap not in cyclic_cmap:
+        raise ValueError(f'cmap should be one of the {cyclic_cmap}, not "{cmap}"')
+    colors = get_customized_cmap(cmap, (0, 1), num_colors, endpoint=False)
     polar_ax.bar(theta, r1, color=colors, width=width, bottom=r2)
 
     # Add labels corresponding to the data values

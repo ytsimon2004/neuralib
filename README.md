@@ -1,11 +1,11 @@
 # neuralib
 
-[![PyPI version](https://badge.fury.io/py/neura-library.svg)](https://badge.fury.io/py/neura-library)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/neura-library)
+[![PyPI version](https://badge.fury.io/py/neura-library.svg)](https://badge.fury.io/py/neura-library)
+[![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
-[![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
 
