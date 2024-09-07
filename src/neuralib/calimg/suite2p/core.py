@@ -22,7 +22,7 @@ __all__ = [
     'get_s2p_coords'
 ]
 
-SIGNAL_TYPE = Literal["df_f", "spks"]
+SIGNAL_TYPE = Literal['df_f', 'spks']
 CALCIUM_TYPE = Literal['baseline', 'transient']
 
 
