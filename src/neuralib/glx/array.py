@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 from pathlib import Path
@@ -156,8 +158,8 @@ def allocation_limit() -> int:
 
 
 def allocating_barrier(data: np.ndarray,
-                       channels: Union[int, slice, np.ndarray] = None,
-                       samples: Union[int, slice, np.ndarray] = None,
+                       channels: int | slice | np.ndarray = None,
+                       samples: int | slice | np.ndarray = None,
                        dtype: np.dtype = None) -> np.ndarray:
     if data.ndim == 1:
         s = len(data)

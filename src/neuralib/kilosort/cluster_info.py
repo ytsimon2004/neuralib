@@ -1,63 +1,181 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, IO
 
 import numpy as np
 import polars as pl
+from typing_extensions import Self
+
+from neuralib.util.util_polars import DataFrameWrapper
 
 if TYPE_CHECKING:
-    from polars.type_aliases import JoinStrategy
+    pass
 
-__all__ = ['read_csv']
-
-
-def read_csv(path: Union[str, Path], **kwargs) -> pl.DataFrame:
-    ret = pl.read_csv(path, separator='\t', **kwargs)
-    if 'cluster_id' not in ret.columns:
-        raise RuntimeError('not a Cluster DataFrame')
-    return ret
+__all__ = ['ClusterInfo']
 
 
-@pl.api.register_dataframe_namespace("cluster_info")
-class ClusterInfoPolarExtension:
+class ClusterInfo(DataFrameWrapper):
+    """
+    Cluster info data frame. Any polars with a columns "cluster_id" could be considered ClusterInfo.
+    """
+
     def __init__(self, df: pl.DataFrame):
+        if 'cluster_id' not in df.columns:
+            raise RuntimeError('not a cluster info. miss "cluster_id" column.')
+
         self._df = df
+        self.use_label_column = 'label'
+
+    @classmethod
+    def read_csv(cls, path: Union[str, Path], **kwargs) -> ClusterInfo:
+        ret = pl.read_csv(path, separator='\t', **kwargs)
+        return ClusterInfo(ret)
+
+    def save(self, path: str | Path | IO | None):
+        self._df.write_csv(path, separator='\t')
+
+    def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        if dataframe is None:
+            return self._df
+        else:
+            ret = ClusterInfo(dataframe)
+            ret.use_label_column = self.use_label_column
+            return ret
+
+    """property"""
 
     @property
     def cluster_id(self) -> np.ndarray:
         return self._df.get_column('cluster_id').to_numpy()
 
-    def sort_by_cluster_id(self) -> pl.DataFrame:
-        return self._df.sort('cluster_id', nulls_last=True)
+    @property
+    def cluster_shank(self) -> np.ndarray:
+        """
+        shank array of clusters.
 
-    def filter_clusters(self, cluster: Union[int, list[int], np.ndarray]) -> pl.DataFrame:
-        if isinstance(cluster, int) or np.isscalar(cluster):
-            return self._df.filter(pl.col('cluster_id') == cluster)
-        elif isinstance(cluster, np.ndarray):
-            cluster = list(cluster)
+        :return:
+        :raise ColumnNotFoundError: sh
+        """
+        return self['sh'].to_numpy()
+
+    @property
+    def cluster_channel(self) -> np.ndarray:
+        """
+
+        :return:
+        :raise ColumnNotFoundError: ch
+        """
+        return self['ch'].to_numpy()
+
+    @property
+    def cluster_pos_y(self) -> np.ndarray:
+        """
+        :return:
+        :raise ColumnNotFoundError: depth
+        """
+        return self['depth'].to_numpy()
+
+    """clusters"""
+
+    def with_clusters(self, cluster: list[int] | np.ndarray | ClusterInfo) -> Self:
+        """
+        select particular clusters and keep the ordering of *cluster*.
+
+        This method does not ensure every cluster in this are present in *cluster*.
+
+        :param cluster:
+        :return:
+        """
+        if isinstance(cluster, ClusterInfo):
+            cluster_id = cluster.cluster_id
+        else:
+            cluster_id = np.asarray(cluster)
+
+        rank = pl.DataFrame(dict(cluster_id=cluster_id)).with_row_index('_index')
+        ret = self.lazy().join(rank, on='cluster_id', how='left')
+        ret = ret.filter(pl.col('_index').is_not_null())
+        return ret.sort('_index').drop('_index').collect()
+
+    def filter_clusters(self, cluster: int | list[int] | np.ndarray | ClusterInfo) -> Self:
+        """
+        select particular clusters.
+
+        :param cluster:
+        :return:
+        """
+        if isinstance(cluster, (int, np.integer)):
+            return self.filter(pl.col('cluster_id') == cluster)
+
+        if isinstance(cluster, ClusterInfo):
+            cluster = cluster.cluster_id
 
         return self._df.filter(pl.col('cluster_id').is_in(cluster))
 
-    def add_column(self, name: str, value: np.ndarray, cluster: np.ndarray = None) -> pl.DataFrame:
-        if name in self._df.columns:
-            raise RuntimeError(f'column {name} has existed')
+    def sort_cluster_by_id(self) -> Self:
+        return self.sort('cluster_id', nulls_last=True)
 
-        if cluster is None:
-            return self._df.with_columns(pl.lit(value).alias(name))
+    def sort_cluster_by_depth(self) -> Self:
+        """
+        sort clusters by their depth.
 
-        dat = pl.DataFrame({'cluster_id': cluster, name: value})
-        return self._df.join(dat, on='cluster_id', how='left')
+        :return:
+        :raise ColumnNotFoundError: depth
+        """
+        return self.sort('depth', nulls_last=True)
 
-    def join(self, df: pl.DataFrame, how: JoinStrategy = 'left', **kwargs) -> pl.DataFrame:
-        if 'cluster_id' not in df.columns:
-            raise RuntimeError('not a ClusterInfo DataFrame')
+    def append_cluster_data(self, cluster_id: int, **kwargs) -> Self:
+        """
+        append a new cluster data.
 
-        return self._df.join(df, on='cluster_id', how=how, **kwargs)
+        :param cluster_id:
+        :param kwargs:
+        :return:
+        """
+        if np.any(self.cluster_id == cluster_id):
+            raise RuntimeError(f'cluster {cluster_id} has been used')
 
-    def filter_labels(self, labels: list[str], label_column: str = 'group') -> pl.DataFrame:
-        if len(labels) == 1:
-            return self._df.filter(pl.col(label_column).cast(pl.Utf8) == labels[0])
+        other = pl.DataFrame({'cluster_id': cluster_id, **kwargs}, schema=self._df.schema)
+        return self.dataframe(pl.concat([self._df, other], how='diagonal'))
+
+    def join(self, other: pl.DataFrame, on='cluster_id', how="inner", *,
+             left_on=None,
+             right_on=None,
+             suffix: str = "_right",
+             validate="m:m",
+             join_nulls: bool = False,
+             coalesce: bool | None = None) -> Self:
+        return super().join(other, on, how, left_on=left_on, right_on=right_on, suffix=suffix,
+                            validate=validate, join_nulls=join_nulls, coalesce=coalesce)
+
+    """label"""
+
+    def n_cluster_label(self, label: str, column: str = None) -> int:
+        """
+        number of cluster labeled as *label*.
+
+        :param label:
+        :param column:
+        :return: count
+        :raise ColumnNotFoundError: *column*
+        """
+        if column is None:
+            column = self.use_label_column
+
+        return np.count_nonzero((self[column] == label).to_numpy())
+
+    def filter_cluster_label(self, labels: str | list[str], column: str = None) -> Self:
+        """
+
+        :param labels:
+        :param column:
+        :return:
+        :raise ColumnNotFoundError: *column*
+        """
+        if column is None:
+            column = self.use_label_column
+
+        if isinstance(labels, str):
+            return self.filter(pl.col(column) == labels)
         else:
-            return self._df.filter(pl.col(label_column).cast(pl.Utf8).is_in(labels))
-
-    def save(self, path: Union[str, Path]):
-        self._df.write_csv(Path(path), separator='\t')
+            return self.filter(pl.col(column).is_in(labels))
