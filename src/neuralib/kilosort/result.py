@@ -2,9 +2,9 @@ import functools
 from typing import Optional, overload, Union
 
 import numpy as np
-import polars as pl
 
-from neuralib.kilosort.files import KilosortFiles
+from .cluster_info import ClusterInfo
+from .files import KilosortFiles
 
 __all__ = ['KilosortResult']
 
@@ -42,7 +42,7 @@ class KilosortResult:
         return self.para.sample_rate
 
     @property
-    def cluster_info(self) -> pl.DataFrame:
+    def cluster_info(self) -> ClusterInfo:
         return self.file.cluster_info()
 
     @functools.cached_property

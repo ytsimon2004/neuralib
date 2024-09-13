@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import Union, Iterator, TYPE_CHECKING, Optional, Final
 
 import numpy as np
-import polars as pl
 
 from neuralib.glx.spikeglx import GlxFile
-from . import cluster_info
+from .cluster_info import ClusterInfo
 from .params import KilosortParameter
 
 if TYPE_CHECKING:
@@ -201,11 +200,11 @@ class KilosortFiles:
             raise FileNotFoundError(file)
         return np.load(file).item()
 
-    def cluster_info(self) -> pl.DataFrame:
-        return cluster_info.read_csv(self.cluster_info_file)
+    def cluster_info(self) -> ClusterInfo:
+        return ClusterInfo.read_csv(self.cluster_info_file)
 
-    def cluster_data(self, name: str) -> pl.DataFrame:
-        return cluster_info.read_csv(self.get_cluster_data_file(name))
+    def cluster_data(self, name: str) -> ClusterInfo:
+        return ClusterInfo.read_csv(self.get_cluster_data_file(name))
 
     # ====== #
     # result #
