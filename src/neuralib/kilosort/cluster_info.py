@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Union, IO
+from typing import IO
 
 import numpy as np
 import polars as pl
 from typing_extensions import Self
 
 from neuralib.util.util_polars import DataFrameWrapper
-
-if TYPE_CHECKING:
-    pass
 
 __all__ = ['ClusterInfo']
 
@@ -28,7 +25,7 @@ class ClusterInfo(DataFrameWrapper):
         self.use_label_column = 'label'
 
     @classmethod
-    def read_csv(cls, path: Union[str, Path], **kwargs) -> ClusterInfo:
+    def read_csv(cls, path: str | Path, **kwargs) -> ClusterInfo:
         ret = pl.read_csv(path, separator='\t', **kwargs)
         return ClusterInfo(ret)
 
@@ -92,8 +89,11 @@ class ClusterInfo(DataFrameWrapper):
         else:
             cluster_id = np.asarray(cluster)
 
-        rank = pl.DataFrame(dict(cluster_id=cluster_id)).with_row_index('_index')
-        ret = self.lazy().join(rank, on='cluster_id', how='left')
+        index = pl.DataFrame(
+            dict(cluster_id=cluster_id),
+            schema_overrides=dict(cluster_id=self._df.schema['cluster_id'])
+        ).with_row_index('_index')
+        ret = self.lazy().join(index, on='cluster_id', how='left')
         ret = ret.filter(pl.col('_index').is_not_null())
         return ret.sort('_index').drop('_index').collect()
 
@@ -115,14 +115,14 @@ class ClusterInfo(DataFrameWrapper):
     def sort_cluster_by_id(self) -> Self:
         return self.sort('cluster_id', nulls_last=True)
 
-    def sort_cluster_by_depth(self) -> Self:
+    def sort_cluster_by_depth(self, descending: bool = False) -> Self:
         """
         sort clusters by their depth.
 
         :return:
         :raise ColumnNotFoundError: depth
         """
-        return self.sort('depth', nulls_last=True)
+        return self.sort('depth', descending=descending, nulls_last=True)
 
     def append_cluster_data(self, cluster_id: int, **kwargs) -> Self:
         """

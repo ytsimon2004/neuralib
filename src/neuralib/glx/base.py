@@ -4,7 +4,10 @@ from typing import Optional
 
 import numpy as np
 
+from neuralib.glx.channel_info import ChannelInfo
+
 __all__ = ['EphysRecording']
+
 
 
 class EphysRecording(metaclass=abc.ABCMeta):
@@ -52,3 +55,5 @@ class EphysRecording(metaclass=abc.ABCMeta):
     def meta(self) -> dict[str, str]:
         return {}
 
+    def channel_info(self) -> ChannelInfo:
+        raise NotImplementedError()

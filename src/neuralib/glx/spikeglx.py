@@ -1,13 +1,17 @@
 import re
+import sys
 from pathlib import Path
 from typing import Union, NamedTuple, Literal, overload, Final
 
 import numpy as np
+import polars as pl
 from typing_extensions import Self
 
 from neuralib.glx.base import EphysRecording
+from neuralib.glx.channel_info import ChannelInfo
 
 __all__ = ['GlxMeta', 'GlxRecording', 'GlxIndex', 'GlxFile']
+
 
 
 class GlxMeta:
@@ -51,8 +55,19 @@ class GlxMeta:
     def imro_table(self) -> str:
         return self.__meta['~imroTbl']
 
+    if sys.version_info >= (3, 10):
+        def channel_info(self) -> ChannelInfo:
+            from neurocarto.probe_npx.npx import ChannelMap
+            chmap = ChannelMap.from_imro(self.imro_table())
+            return ChannelInfo(pl.DataFrame(dict(
+                channel=np.arange(chmap.n_channels),
+                shank=chmap.channel_shank,
+                pos_x=chmap.channel_pos_x,
+                pos_y=chmap.channel_pos_y,
+            )))
 
-class GlxRecording(EphysRecording, GlxMeta):
+
+class GlxRecording(GlxMeta, EphysRecording):
     """SpikeGLX binary file"""
 
     VOLTAGE_FACTOR: Final[float] = 0.195  # mV/1
