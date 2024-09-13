@@ -91,10 +91,10 @@ from pathlib import Path
 from typing import Final, Optional, Literal, Union
 
 import numpy as np
+from neuralib.util.util_verbose import fprint
 from tqdm import tqdm
 
 from neuralib.argp import argument, tuple_type, with_defaults
-from neuralib.util.util_verbose import fprint
 from .spikeglx import GlxFile, GlxMeta
 
 __all__ = [
@@ -392,8 +392,8 @@ class CatGTOptions:
         :param glx_file: glx source file
         :return: glx cat file
         """
-        if glx_file.directory.name != glx_file.glx_index.dir_name:
-            raise RuntimeError(f'glx file does not put under {glx_file.glx_index.dir_name} folder')
+        if glx_file.directory.name != glx_file.glx_index.dirname:
+            raise RuntimeError(f'glx file does not put under {glx_file.glx_index.dirname} folder')
 
         self.source_dir = glx_file.directory.parent
         self.dest = glx_file.directory.parent
@@ -544,7 +544,7 @@ def build_supercat_file(glx_files: list[GlxFile]) -> GlxFile:
 
     d = glx_files[0].directory.parent
     i = glx_files[0].glx_index.as_super_index()
-    bin_file = d / i.dir_name / i.file_name()
+    bin_file = d / i.dirname / i.filename()
 
     return GlxFile(bin_file, bin_file.with_suffix('.meta'), i, )
 
@@ -718,7 +718,7 @@ class CatgtProgress:
         if not src_path.exists():
             raise FileNotFoundError()
 
-        dst_path = cat_file.directory / cat_file.glx_index.file_name(f=ap)
+        dst_path = cat_file.directory / cat_file.glx_index.filename(f=ap)
 
         src_meta = GlxMeta(meta_path)
         self.n_channels = src_meta.total_channels

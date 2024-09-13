@@ -11,6 +11,8 @@ __all__ = ['GlxMeta', 'GlxRecording', 'GlxIndex', 'GlxFile']
 
 
 class GlxMeta:
+    """SpikeGLX meta file"""
+
     def __init__(self, meta: Union[str, Path, dict[str, str]]):
         if isinstance(meta, (str, Path)):
             meta = self._load_meta_dict(meta)
@@ -51,6 +53,8 @@ class GlxMeta:
 
 
 class GlxRecording(EphysRecording, GlxMeta):
+    """SpikeGLX binary file"""
+
     VOLTAGE_FACTOR: Final[float] = 0.195  # mV/1
 
     def __init__(self, path: Union[str, Path]):
@@ -77,14 +81,50 @@ class GlxRecording(EphysRecording, GlxMeta):
 
 
 class GlxIndex(NamedTuple):
+    """
+    Represent an index from the "same" SpikeGLX recording session.
+
+    Common naming pattern::
+
+        <RUN_NAME>_g<G>_t<T>.imec<P>.(ap|lf).(bin|meta)
+
+    For full file path pattern ::
+
+        <RUN_NAME>_g<G>/<RUN_NAME>_g<G>_imec<P>/<RUN_NAME>_g<G>_t<T>.imec<P>.(ap|lf).(bin|meta)
+
+    Example file name ::
+
+        run_name_g0/run_name_g0_imec0/
+        |_  run_name_g0_t0.imec0.ap.meta
+        |_  run_name_g0_t0.imec0.ap.bin
+
+    CatGT will change the ``t`` in the filename. For example::
+
+        catgt_run_name_g0/
+        |_run_name_g0_tcat.imec0.ap.meta
+        |_run_name_g0_tcat.imec0.ap.bin
+        |_run_name_g0_tcat.imec0.lf.meta
+        |_run_name_g0_tcat.imec0.lf.bin
+
+        supercatgt_run_name_g0/
+        |_run_name_g0_tcat.imec0.ap.meta
+        |_run_name_g0_tcat.imec0.ap.bin
+        |_run_name_g0_tcat.imec0.lf.meta
+        |_run_name_g0_tcat.imec0.lf.bin
+    """
+
     run_name: str
-    g: int
-    t: Literal['0', 'cat', 'super']
-    p: int
+
+    g: int = 0  # or str for internal use
+
+    t: Literal['0', 'cat', 'super'] = '0'
+
+    p: int = 0  # or str for internal use
+    """probe index"""
 
     @classmethod
-    def parse_filename(cls, name: str, use_supercat=False) -> 'GlxIndex':
-        m = re.compile(r'(\w+)_g(\d+)_t(cat|\d+)\.imec(\d)\.(ap|lf)\.\w+').match(name)
+    def parse_filename(cls, name: str, use_supercat=False) -> Self:
+        m = re.compile(r'(\w+)_g(\d+)_t(cat|super|\d+)\.imec(\d)\.(ap|lf)\.\w+').match(name)
         if m is None:
             raise RuntimeError(f'glx file name not follow the pattern : {name}')
 
@@ -110,18 +150,32 @@ class GlxIndex(NamedTuple):
     def as_super_index(self) -> Self:
         return self._replace(t='super')
 
-    @property
-    def dir_name(self) -> str:
-        """Build the glx directory name. """
+    def dirname(self, level: int = 0) -> str:
+        """
+        Build the glx directory name.
+
+        **level**
+
+        * 0: <RUN_NAME>_g<G>
+        * 1: <RUN_NAME>_g<G>_imec<P>
+        * other: <RUN_NAME>_g<G>/<RUN_NAME>_g<G>_imec<P>
+
+        :param level: level of directory.
+        :return:
+        """
         name = f'{self.run_name}_g{self.g}'
         if self.t == 'cat':
             return f'catgt_{name}'
         elif self.t == 'super':
             return f'supercat_{name}'
-        else:
+        elif level == 0:
             return name
+        elif level == 1:
+            return f'{name}_imec{self.p}'
+        else:
+            return f'{name}/{name}_imec{self.p}'
 
-    def file_name(self, f: str = 'ap', ext='.bin') -> str:
+    def filename(self, f: str = 'ap', ext='.bin') -> str:
         t = 'cat' if self.t == 'super' else self.t
         return f'{self.run_name}_g{self.g}_t{t}.imec{self.p}.{f}{ext}'
 
@@ -134,6 +188,10 @@ class GlxIndex(NamedTuple):
 
 
 class GlxFile(NamedTuple):
+    """
+    A SpikeGLX recording.
+    """
+
     data_file: Path
     meta_file: Path
     glx_index: GlxIndex
@@ -145,6 +203,14 @@ class GlxFile(NamedTuple):
         meta_file = file.with_suffix('.meta')
         glx_index = GlxIndex.parse_filename(data_file.name)
         return GlxFile(data_file, meta_file, glx_index)
+
+    @property
+    def root_directory(self) -> Path:
+        r = self.run_name
+        d = self.data_file.parent
+        while d.name.startswith(r):
+            d = d.parent
+        return d
 
     @property
     def directory(self) -> Path:
@@ -186,9 +252,12 @@ class GlxFile(NamedTuple):
     def p_index(self) -> int:
         return self.glx_index.p
 
-    def with_glx_index(self, glx_index: GlxIndex) -> Self:
+    def with_glx_index(self, glx_index: GlxIndex, root: Path = None) -> Self:
+        if root is None:
+            root = self.root_directory
+
         f = 'lf' if self.is_lfp_file else 'ap'
-        data_file = self.directory.parent / glx_index.dir_name / glx_index.file_name(f=f, ext='.bin')
+        data_file = root / glx_index.dirname(0) / glx_index.filename(f=f, ext='.bin')
 
         return self._replace(data_file=data_file, meta_file=data_file.with_suffix('.meta'), glx_index=glx_index)
 

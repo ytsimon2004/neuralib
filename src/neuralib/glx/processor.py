@@ -7,7 +7,7 @@ import numpy as np
 
 from neuralib.persistence import PersistenceHandler
 from neuralib.persistence import persistence_class, field
-from .base import ProcessedEphysRecording
+from .array import EphysArray
 
 __all__ = [
     'ProcessedEphysRecordingMeta',
@@ -50,7 +50,7 @@ class ProcessedEphysRecordingMeta:
 Handler = TypeVar('Handler', bound=PersistenceHandler[ProcessedEphysRecordingMeta])
 
 
-def save(handler: Handler, meta: ProcessedEphysRecordingMeta, data: ProcessedEphysRecording):
+def save(handler: Handler, meta: ProcessedEphysRecordingMeta, data: EphysArray):
     meta.channel_list = data.channel_list
     meta.time_start = data.time_start
     meta.total_samples = data.total_samples
@@ -65,7 +65,7 @@ def save(handler: Handler, meta: ProcessedEphysRecordingMeta, data: ProcessedEph
         mmap[:] = data[:]
 
 
-def load(handler: Handler, meta: ProcessedEphysRecordingMeta) -> ProcessedEphysRecording:
+def load(handler: Handler, meta: ProcessedEphysRecordingMeta) -> EphysArray:
     meta_path = handler.filepath(meta)
     if not (data_path := meta_path.with_suffix('.bin')).exists():
         raise FileNotFoundError(data_path)
@@ -73,7 +73,7 @@ def load(handler: Handler, meta: ProcessedEphysRecordingMeta) -> ProcessedEphysR
     shape = (meta.total_channels, meta.total_samples)
     mmap = np.memmap(data_path, shape=shape, dtype=meta.dtype, mode='r', offset=0, order='F')
 
-    return ProcessedEphysRecording(meta.time, meta.channel_list, mmap, meta=meta.meta)
+    return EphysArray(meta.time, meta.channel_list, mmap, meta=meta.meta)
 
 
 @contextlib.contextmanager

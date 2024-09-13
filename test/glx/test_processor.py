@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal
 
 from neuralib.glx import processor as p
-from neuralib.glx.base import ProcessedEphysRecording
+from neuralib.glx.base import EphysArray
 from neuralib.glx.processor import ProcessedEphysRecordingMeta
 from neuralib.persistence import PersistenceHandler
 
@@ -26,7 +26,7 @@ class EphysProcessTester(unittest.TestCase):
         print(f'rm -r {cls.save_root}')
         shutil.rmtree(cls.save_root)
 
-    recording: ProcessedEphysRecording
+    recording: EphysArray
     meta: ProcessedEphysRecordingMeta
 
     def setUp(self):
@@ -34,7 +34,7 @@ class EphysProcessTester(unittest.TestCase):
         nc, nt = data.shape
         t = np.linspace(0, 10, nt)
         c = np.arange(nc)
-        self.recording = ProcessedEphysRecording(t, c, data, meta=dict(test='setup'))
+        self.recording = EphysArray(t, c, data, meta=dict(test='setup'))
         self.meta = ProcessedEphysRecordingMeta('common', 'none')
 
         p.save(self.handler, self.meta, self.recording)
