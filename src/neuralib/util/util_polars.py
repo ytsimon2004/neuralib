@@ -106,22 +106,27 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
     def with_columns(self, *exprs, **named_exprs) -> Self:
         return self.dataframe(self.dataframe().with_columns(*exprs, **named_exprs))
 
-    def join(self, other: pl.DataFrame, on, how="inner", *,
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on, how="inner", *,
              left_on=None,
              right_on=None,
              suffix: str = "_right",
              validate="m:m",
              join_nulls: bool = False,
              coalesce: bool | None = None) -> Self:
+        if isinstance(other, DataFrameWrapper):
+            other = other.dataframe()
+
         return self.dataframe(self.dataframe().join(other, on, how,
                                                     left_on=left_on, right_on=right_on, suffix=suffix,
                                                     validate=validate, join_nulls=join_nulls, coalesce=coalesce))
+
+    def pipe(self, function, *args, **kwargs) -> Self:
+        return self.dataframe(self.dataframe().pipe(function, *args, **kwargs))
 
     def group_by(self, *by,
                  maintain_order: bool = False,
                  **named_by) -> pl.GroupBy:
         return self.dataframe().group_by(*by, maintain_order=maintain_order, **named_by)
-
 
 T = TypeVar('T', bound=DataFrameWrapper)
 
@@ -159,15 +164,21 @@ class LazyDataFrameWrapper(Generic[T]):
     def with_columns(self, *exprs, **named_exprs) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.with_columns(*exprs, **named_exprs))
 
-    def join(self, other: pl.DataFrame | pl.LazyFrame, on, how="inner", *,
+    def join(self, other: pl.DataFrame | pl.LazyFrame | DataFrameWrapper, on, how="inner", *,
              left_on=None,
              right_on=None,
              suffix: str = "_right",
              validate="m:m",
              join_nulls: bool = False,
              coalesce: bool | None = None) -> Self:
+        if isinstance(other, DataFrameWrapper):
+            other = other.dataframe()
         if not isinstance(other, pl.LazyFrame):
             other = other.lazy()
+
         df = self.__lazy.join(other, on, how, left_on=left_on, right_on=right_on, suffix=suffix,
                               validate=validate, join_nulls=join_nulls, coalesce=coalesce)
         return LazyDataFrameWrapper(self.__wrapper, df)
+
+    def pipe(self, function, *args, **kwargs) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.pipe(function, *args, **kwargs))

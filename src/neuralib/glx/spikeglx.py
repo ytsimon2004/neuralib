@@ -79,20 +79,22 @@ class GlxRecording(GlxMeta, EphysRecording):
         GlxMeta.__init__(self, path.with_suffix('.meta'))
 
         self.__path = path.with_suffix('.bin')
-        self.__data = self._open_data()
-
-    def _open_data(self) -> np.ndarray:
-        path = self.__path
-        n_channels = self.total_channels
-        n_samples = self.total_samples
-        return np.memmap(str(path), dtype='int16', mode='r', shape=(n_channels, n_samples), offset=0, order='F')
+        self.__data = None
 
     @property
     def data_path(self) -> Path:
         return self.__path
 
     def __getitem__(self, item):
+        if self.__data is None:
+            self.__data = self._open_data()
         return self.__data[item]
+
+    def _open_data(self) -> np.ndarray:
+        path = self.__path
+        n_channels = self.total_channels
+        n_samples = self.total_samples
+        return np.memmap(str(path), dtype='int16', mode='r', shape=(n_channels, n_samples), offset=0, order='F')
 
 
 class GlxIndex(NamedTuple):

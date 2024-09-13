@@ -9,8 +9,10 @@ import numpy as np
 from typing_extensions import Self
 
 from .base import EphysRecording
+from .channel_info import ChannelInfo
 
 __all__ = ['EphysArray']
+
 
 
 class EphysArray(EphysRecording):
@@ -102,20 +104,28 @@ class EphysArray(EphysRecording):
 
     """channel axis"""
 
-    def with_channels(self, channel: np.ndarray) -> Self:
+    def with_channels(self, channel: list[int] | np.ndarray | ChannelInfo) -> Self:
         """
 
         :param channel: channel number 1d array
         :return:
         """
+        if isinstance(channel, ChannelInfo):
+            channel = channel.channel
+
+        channel = np.atleast_1d(channel)
         return self.with_channel_mask(np.logical_or.reduce(np.equal.outer(self.channel_list, channel), axis=1))
 
-    def with_channel_mask(self, channel: np.ndarray) -> Self:
+    def with_channel_mask(self, channel: list[int] | np.ndarray | ChannelInfo) -> Self:
         """
 
         :param channel: channel index 1d bool or index array
         :return:
         """
+        if isinstance(channel, ChannelInfo):
+            channel = channel.channel
+
+        channel = np.atleast_1d(channel)
         return EphysArray(self.__t, self.__c[channel], allocating_barrier(self.__d, channel, None))
 
     """signal"""

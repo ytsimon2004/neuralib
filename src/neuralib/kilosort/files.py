@@ -4,10 +4,12 @@ from pathlib import Path
 from typing import Union, Iterator, TYPE_CHECKING, Optional, Final
 
 import numpy as np
+import polars as pl
 
-from neuralib.glx.spikeglx import GlxFile
+from neuralib.glx import EphysRecording
 from .cluster_info import ClusterInfo
 from .params import KilosortParameter
+from ..util.verbose import fprint
 
 if TYPE_CHECKING:
     from .ops_ks4 import Kilosort4Options
@@ -17,9 +19,9 @@ __all__ = ['KilosortFiles']
 
 
 class KilosortFiles:
-    def __init__(self, directory: Union[str, Path], glx_file: GlxFile = None):
+    def __init__(self, directory: Union[str, Path], ephys: EphysRecording):
         self.directory = Path(directory)
-        self.glx_file = glx_file
+        self.ephys = ephys
 
     def __str__(self):
         return f'KilosortFiles(directory={self.directory})'
@@ -201,7 +203,37 @@ class KilosortFiles:
         return np.load(file).item()
 
     def cluster_info(self) -> ClusterInfo:
-        return ClusterInfo.read_csv(self.cluster_info_file)
+        """
+        Read cluster info from cluster_info.tsv.
+
+        This method will try to fix following things:
+        * map channel from channel index to channel number
+        * replace with actual shank number
+
+        TODO check kilosort/phy still contain above issues.
+        """
+        ret = ClusterInfo.read_csv(self.cluster_info_file)
+        info = self.ephys.channel_info()
+        result = self.result()
+        chmap = result.channel_map
+        chmap = pl.DataFrame(dict(ch=np.arange(chmap), channel=chmap))
+
+        def check_depth(df: pl.DataFrame) -> pl.DataFrame:
+            if np.any((df['depth'] != df['pos_y']).drop_nulls().to_numpy()):
+                fprint('cluster.depth does not match to channel.pos_y', vtype='warning', timestamp=False)
+            return df
+
+        return (
+            ret
+            .join(chmap, on='ch', how='left')
+            .join(info, on='channel', how='left')
+            .pipe(check_depth)
+            .drop('ch', 'sh')
+            .rename({
+                'channel': 'ch',
+                'shank': 'sh'
+            })
+        )
 
     def cluster_data(self, name: str) -> ClusterInfo:
         return ClusterInfo.read_csv(self.get_cluster_data_file(name))
@@ -220,7 +252,7 @@ class KilosortProcessedFiles(KilosortFiles):
 
     def __init__(self, directory: Path, ks_file: KilosortFiles = None, processed: Optional[bool] = None):
         ks_file = self._load_ks_file(directory, ks_file)
-        super().__init__(directory, ks_file.glx_file)
+        super().__init__(directory, ks_file.ephys)
         self.ks_file = ks_file
         self.__processed = processed
 

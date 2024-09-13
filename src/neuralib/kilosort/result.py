@@ -3,6 +3,7 @@ from typing import Optional, overload, Union
 
 import numpy as np
 
+from .cluster_data import ClusterData
 from .cluster_info import ClusterInfo
 from .files import KilosortFiles
 
@@ -32,10 +33,10 @@ class KilosortResult:
 
     @property
     def time_duration(self) -> Optional[float]:
-        if (glx_file := self.file.glx_file) is None:
+        if (ephys := self.file.ephys) is None:
             return None
 
-        return glx_file.meta().total_duration
+        return ephys.total_duration
 
     @property
     def sample_rate(self) -> float:
@@ -45,13 +46,30 @@ class KilosortResult:
     def cluster_info(self) -> ClusterInfo:
         return self.file.cluster_info()
 
+    @property
+    def cluster_data(self) -> ClusterData:
+        return ClusterData(self, self.cluster_info, np.arange(len(self.spike_cluster)))
+
     @functools.cached_property
     def channel_map(self) -> np.ndarray:
         """
+        A mapping from channel index to channel number.
 
         :return: (C,) channel array
         """
-        raise NotImplementedError('TODO')
+        info = self.file.ephys.channel_info()
+        c_pos = np.column_stack([info.pos_x, info.pos_y])
+        k_pos = self.channel_pos
+        ret = np.zeros((len(k_pos),), dtype=int)
+        for i in range(len(k_pos)):
+            j = np.nonzero(np.logical_and(
+                c_pos[:, 0] == k_pos[i, 0],
+                c_pos[:, 1] == k_pos[i, 1],
+            ))[0]
+            if len(j) != 1:
+                raise RuntimeError()
+            ret[i] = j[0]
+        return ret
 
     @overload
     def as_channel_list(self, channel_idx: int) -> int:

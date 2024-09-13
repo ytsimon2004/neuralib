@@ -66,12 +66,20 @@ class ClusterInfo(DataFrameWrapper):
         return self['ch'].to_numpy()
 
     @property
+    def cluster_pos_x(self) -> np.ndarray:
+        """
+        :return:
+        :raise ColumnNotFoundError: pos_x
+        """
+        return self['pos_x'].to_numpy()
+
+    @property
     def cluster_pos_y(self) -> np.ndarray:
         """
         :return:
-        :raise ColumnNotFoundError: depth
+        :raise ColumnNotFoundError: pos_y
         """
-        return self['depth'].to_numpy()
+        return self['pos_y'].to_numpy()
 
     """clusters"""
 
@@ -138,7 +146,7 @@ class ClusterInfo(DataFrameWrapper):
         other = pl.DataFrame({'cluster_id': cluster_id, **kwargs}, schema=self._df.schema)
         return self.dataframe(pl.concat([self._df, other], how='diagonal'))
 
-    def join(self, other: pl.DataFrame, on='cluster_id', how="inner", *,
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on='cluster_id', how="inner", *,
              left_on=None,
              right_on=None,
              suffix: str = "_right",
