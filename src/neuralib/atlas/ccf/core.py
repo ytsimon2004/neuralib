@@ -14,8 +14,8 @@ from neuralib.atlas.typing import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, load_slice_view
 from neuralib.typing import PathLike
-from neuralib.util.verbose import fprint
 from neuralib.util.utils import uglob, joinn
+from neuralib.util.verbose import fprint
 
 __all__ = [
     'AbstractCCFDir',
@@ -405,7 +405,7 @@ class CoronalCCFOverlapDir(CoronalCCFDir):
             elif glob_type == 'transformation_img_overlap':
                 return uglob(self.transformed_folder_overlap, f'{self.slice_name}*.tif')
 
-        return
+        return ret
 
 
 # ============== #
