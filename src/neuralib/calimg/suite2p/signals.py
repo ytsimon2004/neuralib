@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal, NamedTuple
 
 import numpy as np
-from scipy.ndimage import gaussian_filter, filters
+from scipy.ndimage import gaussian_filter, gaussian_filter1d, minimum_filter1d, maximum_filter1d
 
 from .core import Suite2PResult, SIGNAL_TYPE
 
@@ -215,9 +215,9 @@ def _maximin_filter(signal: np.ndarray, kernel: float, size: int) -> np.ndarray:
     :param size: length along which to calculate 1D minimum
     :return:
     """
-    signal = filters.gaussian_filter1d(signal, kernel, axis=-1)
-    signal = filters.minimum_filter1d(signal, size, axis=-1)
-    baseline = filters.maximum_filter1d(signal, size, axis=-1)
+    signal = gaussian_filter1d(signal, kernel, axis=-1)
+    signal = minimum_filter1d(signal, size, axis=-1)
+    baseline = maximum_filter1d(signal, size, axis=-1)
 
     return baseline
 

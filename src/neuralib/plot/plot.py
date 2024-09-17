@@ -442,6 +442,8 @@ def grid_subplots(data: np.ndarray | list[np.ndarray],
                   hide_axis: bool = True,
                   sharex: bool = False,
                   sharey: bool = False,
+                  title: list[str] | None = None,
+                  figsize: tuple[int, int] | None = None,
                   output: PathLike | None = None,
                   **kwargs) -> None:
     r"""
@@ -466,6 +468,8 @@ def grid_subplots(data: np.ndarray | list[np.ndarray],
     :param hide_axis: If True, hides the axes of the subplots
     :param sharex: sharex acrross grid plots
     :param sharey: sharey acrross grid plots
+    :param title: List of title foreach show in the subplot
+    :param figsize: Figure_size pass to ``plt.subplots()``
     :param output: Path to save the plot image. If None, displays the plot.
     :param kwargs: Additional keyword arguments passed to the plotting function ``plot_func``
     :return:
@@ -474,7 +478,10 @@ def grid_subplots(data: np.ndarray | list[np.ndarray],
     n_rows = np.ceil(n_images / images_per_row).astype(int)
     n_cols = min(images_per_row, n_images)
 
-    _, ax = plt.subplots(n_rows, n_cols, figsize=(n_cols, n_rows), squeeze=False, sharex=sharex, sharey=sharey)
+    if figsize is None:
+        figsize = (n_cols, n_rows)
+
+    _, ax = plt.subplots(n_rows, n_cols, figsize=figsize, squeeze=False, sharex=sharex, sharey=sharey)
 
     for i in range(n_rows * n_cols):
         r, c = divmod(i, images_per_row)
@@ -489,7 +496,7 @@ def grid_subplots(data: np.ndarray | list[np.ndarray],
             else:
                 f = getattr(ax[r, c], plot_func)
 
-            #
+            # dtype
             if dtype == 'xy':
                 dat = data[i]
                 if dat.shape[1] != 2:
@@ -499,6 +506,11 @@ def grid_subplots(data: np.ndarray | list[np.ndarray],
                 f(data[i], **kwargs)
             else:
                 raise ValueError(f'unknown data type: {dtype}')
+
+            # title
+            if title is not None:
+                ax[r, c].set_title(title[i])
+
         else:
             ax[r, c].set_visible(False)
 

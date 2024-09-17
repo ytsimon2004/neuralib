@@ -86,7 +86,7 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def key_from_value(d: dict[KT, VT], value: VT) -> KT | list[KT]:
+def key_from_value(d: dict[KT, list[VT] | VT], value: VT) -> KT | list[KT]:
     """Get dict key from dict value, supporting str, int, float, list, and tuple types for values."""
     matching_keys = []
     for key, val in d.items():

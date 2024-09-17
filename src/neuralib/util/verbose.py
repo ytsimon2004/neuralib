@@ -21,35 +21,30 @@ _PREV_SAVE_FILE = None
 
 
 def fprint(*msgs,
-           vtype: Literal['info', 'io', 'warning', 'error', 'pass'] = 'info',
+           vtype: Literal['info', 'io', 'warning', 'error', 'pass', 'debug'] | str = 'info',
            timestamp: bool = True,
            **kwarg) -> None:
     """
     Formatting print with different colors based on verbose type
 
-    :param msgs:
+    :param msgs: print message
     :param vtype: verbose type
-    :param timestamp:
-    :return:
+    :param timestamp: If add time info
     """
+    prefix = f'[{vtype.upper()}]'
 
     if vtype == 'error':
-        prefix = '[ERROR]'
         color = 'red'
     elif vtype == 'warning':
-        prefix = '[WARNING] '
         color = 'yellow'
     elif vtype == 'io':
-        prefix = '[IO] '
         color = 'magenta'
     elif vtype == 'info':
-        prefix = '[INFO]'
         color = 'cyan'
     elif vtype == 'pass':
-        prefix = '[PASS]'
         color = 'green'
     else:
-        raise ValueError(f'{vtype}')
+        color = 'white'
 
     try:
         fg_color = getattr(Fore, color.upper())
