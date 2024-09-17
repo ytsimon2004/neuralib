@@ -208,7 +208,7 @@ class RoiClassifier:
         if verbose:
             exc = (
                 df.filter(pl.col('acronym').str.starts_with(area))
-                .group_by('hemi.').agg(pl.count())
+                .group_by('hemi.').agg(pl.len())
             )
 
             print(exc)
@@ -417,7 +417,7 @@ class RoiClassifier:
                 df.columns[i]: df.dtypes[i]
                 for i in range(df.shape[1])
             }
-            row = pl.DataFrame([[source, 'other', other_num, other_perc]], schema=schema)  # `other` row
+            row = pl.DataFrame([[source, 'other', other_num, other_perc]], schema=schema, orient='row')  # `other` row
 
             df = pl.concat([df, row])
 
@@ -562,7 +562,7 @@ class RoiClassifiedNormTable:
             self.data
             .select(self.classified_column, 'source', yunit)
             .sort(self.classified_column, 'source')
-            .pivot(values=yunit, index=self.classified_column, columns='source', aggregate_function='first')
+            .pivot(values=yunit, index=self.classified_column, on='source', aggregate_function='first')
             .fill_null(0)
             .with_columns(expr_calc.alias(bias_col))
             .filter(~pl.col(bias_col).is_infinite())  # log2 index calc fail
@@ -623,7 +623,7 @@ class RoiClassifiedNormTable:
             └────────────┴─────────┴──────┴──────┴───────┴────────┘
         """
         df = (self.data
-              .pivot(values='n_rois', columns='source', index=self.classified_column, aggregate_function='first')
+              .pivot(values='n_rois', on='source', index=self.classified_column, aggregate_function='first')
               .fill_nan(0)
               .fill_null(0)
               .with_columns((pl.col('pRSC') + pl.col('aRSC') + pl.col('overlap')).alias('total')))
