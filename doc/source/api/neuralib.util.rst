@@ -14,7 +14,7 @@ neuralib.util
     neuralib.util.deprecation
     neuralib.util.func
     neuralib.util.gpu
-    neuralib.util.profile_test
+    neuralib.util.profile
     neuralib.util.table
     neuralib.util.tqdm
     neuralib.util.verbose
