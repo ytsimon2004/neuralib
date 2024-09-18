@@ -5,6 +5,7 @@ import math
 from typing import Final, Union, ClassVar
 
 import attrs
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage
@@ -14,7 +15,6 @@ from typing_extensions import Self
 from neuralib.atlas.data import DATA_SOURCE_TYPE, load_ccf_annotation, load_ccf_template, load_allensdk_annotation
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
-from neuralib.plot import plot_figure
 from neuralib.typing import PathLike
 
 __all__ = [
@@ -384,39 +384,72 @@ class SlicePlane:
 
         return self.with_offset(dw, dh)
 
-    def plot(self, ax: Axes | None = None,
+    def plot(self,
+             ax: Axes | None = None,
              to_um: bool = True,
              with_annotation: bool = False,
              cbar: bool = False,
              with_title: bool = False,
              affine_transform: bool = False,
              customized_trans: bool = False,
+             extent: tuple[float, float, float, float] | None = None,
              **kwargs) -> tuple[AxesImage, AxesImage | None, CompositeGenericTransform]:
         """
-        Plot slice view
-
-        :param ax:
-        :param to_um: whether plot axis as mm or um
-        :param with_annotation: if plot annotation
-        :param cbar:
-        :param with_title:
-        :param affine_transform: whether do the affine transformation
-        :param customized_trans: whether use customized transformation method. NOTE the Shear transform matrix [2, 0]
-                        value might not be able to apply in other plot (shifting)
-        :param kwargs: pass through the image imshow args
-        :return:
+        :param ax: The Axes object on which to plot. If None, a new figure and axes are created.
+        :param to_um: A boolean flag indicating whether the coordinates should be converted to micrometers. Defaults to True.
+            Only applicable if ``extent`` is None.
+        :param with_annotation: A boolean indicating whether to include annotations in the plot.
+        :param cbar: A boolean indicating whether to include a color bar in the plot.
+        :param with_title: A boolean indicating whether to include a title in the plot.
+        :param affine_transform: A boolean indicating whether to apply an affine transformation to the plot.
+        :param customized_trans: A boolean indicating whether to use a customized affine transformation.
+        :param extent: A tuple defining the image boundaries (left, right, bottom, top). If None, boundaries are computed internally.
+        :param kwargs: Additional keyword arguments passed to ``ax.imshow``.
+        :return: A tuple containing the main AxesImage, the annotation AxesImage if any, and the Affine2D transformation.
         """
 
         if ax is None:
-            with plot_figure(None) as ax:
-                ret = self._plot(ax, to_um, with_annotation, cbar, with_title, affine_transform,
-                                 customized_trans, **kwargs)
+            _, ax = plt.subplots()
+
+        if extent is None:
+            extent = self._get_xy_range(to_um)
+
+        #
+        if affine_transform:
+            import matplotlib.transforms as mtransforms
+            #
+            if customized_trans:
+                aff = mtransforms.Affine2D(self._customized_affine_transform())
+            else:
+                aff = mtransforms.Affine2D().skew_deg(-20, 0)
+
+            aff_trans = aff + ax.transData
         else:
-            ret = self._plot(ax, to_um, with_annotation, cbar, with_title, affine_transform, customized_trans, **kwargs)
+            aff_trans = ax.transData
 
-        return ret
+        #
+        image = self.image.astype(float)
+        image[image <= 10] = np.nan
+        im_view = ax.imshow(image, cmap='Greys', extent=extent, clip_on=False, transform=aff_trans, **kwargs)
 
-    unit: str = None
+        # annotation
+        if with_annotation:
+            im_ann = self.plot_annotation(ax, aff_trans=aff_trans, to_um=to_um)
+        else:
+            im_ann = None
+
+        #
+        if cbar:
+            ax.figure.colorbar(im_view)
+        #
+        if with_title:
+            ax.set_title(f'{self.view.REFERENCE_FROM}: {self.reference_value} mm')
+
+        ax.set(xlabel=self.unit, ylabel=self.unit)
+
+        return im_view, im_ann, aff_trans
+
+    unit: str = 'a.u.'
 
     def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
         if to_um:
@@ -450,58 +483,42 @@ class SlicePlane:
 
         return Y @ tt @ _Y
 
-    def _plot(self, ax: Axes,
-              to_um,
-              with_annotation,
-              cbar,
-              with_title,
-              affine_transform,
-              customized_trans,
-              **kwargs) -> tuple[AxesImage, AxesImage | None, CompositeGenericTransform]:
+    def plot_annotation(self,
+                        ax: Axes,
+                        *,
+                        aff_trans: Axes.transData | None = None,
+                        to_um: bool = True,
+                        cmap: str = 'binary',
+                        alpha: float = 0.3,
+                        extent: tuple[float, float, float, float] | None = None) -> AxesImage:
+        """
+        Plot the annotation image
 
-        x0, x1, y0, y1 = self._get_xy_range(to_um)
+        :param ax: ``Axes``
+        :param aff_trans: The transformation applied to the annotation image. If None, defaults to the Axes' transformation.
+        :param to_um: A boolean flag indicating whether the coordinates should be converted to micrometers. Defaults to True.
+            Only applicable if ``extent`` is None.
+        :param cmap: Colormap to be used for the annotation image. Defaults to 'binary'.
+        :param alpha: The imshow alpha, between 0 (transparent) and 1 (opaque). Defaults to 0.3.
+        :param extent: A tuple defining the image boundaries (left, right, bottom, top). If None, boundaries are computed internally.
+        :return: The AxesImage object created by imshow, representing the plotted annotation image.
+        """
 
-        #
-        if affine_transform:
-            import matplotlib.transforms as mtransforms
-            #
-            if customized_trans:
-                aff = mtransforms.Affine2D(self._customized_affine_transform())
-            else:
-                aff = mtransforms.Affine2D().skew_deg(-20, 0)
+        if extent is None:
+            extent = self._get_xy_range(to_um)
 
-            aff_trans = aff + ax.transData
-        else:
+        ann_img = load_slice_view('ccf_annotation',
+                                  self.view.plane_type,
+                                  allen_annotation_res=self.view.resolution).plane(self.plane_offset)
+        ann = ImageProcFactory(ann_img).cvt_gray().edge_detection(10, 0).image
+
+        ann = ann.astype(float)
+        ann[ann <= 10] = np.nan
+
+        if aff_trans is None:
             aff_trans = ax.transData
 
-        #
-        image = self.image.astype(float)
-        image[image <= 10] = np.nan
-        im_view = ax.imshow(image, cmap='Greys', extent=(x0, x1, y0, y1), clip_on=False, transform=aff_trans, **kwargs)
+        im_ann = ax.imshow(ann, cmap=cmap, extent=extent, alpha=alpha, clip_on=False,
+                           interpolation='none', vmin=0, vmax=255, transform=aff_trans)
 
-        #
-        if with_annotation:
-            ann_img = load_slice_view('ccf_annotation',
-                                      self.view.plane_type,
-                                      allen_annotation_res=self.view.resolution).plane(self.plane_offset)
-            ann = ImageProcFactory(ann_img).cvt_gray().edge_detection(10, 0).image
-
-            ann = ann.astype(float)
-            ann[ann <= 10] = np.nan
-
-            im_ann = ax.imshow(ann, cmap='binary', extent=(x0, x1, y0, y1), alpha=0.3, clip_on=False,
-                               interpolation='none', vmin=0, vmax=255, transform=aff_trans)
-
-        else:
-            im_ann = None
-
-        #
-        if cbar:
-            ax.figure.colorbar(im_view)
-        #
-        if with_title:
-            ax.set_title(f'{self.view.REFERENCE_FROM}: {self.reference_value} mm')
-
-        ax.set(xlabel=self.unit, ylabel=self.unit)
-
-        return im_view, im_ann, aff_trans
+        return im_ann
