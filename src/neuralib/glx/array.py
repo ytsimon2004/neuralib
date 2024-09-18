@@ -14,12 +14,17 @@ from .channel_info import ChannelInfo
 __all__ = ['EphysArray']
 
 
-
 class EphysArray(EphysRecording):
     def __init__(self, time: np.ndarray,
                  channels: np.ndarray,
                  data: np.ndarray,
                  meta: dict[str, str] = None):
+        """
+        :param time: A numpy array representing time points. Must be 1-dimensional.
+        :param channels: A numpy array representing channel identifiers. Must be 1-dimensional.
+        :param data: A 2-dimensional numpy array where rows correspond to channels and columns correspond to time points. Shape must match (len(channels), len(time)).
+        :param meta: An optional dictionary containing metadata as string key-value pairs. If provided, it will be used to update the internal metadata dictionary.
+        """
         if time.ndim != 1 or channels.ndim != 1 or data.shape != (len(channels), len(time)):
             raise ValueError(f'{time.ndim=}, {channels.ndim=}, {data.shape=}')
 
@@ -136,7 +141,8 @@ class EphysArray(EphysRecording):
     def as_voltage(self) -> Self:
         from .spikeglx import GlxRecording
         # XXX Does other EphysRecording use different units?
-        return EphysArray(self.__t, self.__c, allocating_barrier(self.__d, dtype=np.float64) * GlxRecording.VOLTAGE_FACTOR)
+        return EphysArray(self.__t, self.__c,
+                          allocating_barrier(self.__d, dtype=np.float64) * GlxRecording.VOLTAGE_FACTOR)
 
     def downsampling(self, factor: int) -> Self:
         from scipy.signal import decimate

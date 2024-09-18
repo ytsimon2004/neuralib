@@ -97,7 +97,8 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
                      include_key: bool = True,
                      as_dict: bool = False):
         dataframe = self.dataframe().partition_by(by, *more_by,
-                                                  maintain_order=maintain_order, include_key=include_key, as_dict=as_dict)
+                                                  maintain_order=maintain_order, include_key=include_key,
+                                                  as_dict=as_dict)
         if as_dict:
             return {k: self.dataframe(it, may_inplace=False) for k, it in dataframe.items()}
         else:
@@ -127,6 +128,7 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
                  maintain_order: bool = False,
                  **named_by) -> pl.GroupBy:
         return self.dataframe().group_by(*by, maintain_order=maintain_order, **named_by)
+
 
 T = TypeVar('T', bound=DataFrameWrapper)
 

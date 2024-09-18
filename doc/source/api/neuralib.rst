@@ -19,6 +19,7 @@ neuralib package
     neuralib.typing
     neuralib.util
     neuralib.tracking
+    neuralib.glx
 
 Utilities Modules
 -----------------

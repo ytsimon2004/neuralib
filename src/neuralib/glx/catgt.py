@@ -91,10 +91,10 @@ from pathlib import Path
 from typing import Final, Optional, Literal, Union
 
 import numpy as np
-from neuralib.util.util_verbose import fprint
 from tqdm import tqdm
 
 from neuralib.argp import argument, tuple_type, with_defaults
+from neuralib.util.verbose import fprint
 from .spikeglx import GlxFile, GlxMeta
 
 __all__ = [
@@ -229,8 +229,11 @@ class CatGTOptions:
     zero_fill_max: int = argument(
         '-zerofillmax',
         group=GROUP_OPTIONS,
-        help="set a maximum zero-fill span (millisec)"
-    ).set_default(None, 500)
+        help="set a maximum zero-fill span (millisec)",
+        default=None,
+        const=500,
+        nargs='?'
+    )
 
     max_secs: float = argument(
         '-maxsecs',
@@ -268,15 +271,21 @@ class CatGTOptions:
         '-loccar',
         group=GROUP_OPTIONS,
         type=tuple_type((int, int)),
-        help="apply ap local CAR annulus (exclude radius, include radius). Deprecated"
-    ).set_default(None, (2, 8))
+        help="apply ap local CAR annulus (exclude radius, include radius). Deprecated",
+        default=None,
+        const=(2, 8),
+        nargs='?'
+    )
 
     local_car_um: tuple[int, int] = argument(
         '-loccar_um',
         group=GROUP_OPTIONS,
         type=tuple_type((int, int)),
-        help="apply ap local CAR annulus (exclude radius, include radius)"
-    ).set_default(None, (40, 140))
+        help="apply ap local CAR annulus (exclude radius, include radius)",
+        default=None,
+        const=(40, 140),
+        nargs='?'
+    )
 
     global_car: bool = argument(
         '-gblcar',
@@ -288,8 +297,11 @@ class CatGTOptions:
         '-gfix',
         type=tuple_type((float, float, float)),
         group=GROUP_OPTIONS,
-        help="rmv ap artifacts: ||amp(mV)||, ||slope(mV/sample)||, ||noise(mV)||"
-    ).set_default(None, (0.40, 0.10, 0.02))
+        help="rmv ap artifacts: ||amp(mV)||, ||slope(mV/sample)||, ||noise(mV)||",
+        default=None,
+        const=(0.40, 0.10, 0.02),
+        nargs='?'
+    )
 
     channel_exclude: str = argument(
         '-chnexcl',

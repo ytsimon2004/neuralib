@@ -13,11 +13,14 @@ from neuralib.glx.channel_info import ChannelInfo
 __all__ = ['GlxMeta', 'GlxRecording', 'GlxIndex', 'GlxFile']
 
 
-
 class GlxMeta:
-    """SpikeGLX meta file"""
+    """Class for handling GLX metadata"""
 
     def __init__(self, meta: Union[str, Path, dict[str, str]]):
+        """
+        :param meta: Can be a string or Path object pointing to a file with metadata or a dictionary containing metadata.
+        :type meta: Union[str, Path, dict[str, str]]
+        """
         if isinstance(meta, (str, Path)):
             meta = self._load_meta_dict(meta)
 
@@ -34,29 +37,40 @@ class GlxMeta:
 
     @property
     def total_channels(self) -> int:
+        """Total number of saved channels."""
         return int(self.__meta['nSavedChans'])
 
     @property
     def total_samples(self) -> int:
+        """The total number of samples calculated by dividing the file size in bytes by the total number of channels and the sample size
+        (2 bytes per sample)
+        """
         return int(self.__meta['fileSizeBytes']) // self.total_channels // 2
 
     @property
     def sample_rate(self) -> float:
+        """The sample rate of the recording"""
         return int(self.__meta['imSampRate'])
 
     @property
     def total_duration(self) -> float:
+        """Total duration of the recording in seconds."""
         return float(self.__meta['fileTimeSecs'])
 
     @property
     def meta(self) -> dict[str, str]:
+        """The metadata dictionary"""
         return self.__meta
 
     def imro_table(self) -> str:
+        """The IMRO table as a string from the metadata"""
         return self.__meta['~imroTbl']
 
     if sys.version_info >= (3, 10):
         def channel_info(self) -> ChannelInfo:
+            """
+            :return: A ChannelInfo object containing a DataFrame with channel information.
+            """
             from neurocarto.probe_npx.npx import ChannelMap
             chmap = ChannelMap.from_imro(self.imro_table())
             return ChannelInfo(pl.DataFrame(dict(
@@ -68,11 +82,14 @@ class GlxMeta:
 
 
 class GlxRecording(GlxMeta, EphysRecording):
-    """SpikeGLX binary file"""
-
-    VOLTAGE_FACTOR: Final[float] = 0.195  # mV/1
+    VOLTAGE_FACTOR: Final[float] = 0.195
+    """A constant factor for voltage conversion, in mV/1"""
 
     def __init__(self, path: Union[str, Path]):
+        """
+        :param path: The file path to the recording data, either as a string or a Path object.
+            This path is used to locate the associated `.meta` file and `.bin` file for the recording.
+        """
         EphysRecording.__init__(self)
 
         path = Path(path)
