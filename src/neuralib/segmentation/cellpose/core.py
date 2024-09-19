@@ -80,7 +80,7 @@ class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
 
         viewer = napari.Viewer()
         viewer.add_image(res.image, name='image', colormap='cyan')
-        viewer.add_image(res.nan_masks(), name='mask', colormap='hsv', opacity=0.5)
+        viewer.add_image(res.nan_masks(), name='mask', colormap='twilight_shifted', opacity=0.5)
         viewer.add_image(res.nan_outlines(), name='outline', opacity=0.5)
 
         napari.run()

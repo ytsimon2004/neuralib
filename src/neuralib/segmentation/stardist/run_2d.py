@@ -229,7 +229,7 @@ class StarDist2DOptions(AbstractSegmentationOption):
         viewer.add_image(self.raw_image(), name='raw')
         if not self.no_normalize:
             viewer.add_image(self.normalize_image(), name='normalized')
-        viewer.add_image(res.labels, name='labels', colormap='hsv', opacity=0.5)
+        viewer.add_image(res.labels, name='labels', colormap='twilight_shifted', opacity=0.5)
         viewer.add_points(res.points, face_color='red')
 
         if with_widget:

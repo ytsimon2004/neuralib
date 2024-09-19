@@ -8,7 +8,7 @@ from .annotation import *
 from .literal import FOREIGN_POLICY, CONFLICT_POLICY
 
 if TYPE_CHECKING:
-    from .expr import SqlExpr
+    from .expr import SqlExpr, SqlField
 
 __all__ = [
     'Field', 'table_name', 'table_field_names', 'table_fields', 'table_field',
