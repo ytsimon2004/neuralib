@@ -6,10 +6,10 @@ from typing import Union, Iterator, TYPE_CHECKING, Optional, Final
 import numpy as np
 import polars as pl
 
-from neuralib.glx import EphysRecording
+from neuralib.ephys.glx import EphysRecording
+from neuralib.util.verbose import fprint
 from .cluster_info import ClusterInfo
 from .params import KilosortParameter
-from ..util.verbose import fprint
 
 if TYPE_CHECKING:
     from .ops_ks4 import Kilosort4Options

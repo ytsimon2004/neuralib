@@ -7,11 +7,11 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self
 
-from neuralib.kilosort.cluster_info import ClusterInfo
+from neuralib.ephys.kilosort.cluster_info import ClusterInfo
 
 __all__ = ['Cluster', 'ClusterData']
 
-from neuralib.kilosort.result import KilosortResult
+from neuralib.ephys.kilosort.result import KilosortResult
 
 
 class Cluster(NamedTuple):

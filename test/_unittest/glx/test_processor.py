@@ -5,9 +5,9 @@ from typing import Final
 import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal
 
-from neuralib.glx import processor as p
-from neuralib.glx.base import EphysArray
-from neuralib.glx.processor import ProcessedEphysRecordingMeta
+from neuralib.ephys.glx import EphysArray
+from neuralib.ephys.glx import processor as p
+from neuralib.ephys.glx.processor import ProcessedEphysRecordingMeta
 from neuralib.persistence import PersistenceHandler
 
 

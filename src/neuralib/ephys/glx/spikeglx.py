@@ -7,8 +7,8 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self
 
-from neuralib.glx.base import EphysRecording
-from neuralib.glx.channel_info import ChannelInfo
+from neuralib.ephys.glx.base import EphysRecording
+from neuralib.ephys.glx.channel_info import ChannelInfo
 
 __all__ = ['GlxMeta', 'GlxRecording', 'GlxIndex', 'GlxFile']
 
@@ -19,7 +19,6 @@ class GlxMeta:
     def __init__(self, meta: Union[str, Path, dict[str, str]]):
         """
         :param meta: Can be a string or Path object pointing to a file with metadata or a dictionary containing metadata.
-        :type meta: Union[str, Path, dict[str, str]]
         """
         if isinstance(meta, (str, Path)):
             meta = self._load_meta_dict(meta)

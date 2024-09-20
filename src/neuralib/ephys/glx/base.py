@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 
-from neuralib.glx.channel_info import ChannelInfo
+from neuralib.ephys.glx.channel_info import ChannelInfo
 
 __all__ = ['EphysRecording']
 
