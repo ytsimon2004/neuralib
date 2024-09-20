@@ -12,7 +12,7 @@ from neuralib.persistence import PersistenceHandler
 
 
 class EphysProcessTester(unittest.TestCase):
-    save_root: Final[Path] = Path('.test-ephys-cachr-dir')
+    save_root: Final[Path] = Path('.test-ephys-cache-dir')
     handler: PersistenceHandler[ProcessedEphysRecordingMeta]
 
     @classmethod
