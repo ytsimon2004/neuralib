@@ -143,6 +143,15 @@ Modules
     - :mod:`neuralib.calimg.spikes`: dF/F to spike activity (OASIS/Cascade)
 
 
+:mod:`neuralib.ephys`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- Module for *in-vivo* electrophysiology recording data processing (under DEV)
+
+    - :mod:`neuralib.ephys.glx`: spike GLX
+
+    - :mod:`neuralib.ephys.kilosort`: Kilosort
+
+
 :mod:`neuralib.segmentation`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

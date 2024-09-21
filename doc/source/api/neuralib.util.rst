@@ -14,12 +14,13 @@ neuralib.util
     neuralib.util.deprecation
     neuralib.util.func
     neuralib.util.gpu
-    neuralib.util.profile_test
+    neuralib.util.profile
     neuralib.util.table
     neuralib.util.tqdm
     neuralib.util.verbose
+    neuralib.util.utils
     neuralib.util.util_cv2
     neuralib.util.util_class
-    neuralib.util.utils
+    neuralib.util.util_polars
     neuralib.util.version
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from typing import NamedTuple, Any
+from typing import NamedTuple, Any, TYPE_CHECKING
 
 import numpy as np
 import polars as pl
@@ -9,9 +9,10 @@ from typing_extensions import Self
 
 from neuralib.ephys.kilosort.cluster_info import ClusterInfo
 
-__all__ = ['Cluster', 'ClusterData']
+if TYPE_CHECKING:
+    from neuralib.ephys.kilosort.result import KilosortResult
 
-from neuralib.ephys.kilosort.result import KilosortResult
+__all__ = ['Cluster', 'ClusterData']
 
 
 class Cluster(NamedTuple):
@@ -101,7 +102,7 @@ class Cluster(NamedTuple):
 
 
 class ClusterData(NamedTuple):
-    ks_data: KilosortResult
+    ks_data: 'KilosortResult'
     info: ClusterInfo
     spikes: np.ndarray
 
