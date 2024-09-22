@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import cv2
 import numpy as np
+from PIL import Image
 from tqdm import tqdm
 
 from neuralib.imglib.norm import normalize_sequences
@@ -11,7 +14,8 @@ __all__ = [
     'read_sequences',
     'read_pdf',
     'write_avi',
-    'tif_to_gif'
+    'tif_to_gif',
+    'gif_show'
 ]
 
 
@@ -97,7 +101,39 @@ def tif_to_gif(image_file: PathLike,
 
     frames = imageio.mimread(image_file)
     frames = normalize_sequences(frames, **kwargs)
-    imageio.mimsave(output_path, frames, fps=fps)
+    imageio.mimsave(output_path, frames, duration=1 / fps)
+
+
+def gif_show(file: PathLike) -> None:
+    """
+    Display GIF file in a cv2 window
+
+    :param file: Path to the GIF file to be displayed.
+    :raises ValueError: If the provided file is not a GIF.
+    """
+    if isinstance(file, str):
+        file = Path(file)
+
+    if not file.suffix == '.gif':
+        raise ValueError('must be gif file!')
+
+    gif = Image.open(file)
+    while True:
+        try:
+            frame = np.array(gif.convert('RGB'))
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            cv2.imshow('GIF', frame)
+
+            if cv2.waitKey(100) & 0xFF == ord('q'):
+                break
+
+            gif.seek(gif.tell() + 1)
+
+        except EOFError:
+            gif.seek(0)
+
+    gif.close()
+    cv2.destroyAllWindows()
 
 
 def write_avi(file_path: str, frames: np.ndarray, fps: int = 30.0) -> None:
