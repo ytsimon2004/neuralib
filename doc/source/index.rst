@@ -173,17 +173,17 @@ Modules
 Utilities Modules
 ^^^^^^^^^^^^^^^^^
 
-- :mod:`neuralib.argp`:Use argparse as dataclass field
+- :mod:`neuralib.argp`: Use argparse as dataclass field
 
-- :mod:`neuralib.persistence`:Caching the analyzed results (i.e., concatenation for statistic purpose)
+- :mod:`neuralib.persistence`: Caching the analyzed results (i.e., concatenation for statistic purpose)
 
-- :mod:`neuralib.sqlp`:Python functions to build a SQL (sqlite3) statement.
+- :mod:`neuralib.sqlp`: Python functions to build a SQL (sqlite3) statement.
 
-- :mod:`neuralib.bokeh_model`:Interactive dashboard visualization
+- :mod:`neuralib.dashboard`: Interactive dashboard visualization
 
-- :mod:`neuralib.plot`:Module for general plotting purpose
+- :mod:`neuralib.plot`: Module for general plotting purpose
 
-- :mod:`neuralib.imglib`:Image processing library
+- :mod:`neuralib.imglib`: Image processing library
 
 - :mod:`neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write
 

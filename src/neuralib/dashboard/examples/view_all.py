@@ -4,7 +4,7 @@ from typing import Optional
 from bokeh.model import Model
 from bokeh.models import Select, Div
 
-from neuralib.bokeh_model import BokehServer, View
+from neuralib.dashboard import BokehServer, View
 from .model import *
 
 __all__ = ['AllView']

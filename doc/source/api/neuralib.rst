@@ -6,7 +6,7 @@ neuralib package
     :caption: Modules:
 
     neuralib.atlas
-    neuralib.bokeh_model
+    neuralib.dashboard
     neuralib.calimg
     neuralib.imglib
     neuralib.io

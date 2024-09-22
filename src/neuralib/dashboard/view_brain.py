@@ -6,7 +6,7 @@ import numpy as np
 from bokeh.models import GlyphRenderer, ColumnDataSource
 from bokeh.plotting import figure
 
-from neuralib.bokeh_model.base import ViewComponent
+from neuralib.dashboard.base import ViewComponent
 
 __all__ = ['AbstractBrainView', 'BrainView', 'TiffBrainView', 'AtlasBrainView']
 

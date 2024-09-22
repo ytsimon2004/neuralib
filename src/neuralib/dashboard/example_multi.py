@@ -1,7 +1,7 @@
 from bokeh.model import Model
 from bokeh.models import Div
 
-from neuralib.bokeh_model import View, BokehServer
+from neuralib.dashboard import View, BokehServer
 
 
 class Top(View):

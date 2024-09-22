@@ -3,7 +3,7 @@ from typing import Optional, Union
 from bokeh.model import Model
 from bokeh.models import Div, Select
 
-from neuralib.bokeh_model import BokehServer, View
+from neuralib.dashboard import BokehServer, View
 from .view_figure import AnimalFigureView
 
 __all__ = ['AnimalView']

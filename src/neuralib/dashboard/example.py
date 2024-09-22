@@ -4,7 +4,7 @@ from bokeh.model import Model
 from bokeh.models import ColumnDataSource, GlyphRenderer
 from bokeh.plotting import figure
 
-from neuralib.bokeh_model import ViewComponent, View, BokehServer
+from neuralib.dashboard import ViewComponent, View, BokehServer
 
 
 class Graph(ViewComponent):
