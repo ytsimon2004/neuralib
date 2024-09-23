@@ -4,6 +4,7 @@ import abc
 from collections.abc import Sequence
 from typing import Callable, Literal, overload, TypeVar, Generic
 
+import numpy as np
 import polars as pl
 from typing_extensions import Self
 
@@ -184,3 +185,46 @@ class LazyDataFrameWrapper(Generic[T]):
 
     def pipe(self, function, *args, **kwargs) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.pipe(function, *args, **kwargs))
+
+
+def helper_with_index_column(df: T,
+                             column: str,
+                             index: int | list[int] | np.ndarray | T,
+                             maintain_order:bool=False,
+                             strict: bool = False) -> T:
+    """
+    A help function to do the filter on an index column.
+
+    :param df:
+    :param column: index column
+    :param index: index array
+    :param maintain_order: keep the ordering of *index* in the returned dataframe.
+    :param strict: all index in *index* should present in the returned dataframe. Otherwise, an error will be raised.
+    :return:
+    :raise RuntimeError:
+    """
+    if isinstance(index, (int, np.integer)):
+        ret = df.filter(pl.col(column) == index)
+        if len(ret) == 0 and strict:
+            raise RuntimeError(f'missing {column}: [{index}]')
+    elif isinstance(index, type(df)):
+        index = index[column].to_numpy()
+    else:
+        index = np.asarray(index)
+
+    if strict:
+        if len(miss := np.setdiff1d(index, df.dataframe()[column].unique().to_numpy())) > 0:
+            raise RuntimeError(f'missing {column}: {list(miss)}')
+
+
+    if maintain_order:
+        _column = '_' + column
+        index = pl.DataFrame(
+            {column: index},
+            schema_overrides={column: df.schema[column]}
+        ).with_row_index(_column)
+        ret = df.lazy().join(index, on=column, how='left')
+        ret = ret.filter(pl.col(_column).is_not_null())
+        return ret.sort(_column).drop(_column).collect()
+    else:
+        return df.filter(pl.col(column).is_in(index))

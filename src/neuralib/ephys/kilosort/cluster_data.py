@@ -149,32 +149,20 @@ class ClusterData(NamedTuple):
             for it in info.cluster_id
         ]))[0]
 
-        info = info.filter_clusters(np.unique(spike_cluster[i]))
+        info = info.with_clusters(np.unique(spike_cluster[i]))
         return self._replace(info=info, spikes=self.spikes[i])
 
-    def with_clusters(self, cluster: list[int] | np.ndarray | ClusterInfo) -> Self:
-        if isinstance(cluster, ClusterInfo):
-            cluster = cluster.cluster_id
-
-        cluster = np.asarray(cluster)
-        if len(self.cluster_list) == len(cluster) and np.all(self.cluster_list == cluster):
-            return self
-
-        info = self.info.with_clusters(cluster)
+    def with_clusters(self, cluster: list[int] | np.ndarray | ClusterInfo, *,
+                      maintain_order: bool = False,
+                      strict: bool = False) -> Self:
+        info = self.info.with_clusters(cluster, maintain_order=maintain_order, strict=strict)
         return self.with_info(info)
 
-    def filter_clusters(self, cluster: list[int] | np.ndarray | ClusterInfo) -> Self:
-        if isinstance(cluster, ClusterInfo):
-            cluster = cluster.cluster_id
-
-        info = self.info.filter_clusters(cluster)
-        return self.with_info(info)
-
-    def filter_cluster_shank(self, shank: int) -> Self:
+    def with_cluster_shank(self, shank: int) -> Self:
         return self.with_info(self.info.filter(pl.col('shank') == shank))
 
-    def filter_cluster_label(self, label: str | list[str]):
-        return self.with_info(self.info.filter_cluster_label(label))
+    def with_cluster_label(self, label: str | list[str]):
+        return self.with_info(self.info.with_cluster_label(label))
 
     @property
     def duration(self) -> float:
@@ -192,23 +180,23 @@ class ClusterData(NamedTuple):
             for it in self.cluster_list
         ])
 
-    def with_firingrate(self) -> Self:
-        if 'fr' in self.info.columns:
-            return self
-
-        duration = self.duration
-        info = self.info.with_columns(
-            duration=pl.lit(duration),
-            fr=self.firingrate()
-        )
-        return self._replace(info=info)
-
-    def filter_firingrate(self, fr: float) -> Self:
+    def with_firingrate(self, fr: float = None) -> Self:
         """
 
         :param fr:
         :return:
         """
+        if fr is None:
+            if 'fr' in self.info.columns:
+                return self
+            else:
+                duration = self.duration
+                info = self.info.with_columns(
+                    duration=pl.lit(duration),
+                    fr=self.firingrate()
+                )
+                return self._replace(info=info)
+
         if 'fr' not in self.info.columns:
             ret = self.with_firingrate()
         else:
@@ -219,7 +207,7 @@ class ClusterData(NamedTuple):
         elif fr < 0:
             return ret.with_info(ret.info.filter(pl.col('fr') <= -fr))
         else:
-            raise ValueError()
+            assert False, 'unreachable'
 
     def map_spike_data(self, a: np.ndarray, axis=0) -> np.ndarray:
         return np.take(a, self.spikes, axis)
@@ -227,26 +215,8 @@ class ClusterData(NamedTuple):
     def filter_time_range(self, time_range: tuple[float, float]) -> Self:
         t = self.spike_time
         x = np.logical_and(time_range[0] <= t, t <= time_range[1])
-        info = self.info.filter_clusters(np.unique(self.spike_cluster[x]))
+        info = self.info.with_clusters(np.unique(self.spike_cluster[x]))
         return self._replace(info=info, spikes=self.spikes[x])
-
-    # def with_time(self, offset: float | Callable[[np.ndarray], np.ndarray]) -> Self:
-    #     if isinstance(offset, (int, float)):
-    #         t = self.spike_time + offset
-    #     else:
-    #         if callable(offset):
-    #             t = offset(self.spike_time)
-    #
-    #         elif isinstance(offset, np.ndarray):
-    #             t = offset
-    #
-    #         else:
-    #             raise TypeError()
-    #
-    #         if t.shape != self.spike_time.shape:
-    #             raise RuntimeError()
-    #
-    #     return self._replace(spike_time=t)
 
     def get_cluster(self, c: int) -> Cluster:
         info = self.info.filter(pl.col('cluster_id') == c)

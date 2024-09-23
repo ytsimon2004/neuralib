@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self
 
-from neuralib.util.util_polars import DataFrameWrapper
+from neuralib.util.util_polars import DataFrameWrapper, helper_with_index_column
 
 __all__ = ['ChannelInfo']
 
@@ -37,44 +37,66 @@ class ChannelInfo(DataFrameWrapper):
 
     @property
     def n_shanks(self) -> int:
+        """
+
+        :return:
+        :raise ColumnNotFoundError: shank
+        """
         return self['shank'].n_unique()
 
     @property
     def shank_set(self) -> np.ndarray:
+        """
+
+        :return:
+        :raise ColumnNotFoundError: shank
+        """
         return self['shank'].unique().to_numpy()
 
     @property
     def shank(self) -> np.ndarray:
+        """
+
+        :return:
+        :raise ColumnNotFoundError: shank
+        """
         return self['shank'].to_numpy()
 
     @property
     def pos_x(self) -> np.ndarray:
+        """
+        :return:
+        :raise ColumnNotFoundError: pos_x
+        """
         return self['pos_x'].to_numpy()
 
     @property
     def pos_y(self) -> np.ndarray:
+        """
+        :return:
+        :raise ColumnNotFoundError: pos_y
+        """
         return self['pos_y'].to_numpy()
 
     """channels"""
 
-    def with_channels(self, channel: list[int] | np.ndarray | pl.Series) -> Self:
-        index = pl.DataFrame(
-            dict(channel=channel),
-            schema_overrides=dict(channel=self._df.schema['channel'])
-        ).with_row_index('_index')
-        ret = self.lazy().join(index, on=['channel'], how='left')
-        ret = ret.filter(pl.col('_index').is_not_null())
-        return ret.sort('_index').drop('_index').collect()
+    def with_channels(self, channel: int | list[int] | np.ndarray | ChannelInfo, *,
+                      maintain_order: bool = False,
+                      strict: bool = False) -> Self:
+        """
 
-    def filter_channels(self, channel: int | list[int] | np.ndarray) -> Self:
-        channel = np.atleast_1d(channel)
-        return self.filter(pl.col('channel').is_in(channel))
+        :param channel:
+        :param maintain_order: keep the ordering of *channel* in the returned dataframe.
+        :param strict: all *channel* should present in the returned dataframe. Otherwise, an error will be raised.
+        :return:
+        """
+        return helper_with_index_column(self, 'channel', channel, maintain_order, strict)
 
     def drop_channels(self, channel: int | list[int] | np.ndarray) -> Self:
         channel = np.atleast_1d(channel)
         return self.filter(pl.col('channel').is_in(channel).not_())
 
-    def filter_shanks(self, shank: int | list[int] | np.ndarray) -> Self:
+    def with_shanks(self, shank: int | list[int] | np.ndarray) -> Self:
         shank = np.atleast_1d(shank)
         return self.filter(pl.col('shank').is_in(shank))
 
@@ -113,6 +135,9 @@ class ChannelInfo(DataFrameWrapper):
         return self.with_columns(**columns)
 
     """other"""
+
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on='channel', how="inner", **kwargs) -> Self:
+        return super().join(other, on, how, **kwargs)
 
     def partition_channel_by_shank(self) -> dict[int, Self]:
         return {

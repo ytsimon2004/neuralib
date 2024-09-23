@@ -229,10 +229,6 @@ class KilosortFiles:
             .join(info, on='channel', how='left')
             .pipe(check_depth)
             .drop('ch', 'sh')
-            .rename({
-                'channel': 'ch',
-                'shank': 'sh'
-            })
         )
 
     def cluster_data(self, name: str) -> ClusterInfo:
