@@ -5,6 +5,7 @@ from typing import Iterable
 import numpy as np
 
 from neuralib.typing import ArrayLike
+from neuralib.util.deprecation import deprecated_class
 
 __all__ = ['Segment',
            #
@@ -12,7 +13,8 @@ __all__ = ['Segment',
            'grouped_iter']
 
 
-# TODO add example doc
+
+@deprecated_class
 class Segment:
     """Segment container class"""
 
