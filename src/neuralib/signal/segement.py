@@ -14,7 +14,7 @@ __all__ = ['Segment',
 
 
 
-@deprecated_class
+@deprecated_class(new='neuralib.util.segments.*')
 class Segment:
     """Segment container class"""
 

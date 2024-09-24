@@ -9,6 +9,26 @@ __all__ = ['deprecated_class',
            'deprecated_aliases']
 
 
+def _build_deprecated_message(target: str,
+                              alternation: str | None = None,
+                              remarks: str | None = None,
+                              removal: str | None = None) -> str:
+    msg = f'{target} is deprecated'
+
+    if removal is not None:
+        msg += f' and will be removed in a future release (after version {removal}).'
+    else:
+        msg += '.'
+
+    if alternation is not None:
+        msg += f' Please use "{alternation}" instead.'
+
+    if remarks is not None:
+        msg += f' NOTE: {remarks}.'
+
+    return msg
+
+
 def deprecated_class(*,
                      new: str | None = None,
                      remarks: str | None = None,
@@ -25,16 +45,7 @@ def deprecated_class(*,
 
         @functools.wraps(ori_init)
         def new_init(self, *args, **kwargs):
-            msg = f'{cls.__qualname__} is deprecated and will be removed in a future release'
-
-            if removal_version is not None:
-                msg += f'(after version {removal_version}).'
-
-            if new is not None:
-                msg += f' Please use "{new}" instead.'
-
-            if remarks is not None:
-                msg += f' NOTE: {remarks}.'
+            msg = _build_deprecated_message(cls.__qualname__, new, remarks, removal_version)
 
             warnings.warn(
                 msg,
@@ -72,17 +83,7 @@ def deprecated_func(*,
 
         @functools.wraps(f)
         def _deprecated_func(*args, **kwargs):
-
-            msg = f'{f.__qualname__} is deprecated and will be removed in a future release'
-
-            if removal_version is not None:
-                msg += f'(after version {removal_version}).'
-
-            if new is not None:
-                msg += f' Please use "{new}" instead.'
-
-            if remarks is not None:
-                msg += f' NOTE: {remarks}.'
+            msg = _build_deprecated_message(f.__qualname__, new, remarks, removal_version)
 
             warnings.warn(
                 msg,
