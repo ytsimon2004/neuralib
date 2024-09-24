@@ -12,7 +12,7 @@ __all__ = ['interp_timestamp',
 def interp_timestamp(timestamp: np.ndarray,
                      t0: float,
                      t1: float,
-                     sampling_rate: int) -> tuple[np.ndarray, np.ndarray]:
+                     sampling_rate: float) -> tuple[np.ndarray, np.ndarray]:
     """
     Create interpolated time and value(01) array from event timestamp
 

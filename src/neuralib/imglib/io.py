@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-def read_sequences(avi_file: str | PathLike,
+def read_sequences(avi_file: PathLike,
                    grey_scale: bool = True) -> np.ndarray:
     """Read an sequences file (i.e., AVI/MP4) into an array, converting to grayscale if specified.
 
