@@ -122,7 +122,7 @@ class DFFSignal(NamedTuple):
     f: np.ndarray
     """Fluorescence intensity. `Array[float, F | [N,F]]`"""
     fneu: np.ndarray
-    """Neuropil intensity. (F,) | (N, F)"""
+    """Neuropil intensity. `Array[float, F | [N,F]]`"""
     fcorr: np.ndarray
     """Fluorescence corrected by fneu that used for dff calculation. `Array[float, F | [N,F]]`"""
     f0: np.ndarray
