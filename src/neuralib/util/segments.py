@@ -35,7 +35,6 @@ __all__ = [
     'shift_time',
 ]
 
-
 Segment = np.ndarray  # (N, 2) value array ([(start, stop)]), as a segment.
 SegmentLike = Segment | tuple[float, float] | list[tuple[float, float]]
 SegmentGroup = np.ndarray  # (N,) int array, where a unique value indicate a unique group/segment.
@@ -162,8 +161,9 @@ def segment_gap(x: np.ndarray, gap: float) -> SegmentGroup:
     else:
         return np.cumsum(np.abs(np.diff(x, prepend=x[0])) > gap)
 
+
 def as_segment(segs: SegmentLike) -> Segment:
-    ret = np.atleast_2d(segs)
+    ret = np.atleast_2d(segs).astype(float, copy=False)
     if ret.ndim != 2 or ret.shape[1] != 2:
         raise ValueError(f'not a (N, 2) segment array : {ret.shape}')
     return ret
@@ -188,13 +188,6 @@ def segment_duration(segs: SegmentLike) -> np.ndarray:
     :return: (N,) T-value array
     """
     a = as_segment(segs)
-
-    if a.ndim == 1 and len(a) == 2:
-        a = np.array([a])
-
-    if a.ndim != 2:
-        raise ValueError(f'not a (N, 2) segment array : {a.shape}')
-
     return a[:, 1] - a[:, 0]
 
 
@@ -206,7 +199,7 @@ def segment_at_least_duration(segs: SegmentLike, duration: float) -> np.ndarray:
     :return: (N, 2) T-value segments
     """
     a = as_segment(segs).copy()
-    dur = (a[:, 1] - a[:, 0]) - duration
+    dur = duration - (a[:, 1] - a[:, 0])
     ext = np.where(dur > 0, dur / 2, 0)
     a[:, 0] -= ext
     a[:, 1] += ext
@@ -267,7 +260,7 @@ def segment_flatten(a: SegmentLike, closed=True) -> Segment:
     if len(a) == 0:
         return a
 
-    if not is_sorted(a[: 0]):
+    if not is_sorted(a[:, 0]):
         a = a[np.argsort(a[:, 0])]
 
     if is_sorted(a.ravel(), strict=True):
@@ -293,10 +286,13 @@ def segment_invert(a: SegmentLike) -> Segment:
     :param a: (N, 2) T-value segments
     :return:  (N+1, 2) T-value segments
     """
-    return _segment_invert(segment_flatten(a))
+    return _segment_invert(segment_flatten(a, closed=False))
 
 
 def _segment_invert(a: Segment) -> Segment:
+    if len(a) == 0:
+        return segment_universe()
+
     a = np.concatenate([[-np.Inf], a.ravel(), [np.Inf]]).reshape((-1, 2))
 
     d = []
@@ -325,10 +321,10 @@ def segment_intersection(a: SegmentLike, b: SegmentLike) -> Segment:
         p, q = a[i]
         s, t = b[j]
         if p <= s:
-            if s < q:  # p <= s < {q  t}
+            if s < q:  # p <= s < {q,t}
                 ret.append((s, min(q, t)))
         else:
-            if p < t:  # s < p < {q  t}
+            if p < t:  # s < p < {q,t}
                 ret.append((p, min(q, t)))
 
         if q <= t:
