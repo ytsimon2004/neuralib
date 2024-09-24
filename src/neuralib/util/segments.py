@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import Union, Literal
+
+from collections.abc import Callable
+from typing import Literal
 
 import numpy as np
 
@@ -7,6 +9,8 @@ __all__ = [
     'is_sorted',
     'segment_mask',
     'segment_epochs',
+    'has_gap',
+    'segment_gap',
     'as_segment',
     'segment_range',
     'segment_duration',
@@ -23,8 +27,13 @@ __all__ = [
     'segment_overlap',
     'segment_overlap_index',
     'segment_join',
-    'segment_join_index'
+    'segment_join_index',
+    'segment_map',
+    'segment_group_map',
+    'segment_sample',
+    'segment_bins',
 ]
+
 
 Segment = np.ndarray  # (N, 2) value array ([(start, stop)]), as a segment.
 SegmentLike = Segment | tuple[float, float] | list[tuple[float, float]]
@@ -125,6 +134,32 @@ def segment_epochs(x: np.ndarray, t: np.ndarray = None,
                 ret.append((t[i[0]], t[i[-1]]))
     return np.array(ret)
 
+
+def has_gap(y: np.ndarray, gap: float) -> bool:
+    """
+
+    :param y: (N,) V-value array
+    :param gap: V
+    :return:
+    """
+    return np.any(np.abs(np.diff(y)) > gap)
+
+
+def segment_gap(x: np.ndarray, gap: float) -> SegmentGroup:
+    """segmenting an array that cut at the place which the difference of nearby value larger than *gap*.
+
+    `min{|ai-aj|} > gap` for any value `ai` from segment `si`, any value `aj` from segment `sj`, `si != sj`.
+
+    :param x: (N,) V-value array
+    :param gap: V
+    :return: (N,) int-group array
+    """
+    if len(x) == 0:
+        raise ValueError('empty array')
+    elif len(x) == 1:
+        return np.array([0])
+    else:
+        return np.cumsum(np.abs(np.diff(x, prepend=x[0])) > gap)
 
 def as_segment(segs: SegmentLike) -> Segment:
     ret = np.atleast_2d(segs)
@@ -546,8 +581,161 @@ def segment_join_index(segs: Segment, gap: float = 0) -> SegmentGroup:
             t4[sx] = t
     return t4
 
-# TODO segment_map
-# TODO segment_group_map
-# TODO segment_sample
-# TODO segment_bins
+
+def segment_map(f: Callable[[np.ndarray], float],
+                segs: SegmentLike,
+                t: np.ndarray,
+                v: np.ndarray = None) -> np.ndarray:
+    """
+
+    :param f: function ((N,) V-value array) -> R-value
+    :param segs: (S, 2) T-value segment
+    :param t: (T,) T-value array
+    :param v: (T,) V-value array. If `None`, use *t*.
+    :return: (S,) R-value array
+    """
+    if v is None:
+        v = t
+    return segment_group_map(f, segment_index(as_segment(segs), t), v)
+
+
+def segment_group_map(f: Callable[[np.ndarray], float],
+                      group: SegmentGroup,
+                      v: np.ndarray) -> np.ndarray:
+    """
+
+    :param f: function ((N,) V-value array) -> R-value
+    :param group: (T) S-group array. Only non-negative value will be considered.
+    :param v: (T,) T-value array
+    :return: (S,) R-value array
+    """
+    ret = []
+    for i in range(np.max(group) + 1):
+        x = np.nonzero(group == i)[0]
+        ret.append(f(v[x]))
+
+    return np.array(ret)
+
+
+def segment_sample(segs: SegmentLike) -> _SegmentSampleHelper:
+    return _SegmentSampleHelper(segment_flatten(segs))
+
+
+class _SegmentSampleHelper:
+    def __init__(self, segs: Segment):
+        self.segs = segs
+
+    def random(self, time_duration: float, sample_times: int) -> Segment:
+        if time_duration < 0:
+            raise ValueError()
+        if sample_times < 0:
+            raise ValueError()
+        if sample_times == 0:
+            return np.zeros((0, 2), dtype=float)
+
+        segs = self.segs[segment_duration(self.segs) >= time_duration]
+        cum = np.concatenate([[0], np.cumsum(segment_duration(segs) - time_duration)])
+        total = cum[-1]
+        a = np.sort(np.random.random(sample_times) * total)
+        i = np.searchsorted(cum, a, side='left') - 1
+
+        ret = np.zeros((sample_times, 2), dtype=float)
+        ret[:, 0] = a - cum[i] + segs[i, 0]
+        ret[:, 1] = ret[:, 0] + time_duration
+        return ret
+
+    def uniform(self, time_duration: float, sample_times: int = None) -> Segment:
+        if time_duration < 0:
+            raise ValueError()
+
+        if sample_times is not None:
+            if sample_times < 0:
+                raise ValueError()
+            if sample_times == 0:
+                return np.zeros((0, 2), dtype=float)
+
+        segs = self.segs[segment_duration(self.segs) >= time_duration]
+        count = (segment_duration(segs) / time_duration).astype(int)
+        total = np.sum(count)
+        if sample_times is None:
+            sample_times = total
+        if total < sample_times:
+            raise RuntimeError('d*t larger than dur(segs)')
+
+        cum = np.concatenate([[0], np.cumsum(count)])
+
+        a = np.sort(np.random.choice(np.arange(cum[-1]), time_duration, replace=False))
+
+        i = np.searchsorted(cum, a, side='right') - 1
+
+        ret = np.zeros((sample_times, 2), dtype=float)
+        for j in np.unique(i):
+            k = np.nonzero(i == j)[0]
+            n = len(k)
+            assert n <= count[j], f'{n=} > {count[j]}'
+            seg = segs[j]
+            dur = (seg[1] - seg[0]) - time_duration * n
+            assert dur >= 0
+            r = np.random.random(n) * dur
+            ret[k, 0] = seg[0] + np.cumsum(r) + time_duration * np.arange(n)
+
+        ret[:, 1] = ret[:, 0] + time_duration
+
+        return ret
+
+    def bins(self, time_duration: float, sample_times: int = None, interval: float = 0) -> Segment:
+        return segment_bins(self.segs, time_duration, interval, sample_times)
+
+
+def segment_bins(segs: SegmentLike, duration: float, interval: float = 0, nbins: int = None) -> Segment:
+    """
+    Divide *segs* into equal-size sub-segments with equal *duration* and equal *interval*.
+
+    ::
+
+        returns = [(start := R[0] + (i+d)*j, start + d)] ⊆ segs, for j in [0, t)
+
+    :param segs: (N, 2) T-value segment
+    :param duration: T value
+    :param interval: T value
+    :param nbins: number of bins
+    :return: (*nbins*, 2) T-value segment
+    """
+    if duration < 0:
+        raise ValueError()
+
+    if interval < 0:
+        raise ValueError()
+
+    if nbins is not None:
+        if nbins < 0:
+            raise ValueError()
+        if nbins == 0:
+            return np.zeros((0, 2), dtype=float)
+
+    segs = segment_flatten(segs)
+
+    # number of bins per segments
+    count = ((interval + segment_duration(segs)) / (duration + interval)).astype(int)
+
+    # maximal total bins
+    total = np.sum(count)
+
+    if nbins is None:
+        nbins = total
+    else:
+        nbins = min(total, nbins)
+
+    ret = np.zeros((nbins, 2), dtype=float)
+    p = 0
+    for j in range(len(count)):
+        n = int(count[j])
+        k = p + np.arange(n)
+        ret[k, 0] = segs[j, 0] + (duration + interval) * np.arange(n)
+        p += n
+
+    ret[:, 1] = ret[:, 0] + duration
+    return ret
+
+
 # TODO shift_time
