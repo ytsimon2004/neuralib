@@ -32,6 +32,7 @@ __all__ = [
     'segment_group_map',
     'segment_sample',
     'segment_bins',
+    'shift_time',
 ]
 
 
@@ -738,4 +739,68 @@ def segment_bins(segs: SegmentLike, duration: float, interval: float = 0, nbins:
     return ret
 
 
-# TODO shift_time
+def shift_time(t: np.ndarray, shift: float, *,
+               duration: float = np.inf,
+               epochs: Segment = None,
+               circular=True):
+    """Shift event with a value.
+
+    :param t: (N,) T-value array
+    :param shift: shift T value
+    :param duration: The maximal T value for wrapping when *circular*
+    :param epochs:  (S, 2) segment, only shift time in the segments.
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+    if circular:
+        if not (0 <= shift <= duration):
+            raise ValueError(f'illegal {shift=}')
+
+    if epochs is None:
+        ret = t + shift
+
+        if circular:
+            ret[ret > duration] -= duration
+        else:
+            ret = np.delete(ret, ret > duration, 0)
+    else:
+        ret = _shift_time_in_segment(t, shift, epochs, (0, duration), circular=circular)
+
+    return np.sort(ret)
+
+
+def _shift_time_in_segment(t: np.ndarray,
+                           shift: float | Callable[[np.ndarray], np.ndarray],
+                           epochs: Segment,
+                           duration: tuple[float, float],
+                           circular=True):
+    if isinstance(shift, (int, float)):
+        _shift = shift
+        shift = lambda it: it + _shift
+
+    epochs = segment_flatten(epochs)  # Array[float, E', 2]
+
+    ret = t.copy()  # Array[float, T]
+    i = segment_index(epochs, t)  # Array[E', T], index of seg for all t
+    x = np.nonzero(i >= 0)[0]  # Array[T, T'], index of t for valid t
+    i = i[x]  # Array[E', T'], index of seg for valid t
+    sd = segment_duration(epochs)  # Array[float, E']
+    sd = np.concatenate([[0], np.cumsum(sd)])  # Array[float, E' + 1]
+    ret[x] = shift(ret[x] - epochs[i, 0] + sd[i])
+
+    if circular:
+        ret[x] %= sd[-1]
+    else:
+        o = x[ret[x] > duration[1]]
+        ret[o] = np.nan
+        o = x[ret[x] < duration[0]]
+        ret[o] = np.nan
+        x = x[~np.isnan(ret[x])]
+
+    i = np.searchsorted(sd, ret[x], side='right') - 1  # Array[E', T'], new index of seg for shifted t
+    ret[x] = ret[x] + epochs[i, 0] - sd[i]
+
+    if not circular:
+        ret = ret[~np.isnan(ret)]
+
+    return ret
