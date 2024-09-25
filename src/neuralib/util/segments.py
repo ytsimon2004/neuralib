@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Literal
+from typing import Literal, Union
 
 import numpy as np
 
@@ -36,7 +36,7 @@ __all__ = [
 ]
 
 Segment = np.ndarray  # (N, 2) value array ([(start, stop)]), as a segment.
-SegmentLike = Segment | tuple[float, float] | list[tuple[float, float]]
+SegmentLike = Union[Segment, tuple[float, float], list[tuple[float, float]]]
 SegmentGroup = np.ndarray  # (N,) int array, where a unique value indicate a unique group/segment.
 
 
@@ -483,15 +483,15 @@ def segment_overlap_index(segs: SegmentLike, t: Segment, mode: Literal['in', 'ou
     """
     * mode == 'in' (t is smaller) ::
 
-        return[t] = [∃ i in |S| st. t ⊂ s[i]] for t in T
+        return[t] = [∃ i in |S| st. t ⊂ s[i]] for t in T, otherwise [-1]
 
     * mode == 'out' (t is larger)::
 
-         return[t] = [∃ i in |S| st. s[i] ⊂ t] for t in T
+         return[t] = [∃ i in |S| st. s[i] ⊂ t] for t in T, otherwise [-1]
 
     * mode == 'overlap' ::
 
-       return[t] = [∃ i in |S| st. s[i] ⋂ t ≠ ∅] for t in T
+       return[t] = [∃ i in |S| st. s[i] ⋂ t ≠ ∅] for t in T, otherwise [-1]
 
     returns = [min(return[T]), max(return[T])]
 
@@ -661,7 +661,7 @@ class _SegmentSampleHelper:
 
         cum = np.concatenate([[0], np.cumsum(count)])
 
-        a = np.sort(np.random.choice(np.arange(cum[-1]), time_duration, replace=False))
+        a = np.sort(np.random.choice(np.arange(cum[-1]), sample_times, replace=False))
 
         i = np.searchsorted(cum, a, side='right') - 1
 
@@ -673,8 +673,8 @@ class _SegmentSampleHelper:
             seg = segs[j]
             dur = (seg[1] - seg[0]) - time_duration * n
             assert dur >= 0
-            r = np.random.random(n) * dur
-            ret[k, 0] = seg[0] + np.cumsum(r) + time_duration * np.arange(n)
+            r = np.sort(np.random.random(n)) * dur
+            ret[k, 0] = seg[0] + r + time_duration * np.arange(n)
 
         ret[:, 1] = ret[:, 0] + time_duration
 

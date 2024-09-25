@@ -211,8 +211,11 @@ class TestSegment(unittest.TestCase):
             s1 = self.random_segment(20, 5)
             s2 = self.random_segment(20, 5)
             s3 = segment_intersection(s1, s2)
-            self.assertTrue(np.all(ret := segment_contains(s1, i)[segment_contains(s3, i)]), f'{ret=}')
-            self.assertTrue(np.all(ret := segment_contains(s2, i)[segment_contains(s3, i)]), f'{ret=}')
+
+            c1 = segment_contains(s1, i)
+            c2 = segment_contains(s2, i)
+            c3 = segment_contains(s3, i)
+            assert_array_equal(c3, np.logical_and(c1, c2))
 
     def test_segment_intersection_on_empty_set(self):
         e = np.empty((0, 2))
@@ -242,8 +245,11 @@ class TestSegment(unittest.TestCase):
             s1 = self.random_segment(20, 5)
             s2 = self.random_segment(20, 5)
             s3 = segment_union(s1, s2)
-            self.assertTrue(np.all(ret := segment_contains(s3, i)[segment_contains(s1, i)]), f'{ret=}')
-            self.assertTrue(np.all(ret := segment_contains(s3, i)[segment_contains(s2, i)]), f'{ret=}')
+
+            c1 = segment_contains(s1, i)
+            c2 = segment_contains(s2, i)
+            c3 = segment_contains(s3, i)
+            assert_array_equal(c3, np.logical_or(c1, c2))
 
     def test_segment_union_on_empty_set(self):
         e = np.empty((0, 2))
@@ -290,6 +296,147 @@ class TestSegment(unittest.TestCase):
                 if len(s) > 4:
                     break
             assert_array_equal(s[0:2], segment_diff(s[0:2], s[-2:]))
+
+    def test_segment_contains(self):
+        i = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            c = segment_contains(s, i)
+            for ii in i:
+                self.assertEqual(c[ii], np.any(np.logical_and(
+                    s[:, 0] <= ii,
+                    ii <= s[:, 1]
+                )))
+
+    def test_segment_index(self):
+        t = np.arange(-5, 25)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            i = segment_index(s, t)
+
+            for j in np.nonzero(i >= 0)[0]:
+                self.assertTrue(s[i[j], 0] <= t[j] <= s[i[j], 1])
+
+            for j in np.nonzero(i < 0)[0]:
+                if -i[j] - 1 == 0:
+                    self.assertTrue(t[j] < s[0, 0])
+                elif -i[j] - 1 == len(s):
+                    self.assertTrue(s[-1, 1] <= t[j])
+                else:
+                    self.assertTrue(s[-i[j] - 2, 1] < t[j] < s[-i[j] - 1, 0])
+
+    def test_segment_overlap_mode_in(self):
+        for _ in range(10):
+            while True:
+                s1 = self.random_segment(20, 5)
+                s2 = self.random_segment(20, 5)
+                if len(s3 := segment_intersection(s1, s2)) > 0:
+                    break
+
+            self.assertTrue(np.all(segment_overlap(s1, s1, mode='in')))
+            self.assertTrue(np.all(segment_overlap(s1, s3, mode='in')))
+            self.assertTrue(np.all(segment_overlap(s2, s3, mode='in')))
+
+            self.assertFalse(np.all(segment_overlap(s3, s1, mode='in')))
+            self.assertFalse(np.all(segment_overlap(s3, s2, mode='in')))
+
+    def test_segment_overlap_mode_out(self):
+        for _ in range(10):
+            s1 = self.random_segment(20, 5)
+            s2 = segment_expand_duration(s1, 0.1)
+
+            self.assertTrue(np.all(segment_overlap(s1, s1, mode='out')))
+            self.assertTrue(np.all(segment_overlap(s1, s2, mode='out')))
+            self.assertTrue(np.all(segment_overlap(s2, s1, mode='in')))
+
+    def test_segment_overlap_mode_overlap(self):
+        for _ in range(10):
+            s1 = segment_at_least_duration(self.random_segment(20, 5), 0.2)
+            s2 = s1 + 0.1
+
+            self.assertTrue(np.all(segment_overlap(s1, s2, mode='overlap')))
+            self.assertTrue(np.all(segment_overlap(s2, s1, mode='overlap')))
+
+            self.assertFalse(np.all(segment_overlap(s1, s2, mode='in')))
+            self.assertFalse(np.all(segment_overlap(s1, s2, mode='out')))
+
+    def test_segment_overlap_index_mode_in(self):
+        for _ in range(10):
+            while True:
+                s1 = self.random_segment(20, 5)
+                s2 = self.random_segment(20, 5)
+                if len(s3 := segment_intersection(s1, s2)) > 0:
+                    break
+
+            i = segment_overlap_index(s1, s2, mode='in')
+            for j, (a, b) in enumerate(i.T):
+                if a < 0:
+                    self.assertTrue(b < 0)
+                else:
+                    self.assertTrue(s1[a, 0] <= s2[j, 0])
+                    self.assertTrue(s2[j, 1] <= s1[b, 1])
+                    self.assertTrue(a == 0 or s1[a - 1, 1] < s2[j, 0])
+                    self.assertTrue(b + 1 == len(s1) or s2[j, 1] < s1[b + 1, 0])
+
+    def test_segment_overlap_index_mode_out(self):
+        for _ in range(10):
+            s1 = self.random_segment(20, 5)
+            s2 = self.random_segment(20, 5)
+            s3 = segment_union(s1, s2)
+
+            i = segment_overlap_index(s1, s3, mode='out')
+            for j, (a, b) in enumerate(i.T):
+                if a < 0:
+                    self.assertTrue(b < 0)
+                else:
+                    self.assertTrue(s3[j, 0] <= s1[a, 0])
+                    self.assertTrue(s1[b, 1] <= s3[j, 1])
+
+    def test_segment_overlap_index_mode_overlap(self):
+        for _ in range(10):
+            while True:
+                s1 = self.random_segment(20, 5)
+                s2 = self.random_segment(20, 5)
+                if len(s3 := segment_intersection(s1, s2)) > 0:
+                    break
+
+            i = segment_overlap_index(s1, s2, mode='overlap')
+            for j, (a, b) in enumerate(i.T):
+                if a < 0:
+                    self.assertTrue(b < 0)
+                else:
+                    self.assertTrue(s1[a, 0] <= s2[j, 0] or s2[j, 0] <= s1[a, 0])
+                    self.assertTrue(s2[j, 1] <= s1[b, 1] or s1[b, 1] <= s2[j, 1])
+                    self.assertTrue(a == 0 or s1[a - 1, 1] < s2[j, 0])
+                    self.assertTrue(b + 1 == len(s1) or s2[j, 1] < s1[b + 1, 0])
+
+    def test_segment_sample_random(self):
+        for _ in range(10):
+            s1 = self.random_segment(20, 5)
+            s2 = segment_sample(s1).random(0.1, 10)
+
+            self.assertTrue(np.all(np.round(segment_duration(s2), 4) == 0.1))
+            self.assertTrue(np.all(segment_overlap(s1, s2, mode='in')))
+
+    def test_segment_sample_uniform(self):
+        for _ in range(10):
+            s1 = self.random_segment(20, 5)
+            s2 = segment_sample(s1).uniform(0.1, 10)
+
+            self.assertTrue(np.all(np.round(segment_duration(s2), 4) == 0.1))
+            self.assertTrue(np.all(ret := segment_overlap(s1, s2, mode='in')), f'{ret}')
+            assert_array_equal(s2, segment_flatten(s2))
+
+    def test_segment_sample_bins(self):
+        for _ in range(10):
+            s1 = self.random_segment(20, 5)
+            s2 = segment_sample(s1).bins(0.1, 10)
+
+            self.assertTrue(np.all(np.round(segment_duration(s2), 4) == 0.1))
+            self.assertTrue(np.all(ret := segment_overlap(s1, s2, mode='in')), f'{ret}')
+            assert_array_equal(s2, segment_flatten(s2))
+            # s2 is an arithmetic sequence, twice diff gives us 0
+            self.assertTrue(np.diff(np.diff(s2)) == 0)
 
 
 if __name__ == '__main__':
