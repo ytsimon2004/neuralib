@@ -10,7 +10,7 @@ def running_mask1d(time: np.ndarray,
                    merge_gap: float = 0.5,
                    minimal_time: float = 1) -> np.ndarray:
     """
-    Running mask for linear (1-dimension) locomotion.
+    Running epoch mask for linear (1-dimension) locomotion.
 
     Refer to Zaremba et al., 2016. Nature Neuroscience.
     Selection based on criterion:

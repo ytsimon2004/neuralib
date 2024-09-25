@@ -11,6 +11,7 @@ neuralib package
     neuralib.imglib
     neuralib.io
     neuralib.model
+    neuralib.locomotion
     neuralib.plot
     neuralib.signal
     neuralib.scanner
