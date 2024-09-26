@@ -1,8 +1,7 @@
 import unittest
 
 import numpy as np
-from numpy.ma.testutils import assert_array_almost_equal
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from neuralib.util.segments import *
 
@@ -10,7 +9,7 @@ from neuralib.util.segments import *
 class TestSegment(unittest.TestCase):
     @classmethod
     def random_segment(cls, high, length):
-        return np.sort(np.random.random((2 * length,)) * high).reshape(-1, 2)
+        return np.sort(np.round(np.random.random((2 * length,)) * high, 4)).reshape(-1, 2)
 
     def test_is_sorted(self):
         self.assertTrue(is_sorted(np.array([0, 1, 2, 3, 4])))
@@ -154,6 +153,21 @@ class TestSegment(unittest.TestCase):
             [0, 2],
             [2, 4],
         ], closed=True))
+
+    def test_segment_flatten_opened_case_1(self):
+        s = [
+            [2.5, 2.7],
+            [2.7, 2.9],
+            [2.9, 3.1],
+            [3.9, 4.1],
+            [4.1, 4.3],
+            [4.3, 4.5],
+            [4.5, 4.7],
+            [4.7, 4.9],
+            [6.1, 6.3],
+            [6.3, 6.5]
+        ]
+        assert_array_equal(np.array(s), segment_flatten(s, closed=False))
 
     def test_segment_invert(self):
         s = [
@@ -408,7 +422,7 @@ class TestSegment(unittest.TestCase):
                     self.assertTrue(s1[a, 0] <= s2[j, 0] or s2[j, 0] <= s1[a, 0])
                     self.assertTrue(s2[j, 1] <= s1[b, 1] or s1[b, 1] <= s2[j, 1])
                     self.assertTrue(a == 0 or s1[a - 1, 1] < s2[j, 0])
-                    self.assertTrue(b + 1 == len(s1) or s2[j, 1] < s1[b + 1, 0])
+                    self.assertTrue(b + 1 >= len(s1) or s2[j, 1] < s1[b + 1, 0])
 
     def test_segment_sample_random(self):
         for _ in range(10):
@@ -429,14 +443,70 @@ class TestSegment(unittest.TestCase):
 
     def test_segment_sample_bins(self):
         for _ in range(10):
-            s1 = self.random_segment(20, 5)
-            s2 = segment_sample(s1).bins(0.1, 10)
+            # we need to round to 1, because few segment may be union-ed due to floating number precise when segment_flatten
+            # we tested segment_flatten for precise 1 case in test_segment_flatten_opened_case_1
+            # to ensure it works in general.
+            s1 = np.round(self.random_segment(20, 5), 1)
+            s2 = np.round(segment_sample(s1).bins(0.2, 10), 1)
 
-            self.assertTrue(np.all(np.round(segment_duration(s2), 4) == 0.1))
+            self.assertTrue(np.all(np.round(segment_duration(s2), 4) == 0.2))
             self.assertTrue(np.all(ret := segment_overlap(s1, s2, mode='in')), f'{ret}')
-            assert_array_equal(s2, segment_flatten(s2))
-            # s2 is an arithmetic sequence, twice diff gives us 0
-            self.assertTrue(np.diff(np.diff(s2)) == 0)
+            assert_array_equal(s2, ret := segment_flatten(s2, closed=False), f'{s2} != {ret}')
+
+            o = segment_overlap_index(s1, s2, mode='in')[0]
+            for oo in np.unique(o):
+                if np.count_nonzero(o == oo) > 1:
+                    self.assertAlmostEqual(0.2, np.min(np.diff(s2[o == oo, 0])))
+
+    def test_segment_sample_bins_with_interval(self):
+        for _ in range(10):
+            s1 = self.random_segment(20, 5)
+            s2 = segment_sample(s1).bins(0.2, interval=0.1)
+
+            self.assertTrue(np.all(np.round(segment_duration(s2), 4) == 0.2))
+            self.assertTrue(np.all(ret := segment_overlap(s1, s2, mode='in')), f'{ret}')
+            assert_array_equal(s2, segment_flatten(s2, closed=False))
+
+            o = segment_overlap_index(s1, s2, mode='in')[0]
+            for oo in np.unique(o):
+                if np.count_nonzero(o == oo) > 1:
+                    self.assertAlmostEqual(0.3, np.min(np.diff(s2[o == oo, 0])))
+
+    def test_shift_time(self):
+        t = np.arange(10)
+        s = np.array([[3, 7]])
+        e = np.array(
+            [0, 1, 2, 3.2, 4.2, 5.2, 6.2, 7, 8, 9], dtype=float
+        )
+        a = shift_time(t, 0.2, s)
+        assert_array_almost_equal(e, a)
+
+    def test_shift_time_circular(self):
+        t = np.arange(10)
+        s = np.array([[3, 7.1]])
+        e = np.array(
+            [0, 1, 2, 3.1, 3.2, 4.2, 5.2, 6.2, 8, 9], dtype=float
+        )
+        a = shift_time(t, 0.2, s, circular=True)
+        assert_array_almost_equal(e, a)
+
+    def test_shift_time_random(self):
+        t = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            a = shift_time(t, 0.2, s)
+            assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
+            with self.assertRaises(AssertionError):
+                assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
+
+    def test_shift_time_circular_random(self):
+        t = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            a = shift_time(t, 0.2, s, circular=True)
+            assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
+            with self.assertRaises(AssertionError):
+                assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
 
 
 if __name__ == '__main__':

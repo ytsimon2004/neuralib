@@ -266,18 +266,23 @@ def segment_flatten(a: SegmentLike, closed=True) -> Segment:
     if is_sorted(a.ravel(), strict=True):
         return a
 
-    a = a.copy()
+    r = np.empty_like(a)
+    r[0] = a[0]
     i = 1
-    while i < len(a):
-        p = a[i - 1, 1]
-        q = a[i, 0]
-        if p >= q if closed else p > q:
-            a[i - 1, 1] = max(a[i, 1], a[i - 1, 1])
-            a = np.delete(a, i, axis=0)
+    j = 1
+    while j < len(a):
+        p: float = r[i - 1, 1]
+        q: float = a[j, 0]
+        assert r[i - 1, 0] <= q, f'{r[i-1]=} <> {a[j]=}'
+        if (p >= q if closed else p > q):
+            r[i - 1, 1] = max(a[j, 1], p)
         else:
+            r[i] = a[j]
             i += 1
+        j += 1
 
-    return a
+    r = r[:i]
+    return r
 
 
 def segment_invert(a: SegmentLike) -> Segment:
@@ -726,25 +731,26 @@ def segment_bins(segs: SegmentLike, duration: float, interval: float = 0, nbins:
     ret = np.zeros((nbins, 2), dtype=float)
     p = 0
     for j in range(len(count)):
-        n = int(count[j])
+        n = min(int(count[j]), nbins - p)
         k = p + np.arange(n)
         ret[k, 0] = segs[j, 0] + (duration + interval) * np.arange(n)
         p += n
+        if p >= nbins:
+            break
 
     ret[:, 1] = ret[:, 0] + duration
     return ret
 
 
-def shift_time(t: np.ndarray, shift: float, *,
+def shift_time(t: np.ndarray, shift: float, segs: Segment = None, *,
                duration: float = np.inf,
-               epochs: Segment = None,
                circular=True):
     """Shift event with a value.
 
     :param t: (N,) T-value array
-    :param shift: shift T value
+    :param shift: shift T value, positive value.
+    :param segs:  (S, 2) segment, only shift time in the segments.
     :param duration: The maximal T value for wrapping when *circular*
-    :param epochs:  (S, 2) segment, only shift time in the segments.
     :param circular: keep total event number. If epochs is given, keep total event number in epochs.
     :return: (N',) T-value array
     """
@@ -752,15 +758,16 @@ def shift_time(t: np.ndarray, shift: float, *,
         if not (0 <= shift <= duration):
             raise ValueError(f'illegal {shift=}')
 
-    if epochs is None:
+    if segs is None:
         ret = t + shift
 
         if circular:
-            ret[ret > duration] -= duration
+            while np.any(x := ret > duration):
+                ret[x] -= duration
         else:
             ret = np.delete(ret, ret > duration, 0)
     else:
-        ret = _shift_time_in_segment(t, shift, epochs, (0, duration), circular=circular)
+        ret = _shift_time_in_segment(t, shift, segs, (0, duration), circular=circular)
 
     return np.sort(ret)
 
@@ -776,7 +783,7 @@ def _shift_time_in_segment(t: np.ndarray,
 
     epochs = segment_flatten(epochs)  # Array[float, E', 2]
 
-    ret = t.copy()  # Array[float, T]
+    ret = t.astype(float, copy=True)  # Array[float, T]
     i = segment_index(epochs, t)  # Array[E', T], index of seg for all t
     x = np.nonzero(i >= 0)[0]  # Array[T, T'], index of t for valid t
     i = i[x]  # Array[E', T'], index of seg for valid t
