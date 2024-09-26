@@ -9,6 +9,6 @@ neuralib.io
     :caption: Modules:
 
     neuralib.io.core
-    neuralib.io.csv
+    neuralib.io.csv_header
     neuralib.io.json
 

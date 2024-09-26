@@ -204,7 +204,7 @@ Utilities Modules
 
 - :mod:`neuralib.util.color_logging`: Logging with color format
 
-- :mod:`neuralib.util.csv`: CSV context manager
+- :mod:`neuralib.util.csv_header`: CSV context manager
 
 - :mod:`neuralib.util.gpu`: OS-dependent GPU info
 

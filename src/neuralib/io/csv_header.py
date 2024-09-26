@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional, Set
+from neuralib.typing import PathLike
 
 __all__ = ['CsvContextManager', 'csv_header']
-
-from neuralib.typing import PathLike
 
 
 class CsvContextManager:
@@ -22,7 +20,7 @@ class CsvContextManager:
         self._cont_mode = continuous_mode
 
         self._stream = None
-        self._cont_column: Optional[Set[str]] = None
+        self._cont_column: set[str] | None = None
         self._cont_index = -1
 
         if isinstance(quotes_header, str):
