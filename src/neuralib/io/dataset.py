@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import gdown
 import numpy as np
 import polars as pl
+from PIL import Image
 
 from neuralib.calimg.scanbox import SBXInfo
 from neuralib.calimg.suite2p import Suite2PResult
@@ -16,11 +17,14 @@ from neuralib.io import NEUROLIB_CACHE_DIRECTORY
 from neuralib.typing import PathLike
 
 __all__ = [
+    'google_drive_file',
+    'google_drive_folder',
+    #
     'load_example_scanbox',
-    'load_example_dff',
     'load_example_suite2p',
     #
     'load_example_rois',
+    'load_example_rois_image',
     #
     'load_ephys_meta',
     'load_ephys_data',
@@ -99,11 +103,6 @@ def load_example_scanbox(**kwargs) -> SBXInfo:
         return SBXInfo.load(file)
 
 
-def load_example_dff(**kwargs) -> np.ndarray:
-    with google_drive_file('1OqGK2inSYkFEMEe_8umVr7VGz0fuSoX7', **kwargs) as file:
-        return np.load(file, allow_pickle=True)
-
-
 def load_example_suite2p(**kwargs) -> Suite2PResult:
     with google_drive_folder('1iVImr_rIywWhCiBDYhcphcSODaWJrhy7', **kwargs) as suite2p_dir:
         return Suite2PResult.load(suite2p_dir)
@@ -118,6 +117,11 @@ def load_example_rois(**kwargs) -> pl.DataFrame:
         return pl.read_csv(file)
 
 
+def load_example_rois_image(**kwargs) -> np.ndarray:
+    with google_drive_file('1-ZFC7Fd6IgwbY6X8oetvpGjZaBBiwg0t', **kwargs) as file:
+        return np.array(Image.open(file))
+
+
 # ========== #
 # Ephys data #
 # ========== #
@@ -130,7 +134,3 @@ def load_ephys_meta(**kwargs):
 def load_ephys_data(**kwargs):
     with google_drive_file('1U0xAchQagyXRT72M68fRQ4JsRQeW9q5d', **kwargs) as _:
         pass
-
-
-if __name__ == '__main__':
-    load_ephys_meta()

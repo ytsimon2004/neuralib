@@ -16,7 +16,8 @@ from neuralib.util.color_logging import setup_clogger, LOGGING_IO_LEVEL
 STARDIST_MODEL = Literal['2D_versatile_fluo', '2D_versatile_he', '2D_paper_dsb2018', '2D_demo']
 Logger = setup_clogger(caller_name=Path(__file__).name)
 
-__all__ = ['StarDistResult']
+__all__ = ['StarDistResult',
+           'StarDist2DOptions']
 
 
 @final

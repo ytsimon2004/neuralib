@@ -42,7 +42,6 @@ import numpy as np
 import requests
 import tensorflow as tf
 import tensorflow.keras
-from rich.pretty import pprint
 from ruamel.yaml import YAML
 from scipy.ndimage import binary_dilation, gaussian_filter
 
@@ -453,7 +452,6 @@ class CascadeSpikePrediction:
             noise_mean = str(int(np.nanmean(trace_noise_levels * 100)) / 100)
             noise_std = str(int(np.nanstd(trace_noise_levels * 100)) / 100)
             fprint(f'Noise levels (mean, std; in standard units): {noise_mean}, {noise_std}')
-            pprint(model_dict)
 
         # XX has shape: (neurons, timepoints, windows)
         XX = preprocess_traces(dff, before_frac=before_frac, window_size=window_size)

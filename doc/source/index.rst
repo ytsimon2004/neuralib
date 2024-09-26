@@ -106,6 +106,7 @@ CLI project.scripts
     ../notebooks/example_rastermap_2p
     ../notebooks/example_rastermap_wfield
 
+    ../notebooks/example_segmentation
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot
     ../notebooks/example_neuralib_plot
