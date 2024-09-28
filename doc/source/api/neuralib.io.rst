@@ -10,5 +10,6 @@ neuralib.io
 
     neuralib.io.core
     neuralib.io.csv_header
+    neuralib.io.dataset
     neuralib.io.json
 
