@@ -59,16 +59,19 @@ class RasterMapResult:
 
     `Dimension parameters`:
 
-        N = number of neurons
+        N = Number of neurons/pixel
 
-        T = number of image pulse
+        T = Number of image pulse
 
-        C = number of clusters = N / binsize
+        C = Number of clusters = N / binsize
 
     """
 
     filename: str
-    """neural activity numpy file. `Array[float, [N, T]]`"""
+    """
+    Filename of the neural activity data
+    (i.e., *.tif or *.avi for wfield activity; .npy `Array[float, [N, T]]` file for cellular)
+    """
 
     save_path: str
     """filename for the rastermap result save"""
