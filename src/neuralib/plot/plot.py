@@ -11,17 +11,14 @@ from matplotlib.axes import Axes
 from scipy.stats import pearsonr
 
 from neuralib.plot._dotplot import DotPlot
-from neuralib.plot.colormap import insert_colorbar
-from neuralib.typing import ArrayLike, ArrayLikeStr
+from neuralib.typing import ArrayLikeStr
 from neuralib.typing import PathLike, DataFrame
-from neuralib.util.deprecation import deprecated_aliases, deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = [
     'dotplot',
-    'plot_2d_dots',
-    'scatter_binx_plot',
     'scatter_histogram',
+    'scatter_binx_plot',
     'hist_cutoff',
     'violin_boxplot',
     'grid_subplots',
@@ -99,63 +96,6 @@ def dotplot(xlabel: ArrayLikeStr,
     dp.plot(**kwargs)
 
 
-@deprecated_aliases(x='xlabel', y='ylabel', size='values')
-@deprecated_func(new='neuralib.plot.dotplot()', removal_version='0.3')
-def plot_2d_dots(ax: Axes,
-                 xlabel: ArrayLike,
-                 ylabel: ArrayLike,
-                 values: np.ndarray, *,
-                 with_color: bool = False,
-                 with_legends: bool = True,
-                 size_type: Literal['area', 'radius'] = 'radius',
-                 size_factor: float = 3000,
-                 **kwargs):
-    """
-    Plot values as 2D dots
-
-    `Dimension parameters`:
-
-        X = number of x label
-
-        Y = number of y label
-
-    :param ax: ``Axes``
-    :param xlabel: string values. `ArrayLike[str, X]`
-    :param ylabel: string values. `ArrayLike[str, X]`
-    :param values: size of the dots. `Array(float, [X, Y]]`
-    :param with_color: `size` domain as colormap
-    :param with_legends: show the value scaling as legend
-    :param size_type: whether the value corresponding to circle radius or surface area.
-    :param size_factor: scaling factor for visualization
-    :param kwargs: passed to ``ax.scatter()``
-    :return:
-    """
-    values = np.array([values]).flatten()
-    xlabel, ylabel = np.meshgrid(xlabel, ylabel, indexing='ij')
-
-    #
-
-    def _func(v):
-        if size_type == 'radius':
-            return v ** 2 * size_factor
-        elif size_type == 'area':
-            return v * size_factor
-        else:
-            raise ValueError('')
-
-    s = _func(values)
-    #
-    if with_color:
-        im = ax.scatter(xlabel.ravel(), ylabel.ravel(), s=s, c=values, cmap='viridis', clip_on=False,
-                        vmin=0, vmax=1, **kwargs)
-        insert_colorbar(ax, im)
-    else:
-        ax.scatter(xlabel.ravel(), ylabel.ravel(), s=s, c='k', clip_on=False, **kwargs)
-
-    if with_legends:
-        _ax_size_legend(ax, values, _func)
-
-
 def _ax_size_legend(ax: Axes,
                     value: list[int] | np.ndarray,
                     f: Callable[[float], float]):
@@ -181,12 +121,57 @@ def _ax_size_legend(ax: Axes,
 # Regression #
 # ========== #
 
-@deprecated_func(new='scatter_binx_plot()', removal_version='0.3')
-def plot_regression_cc(*args, **kwargs):
-    scatter_binx_plot(*args, **kwargs)
+def scatter_histogram(x: np.ndarray,
+                      y: np.ndarray,
+                      bins: int | Sequence[float] | str = 15,
+                      *,
+                      linear_reg: bool = True,
+                      output: Path | None = None,
+                      **kwargs):
+    """
+    plot the linear correlation scatter and histogram between two variables
+
+    `Dimension parameters`:
+
+        N = number of sample points
+
+    :param x: numerical array x. `Array[float, N]`
+    :param y: numerical array y. `Array[float, N]`
+    :param bins: passed to ``numpy.histogram()``
+    :param linear_reg: If show correlation coefficient
+    :param output: Figure save output
+    :param kwargs: additional args pass through ``ax.set()``
+    :return:
+    """
+
+    sns.set(style='white', font_scale=1.2)
+
+    g = sns.JointGrid(x=x, y=y, height=5)
+
+    if linear_reg:
+        g.plot_joint(sns.regplot, color='grey')
+    else:
+        g.plot_joint(sns.scatterplot, color='grey')
+
+    g = g.plot_marginals(sns.histplot, kde=False, bins=bins, color='grey')
+
+    ax = g.ax_joint
+    ax.set(**kwargs)
+
+    #
+    if linear_reg:
+        cc = pearsonr(x, y)[0]
+        ax.text(0.5, 0.8, f'r = {round(cc, 4)}', fontstyle='italic',
+                horizontalalignment='center',
+                verticalalignment='center',
+                transform=ax.transAxes)
+
+    if output is not None:
+        plt.savefig(output)
+    else:
+        plt.show()
 
 
-@deprecated_aliases(show_cc='linear_reg')
 def scatter_binx_plot(ax: Axes,
                       x: np.ndarray,
                       y: np.ndarray,
@@ -305,68 +290,6 @@ def hist_cutoff(ax: Axes,
     ax.set(**kwargs)
 
 
-@deprecated_func(new='scatter_histogram()', removal_version='0.3')
-def plot_joint_scatter_histogram(*args, **kwargs):
-    scatter_histogram(*args, **kwargs)
-
-
-@deprecated_aliases(show_cc='linear_reg')
-def scatter_histogram(x: np.ndarray,
-                      y: np.ndarray,
-                      bins: int | Sequence[float] | str = 15,
-                      *,
-                      linear_reg: bool = True,
-                      output: Path | None = None,
-                      **kwargs):
-    """
-    plot the linear correlation scatter and histogram between two variables
-
-    `Dimension parameters`:
-
-        N = number of sample points
-
-    :param x: numerical array x. `Array[float, N]`
-    :param y: numerical array y. `Array[float, N]`
-    :param bins: passed to ``numpy.histogram()``
-    :param linear_reg: If show correlation coefficient
-    :param output: Figure save output
-    :param kwargs: additional args pass through ``ax.set()``
-    :return:
-    """
-
-    sns.set(style='white', font_scale=1.2)
-
-    g = sns.JointGrid(x=x, y=y, height=5)
-
-    if linear_reg:
-        g.plot_joint(sns.regplot, color='grey')
-    else:
-        g.plot_joint(sns.scatterplot, color='grey')
-
-    g = g.plot_marginals(sns.histplot, kde=False, bins=bins, color='grey')
-
-    ax = g.ax_joint
-    ax.set(**kwargs)
-
-    #
-    if linear_reg:
-        cc = pearsonr(x, y)[0]
-        ax.text(0.5, 0.8, f'r = {round(cc, 4)}', fontstyle='italic',
-                horizontalalignment='center',
-                verticalalignment='center',
-                transform=ax.transAxes)
-
-    if output is not None:
-        plt.savefig(output)
-    else:
-        plt.show()
-
-
-@deprecated_func(new='violin_boxplot()', removal_version='0.3')
-def plot_half_violin_box_dot(*args, **kwargs):
-    violin_boxplot(*args, **kwargs)
-
-
 def violin_boxplot(ax: Axes,
                    data: DataFrame | dict | list[np.ndarray],
                    x: str | None = None,
@@ -430,14 +353,10 @@ def violin_boxplot(ax: Axes,
         plt.savefig(output)
 
 
-@deprecated_func(new='grid_subplots()', removal_version='0.3')
-def plot_grid_subplots(*args, **kwargs):
-    grid_subplots(*args, **kwargs)
-
-
 def grid_subplots(data: np.ndarray | list[np.ndarray],
                   images_per_row: int,
-                  plot_func: Callable | str, *,
+                  plot_func: Callable | str,
+                  *,
                   dtype: Literal['xy', 'img'],
                   hide_axis: bool = True,
                   sharex: bool = False,

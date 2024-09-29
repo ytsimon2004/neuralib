@@ -10,7 +10,6 @@ neuralib.util
     
     neuralib.util.cli_args
     neuralib.util.color_logging
-    neuralib.util.csv
     neuralib.util.deprecation
     neuralib.util.func
     neuralib.util.gpu

@@ -96,9 +96,11 @@ CLI project.scripts
 
 
 
+Notebook Demo
+------------------------------
+
 .. toctree::
     :maxdepth: 1
-    :caption: Notebook Demo
 
     ../notebooks/example_calimg
 
@@ -183,35 +185,78 @@ Modules
 
 
 Utilities Modules
-^^^^^^^^^^^^^^^^^
+-------------------
 
-- :mod:`neuralib.argp`: Use argparse as dataclass field
 
-- :mod:`neuralib.persistence`: Caching the analyzed results (i.e., concatenation for statistic purpose)
+:mod:`neuralib.argp`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Use argparse as dataclass field
 
-- :mod:`neuralib.sqlp`: Python functions to build a SQL (sqlite3) statement.
 
-- :mod:`neuralib.dashboard`: Interactive dashboard visualization
+:mod:`neuralib.persistence`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Caching the analyzed results (i.e., concatenation for statistic purpose)
 
-- :mod:`neuralib.plot`: Module for general plotting purpose
 
-- :mod:`neuralib.imglib`: Image processing library
+:mod:`neuralib.sqlp`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Python functions to build a SQL (sqlite3) statement.
 
-- :mod:`neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write
 
-- :mod:`neuralib.tools.slack_bot`: Real-time Slack notification bot for analysis pipeline
+:mod:`neuralib.dashboard`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Interactive dashboard visualization
 
-- :mod:`neuralib.util.cli_args`: Run script as subprocess
 
-- :mod:`neuralib.util.color_logging`: Logging with color format
+:mod:`neuralib.plot`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Module for general plotting purpose
 
-- :mod:`neuralib.util.csv_header`: CSV context manager
 
-- :mod:`neuralib.util.gpu`: OS-dependent GPU info
+:mod:`neuralib.imglib`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Image processing library
 
-- :mod:`neuralib.util.profile`: Simple benchmark profile testing and debugging
 
-- :mod:`neuralib.util.table`: Rich table visualization
+:mod:`neuralib.tools.gspread`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Google spreadsheet API wrapper for read/write
+
+
+:mod:`neuralib.tools.slack_bot`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Real-time Slack notification bot for analysis pipeline
+
+
+:mod:`neuralib.util.cli_args`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Run script as subprocess
+
+
+:mod:`neuralib.util.color_logging`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Logging with color format
+
+
+:mod:`neuralib.util.csv_header`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - CSV context manager
+
+
+:mod:`neuralib.util.gpu`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - OS-dependent GPU info
+
+
+:mod:`neuralib.util.profile`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Simple benchmark profile testing and debugging
+
+
+:mod:`neuralib.util.table`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Rich table visualization
+
 
 
 

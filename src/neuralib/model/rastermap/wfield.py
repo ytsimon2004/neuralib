@@ -11,11 +11,11 @@ class SequenceSingularVector(NamedTuple):
     """A NamedTuple that represents a singular value decomposition result from image sequences."""
 
     singular_value: np.ndarray
-    """The singular values of the decomposition."""
+    """The singular values of the decomposition"""
     right_vector: np.ndarray
     """Right singular vectors of the decomposition"""
     left_vector: np.ndarray
-    """Left singular vectors of the decomposition."""
+    """Left singular vectors of the decomposition"""
 
 
 def compute_singular_vector(sequences: np.ndarray,

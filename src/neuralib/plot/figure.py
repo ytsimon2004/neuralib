@@ -11,8 +11,6 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
-from neuralib.util.deprecation import deprecated_aliases
-
 __all__ = ['plot_figure',
            'ax_set_default_style',
            'ax_merge']
@@ -26,7 +24,6 @@ MPL_BACKEND_TYPE = Literal[
 ]
 
 
-@deprecated_aliases(ax_default_style='default_style')
 @contextmanager
 def plot_figure(output: Path | None,
                 *args,

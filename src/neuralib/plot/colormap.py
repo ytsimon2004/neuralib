@@ -9,10 +9,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import ColorbarBase
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from neuralib.util.deprecation import deprecated_class
-
 __all__ = [
-    'ColorMapper',
     'DiscreteColorMapper',
     'get_customized_cmap',
     'insert_colorbar',
@@ -67,12 +64,6 @@ class DiscreteColorMapper:
             color = next(self._color_pool)
             self._key_pool[item] = color
             return color
-
-
-@deprecated_class(new='DiscreteColorMapper', removal_version='0.3')
-class ColorMapper(DiscreteColorMapper):
-    """Deprecated: Use DiscreteColorMapper instead."""
-    pass
 
 
 def get_customized_cmap(name: str,
