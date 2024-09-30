@@ -50,8 +50,7 @@ class BrainReconstructor(AbstractParser):
         """
 
     title: str = argument('-T', '--title', metavar='TEXT', default=None)
-    source: str = argument('--source', default='allen_mouse_10um',
-                           help='atlas source name. allen_human_500um for human')
+    source: str = argument('--source', default='allen_mouse_10um', help='atlas source name. allen_human_500um as human')
 
     # scene
     no_root: bool = argument('--no-root', help='render without root(brain) mesh')
@@ -193,16 +192,15 @@ class BrainReconstructor(AbstractParser):
     def _reconstruct_region(self):
         if self.region_colors is not None:
             color_list = self.region_colors
-            assert len(color_list) == len(self.regions)
         else:
             color_list = DEFAULT_REGION_COLORS
 
         if len(self.regions) != 0:
             for i, region in enumerate(self.regions):
-                if len(self.regions) > len(color_list):
+                try:
+                    color = color_list[i]
+                except IndexError:
                     color = get_color(i, [''])
-                else:
-                    color = get_color(i, color_list)
 
                 Logger.info(f'Plot Rois File: {i}, {region}, {color}')
                 self.scene.add_brain_region(region, color=color, alpha=self.regions_alpha, hemisphere=self.hemisphere)

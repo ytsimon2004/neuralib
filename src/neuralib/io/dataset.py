@@ -1,6 +1,4 @@
-"""
-Load example dataset from public google drive
-"""
+"""Load example dataset from public google drive"""
 from __future__ import annotations
 
 import pickle
@@ -30,6 +28,7 @@ __all__ = [
     #
     'load_ephys_meta',
     'load_ephys_data',
+    'load_npx2_reconstruction',
     #
     'load_example_rastermap_2p',
     'load_example_rastermap_wfield'
@@ -173,6 +172,17 @@ def load_ephys_meta(**kwargs):
 def load_ephys_data(**kwargs):
     with google_drive_file('1U0xAchQagyXRT72M68fRQ4JsRQeW9q5d', **kwargs) as _:
         pass
+
+
+def load_npx2_reconstruction(**kwargs) -> pl.DataFrame:
+    """
+    Example of NeuroPixel2 reconstruction data
+
+    :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
+    :return: A Polars DataFrame containing the example DiI labelled traces ROIs
+    """
+    with google_drive_file('1fRvMNHhGgh5KP3CgGm6CMFth1qIAmwfh', **kwargs) as file:
+        return pl.read_csv(file)
 
 
 # ========== #

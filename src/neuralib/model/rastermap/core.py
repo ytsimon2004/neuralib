@@ -17,39 +17,53 @@ __all__ = ['UserCluster',
 
 class UserCluster(TypedDict, total=False):
     """GUI selected clusters"""
+
     ids: np.ndarray
-    """neuronal ids. Array[int, N]"""
+    """Neuronal ids. `Array[int, N]`"""
     slice: slice
-    """binned neurons range"""
+    """Binned neurons range"""
     binsize: int
-    """neuron bins"""
+    """Neuron bins"""
     color: np.ndarray
-    """color. Array[float, 4]"""
+    """Colors. `Array[float, 4]`"""
 
 
 class RasterOptions(TypedDict, total=False):
-    """Run Rastermap model options"""
+    """Run Rastermap model options. Refer to the ``rastermap.rastermap.setting_info()``"""
 
     n_clusters: int
-    """number of clusters to compute. TODO check how affect the result"""
+    """Number of clusters created from data before upsampling and creating embedding 
+    (any number above 150 will be very slow due to NP-hard sorting problem)"""
+
     n_PCs: int
-    """number of PCs to use"""
+    """Number of PCs to use during optimization"""
+
     time_lag_window: float
-    """use future timepoints to compute correlation"""
+    """Number of time points into the future to compute cross-correlation, useful for sequence finding"""
+
     locality: float
-    """locality in sorting to find sequences"""
+    """How local should the algorithm be -- set to 1.0 for highly local + sequence finding"""
+
     n_splits: int
-    """TODO"""
+    """Recluster and sort n_splits times (increases local neighborhood preservation)"""
+
     time_bin: int
-    """TODO"""
+    """Binning of data in time before PCA is computed"""
+
     grid_upsample: int
-    """default value, 10 is good for large recordings"""
+    """How much to upsample clusters"""
 
     mean_time: bool
+    """Whether to project out the mean over data samples at each timepoint, usually good to keep on to find structure"""
+
     verbose: bool
+    """Whether to output progress during optimization"""
+
     verbose_sorting: bool
-    end_time: int
+    """Output progress in travelling salesman"""
+
     start_time: int
+    end_time: int
 
 
 @attrs.define
