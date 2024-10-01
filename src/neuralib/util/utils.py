@@ -11,7 +11,8 @@ __all__ = ['uglob',
            'glob_re',
            'joinn',
            'ensure_dir',
-           'key_from_value']
+           'key_from_value',
+           'cls_hasattr']
 
 
 def uglob(directory: PathLike,
@@ -102,3 +103,21 @@ def key_from_value(d: dict[KT, list[VT] | VT], value: VT) -> KT | list[KT]:
         raise KeyError(f'Value {value} not found in the dictionary')
     else:
         return matching_keys[0] if len(matching_keys) == 1 else matching_keys
+
+
+def cls_hasattr(cls: type, attr: str) -> bool:
+    """
+    Check if attributes in class
+
+    :param cls: The class to check for the attribute.
+    :param attr: The name of the attribute to look for within the class and its hierarchy.
+    :return: True if the class or any of its parent classes has the specified attribute, False otherwise.
+    """
+    if attr in getattr(cls, '__annotations__', {}):
+        return True
+
+    for c in cls.mro()[1:]:  # Skip the first class as it's already checked
+        if attr in getattr(c, '__annotations__', {}):
+            return True
+
+    return False

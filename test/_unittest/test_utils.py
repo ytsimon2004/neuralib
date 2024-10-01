@@ -8,8 +8,8 @@ from neuralib.util.verbose import publish_annotation
 
 class TestUtilFunc(unittest.TestCase):
 
-    def test_check_attrs_in_clazz(self):
-        from neuralib.util.util_class import check_attrs_in_clazz
+    def test_cls_hasattr(self):
+        from neuralib.util.utils import cls_hasattr
 
         class Parent:
             a: int
@@ -20,10 +20,10 @@ class TestUtilFunc(unittest.TestCase):
             d: float
             e: dict
 
-        self.assertTrue(check_attrs_in_clazz(Parent, 'a'))
-        self.assertFalse(check_attrs_in_clazz(Parent, 'd'))
-        self.assertTrue(check_attrs_in_clazz(Child, 'a'))
-        self.assertTrue(check_attrs_in_clazz(Child, 'e'))
+        self.assertTrue(cls_hasattr(Parent, 'a'))
+        self.assertFalse(cls_hasattr(Parent, 'd'))
+        self.assertTrue(cls_hasattr(Child, 'a'))
+        self.assertTrue(cls_hasattr(Child, 'e'))
 
     def test_key_from_value(self):
         from neuralib.util.utils import key_from_value
