@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Union, Any, get_args, Final, Literal
 
 import gspread
@@ -78,12 +79,12 @@ class GoogleWorkSheet:
 
         :return: ``GoogleWorkSheet``
         """
-        sh = GoogleSpreadSheet(name, service_account_path)
+        sh = GoogleSpreadSheet(name, service_account_path, primary_key)
 
         if page not in sh:
             raise ValueError(f'{page} not found in spreadsheet: {name}')
 
-        return sh.get_worksheet(page, primary_key)
+        return sh.get_worksheet(page)
 
     @property
     def title(self) -> WorkPageName:
@@ -262,17 +263,24 @@ class GoogleSpreadSheet:
     """
 
     def __init__(self, name: SpreadSheetName,
-                 service_account_path: PathLike):
+                 service_account_path: PathLike,
+                 primary_key: str | tuple[str, ...] = 'Data'):
         """
 
         :param name: name of the spreadsheet
         :param service_account_path: The path to the service account json file
+        :param primary_key: Primary key of the worksheet.
+
+            If str type, it must be one of the column name.
+
+            If tuple str type, the primary key is join using "_" per row
         """
 
         self._client = gspread.service_account(filename=service_account_path)
 
         self._sheet: gspread.Spreadsheet = self._client.open(name)
         self._worksheets: list[gspread.Worksheet] = self._sheet.worksheets()
+        self._primary_key = primary_key
 
     def __len__(self):
         """number of worksheet"""
@@ -318,11 +326,11 @@ class GoogleSpreadSheet:
                 return True
         return False
 
-    def get_worksheet(self, page: WorkPageName, primary_key: str = 'Data') -> GoogleWorkSheet:
+    def get_worksheet(self, page: WorkPageName) -> GoogleWorkSheet:
         """Get the worksheet. implement also in ``__get_item__()``"""
         for w in self._worksheets:
             if w.title == page:
-                return GoogleWorkSheet(w, primary_key)
+                return GoogleWorkSheet(w, self._primary_key)
 
         raise ValueError(f'page not found: {page}')
 
@@ -333,15 +341,25 @@ class GoogleSpreadSheet:
 
 def upload_dataframe_to_spreadsheet(df: DataFrame,
                                     gspread_name: SpreadSheetName,
-                                    worksheet_name: WorkPageName) -> None:
+                                    worksheet_name: WorkPageName,
+                                    service_account_path: Path | None = None,
+                                    primary_key: str | tuple[str, ...] = 'Data') -> None:
     """
     Upload a dataframe to a gspread worksheet
 
     :param df: polars or pandas DataFrame
     :param gspread_name: spreadsheet name
     :param worksheet_name: worksheet name under the spreadsheet
+    :param service_account_path: The path to the service account json file.
+    :param primary_key: Primary key of the worksheet.
+            If str type, it must be one of the column name.
+            If tuple str type, the primary key is join using "_" per row
     """
-    gs = GoogleSpreadSheet(gspread_name)
+    if service_account_path is None:
+        from rscvp.util.io import IOConfig
+        service_account_path = IOConfig.load_from_json().gspread_auth
+
+    gs = GoogleSpreadSheet(gspread_name, service_account_path, primary_key)
     spreadsheet = gs._sheet
 
     if isinstance(df, pd.DataFrame):
@@ -350,10 +368,13 @@ def upload_dataframe_to_spreadsheet(df: DataFrame,
     if worksheet_name not in gs.worksheet_list:
         spreadsheet.add_worksheet(title=worksheet_name, rows=df.shape[0], cols=len(df.columns))
         fprint(f'ADD WORKSHEET: {worksheet_name}')
-        gs = GoogleSpreadSheet(gspread_name)  # refresh page
+        gs = GoogleSpreadSheet(gspread_name, service_account_path, primary_key)  # refresh page
 
     worksheet = gs[worksheet_name]
     worksheet.clear()
+
+    # cast dtype avoid serialization problem from gspread
+    df = df.cast({pl.Datetime: pl.Utf8})
 
     data = [df.columns] + [field for field in df.iter_rows()]
     worksheet.update(data)
