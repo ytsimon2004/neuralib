@@ -16,7 +16,8 @@ from neuralib.util.color_logging import setup_clogger, LOGGING_IO_LEVEL
 STARDIST_MODEL = Literal['2D_versatile_fluo', '2D_versatile_he', '2D_paper_dsb2018', '2D_demo']
 Logger = setup_clogger(caller_name=Path(__file__).name)
 
-__all__ = ['StarDistResult']
+__all__ = ['StarDistResult',
+           'StarDist2DOptions']
 
 
 @final
@@ -229,7 +230,7 @@ class StarDist2DOptions(AbstractSegmentationOption):
         viewer.add_image(self.raw_image(), name='raw')
         if not self.no_normalize:
             viewer.add_image(self.normalize_image(), name='normalized')
-        viewer.add_image(res.labels, name='labels', colormap='hsv', opacity=0.5)
+        viewer.add_image(res.labels, name='labels', colormap='twilight_shifted', opacity=0.5)
         viewer.add_points(res.points, face_color='red')
 
         if with_widget:

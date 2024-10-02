@@ -18,4 +18,5 @@ from .func_win import *
 from .literal import *
 from .stat import Cursor
 from .stat_start import *
+from .table import *
 from .table_nt import *

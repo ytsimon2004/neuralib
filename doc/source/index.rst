@@ -106,6 +106,7 @@ CLI project.scripts
     ../notebooks/example_rastermap_2p
     ../notebooks/example_rastermap_wfield
 
+    ../notebooks/example_segmentation
     ../notebooks/example_slice_view
     ../notebooks/example_ibl_plot
     ../notebooks/example_neuralib_plot
@@ -162,6 +163,17 @@ Modules
     - :mod:`neuralib.segmentation.stardist`: Result parser and batch running for `stardist <https://github.com/stardist/stardist>`_
 
 
+:mod:`neuralib.locomotion`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Module for handle animal's locomotion
+
+    - :mod:`neuralib.locomotion.epoch`: Selection of specific epoch (i.e., running, stationary)
+
+    - :mod:`neuralib.locomotion.position`: Position in environment, current only support 1D circular (i.e., linear treadmill)
+
+
+
 :mod:`neuralib.model`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -182,17 +194,17 @@ Modules
 Utilities Modules
 ^^^^^^^^^^^^^^^^^
 
-- :mod:`neuralib.argp`:Use argparse as dataclass field
+- :mod:`neuralib.argp`: Use argparse as dataclass field
 
-- :mod:`neuralib.persistence`:Caching the analyzed results (i.e., concatenation for statistic purpose)
+- :mod:`neuralib.persistence`: Caching the analyzed results (i.e., concatenation for statistic purpose)
 
-- :mod:`neuralib.sqlp`:Python functions to build a SQL (sqlite3) statement.
+- :mod:`neuralib.sqlp`: Python functions to build a SQL (sqlite3) statement.
 
-- :mod:`neuralib.bokeh_model`:Interactive dashboard visualization
+- :mod:`neuralib.dashboard`: Interactive dashboard visualization
 
-- :mod:`neuralib.plot`:Module for general plotting purpose
+- :mod:`neuralib.plot`: Module for general plotting purpose
 
-- :mod:`neuralib.imglib`:Image processing library
+- :mod:`neuralib.imglib`: Image processing library
 
 - :mod:`neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write
 
@@ -202,11 +214,11 @@ Utilities Modules
 
 - :mod:`neuralib.util.color_logging`: Logging with color format
 
-- :mod:`neuralib.util.csv`: CSV context manager
+- :mod:`neuralib.util.csv_header`: CSV context manager
 
 - :mod:`neuralib.util.gpu`: OS-dependent GPU info
 
-- :mod:`neuralib.util.profile_test`: Simple benchmark profile testing
+- :mod:`neuralib.util.profile`: Simple benchmark profile testing and debugging
 
 - :mod:`neuralib.util.table`: Rich table visualization
 

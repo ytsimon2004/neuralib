@@ -7,7 +7,8 @@ from cellpose import denoise
 from neuralib.util.gpu import gpu_available
 from .core import AbstractCellPoseOption, CellPoseEvalResult
 
-__all__ = ['CellPoseEvalResult']
+__all__ = ['CellPoseAPIOption',
+           'CellPoseEvalResult']
 
 
 class CellPoseAPIOption(AbstractCellPoseOption):

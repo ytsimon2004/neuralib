@@ -1,6 +1,6 @@
 import argparse
 
-from neuralib.bokeh_model import BokehServer
+from neuralib.dashboard import BokehServer
 from .view_all import AllView
 from .view_animal import AnimalView
 from .view_figure import AnimalFigureView

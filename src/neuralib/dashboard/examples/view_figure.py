@@ -3,7 +3,7 @@ from typing import Union, Optional
 from bokeh.model import Model
 from bokeh.models import Div
 
-from neuralib.bokeh_model import View
+from neuralib.dashboard import View
 from .model import list_date
 
 __all__ = ['AnimalFigureView']
