@@ -6,7 +6,8 @@ from __future__ import annotations
 import pickle
 import shutil
 from contextlib import contextmanager
-from typing import Any
+from pathlib import Path
+from typing import Any, ContextManager, TYPE_CHECKING
 
 import gdown
 import numpy as np
@@ -17,6 +18,9 @@ from neuralib.calimg.scanbox import SBXInfo
 from neuralib.calimg.suite2p import Suite2PResult
 from neuralib.io import NEUROLIB_CACHE_DIRECTORY
 from neuralib.typing import PathLike
+
+if TYPE_CHECKING:
+    from neuralib.ephys.glx.spikeglx import GlxMeta, GlxRecording, GlxFile
 
 __all__ = [
     'google_drive_file',
@@ -30,6 +34,7 @@ __all__ = [
     #
     'load_ephys_meta',
     'load_ephys_data',
+    'load_ephys_file',
     #
     'load_example_rastermap_2p',
     'load_example_rastermap_wfield'
@@ -43,7 +48,7 @@ def google_drive_file(file_id: str,
                       output_dir: PathLike | None = None,
                       rename_file: str | None = None,
                       cached: bool = False,
-                      invalid_cache: bool = False):
+                      invalid_cache: bool = False) -> ContextManager[Path]:
     """
     Download file from Google Drive. If not ``cached``, then delete afterward.
 
@@ -165,14 +170,60 @@ def load_example_rois_image(**kwargs) -> np.ndarray:
 # Ephys data #
 # ========== #
 
-def load_ephys_meta(**kwargs):
-    with google_drive_file('1gB2MegBAJbobEudx2pZmVe0LBQiU8HFU', **kwargs) as _:
-        pass
+@contextmanager
+def _load_ephys_meta() -> ContextManager[Path]:
+    with google_drive_file('1gB2MegBAJbobEudx2pZmVe0LBQiU8HFU',
+                           output_dir=NEUROLIB_CACHE_DIRECTORY / 'tmp' / 'TEST_20210920_0_g0',
+                           rename_file='TEST_20210920_0_g0_t0.imec0.ap.meta') as file:
+        yield file
 
 
-def load_ephys_data(**kwargs):
-    with google_drive_file('1U0xAchQagyXRT72M68fRQ4JsRQeW9q5d', **kwargs) as _:
-        pass
+@contextmanager
+def _load_ephys_data() -> ContextManager[Path]:
+    with google_drive_file('1U0xAchQagyXRT72M68fRQ4JsRQeW9q5d',
+                           output_dir=NEUROLIB_CACHE_DIRECTORY / 'tmp' / 'TEST_20210920_0_g0',
+                           rename_file='TEST_20210920_0_g0_t0.imec0.ap.bin') as file:
+        yield file
+
+
+@contextmanager
+def load_ephys_meta() -> ContextManager[GlxMeta]:
+    """
+    Example SpikeGlx meta.
+
+    :return:
+    """
+    from neuralib.ephys.glx.spikeglx import GlxMeta
+    with _load_ephys_meta() as file:
+        yield GlxMeta(file)
+
+
+@contextmanager
+def load_ephys_data() -> ContextManager[GlxRecording]:
+    """
+    Example SpikeGlx recording binary file.
+
+    :return:
+    """
+    from neuralib.ephys.glx.spikeglx import GlxRecording
+
+    with _load_ephys_meta() as meta_file:
+        with _load_ephys_data() as bin_file:
+            yield GlxRecording(bin_file)
+
+
+@contextmanager
+def load_ephys_file() -> ContextManager[GlxFile]:
+    """
+    Example SpikeGlx recording file.
+
+    :return:
+    """
+    from neuralib.ephys.glx.spikeglx import GlxFile
+
+    with _load_ephys_meta() as meta_file:
+        with _load_ephys_data() as bin_file:
+            yield GlxFile.of(bin_file)
 
 
 # ========== #
