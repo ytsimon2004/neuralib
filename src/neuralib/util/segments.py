@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable
-from typing import Literal, Union
+from typing import Literal, Union, overload
 
 import numpy as np
 
@@ -32,6 +33,9 @@ __all__ = [
     'segment_group_map',
     'segment_sample',
     'segment_bins',
+    'shuffle_time',
+    'shuffle_time_uniform',
+    'shuffle_time_normal',
     'shift_time',
 ]
 
@@ -742,10 +746,83 @@ def segment_bins(segs: SegmentLike, duration: float, interval: float = 0, nbins:
     return ret
 
 
+def shuffle_time(t: np.ndarray,
+                 method: Callable[[np.ndarray], np.ndarray],
+                 segs: Segment = None,
+                 duration: float = np.inf,
+                 circular=True):
+    """
+    Shuffle *t* by remapping function *method* for *t* in *segs*.
+
+    :param t: (N,) T-value array
+    :param method: time remapping function with signature ((K,) T-value array) -> (K,) T-value array
+    :param segs: (S, 2) segment, only shift time in the segments.
+    :param duration: The maximal T value
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+    if segs is None:
+        ret = method(t)
+
+        if not np.isinf(duration):
+            if circular:
+                while np.any(x := ret > duration):
+                    ret[x] -= duration
+            else:
+                ret = np.delete(ret, ret > duration, 0)
+    else:
+        ret = _shuffle_time_in_segment(t, method, segs, (0, duration), circular=circular)
+
+    return np.sort(ret)
+
+
+def shuffle_time_uniform(t: np.ndarray, segs: Segment = None, *,
+                         duration: float = np.inf,
+                         circular=True) -> np.ndarray:
+    """
+    Shuffle *t* for *t* in *segs*.
+
+    :param t: (N,) T-value array
+    :param segs: (S, 2) segment, only shift time in the segments.
+    :param duration: The maximal T value
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+    if np.isinf(duration):
+        duration = np.max(t)
+
+    def method(it: np.ndarray) -> np.ndarray:
+        return np.random.uniform(0, duration, size=it.shape)
+
+    return shuffle_time(t, method, segs, duration, circular)
+
+
+def shuffle_time_normal(t: np.ndarray, loc: float = 0, scale: float = 1, segs: Segment = None, *,
+                        duration: float = np.inf,
+                        circular=True) -> np.ndarray:
+    """
+    Shuffle *t* with add a value from a normal distribution for *t* in *segs*.
+
+    :param t: (N,) T-value array
+    :param loc: mean of the normal distribution
+    :param scale: std of the normal distribution
+    :param segs: (S, 2) segment, only shift time in the segments.
+    :param duration: The maximal T value
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+
+    def method(it: np.ndarray) -> np.ndarray:
+        return it + np.random.normal(loc, scale, size=it.shape)
+
+    return shuffle_time(t, method, segs, duration, circular)
+
+
 def shift_time(t: np.ndarray, shift: float, segs: Segment = None, *,
                duration: float = np.inf,
                circular=True):
-    """Shift event with a value.
+    """
+    Shift *t* with a *shift* value for *t* in *segs*.
 
     :param t: (N,) T-value array
     :param shift: shift T value, positive value.
@@ -758,29 +835,17 @@ def shift_time(t: np.ndarray, shift: float, segs: Segment = None, *,
         if not (0 <= shift <= duration):
             raise ValueError(f'illegal {shift=}')
 
-    if segs is None:
-        ret = t + shift
+    def method(it: np.ndarray) -> np.ndarray:
+        return it + shift
 
-        if circular:
-            while np.any(x := ret > duration):
-                ret[x] -= duration
-        else:
-            ret = np.delete(ret, ret > duration, 0)
-    else:
-        ret = _shift_time_in_segment(t, shift, segs, (0, duration), circular=circular)
-
-    return np.sort(ret)
+    return shuffle_time(t, method, segs, duration, circular)
 
 
-def _shift_time_in_segment(t: np.ndarray,
-                           shift: float | Callable[[np.ndarray], np.ndarray],
-                           epochs: Segment,
-                           duration: tuple[float, float],
-                           circular=True):
-    if isinstance(shift, (int, float)):
-        _shift = shift
-        shift = lambda it: it + _shift
-
+def _shuffle_time_in_segment(t: np.ndarray,
+                             shift: Callable[[np.ndarray], np.ndarray],
+                             epochs: Segment,
+                             duration: tuple[float, float],
+                             circular=True):
     epochs = segment_flatten(epochs)  # Array[float, E', 2]
 
     ret = t.astype(float, copy=True)  # Array[float, T]

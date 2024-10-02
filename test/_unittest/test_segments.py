@@ -495,6 +495,7 @@ class TestSegment(unittest.TestCase):
         for _ in range(10):
             s = self.random_segment(20, 5)
             a = shift_time(t, 0.2, s)
+            self.assertGreaterEqual(len(t), len(a))
             assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
             with self.assertRaises(AssertionError):
                 assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
@@ -504,6 +505,47 @@ class TestSegment(unittest.TestCase):
         for _ in range(10):
             s = self.random_segment(20, 5)
             a = shift_time(t, 0.2, s, circular=True)
+            self.assertEqual(len(t), len(a))
+            assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
+            with self.assertRaises(AssertionError):
+                assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
+
+    def test_shuffle_time_uniform(self):
+        t = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            a = shuffle_time_uniform(t, s)
+            self.assertGreaterEqual(len(t), len(a))
+            assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
+            with self.assertRaises(AssertionError):
+                assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
+
+    def test_shuffle_time_uniform_circular(self):
+        t = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            a = shuffle_time_uniform(t, s, circular=True)
+            self.assertEqual(len(t), len(a))
+            assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
+            with self.assertRaises(AssertionError):
+                assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
+
+    def test_shuffle_time_normal(self):
+        t = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            a = shuffle_time_normal(t, 0, 10, s)
+            self.assertGreaterEqual(len(t), len(a))
+            assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
+            with self.assertRaises(AssertionError):
+                assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
+
+    def test_shuffle_time_normal_circular(self):
+        t = np.arange(20)
+        for _ in range(10):
+            s = self.random_segment(20, 5)
+            a = shuffle_time_normal(t, 0, 10, s, circular=True)
+            self.assertEqual(len(t), len(a))
             assert_array_equal(t[~segment_contains(s, t)], a[~segment_contains(s, a)])
             with self.assertRaises(AssertionError):
                 assert_array_equal(t[segment_contains(s, t)], a[segment_contains(s, a)])
