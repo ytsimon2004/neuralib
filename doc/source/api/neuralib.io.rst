@@ -9,6 +9,7 @@ neuralib.io
     :caption: Modules:
 
     neuralib.io.core
+    neuralib.io.output
     neuralib.io.csv_header
     neuralib.io.dataset
     neuralib.io.json

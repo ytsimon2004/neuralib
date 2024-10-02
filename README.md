@@ -101,8 +101,6 @@
 
 - `neuralib.util.color_logging`: logging with color format
 
-- `neuralib.util.csv`: csv context manager
-
 - `neuralib.util.gpu`: OS-dependent gpu info
 
 - `neuralib.util.profile_test`: simple benchmark profile testing

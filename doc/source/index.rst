@@ -218,6 +218,11 @@ Utilities Modules
     - Image processing library
 
 
+:mod:`neuralib.io`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - File IO and example dataset
+
+
 :mod:`neuralib.tools.gspread`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     - Google spreadsheet API wrapper for read/write
@@ -236,11 +241,6 @@ Utilities Modules
 :mod:`neuralib.util.color_logging`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     - Logging with color format
-
-
-:mod:`neuralib.util.csv_header`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    - CSV context manager
 
 
 :mod:`neuralib.util.gpu`
