@@ -44,7 +44,7 @@ Install all dependencies
 
 .. code-block:: console
 
-    pip install neural-library[all]
+    pip install neura-library[all]
 
 Install the minimal required dependencies according to usage purpose
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -55,13 +55,13 @@ Install the minimal required dependencies according to usage purpose
 
 .. code-block:: console
 
-    pip install neural-library[atlas]
+    pip install neura-library[atlas]
 
 - Example of using ``segmentation`` module:
 
 .. code-block:: console
 
-    pip install neural-library[segmentation]
+    pip install neura-library[segmentation]
 
 
 Install pre-commit and linter check (For developer only)
@@ -69,7 +69,7 @@ Install pre-commit and linter check (For developer only)
 
 .. code-block:: console
 
-    pip install neural-library[dev]
+    pip install neura-library[dev]
 
 -  Setup pre-commit by:
 

@@ -19,17 +19,17 @@
     - `pip install neura-library`
 
 - Install all dependencies using
-    - `pip install neural-library[all]`
+    - `pip install neura-library[all]`
 
 - Install the minimal required dependencies according to usage purpose . For example:
     - Choices
       in `[]`: `atlas`, `scanner`, `calimg`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
       `all`
-    - Use `atlas` module: `pip install neural-library[atlas]`
-    - Use `segmentation` module: `pip install neural-library[segmentation]`
+  - Use `atlas` module: `pip install neura-library[atlas]`
+  - Use `segmentation` module: `pip install neura-library[segmentation]`
 
 - For developer for anyone want to contribute, run also:
-    - `pip install neural-library[dev]`
+    - `pip install neura-library[dev]`
     - Setup pre-commit by: `pre-commit install`
     - Do dry run `ruff` lint check by: `ruff check .`
 
