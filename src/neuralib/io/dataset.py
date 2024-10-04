@@ -1,10 +1,10 @@
-"""Load example dataset from public google drive"""
 from __future__ import annotations
 
 import pickle
 import shutil
 from contextlib import contextmanager
-from typing import Any
+from pathlib import Path
+from typing import Any, ContextManager
 
 import gdown
 import numpy as np
@@ -42,7 +42,7 @@ def google_drive_file(file_id: str,
                       output_dir: PathLike | None = None,
                       rename_file: str | None = None,
                       cached: bool = False,
-                      invalid_cache: bool = False):
+                      invalid_cache: bool = False) -> ContextManager[Path]:
     """
     Download file from Google Drive. If not ``cached``, then delete afterward.
 
@@ -84,7 +84,7 @@ def google_drive_folder(folder_id: str,
                         output_dir: PathLike | None = None,
                         rename_folder: str | None = None,
                         cached: bool = False,
-                        invalid_cache: bool = False):
+                        invalid_cache: bool = False) -> ContextManager[Path]:
     """
     Download a entire folder from Google Drive. If not ``cached``, then delete afterward.
 
@@ -207,8 +207,3 @@ def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
     with google_drive_file('1zdZ3ihNPObyA1zVY7knJwVDH8MLXXuYB', **kwargs) as file:
         with file.open('rb') as f:
             return pickle.load(f)
-
-
-if __name__ == '__main__':
-    dat = load_example_rastermap_wfield(cached=True)
-    print(dat.keys())
