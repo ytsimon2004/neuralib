@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable
-from typing import Literal
+from typing import Literal, Union, overload
 
 import numpy as np
 
@@ -32,12 +33,14 @@ __all__ = [
     'segment_group_map',
     'segment_sample',
     'segment_bins',
+    'shuffle_time',
+    'shuffle_time_uniform',
+    'shuffle_time_normal',
     'shift_time',
 ]
 
-
 Segment = np.ndarray  # (N, 2) value array ([(start, stop)]), as a segment.
-SegmentLike = Segment | tuple[float, float] | list[tuple[float, float]]
+SegmentLike = Union[Segment, tuple[float, float], list[tuple[float, float]]]
 SegmentGroup = np.ndarray  # (N,) int array, where a unique value indicate a unique group/segment.
 
 
@@ -162,8 +165,9 @@ def segment_gap(x: np.ndarray, gap: float) -> SegmentGroup:
     else:
         return np.cumsum(np.abs(np.diff(x, prepend=x[0])) > gap)
 
+
 def as_segment(segs: SegmentLike) -> Segment:
-    ret = np.atleast_2d(segs)
+    ret = np.atleast_2d(segs).astype(float, copy=False)
     if ret.ndim != 2 or ret.shape[1] != 2:
         raise ValueError(f'not a (N, 2) segment array : {ret.shape}')
     return ret
@@ -188,13 +192,6 @@ def segment_duration(segs: SegmentLike) -> np.ndarray:
     :return: (N,) T-value array
     """
     a = as_segment(segs)
-
-    if a.ndim == 1 and len(a) == 2:
-        a = np.array([a])
-
-    if a.ndim != 2:
-        raise ValueError(f'not a (N, 2) segment array : {a.shape}')
-
     return a[:, 1] - a[:, 0]
 
 
@@ -206,7 +203,7 @@ def segment_at_least_duration(segs: SegmentLike, duration: float) -> np.ndarray:
     :return: (N, 2) T-value segments
     """
     a = as_segment(segs).copy()
-    dur = (a[:, 1] - a[:, 0]) - duration
+    dur = duration - (a[:, 1] - a[:, 0])
     ext = np.where(dur > 0, dur / 2, 0)
     a[:, 0] -= ext
     a[:, 1] += ext
@@ -267,24 +264,29 @@ def segment_flatten(a: SegmentLike, closed=True) -> Segment:
     if len(a) == 0:
         return a
 
-    if not is_sorted(a[: 0]):
+    if not is_sorted(a[:, 0]):
         a = a[np.argsort(a[:, 0])]
 
     if is_sorted(a.ravel(), strict=True):
         return a
 
-    a = a.copy()
+    r = np.empty_like(a)
+    r[0] = a[0]
     i = 1
-    while i < len(a):
-        p = a[i - 1, 1]
-        q = a[i, 0]
-        if p >= q if closed else p > q:
-            a[i - 1, 1] = max(a[i, 1], a[i - 1, 1])
-            a = np.delete(a, i, axis=0)
+    j = 1
+    while j < len(a):
+        p: float = r[i - 1, 1]
+        q: float = a[j, 0]
+        assert r[i - 1, 0] <= q, f'{r[i-1]=} <> {a[j]=}'
+        if (p >= q if closed else p > q):
+            r[i - 1, 1] = max(a[j, 1], p)
         else:
+            r[i] = a[j]
             i += 1
+        j += 1
 
-    return a
+    r = r[:i]
+    return r
 
 
 def segment_invert(a: SegmentLike) -> Segment:
@@ -293,10 +295,13 @@ def segment_invert(a: SegmentLike) -> Segment:
     :param a: (N, 2) T-value segments
     :return:  (N+1, 2) T-value segments
     """
-    return _segment_invert(segment_flatten(a))
+    return _segment_invert(segment_flatten(a, closed=False))
 
 
 def _segment_invert(a: Segment) -> Segment:
+    if len(a) == 0:
+        return segment_universe()
+
     a = np.concatenate([[-np.Inf], a.ravel(), [np.Inf]]).reshape((-1, 2))
 
     d = []
@@ -325,10 +330,10 @@ def segment_intersection(a: SegmentLike, b: SegmentLike) -> Segment:
         p, q = a[i]
         s, t = b[j]
         if p <= s:
-            if s < q:  # p <= s < {q  t}
+            if s < q:  # p <= s < {q,t}
                 ret.append((s, min(q, t)))
         else:
-            if p < t:  # s < p < {q  t}
+            if p < t:  # s < p < {q,t}
                 ret.append((p, min(q, t)))
 
         if q <= t:
@@ -487,15 +492,15 @@ def segment_overlap_index(segs: SegmentLike, t: Segment, mode: Literal['in', 'ou
     """
     * mode == 'in' (t is smaller) ::
 
-        return[t] = [∃ i in |S| st. t ⊂ s[i]] for t in T
+        return[t] = [∃ i in |S| st. t ⊂ s[i]] for t in T, otherwise [-1]
 
     * mode == 'out' (t is larger)::
 
-         return[t] = [∃ i in |S| st. s[i] ⊂ t] for t in T
+         return[t] = [∃ i in |S| st. s[i] ⊂ t] for t in T, otherwise [-1]
 
     * mode == 'overlap' ::
 
-       return[t] = [∃ i in |S| st. s[i] ⋂ t ≠ ∅] for t in T
+       return[t] = [∃ i in |S| st. s[i] ⋂ t ≠ ∅] for t in T, otherwise [-1]
 
     returns = [min(return[T]), max(return[T])]
 
@@ -665,7 +670,7 @@ class _SegmentSampleHelper:
 
         cum = np.concatenate([[0], np.cumsum(count)])
 
-        a = np.sort(np.random.choice(np.arange(cum[-1]), time_duration, replace=False))
+        a = np.sort(np.random.choice(np.arange(cum[-1]), sample_times, replace=False))
 
         i = np.searchsorted(cum, a, side='right') - 1
 
@@ -677,8 +682,8 @@ class _SegmentSampleHelper:
             seg = segs[j]
             dur = (seg[1] - seg[0]) - time_duration * n
             assert dur >= 0
-            r = np.random.random(n) * dur
-            ret[k, 0] = seg[0] + np.cumsum(r) + time_duration * np.arange(n)
+            r = np.sort(np.random.random(n)) * dur
+            ret[k, 0] = seg[0] + r + time_duration * np.arange(n)
 
         ret[:, 1] = ret[:, 0] + time_duration
 
@@ -730,25 +735,99 @@ def segment_bins(segs: SegmentLike, duration: float, interval: float = 0, nbins:
     ret = np.zeros((nbins, 2), dtype=float)
     p = 0
     for j in range(len(count)):
-        n = int(count[j])
+        n = min(int(count[j]), nbins - p)
         k = p + np.arange(n)
         ret[k, 0] = segs[j, 0] + (duration + interval) * np.arange(n)
         p += n
+        if p >= nbins:
+            break
 
     ret[:, 1] = ret[:, 0] + duration
     return ret
 
 
-def shift_time(t: np.ndarray, shift: float, *,
-               duration: float = np.inf,
-               epochs: Segment = None,
-               circular=True):
-    """Shift event with a value.
+def shuffle_time(t: np.ndarray,
+                 method: Callable[[np.ndarray], np.ndarray],
+                 segs: Segment = None,
+                 duration: float = np.inf,
+                 circular=True):
+    """
+    Shuffle *t* by remapping function *method* for *t* in *segs*.
 
     :param t: (N,) T-value array
-    :param shift: shift T value
+    :param method: time remapping function with signature ((K,) T-value array) -> (K,) T-value array
+    :param segs: (S, 2) segment, only shift time in the segments.
+    :param duration: The maximal T value
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+    if segs is None:
+        ret = method(t)
+
+        if not np.isinf(duration):
+            if circular:
+                while np.any(x := ret > duration):
+                    ret[x] -= duration
+            else:
+                ret = np.delete(ret, ret > duration, 0)
+    else:
+        ret = _shuffle_time_in_segment(t, method, segs, (0, duration), circular=circular)
+
+    return np.sort(ret)
+
+
+def shuffle_time_uniform(t: np.ndarray, segs: Segment = None, *,
+                         duration: float = np.inf,
+                         circular=True) -> np.ndarray:
+    """
+    Shuffle *t* for *t* in *segs*.
+
+    :param t: (N,) T-value array
+    :param segs: (S, 2) segment, only shift time in the segments.
+    :param duration: The maximal T value
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+    if np.isinf(duration):
+        duration = np.max(t)
+
+    def method(it: np.ndarray) -> np.ndarray:
+        return np.random.uniform(0, duration, size=it.shape)
+
+    return shuffle_time(t, method, segs, duration, circular)
+
+
+def shuffle_time_normal(t: np.ndarray, loc: float = 0, scale: float = 1, segs: Segment = None, *,
+                        duration: float = np.inf,
+                        circular=True) -> np.ndarray:
+    """
+    Shuffle *t* with add a value from a normal distribution for *t* in *segs*.
+
+    :param t: (N,) T-value array
+    :param loc: mean of the normal distribution
+    :param scale: std of the normal distribution
+    :param segs: (S, 2) segment, only shift time in the segments.
+    :param duration: The maximal T value
+    :param circular: keep total event number. If epochs is given, keep total event number in epochs.
+    :return: (N',) T-value array
+    """
+
+    def method(it: np.ndarray) -> np.ndarray:
+        return it + np.random.normal(loc, scale, size=it.shape)
+
+    return shuffle_time(t, method, segs, duration, circular)
+
+
+def shift_time(t: np.ndarray, shift: float, segs: Segment = None, *,
+               duration: float = np.inf,
+               circular=True):
+    """
+    Shift *t* with a *shift* value for *t* in *segs*.
+
+    :param t: (N,) T-value array
+    :param shift: shift T value, positive value.
+    :param segs:  (S, 2) segment, only shift time in the segments.
     :param duration: The maximal T value for wrapping when *circular*
-    :param epochs:  (S, 2) segment, only shift time in the segments.
     :param circular: keep total event number. If epochs is given, keep total event number in epochs.
     :return: (N',) T-value array
     """
@@ -756,31 +835,20 @@ def shift_time(t: np.ndarray, shift: float, *,
         if not (0 <= shift <= duration):
             raise ValueError(f'illegal {shift=}')
 
-    if epochs is None:
-        ret = t + shift
+    def method(it: np.ndarray) -> np.ndarray:
+        return it + shift
 
-        if circular:
-            ret[ret > duration] -= duration
-        else:
-            ret = np.delete(ret, ret > duration, 0)
-    else:
-        ret = _shift_time_in_segment(t, shift, epochs, (0, duration), circular=circular)
-
-    return np.sort(ret)
+    return shuffle_time(t, method, segs, duration, circular)
 
 
-def _shift_time_in_segment(t: np.ndarray,
-                           shift: float | Callable[[np.ndarray], np.ndarray],
-                           epochs: Segment,
-                           duration: tuple[float, float],
-                           circular=True):
-    if isinstance(shift, (int, float)):
-        _shift = shift
-        shift = lambda it: it + _shift
-
+def _shuffle_time_in_segment(t: np.ndarray,
+                             shift: Callable[[np.ndarray], np.ndarray],
+                             epochs: Segment,
+                             duration: tuple[float, float],
+                             circular=True):
     epochs = segment_flatten(epochs)  # Array[float, E', 2]
 
-    ret = t.copy()  # Array[float, T]
+    ret = t.astype(float, copy=True)  # Array[float, T]
     i = segment_index(epochs, t)  # Array[E', T], index of seg for all t
     x = np.nonzero(i >= 0)[0]  # Array[T, T'], index of t for valid t
     i = i[x]  # Array[E', T'], index of seg for valid t
