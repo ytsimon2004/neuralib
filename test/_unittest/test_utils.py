@@ -51,7 +51,7 @@ class TestUtilFunc(unittest.TestCase):
             A()
 
         self.assertIn(
-            'TestUtilFunc.test_deprecate_class.<locals>.A is deprecated and will be removed in a future release(after version v0.0.10). Please use "B" instead. NOTE: TEST REMARKS.',
+            'TestUtilFunc.test_deprecate_class.<locals>.A is deprecated and will be removed in a future release (after version v0.0.10). Please use "B" instead. NOTE: TEST REMARKS.',
             str(warns.warning))
 
         self.assertIn('TEST REMARKS', str(warns.warning))
@@ -65,7 +65,7 @@ class TestUtilFunc(unittest.TestCase):
             test_deprecate()
 
         self.assertIn(
-            'TestUtilFunc.test_deprecate_function.<locals>.test_deprecate is deprecated and will be removed in a future release(after version v1.0.0). Please use "new()" instead.',
+            'TestUtilFunc.test_deprecate_function.<locals>.test_deprecate is deprecated and will be removed in a future release (after version v1.0.0). Please use "new()" instead.',
             str(warns.warning)
         )
 

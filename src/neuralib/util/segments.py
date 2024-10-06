@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import functools
 from collections.abc import Callable
-from typing import Literal, Union, overload
+from typing import Literal, Union
 
 import numpy as np
 
@@ -44,13 +43,14 @@ SegmentLike = Union[Segment, tuple[float, float], list[tuple[float, float]]]
 SegmentGroup = np.ndarray  # (N,) int array, where a unique value indicate a unique group/segment.
 
 
-def is_sorted(a: np.ndarray, strict=False) -> bool:
+def is_sorted(a: np.ndarray, strict: bool = False) -> bool:
     """
+    Check if array is sorted.
     [reference](https://stackoverflow.com/a/47004507)
 
-    :param a:
-    :param strict:
-    :return:
+    :param a: Input array to check for sorted order.
+    :param strict: If True, checks for strictly increasing order. Otherwise, checks for non-decreasing order.
+    :return: Returns True if the input array is sorted based on the specified criteria, else False.
     """
     if strict:
         return np.all(a[:-1] < a[1:])
@@ -58,9 +58,10 @@ def is_sorted(a: np.ndarray, strict=False) -> bool:
         return np.all(a[:-1] <= a[1:])
 
 
-def segment_mask(x: np.ndarray, t: np.ndarray = None,
-                 duration: float = None,
-                 merge: float = None) -> SegmentGroup:
+def segment_mask(x: np.ndarray,
+                 t: np.ndarray | None = None,
+                 duration: float | None = None,
+                 merge: float | None = None) -> SegmentGroup:
     """segmenting an array that the value is long enough.
 
     :param x: (N,) int-cast-able array.
@@ -107,9 +108,10 @@ def segment_mask(x: np.ndarray, t: np.ndarray = None,
     return s
 
 
-def segment_epochs(x: np.ndarray, t: np.ndarray = None,
-                   duration: float = None,
-                   merge: float = None) -> Segment:
+def segment_epochs(x: np.ndarray,
+                   t: np.ndarray | None = None,
+                   duration: float | None = None,
+                   merge: float | None = None) -> Segment:
     """
 
     :param x: (N,) int-cast-able array.
@@ -167,6 +169,11 @@ def segment_gap(x: np.ndarray, gap: float) -> SegmentGroup:
 
 
 def as_segment(segs: SegmentLike) -> Segment:
+    """
+    :param segs: Input segment-like data that can be converted to a 2D array of floats.
+    :return: A numpy 2D array representation of the input segments.
+    :raises ValueError: If the input cannot be reshaped to a (N, 2) segment array.
+    """
     ret = np.atleast_2d(segs).astype(float, copy=False)
     if ret.ndim != 2 or ret.shape[1] != 2:
         raise ValueError(f'not a (N, 2) segment array : {ret.shape}')
@@ -176,8 +183,8 @@ def as_segment(segs: SegmentLike) -> Segment:
 def segment_range(segs: SegmentLike) -> np.ndarray:
     """change [(start, stop)] to [(start, duration)]
 
-    :param segs: (N, 2) segments
-    :return: (N, 2) array
+    :param segs: segments. `Array[float, [N, 2]]`
+    :return: `Array[int, [N, 2]]`
     """
     a = as_segment(segs)
     r = a.copy()
@@ -188,8 +195,8 @@ def segment_range(segs: SegmentLike) -> np.ndarray:
 def segment_duration(segs: SegmentLike) -> np.ndarray:
     """
 
-    :param segs: (N, 2) T-value segments
-    :return: (N,) T-value array
+    :param segs: T-value segments. `Array[float, [N, 2]]`
+    :return: T-value array. `Array[int, N]`
     """
     a = as_segment(segs)
     return a[:, 1] - a[:, 0]
@@ -198,9 +205,9 @@ def segment_duration(segs: SegmentLike) -> np.ndarray:
 def segment_at_least_duration(segs: SegmentLike, duration: float) -> np.ndarray:
     """
 
-    :param segs: (N, 2) T-value segments
+    :param segs: T-value segments. `Array[float, [N, 2]]`
     :param duration: T-value
-    :return: (N, 2) T-value segments
+    :return: T-value segments. `Array[float, [N, 2]]`
     """
     a = as_segment(segs).copy()
     dur = duration - (a[:, 1] - a[:, 0])
@@ -214,9 +221,9 @@ def segment_at_least_duration(segs: SegmentLike, duration: float) -> np.ndarray:
 def segment_expand_duration(segs: SegmentLike, duration: float | tuple[float, float] | np.ndarray) -> np.ndarray:
     """
 
-    :param segs: (N, 2) T-value segments
+    :param segs: T-value segments. `Array[float, [N, 2]]`
     :param duration: T-value scalar, tuple(prepend:T, append:T), or (N, 2?) array
-    :return: (N, 2) T-value segments
+    :return: T-value segments. `Array[float, [N, 2]]`
     """
     a = as_segment(segs).copy()
 
@@ -252,14 +259,14 @@ def segment_universe() -> Segment:
     return np.array([[-np.Inf, np.Inf]])
 
 
-def segment_flatten(a: SegmentLike, closed=True) -> Segment:
+def segment_flatten(segs: SegmentLike, closed: bool = True) -> Segment:
     """sorting and remove overlapped segments.
 
-    :param a: (N, 2) T-value segments
+    :param segs: T-value segments. `Array[float, [N, 2]]`
     :param closed: Is segment a closed on right side?
-    :return: (M, 2) T-value segments
+    :return: T-value segments. `Array[float, [M, 2]]`
     """
-    a = as_segment(a)
+    a = as_segment(segs)
 
     if len(a) == 0:
         return a
@@ -278,6 +285,7 @@ def segment_flatten(a: SegmentLike, closed=True) -> Segment:
         p: float = r[i - 1, 1]
         q: float = a[j, 0]
         assert r[i - 1, 0] <= q, f'{r[i-1]=} <> {a[j]=}'
+
         if (p >= q if closed else p > q):
             r[i - 1, 1] = max(a[j, 1], p)
         else:
@@ -289,20 +297,20 @@ def segment_flatten(a: SegmentLike, closed=True) -> Segment:
     return r
 
 
-def segment_invert(a: SegmentLike) -> Segment:
+def segment_invert(segs: SegmentLike) -> Segment:
     """
 
-    :param a: (N, 2) T-value segments
-    :return:  (N+1, 2) T-value segments
+    :param segs: T-value segments. `Array[float, [N, 2]]`
+    :return:  T-value segments. `Array[float, [N+1, 2]]`
     """
-    return _segment_invert(segment_flatten(a, closed=False))
+    return _segment_invert(segment_flatten(segs, closed=False))
 
 
-def _segment_invert(a: Segment) -> Segment:
-    if len(a) == 0:
+def _segment_invert(segs: Segment) -> Segment:
+    if len(segs) == 0:
         return segment_universe()
 
-    a = np.concatenate([[-np.Inf], a.ravel(), [np.Inf]]).reshape((-1, 2))
+    a = np.concatenate([[-np.Inf], segs.ravel(), [np.Inf]]).reshape((-1, 2))
 
     d = []
     if np.all(np.isinf(a[0])):
@@ -316,9 +324,9 @@ def _segment_invert(a: Segment) -> Segment:
 def segment_intersection(a: SegmentLike, b: SegmentLike) -> Segment:
     """
 
-    :param a: (A, 2) T-value segments
-    :param b: (B, 2) T-value segments
-    :return: (C, 2) T-value segments
+    :param a: T-value segments. `Array[float, [A, 2]]`
+    :param b: T-value segments. `Array[float, [B, 2]]`
+    :return: T-value segments. `Array[float, [C, 2]]`
     """
     a = segment_flatten(a)
     b = segment_flatten(b)
@@ -350,10 +358,10 @@ def segment_intersection(a: SegmentLike, b: SegmentLike) -> Segment:
 def segment_union(a: SegmentLike, b: SegmentLike, gap: float = 0) -> Segment:
     """
 
-    :param a: (A, 2) T-value segments
-    :param b: (B, 2) T-value segments
+    :param a: T-value segments. `Array[float, [A, 2]]`
+    :param b: T-value segments. `Array[float, [B, 2]]`
     :param gap: T value
-    :return: (C, 2) T-value segments
+    :return: T-value segments. `Array[float, [C, 2]]`
     """
     a = segment_flatten(a)
     b = segment_flatten(b)
@@ -395,10 +403,9 @@ def segment_union(a: SegmentLike, b: SegmentLike, gap: float = 0) -> Segment:
 def segment_diff(a: SegmentLike, b: SegmentLike) -> Segment:
     """
 
-    :param a: (A, 2) T-value segments
-    :param b: (B, 2) T-value segments
-    :param gap: T value
-    :return: (C, 2) T-value segments
+    :param a: T-value segments. `Array[float, [A, 2]]`
+    :param b: T-value segments. `Array[float, [B, 2]]`
+    :return: T-value segments. `Array[float, [C, 2]]`
     """
     a = segment_flatten(a)
     b = segment_flatten(b)
@@ -409,9 +416,9 @@ def segment_contains(segs: SegmentLike, t: np.ndarray) -> np.ndarray:
     """
     whether *t* in the segments.
 
-    :param segs: (N, 2) T-value segments
-    :param t: (R,) T-value array
-    :return: (R,) bool array
+    :param segs: T-value segments. `Array[float, [N, 2]]`
+    :param t: T-value array. `Array[float, R]`
+    :return: bool array. `Array[bool, R]`
     """
     segs = segment_flatten(segs)
     x1 = np.less_equal.outer(segs[:, 0], t)  # (N, T), s[0] <= t
@@ -693,7 +700,10 @@ class _SegmentSampleHelper:
         return segment_bins(self.segs, time_duration, interval, sample_times)
 
 
-def segment_bins(segs: SegmentLike, duration: float, interval: float = 0, nbins: int = None) -> Segment:
+def segment_bins(segs: SegmentLike,
+                 duration: float,
+                 interval: float = 0,
+                 nbins: int = None) -> Segment:
     """
     Divide *segs* into equal-size sub-segments with equal *duration* and equal *interval*.
 
@@ -776,7 +786,9 @@ def shuffle_time(t: np.ndarray,
     return np.sort(ret)
 
 
-def shuffle_time_uniform(t: np.ndarray, segs: Segment = None, *,
+def shuffle_time_uniform(t: np.ndarray,
+                         segs: Segment = None,
+                         *,
                          duration: float = np.inf,
                          circular=True) -> np.ndarray:
     """
@@ -797,7 +809,11 @@ def shuffle_time_uniform(t: np.ndarray, segs: Segment = None, *,
     return shuffle_time(t, method, segs, duration, circular)
 
 
-def shuffle_time_normal(t: np.ndarray, loc: float = 0, scale: float = 1, segs: Segment = None, *,
+def shuffle_time_normal(t: np.ndarray,
+                        loc: float = 0,
+                        scale: float = 1,
+                        segs: Segment = None,
+                        *,
                         duration: float = np.inf,
                         circular=True) -> np.ndarray:
     """
@@ -818,7 +834,10 @@ def shuffle_time_normal(t: np.ndarray, loc: float = 0, scale: float = 1, segs: S
     return shuffle_time(t, method, segs, duration, circular)
 
 
-def shift_time(t: np.ndarray, shift: float, segs: Segment = None, *,
+def shift_time(t: np.ndarray,
+               shift: float,
+               segs: Segment = None,
+               *,
                duration: float = np.inf,
                circular=True):
     """
