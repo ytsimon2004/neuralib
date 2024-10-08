@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
 from pathlib import Path
 from typing import TypeVar
 
@@ -11,7 +12,7 @@ __all__ = ['uglob',
            'filter_matched',
            'joinn',
            'ensure_dir',
-           'key_from_value',
+           'keys_with_value',
            'cls_hasattr']
 
 
@@ -94,22 +95,27 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def key_from_value(d: dict[KT, list[VT] | VT], value: VT) -> KT | list[KT]:
-    """Get dict key from dict value, supporting str, int, float, list, and tuple types for values."""
+def keys_with_value(d: dict[KT, VT | Collection[VT]], value: VT) -> list[KT]:
+    """
+    Get keys from a dict that associated with the value.
+
+    supporting value type: str, int, float, and any collection types.
+
+    :param d:
+    :param value:
+    :return:
+    """
     matching_keys = []
     for key, val in d.items():
-        if not isinstance(val, (str, int, float, list, tuple)):
-            raise RuntimeError(f'value type: {type(val)} not support')
-        else:
-            if isinstance(val, (str, int, float)) and val == value:
+        if isinstance(d, (str, int, float)):  # TODO float should not be here
+            if val == value:
                 matching_keys.append(key)
-            elif isinstance(val, (list, tuple)) and value in val:
+        # TODO NamedTuple and Dataclass cases, should I test with the instance or with their fields?
+        if isinstance(val, Collection):
+            if value in val:
                 matching_keys.append(key)
 
-    if not matching_keys:
-        raise KeyError(f'Value {value} not found in the dictionary')
-    else:
-        return matching_keys[0] if len(matching_keys) == 1 else matching_keys
+    return matching_keys
 
 
 def cls_hasattr(cls: type, attr: str) -> bool:

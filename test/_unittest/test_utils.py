@@ -26,21 +26,18 @@ class TestUtilFunc(unittest.TestCase):
         self.assertTrue(cls_hasattr(Child, 'e'))
 
     def test_key_from_value(self):
-        from neuralib.util.utils import key_from_value
+        from neuralib.util.utils import keys_with_value
 
         dy = dict(
             a=[1, 2, 3],
             b=5,
             c=(4, 5, 3),
-            d=30.5
         )
 
-        self.assertEqual(key_from_value(dy, 3), ['a', 'c'])
-        self.assertEqual(key_from_value(dy, 5), ['b', 'c'])
-        self.assertEqual(key_from_value(dy, 30.5), 'd')
+        self.assertListEqual(keys_with_value(dy, 3), ['a', 'c'])
+        self.assertListEqual(keys_with_value(dy, 5), ['b', 'c'])
+        self.assertListEqual(keys_with_value(dy, 7), [])
 
-        with self.assertRaises(KeyError):
-            key_from_value(dy, 100)
 
     def test_deprecate_class(self):
         @deprecated_class(new='B', remarks='TEST REMARKS', removal_version='v0.0.10')
