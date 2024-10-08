@@ -8,7 +8,7 @@ from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
 
 __all__ = ['uglob',
-           'glob_re',
+           'filter_matched',
            'joinn',
            'ensure_dir',
            'key_from_value',
@@ -17,19 +17,16 @@ __all__ = ['uglob',
 
 def uglob(directory: PathLike,
           pattern: str,
-          sort: bool = True,
           is_dir: bool = False) -> Path:
     """
-    Unique glob the pattern in a directory
+    Use glob pattern to find the unique file in the directory.
 
     :param directory: directory
-    :param pattern: pattern string
-    :param sort: if sort
-    :param is_dir: only return if is a directory
+    :param pattern: glob pattern
+    :param is_dir: Is the pattern point to a directory?
     :return: unique path
     """
-    if not isinstance(directory, Path):
-        directory = Path(directory)
+    directory = Path(directory)
 
     if not directory.exists():
         raise FileNotFoundError(f'{directory} not exit')
@@ -41,28 +38,37 @@ def uglob(directory: PathLike,
 
     if is_dir:
         f = [ff for ff in f if ff.is_dir()]
-
-    if sort:
-        f.sort()
+    else:
+        f = [ff for ff in f if not ff.is_dir()]
 
     if len(f) == 0:
-        raise FileNotFoundError(f'{directory} not have pattern: {pattern}')
+        t = 'directory' if is_dir else 'file'
+        raise FileNotFoundError(f'{directory} not have {t} with the pattern: {pattern}')
     elif len(f) == 1:
         return f[0]
     else:
-        raise RuntimeError(f'multiple files were found in {directory} in pattern {pattern} >>> {f}')
+        f.sort()
+        t = 'directories' if is_dir else 'files'
+        raise RuntimeError(f'multiple {t} were found in {directory} with the pattern {pattern} >>> {f}')
 
 
-def glob_re(pattern: str, strings: list[str]) -> list[str]:
-    """find list of str element fit for re pattern"""
+def filter_matched(pattern: str, strings: list[str]) -> list[str]:
+    """
+    filter a list of string element that match the pattern.
+
+    :param pattern: regular expression
+    :param strings:
+    :return:
+    """
     return list(filter(re.compile(pattern).match, strings))
 
 
-def ensure_dir(p: PathLike, verbose: bool = True) -> None:
-    """ensure the path, create if not exit
+def ensure_dir(p: PathLike, verbose: bool = True) -> Path:
+    """
+    Ensure the path is a directory. Create if it is not exist.
 
     :param p: path to be checked
-    :param verbose: print verbose
+    :param verbose: print verbose message
     """
     p = Path(p)
 
@@ -75,10 +81,11 @@ def ensure_dir(p: PathLike, verbose: bool = True) -> None:
     if not p.is_dir():
         raise NotADirectoryError(f'not a dir: {p}')
 
+    return p
 
 def joinn(sep: str, *part: str | None) -> str:
     """join not-None str"""
-    return sep.join(str(it) for it in part if it is not None)
+    return sep.join([str(it) for it in part if it is not None])
 
 
 # ============================== #
