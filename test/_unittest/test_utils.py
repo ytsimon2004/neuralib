@@ -1,8 +1,11 @@
 import unittest
+from typing import NamedTuple
 
+import attrs
 import numpy as np
 
 from neuralib.util.deprecation import deprecated_class, deprecated_func, deprecated_aliases
+from neuralib.util.unstable import unstable
 from neuralib.util.verbose import publish_annotation
 
 
@@ -108,6 +111,42 @@ class TestUtilFunc(unittest.TestCase):
 
         self.assertEqual(Test().__publish_level__, 'main')
         self.assertEqual(test.__publish_figure__, 'fig.S1')
+
+    def test_unstable(self):
+        #
+        @unstable()
+        class A:
+            def __init__(self, a):
+                self.a = a
+
+        with self.assertWarns(UserWarning) as _:
+            A(1)
+
+        #
+        @unstable()
+        @attrs.define
+        class B:
+            a: int
+            b: float
+
+        with self.assertWarns(UserWarning) as _:
+            B(1, 0.5)
+
+        @unstable()
+        class N(NamedTuple):
+            x: int
+
+        with self.assertWarns(UserWarning) as _:
+            N(1)
+
+        #
+        @unstable()
+        def func():
+            pass
+
+        with self.assertWarns(UserWarning) as warns:
+            func()
+        print(str(warns.warning))
 
 
 if __name__ == '__main__':
