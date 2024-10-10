@@ -16,8 +16,7 @@ __all__ = [
     'DeepLabCutMeta',
     'DeepLabCutModelConfig',
     'DeepLabCutResult',
-    'load_dlc_h5',
-    'load_dlc_csv'
+    'load_dlc_result'
 ]
 
 Joint = str
@@ -167,38 +166,41 @@ class DeepLabCutResult:
         return self
 
 
-def load_dlc_h5(file: PathLike,
-                meta_file: PathLike,
-                time: np.ndarray | None = None) -> DeepLabCutResult:
+def load_dlc_result(file: PathLike,
+                    meta_file: PathLike,
+                    time: np.ndarray | None = None) -> DeepLabCutResult:
+    """
+    Load DeepLabCut result from file
+
+    :param file: DeepLabCut result filepath. supports both .h5 and .csv
+    :param meta_file: DeepLabCut meta filepath. should be the .pickle
+    :param time: time array for each sample point. If None, then assume stable DAQ for using total frames and fps info in meta
+    :return: ``DeepLabCutResult``
+    """
     file = Path(file)
     meta_file = Path(meta_file)
-
-    if file.suffix != '.h5':
-        raise ValueError(f'{file} is not a HDF5 file')
-
     meta = _load_meta(meta_file)
 
+    if file.suffix in ('.h5', '.hdf5'):
+        df = _load_dlc_h5(file, meta)
+    elif file.suffix == '.csv':
+        df = _load_dlc_csv(file)
+    else:
+        raise ValueError(f'Unsupported file type: {file.suffix}')
+
+    return DeepLabCutResult(df, meta, filtered=('filtered' in file.name), time=time)
+
+
+def _load_dlc_h5(file, meta) -> pl.DataFrame:
     dat = h5py.File(file)['df_with_missing']['table']['values_block_0']
-    df = pl.from_numpy(dat, schema=[
+    return pl.from_numpy(dat, schema=[
         f'{joint}_{it}'
         for joint in meta['model_config']['all_joints_names']
         for it in ('x', 'y', 'likelihood')
     ])
 
-    return DeepLabCutResult(df, meta, filtered=('filtered' in file.name), time=time)
 
-
-def load_dlc_csv(file: PathLike,
-                 meta_file: PathLike,
-                 time: np.ndarray | None = None) -> DeepLabCutResult:
-    file = Path(file)
-    meta_file = Path(meta_file)
-
-    if file.suffix != '.csv':
-        raise ValueError(f'{file} is not a HDF5 file')
-
-    meta = _load_meta(meta_file)
-
+def _load_dlc_csv(file) -> pl.DataFrame:
     cols = ['']
     with file.open() as f:
         f.readline()  # skip first line
@@ -207,11 +209,11 @@ def load_dlc_csv(file: PathLike,
 
     df = pl.read_csv(file, skip_rows=3, has_header=False, new_columns=cols)[:, 1:]
 
-    return DeepLabCutResult(df, meta, filtered=('filtered' in file.name), time=time)
+    return df
 
 
 def _load_meta(meta_file) -> DeepLabCutMeta:
-    if meta_file.suffix != '.pickle':
+    if meta_file.suffix not in ('.pkl', '.pickle'):
         raise ValueError(f'{meta_file} is not a pickle file')
 
     # meta

@@ -14,7 +14,7 @@ from PIL import Image
 from neuralib.calimg.scanbox import SBXInfo
 from neuralib.calimg.suite2p import Suite2PResult
 from neuralib.io import NEUROLIB_CACHE_DIRECTORY
-from neuralib.tracking.deeplabcut.core import DeepLabCutResult, load_dlc_h5, load_dlc_csv
+from neuralib.tracking.deeplabcut.core import DeepLabCutResult, load_dlc_result
 from neuralib.typing import PathLike
 
 __all__ = [
@@ -220,10 +220,10 @@ def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
 def load_example_dlc_h5(**kwargs) -> DeepLabCutResult:
     with google_drive_file('1JNhx6Dpe8beP8vnh0yF3o3vY2DfUM-8A', rename_file='test_dlc.h5', **kwargs) as h5:
         with google_drive_file('1juICYcrXa7Vk-fQSBBSg2QcP9DGyHO2E', rename_file='test_dlc.pickle', **kwargs) as meta:
-            return load_dlc_h5(h5, meta)
+            return load_dlc_result(h5, meta)
 
 
 def load_example_dlc_csv(**kwargs) -> DeepLabCutResult:
     with google_drive_file('1R2Ze5xjWlavcKvu45JOH3_QkOD4SSkVN', rename_file='test_dlc.csv', **kwargs) as csv:
         with google_drive_file('1juICYcrXa7Vk-fQSBBSg2QcP9DGyHO2E', rename_file='test_dlc.pickle', **kwargs) as meta:
-            return load_dlc_csv(csv, meta)
+            return load_dlc_result(csv, meta)
