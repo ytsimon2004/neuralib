@@ -21,30 +21,29 @@ __all__ = ['unstable']
 def unstable() -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Mask class/function unstable"""
 
-    def _decorator(f: Callable[P, T] | type) -> Callable[P, T] | type:
+    def _decorator(obj: Callable[P, T] | type) -> Callable[P, T] | type:
+
+        doc = 'UNSTABLE.'
+        if obj.__doc__ is not None:
+            doc += f'\n{obj.__doc__}'
+
+        obj.__doc__ = doc
 
         # class
-        if isinstance(f, type):
-            original_init = f.__init__
+        if isinstance(obj, type):
+            for meth in dir(obj):
+                if callable(f := getattr(obj, meth, None)) and not meth.startswith('_'):
+                    setattr(obj, meth, unstable()(f))
 
-            @functools.wraps(original_init)
-            def _unstable_init(self, *args: P.args, **kwargs: P.kwargs):
-                warnings.warn(f"{f.__name__} is unstable and under development.", stacklevel=2)
-                try:
-                    original_init(self, *args, **kwargs)
-                except TypeError:  # namedtuple?
-                    pass
-
-            f.__init__ = _unstable_init
-            return f
+            return obj
 
         # func
         else:
-            @functools.wraps(f)
-            def _unstable(*args: P.args, **kwargs: P.kwargs) -> T:
-                warnings.warn(f"{f.__name__} is unstable and under development.", stacklevel=2)
-                return f(*args, **kwargs)
+            @functools.wraps(obj)
+            def _unstable_meth(*args: P.args, **kwargs: P.kwargs) -> T:
+                warnings.warn(f"{obj.__qualname__} is unstable and under development.", stacklevel=2)
+                return obj(*args, **kwargs)
 
-            return _unstable
+            return _unstable_meth
 
     return _decorator

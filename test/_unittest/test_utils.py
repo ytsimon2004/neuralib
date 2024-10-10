@@ -1,5 +1,4 @@
 import unittest
-from typing import NamedTuple
 
 import attrs
 import numpy as np
@@ -119,8 +118,11 @@ class TestUtilFunc(unittest.TestCase):
             def __init__(self, a):
                 self.a = a
 
+            def meth(self):
+                pass
+
         with self.assertWarns(UserWarning) as _:
-            A(1)
+            A(1).meth()
 
         #
         @unstable()
@@ -129,15 +131,11 @@ class TestUtilFunc(unittest.TestCase):
             a: int
             b: float
 
-        with self.assertWarns(UserWarning) as _:
-            B(1, 0.5)
-
-        @unstable()
-        class N(NamedTuple):
-            x: int
+            def meth(self):
+                pass
 
         with self.assertWarns(UserWarning) as _:
-            N(1)
+            B(1, 0.5).meth()
 
         #
         @unstable()
@@ -146,7 +144,6 @@ class TestUtilFunc(unittest.TestCase):
 
         with self.assertWarns(UserWarning) as warns:
             func()
-        print(str(warns.warning))
 
 
 if __name__ == '__main__':
