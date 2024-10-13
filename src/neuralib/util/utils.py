@@ -85,7 +85,7 @@ def ensure_dir(p: PathLike, verbose: bool = True) -> Path:
     return p
 
 def joinn(sep: str, *part: str | None) -> str:
-    """join not-None str"""
+    """join non-None str with sep."""
     return sep.join([str(it) for it in part if it is not None])
 
 
