@@ -1,6 +1,11 @@
 import numpy as np
+from numba import jit
 
-__all__ = ['running_mask1d']
+from neuralib.util.segments import SegmentLike
+from neuralib.util.unstable import unstable
+
+__all__ = ['running_mask1d',
+           'jump_mask2d']
 
 
 def running_mask1d(time: np.ndarray,
@@ -58,3 +63,57 @@ def running_mask1d(time: np.ndarray,
                 epoch[epoch == i] += 1
 
     return np.asarray(epoch % 2 != 0)
+
+
+# noinspection PyTypeChecker
+@unstable()
+@jit(nopython=True)
+def jump_mask2d(time: np.ndarray,
+                xy: np.ndarray,
+                jump_size: float,
+                max_duration: float = 0.1) -> tuple[np.ndarray, SegmentLike]:
+    """
+    Find jump epoch in 2D xy locomotion
+
+    :param time: A 1D numpy array of time points corresponding to each xy coordinate. `Array[bool, N]`
+    :param xy: A 2D numpy array of x and y coordinates representing positions. `Array[float, [N, 2]]`
+    :param jump_size: A float representing the minimum jump distance to be considered significant between consecutive points.
+        Should be expressed in the same coordinates as xy
+    :param max_duration: the maximum duration (in the same units as t) of a jump.
+        If a jump lasts longer the duration, it will not be removed (as it may not actually be a jump)
+    :return: A tuple containing:
+
+        - A boolean numpy array indicating which points are part of a detected jump segment. `Array[bool, N]`
+
+        - A list of segments, where each segment is represented by a list of two indices `[start_idx, end_idx]`.
+    """
+    valid = np.nonzero(~np.isnan(xy[:, 0]))[0]
+    ret = np.zeros(xy.shape[0], dtype=np.bool_)
+    seg = [[np.int64(x) for x in range(0)]]
+
+    if len(valid) < 2:
+        return ret, seg  # without detect
+
+    found_jump = False
+    last_idx = valid[0]
+
+    for idx in valid[1:]:
+
+        dt = time[idx] - time[last_idx]
+        dxy = np.sqrt(np.sum((xy[idx] - xy[last_idx]) ** 2))
+
+        if not found_jump and (dxy / (idx - last_idx)) > jump_size:
+            found_jump = True
+
+        if found_jump and (dxy <= jump_size or dt >= max_duration):
+
+            if dt < max_duration:
+                ret[last_idx:idx] = 1
+                seg.append([last_idx, idx])
+
+            found_jump = False
+
+        if not found_jump:
+            last_idx = idx
+
+    return ret, seg[1:]

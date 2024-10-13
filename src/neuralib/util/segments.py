@@ -6,6 +6,7 @@ from typing import Literal, Union
 import numpy as np
 
 __all__ = [
+    'SegmentLike',
     'is_sorted',
     'segment_mask',
     'segment_epochs',

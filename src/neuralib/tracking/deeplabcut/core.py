@@ -98,6 +98,14 @@ class DeepLabCutJoint(NamedTuple):
         return self.dat['y'].to_numpy()
 
     @property
+    def xy(self) -> np.ndarray:
+        return self.dat['x', 'y'].to_numpy()
+
+    @property
+    def t(self) -> np.ndarray:
+        return self.source.time
+
+    @property
     def lh(self) -> np.ndarray:
         return self.dat['likelihood'].to_numpy()
 
