@@ -5,13 +5,16 @@ from scipy import stats
 from scipy.interpolate import interp1d
 from typing_extensions import Self
 
+from neuralib.util.segments import segment_epochs, segment_duration, segment_contains
+from neuralib.util.unstable import unstable
+
 __all__ = [
     'CircularPosition',
     'interp_pos1d',
     #
     'speed_2d',
-    'direction_2d'
-
+    'direction_2d',
+    'interp_gap2d'
 ]
 
 
@@ -202,7 +205,37 @@ def direction_2d(xy: np.ndarray, dt: float = 1.0) -> np.ndarray:
     return np.angle(_complex_2d(xy, dt), deg=True)
 
 
-def interp_gap2d(xy: np.ndarray,
-                 t: np.ndarray,
-                 max_gap_dur: float) -> np.ndarray:
-    pass
+@unstable()
+def interp_gap2d(t: np.ndarray,
+                 xy: np.ndarray,
+                 duration: float) -> np.ndarray:
+    """
+    Interpolate over gaps in position record.
+
+    :param t: Time Vector. `Array[float, N]`
+    :param xy: 2D array coordinates in xy. `Array[float, [N, 2]]`
+    :param duration: Maximum duration of a gap that should be interpolated over. same unit as ``t``
+    :return: Corrected x,y coordinates. `Array[float, [N, 2]]`
+    """
+    invalid = np.isnan(xy[:, 0])
+    valid = ~invalid
+
+    # select small gaps
+    invalid_seg = segment_epochs(invalid, t)
+    invalid_seg = invalid_seg[segment_duration(invalid_seg) < duration]
+
+    if invalid_seg.shape[0] > 0:
+        print(f'{len(invalid_seg)} segments invalid')
+        invalid_indices = np.nonzero(segment_contains(invalid_seg, t))[0]
+
+        f = interp1d(
+            t[valid],
+            xy[valid, :],
+            kind="linear",
+            bounds_error=False,
+            axis=0,
+            assume_sorted=True,
+        )
+        xy[invalid_indices, :] = f(t[invalid_indices])
+
+    return xy

@@ -159,7 +159,7 @@ class DeepLabCutResult:
 
     def _default_time(self):
         """Based on meta file, assume stable frame acquisition"""
-        return np.arange(0, self.nframes, 1 / self.fps)
+        return np.linspace(0, self.nframes / self.fps, self.nframes)
 
     def with_global_lh_filter(self, lh: float) -> Self:
         """replace """

@@ -5,7 +5,7 @@ from typing import Iterable
 import numpy as np
 
 from neuralib.typing import ArrayLike
-from neuralib.util.deprecation import deprecated_class
+from neuralib.util.deprecation import deprecated_class, deprecated_func
 
 __all__ = ['Segment',
            #
@@ -13,7 +13,7 @@ __all__ = ['Segment',
            'grouped_iter']
 
 
-@deprecated_class(new='neuralib.util.segments.*')
+@deprecated_class(new='neuralib.util.segments.*', removal_version="0.4.0")
 class Segment:
     """Segment container class"""
 
@@ -111,6 +111,7 @@ class Segment:
         return self._data[:, 1]
 
 
+@deprecated_func(new='neuralib.util.segments.*', removal_version="0.4.0")
 def check_segments(x: np.ndarray, copy=False) -> np.ndarray:
     """Convert to segment array.
 
