@@ -7,7 +7,11 @@ from typing_extensions import Self
 
 __all__ = [
     'CircularPosition',
-    'interp_pos1d'
+    'interp_pos1d',
+    #
+    'speed_2d',
+    'direction_2d'
+
 ]
 
 
@@ -166,3 +170,39 @@ def interp_pos1d(time: np.ndarray,
             trial_time_index[i] = np.nonzero(tt >= t)[0][0]
 
     return CircularPosition(tt, pp, dd, vv, trial_time_index)
+
+
+# =========== #
+# 2D Movement #
+# =========== #
+
+def _complex_2d(xy: np.ndarray, dt: float = 1.0) -> np.ndarray:
+    return np.gradient(xy[:, 0], dt) + np.gradient(xy[:, 1], dt) * 1.0j
+
+
+def speed_2d(xy: np.ndarray, dt: float = 1.0) -> np.ndarray:
+    """
+    Compute speed 2D movement
+
+    :param xy: 2D array coordinates in xy. `Array[float, [N, 2]]`
+    :param dt: Time period between samples (for smoothing)
+    :return: Speed. `Array[float, N]`
+    """
+    return np.abs(_complex_2d(xy, dt))
+
+
+def direction_2d(xy: np.ndarray, dt: float = 1.0) -> np.ndarray:
+    """
+    Compute direction 2D movement
+
+    :param xy: 2D array coordinates in xy. `Array[float, [N, 2]]`
+    :param dt: Time period between samples (for smoothing)
+    :return: Movement direction. `Array[float, N]`
+    """
+    return np.angle(_complex_2d(xy, dt), deg=True)
+
+
+def interp_gap2d(xy: np.ndarray,
+                 t: np.ndarray,
+                 max_gap_dur: float) -> np.ndarray:
+    pass
