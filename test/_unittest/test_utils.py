@@ -1,7 +1,6 @@
 import unittest
 from collections import namedtuple
-from dataclasses import field
-from typing import NamedTuple
+from dataclasses import field, dataclass
 
 import attrs
 import numpy as np
