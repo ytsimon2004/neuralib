@@ -12,7 +12,7 @@ from neuralib.argp import as_argument, argument
 from neuralib.atlas.brainrender.core import BrainReconstructor
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.util import roi_points_converter
-from neuralib.signal.segement import grouped_iter
+from neuralib.util.segments import grouped_iter
 
 __all__ = ['ProbeReconstructor']
 

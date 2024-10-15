@@ -129,10 +129,6 @@ class DeepLabCutResult:
         dat.columns = cols
         return DeepLabCutJoint(self, item, dat)
 
-    @classmethod
-    def load_from_directory(cls, directory):
-        pass
-
     @property
     def is_filtered(self) -> bool:
         return self._filtered
@@ -162,7 +158,7 @@ class DeepLabCutResult:
         return np.linspace(0, self.nframes / self.fps, self.nframes)
 
     def with_global_lh_filter(self, lh: float) -> Self:
-        """replace """
+        """"""
         for j in self.joints:
             self.dat = (
                 self.dat

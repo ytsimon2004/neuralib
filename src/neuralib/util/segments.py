@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Literal, Union
+from typing import Literal, Union, Iterable
 
 import numpy as np
 
@@ -37,7 +37,11 @@ __all__ = [
     'shuffle_time_uniform',
     'shuffle_time_normal',
     'shift_time',
+    'foreach_map',
+    'grouped_iter'
 ]
+
+from neuralib.typing import ArrayLike
 
 Segment = np.ndarray  # (N, 2) value array ([(start, stop)]), as a segment.
 SegmentLike = Union[Segment, tuple[float, float], list[tuple[float, float]]]
@@ -892,3 +896,37 @@ def _shuffle_time_in_segment(t: np.ndarray,
         ret = ret[~np.isnan(ret)]
 
     return ret
+
+
+def foreach_map(v: np.ndarray,
+                f: Callable[[np.ndarray], np.ndarray],
+                indices_or_sections: np.ndarray) -> np.ndarray:
+    """
+    Map function ``f`` into vector ``v`` in given sections.
+
+    :param v: Input 1d array
+    :param f: Function to apply to each segment
+    :param indices_or_sections: If indices_or_sections is an integer, N, the array will be divided into N equal arrays along axis.
+        If such a split is not possible, an error is raised
+    :return:
+    """
+    if v.ndim != 1 or indices_or_sections.ndim != 1:
+        raise RuntimeError('')
+
+    split_list = np.split(v, indices_or_sections)
+
+    return np.array(list(map(f, split_list[:-1])))  # avoid empty list if divisible
+
+
+def grouped_iter(v: ArrayLike | Iterable, n: int) -> zip:
+    """
+    Groups elements from the input iterable ``v`` into tuples of length ``n``
+
+    >>> list(grouped_iter([1, 2, 3, 4, 5, 6], 2))
+    [(1, 2), (3, 4), (5, 6)]
+
+    :param v: input iterable to be grouped.
+    :param n: number of elements per group
+    :return: An iterator over tuples of length n
+    """
+    return zip(*[iter(v)] * n)

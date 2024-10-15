@@ -107,6 +107,8 @@
 
 - `neuralib.util.table`: rich table visualization
 
+- `neuralib.util.segments`: Epoch or value segments
+
 # CLI project.scripts
 
 - `brender`: see examples in [api](https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html)

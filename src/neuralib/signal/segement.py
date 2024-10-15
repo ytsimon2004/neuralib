@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterable
-
 import numpy as np
 
-from neuralib.typing import ArrayLike
 from neuralib.util.deprecation import deprecated_class, deprecated_func
-
-__all__ = ['Segment',
-           #
-           'mean_over_elements',
-           'grouped_iter']
 
 
 @deprecated_class(new='neuralib.util.segments.*', removal_version="0.4.0")
@@ -143,34 +135,3 @@ def check_segments(x: np.ndarray, copy=False) -> np.ndarray:
         raise ValueError("Segment durations cannot be negative")
 
     return x
-
-
-def mean_over_elements(input_array: np.ndarray,
-                       indices_or_sections: np.ndarray) -> np.ndarray:
-    """
-    Take mean over elements
-
-    :param input_array: input 1d array
-    :param indices_or_sections: accumulative index for doing averaging foreach
-    :return:
-    """
-    if input_array.ndim != 1 or indices_or_sections.ndim != 1:
-        raise RuntimeError('')
-
-    split_list = np.split(input_array, indices_or_sections)  # type: list[np.ndarray]
-
-    return np.array(list(map(np.mean, split_list[:-1])))  # avoid empty list if divisible
-
-
-def grouped_iter(it: ArrayLike | Iterable, n: int) -> zip:
-    """
-    Groups elements from the input iterable into tuples of length n
-
-    >>> list(grouped_iter([1, 2, 3, 4, 5, 6], 2))
-    [(1, 2), (3, 4), (5, 6)]
-
-    :param it: input iterable to be grouped.
-    :param n: number of elements per group
-    :return: An iterator over tuples of length n
-    """
-    return zip(*[iter(it)] * n)

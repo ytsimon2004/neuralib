@@ -258,6 +258,10 @@ Utilities Modules
     - Rich table visualization
 
 
+:mod:`neuralib.util.segments`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    - Epoch or value segments
+
 
 
 Doc for Array type

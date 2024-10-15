@@ -19,4 +19,6 @@ neuralib.util
     neuralib.util.verbose
     neuralib.util.utils
     neuralib.util.version
+    neuralib.util.segments
+    neuralib.util.unstable
 
