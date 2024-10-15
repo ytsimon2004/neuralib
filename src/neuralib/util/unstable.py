@@ -1,27 +1,33 @@
 from __future__ import annotations
 
 import functools
+import sys
 import warnings
-from typing import TYPE_CHECKING, TypeVar, Callable
+from typing import TypeVar, Callable, Union, Type
 
-if TYPE_CHECKING:
-    import sys
-
-    if sys.version_info >= (3, 10):
-        from typing import ParamSpec
-    else:
-        from typing_extensions import ParamSpec
-
-    P = ParamSpec("P")
-    T = TypeVar("T")
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
 
 __all__ = ['unstable']
 
+P = ParamSpec("P")
+R = TypeVar("R")
+F = TypeVar('F', bound=Callable[P, R])
+T = TypeVar('T', bound=Union[Type[R], F])
 
-def unstable() -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """Mask class/function unstable"""
 
-    def _decorator(obj: Callable[P, T] | type) -> Callable[P, T] | type:
+def unstable(doc=True, runtime=True, mark_all=True) -> Callable[[T], T]:
+    """
+    A decorator that mark class/function unstable.
+
+    :param doc: add unstable message in function/class document.
+    :param runtime: add runtime warning when invoking function/initialization.
+    :param mark_all: mark all public methods when decorate on a class.
+    """
+
+    def _decorator(obj: T) -> T:
 
         doc = 'UNSTABLE.'
         if obj.__doc__ is not None:

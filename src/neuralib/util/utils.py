@@ -1,35 +1,34 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
+from dataclasses import is_dataclass, asdict
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, NamedTuple
 
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
 
 __all__ = ['uglob',
-           'glob_re',
+           'filter_matched',
            'joinn',
            'ensure_dir',
-           'key_from_value',
+           'keys_with_value',
            'cls_hasattr']
 
 
 def uglob(directory: PathLike,
           pattern: str,
-          sort: bool = True,
           is_dir: bool = False) -> Path:
     """
-    Unique glob the pattern in a directory
+    Use glob pattern to find the unique file in the directory.
 
-    :param directory: directory
-    :param pattern: pattern string
-    :param sort: if sort
-    :param is_dir: only return if is a directory
-    :return: unique path
+    :param directory: Directory
+    :param pattern: Glob pattern
+    :param is_dir: Is the pattern point to a directory?
+    :return: The unique path
     """
-    if not isinstance(directory, Path):
-        directory = Path(directory)
+    directory = Path(directory)
 
     if not directory.exists():
         raise FileNotFoundError(f'{directory} not exit')
@@ -41,28 +40,37 @@ def uglob(directory: PathLike,
 
     if is_dir:
         f = [ff for ff in f if ff.is_dir()]
-
-    if sort:
-        f.sort()
+    else:
+        f = [ff for ff in f if not ff.is_dir()]
 
     if len(f) == 0:
-        raise FileNotFoundError(f'{directory} not have pattern: {pattern}')
+        t = 'directory' if is_dir else 'file'
+        raise FileNotFoundError(f'{directory} not have {t} with the pattern: {pattern}')
     elif len(f) == 1:
         return f[0]
     else:
-        raise RuntimeError(f'multiple files were found in {directory} in pattern {pattern} >>> {f}')
+        f.sort()
+        t = 'directories' if is_dir else 'files'
+        raise RuntimeError(f'multiple {t} were found in {directory} with the pattern {pattern} >>> {f}')
 
 
-def glob_re(pattern: str, strings: list[str]) -> list[str]:
-    """find list of str element fit for re pattern"""
+def filter_matched(pattern: str, strings: list[str]) -> list[str]:
+    """
+    Filter a list of string element that match the pattern.
+
+    :param pattern: Regular expression
+    :param strings: List of strings to find the pattern
+    :return:
+    """
     return list(filter(re.compile(pattern).match, strings))
 
 
-def ensure_dir(p: PathLike, verbose: bool = True) -> None:
-    """ensure the path, create if not exit
+def ensure_dir(p: PathLike, verbose: bool = True) -> Path:
+    """
+    Ensure the path is a directory. Create if it is not exist.
 
     :param p: path to be checked
-    :param verbose: print verbose
+    :param verbose: print verbose message
     """
     p = Path(p)
 
@@ -75,10 +83,12 @@ def ensure_dir(p: PathLike, verbose: bool = True) -> None:
     if not p.is_dir():
         raise NotADirectoryError(f'not a dir: {p}')
 
+    return p
+
 
 def joinn(sep: str, *part: str | None) -> str:
-    """join not-None str"""
-    return sep.join(str(it) for it in part if it is not None)
+    """join non-None str with sep."""
+    return sep.join([str(it) for it in part if it is not None])
 
 
 # ============================== #
@@ -87,22 +97,43 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def key_from_value(d: dict[KT, list[VT] | VT], value: VT) -> KT | list[KT]:
-    """Get dict key from dict value, supporting str, int, float, list, and tuple types for values."""
+def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT) -> list[KT]:
+    """
+    Get keys from a dict that are associated with the value.
+
+    Supports value types: str, int, float (with tolerance), and any collection types.
+
+    :param dy: The value to match against the dictionary values
+    :param value: The value to match against the dictionary values
+    :return: A list of keys whose values match the provided value
+    """
     matching_keys = []
-    for key, val in d.items():
-        if not isinstance(val, (str, int, float, list, tuple)):
-            raise RuntimeError(f'value type: {type(val)} not support')
-        else:
-            if isinstance(val, (str, int, float)) and val == value:
-                matching_keys.append(key)
-            elif isinstance(val, (list, tuple)) and value in val:
+
+    def _float_eq(v1, v2, tol=1e-9) -> bool:
+        return abs(v1 - v2) < tol
+
+    for key, val in dy.items():
+        if isinstance(val, float) and isinstance(value, float):
+            if _float_eq(val, value):
                 matching_keys.append(key)
 
-    if not matching_keys:
-        raise KeyError(f'Value {value} not found in the dictionary')
-    else:
-        return matching_keys[0] if len(matching_keys) == 1 else matching_keys
+        elif isinstance(val, (str, int)):
+            if val == value:
+                matching_keys.append(key)
+
+        elif isinstance(val, Collection) and not isinstance(val, str):
+            if value in val:
+                matching_keys.append(key)
+
+        elif isinstance(type(val), type(NamedTuple)):
+            if value in val._asdict().values():
+                matching_keys.append(key)
+
+        elif is_dataclass(val):
+            if value in asdict(val).values():
+                matching_keys.append(key)
+
+    return matching_keys
 
 
 def cls_hasattr(cls: type, attr: str) -> bool:

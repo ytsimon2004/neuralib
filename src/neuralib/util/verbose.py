@@ -34,20 +34,20 @@ def fprint(*msgs,
     prefix = f'[{vtype.upper()}]'
 
     if vtype == 'error':
-        color = 'red'
+        color = 'RED'
     elif vtype == 'warning':
-        color = 'yellow'
+        color = 'YELLOW'
     elif vtype == 'io':
-        color = 'magenta'
+        color = 'MAGENTA'
     elif vtype == 'info':
-        color = 'cyan'
+        color = 'CYAN'
     elif vtype == 'pass':
-        color = 'green'
+        color = 'GREEN'
     else:
-        color = 'white'
+        color = 'WHITE'
 
     try:
-        fg_color = getattr(Fore, color.upper())
+        fg_color = getattr(Fore, color)
     except AttributeError:
         fg_color = Fore.WHITE
 
@@ -56,7 +56,7 @@ def fprint(*msgs,
         msg += f"[{datetime.today().strftime('%y-%m-%d %H:%M:%S')}] - "
 
     try:
-        out = f"{''.join(msgs)}\n"
+        out = ''.join(msgs) + "\n"
     except TypeError:
         out = f'{msgs}'
 
@@ -192,14 +192,14 @@ def publish_annotation(level: Literal['main', 'sup', 'appendix', 'test'],
         doc = '' if target.__doc__ is None else target.__doc__
 
         if as_doc:
-            doc += (
-                f'\n\n.. note:: '
-                f'\n\n\t**Publish Annotation**'
-                f'\n\n\tProject: {project}'
-                f'\n\n\tFigure: {figure}'
-                f'\n\n\tLevel: {level} '
-                f'\n\n\tCaption: {caption}'
-            )
+            doc += '\n\n' + '\n\n'.join([
+                f'.. note:: ',
+                f'\t**Publish Annotation**',
+                f'\tProject: {project}',
+                f'\tFigure: {figure}',
+                f'\tLevel: {level} ',
+                f'\tCaption: {caption}',
+            ])
             target.__doc__ = doc
 
         if as_attributes:
