@@ -2,7 +2,7 @@
 Facemap Tracking
 ===========================
 
-This module provide the result parser facemap
+This module provide Facemap result parsing
 Including keypoints and pupil diameter data
 
 
@@ -11,7 +11,7 @@ Example of load the pupil area
 
 .. code-block:: python
 
-    from neuralib.wrapper.facemap import *
+    from neuralib.tracking.facemap import *
 
     directory = ...  # directory with output *proc.npy
     fmap = FaceMapResult.load(directory, track_type='pupil')

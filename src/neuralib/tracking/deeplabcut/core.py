@@ -139,6 +139,7 @@ class DeepLabCutResult:
 
     @property
     def joints(self) -> list[Joint]:
+        """list of labelled joints"""
         return self.meta['model_config']['all_joints_names']
 
     @property
@@ -158,7 +159,11 @@ class DeepLabCutResult:
         return np.linspace(0, self.nframes / self.fps, self.nframes)
 
     def with_global_lh_filter(self, lh: float) -> Self:
-        """"""
+        """
+        With global likelihood filter
+        :param lh: likelihood threshold
+        :return: ``DeepLabCutResult``
+        """
         for j in self.joints:
             self.dat = (
                 self.dat

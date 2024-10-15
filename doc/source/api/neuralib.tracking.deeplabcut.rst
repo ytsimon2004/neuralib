@@ -9,5 +9,3 @@ neuralib.tracking.deeplabcut
     :caption: Modules:
     
     neuralib.tracking.deeplabcut.core
-    neuralib.tracking.deeplabcut.util
-
