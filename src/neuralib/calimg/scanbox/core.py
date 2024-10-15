@@ -106,7 +106,7 @@ class SBXInfo:
     @dataclass(frozen=True)
     class KnobbyInfo:
         """attr from info.config.knobby"""
-        pos: KnobbyPosInfo
+        pos: KnobbyPosInfo  # noqa: F821
         schedule: np.ndarray
 
     @dataclass(frozen=True)
@@ -117,54 +117,45 @@ class SBXInfo:
     @dataclass(frozen=True)
     class ConfigInfo:
         """attr from config"""
-        agc: AgcInfo
+        agc: AgcInfo  # noqa: F821
         # calibration: np.ndarray
         coord_abs: np.ndarray
         coord_rel: np.ndarray
         frame_times: np.ndarray
         frames: int  # total frames
         host_name: str  # BSTATION6
-        knobby: KnobbyInfo
+        knobby: KnobbyInfo  # noqa: F821
         laser_power: float
         laser_power_perc: str  # 75%
         lines: int  # 528
         magnification: int  # idx from 1 in magnification_list
         magnification_list: np.ndarray
-        objective: ObjectiveInfo  # directly get useful attr `name`
+        objective: ObjectiveInfo  # directly get useful attr `name`  # noqa: F821
         objective_type: int
         pmt0_gain: float  # green channel
         pmt1_gain: float  # red channel
         wavelength: int  # laser wavelength. i.e., 920 nm
 
-
     @classmethod
-    def load(cls, root: PathLike) -> SBXInfo:
-        info = loadmat(root, squeeze_me=True, struct_as_record=False)['info']
+    def load(cls, file: PathLike) -> SBXInfo:
+        info = loadmat(file, squeeze_me=True, struct_as_record=False)['info']
 
         try:
             nchan = info.chan.nchan  # version >= 3
         except AttributeError:
             nchan = None
 
-        return copy_from(
-            SBXInfo, info,
-            scanbox_version=str(info.scanbox_version),
-            config=copy_from(
-                cls.ConfigInfo, (config := info.config),
-                agc=copy_from(cls.AgcInfo, config.agc),
-                host_name=getattr(config, 'host_name', ''),
-                knobby=copy_from(
-                    cls.KnobbyInfo, (knobby := config.knobby),
-                    pos=copy_from(
-                        cls.KnobbyPosInfo, (pos := knobby.pos),
-                        a=pos.x
-                    )
-                ),
-                objective=copy_from(cls.ObjectiveInfo, config.objective),
-            ),
-            calibration=[copy_from(cls.CalibrationInfo, cali) for cali in info.calibration],
-            nchan=nchan
-        )
+        return copy_from(SBXInfo, info,
+                         scanbox_version=str(info.scanbox_version),
+                         config=copy_from(cls.ConfigInfo, (config := info.config),
+                                          agc=copy_from(cls.AgcInfo, config.agc),
+                                          host_name=getattr(config, 'host_name', ''),
+                                          knobby=copy_from(cls.KnobbyInfo, (knobby := config.knobby),
+                                                           pos=copy_from(cls.KnobbyPosInfo, (pos := knobby.pos),
+                                                                         a=pos.x)),
+                                          objective=copy_from(cls.ObjectiveInfo, config.objective)),
+                         calibration=[copy_from(cls.CalibrationInfo, cali) for cali in info.calibration],
+                         nchan=nchan)
 
     # =============================== #
     # attributes from SBX .mat output #
@@ -225,7 +216,7 @@ def _get_default_scanbox_fov_dimension(lines: int,
     raise NotImplementedError('check scanbox GUI directly')
 
 
-def sbx_to_json(matfile: Path | str,
+def sbx_to_json(matfile: PathLike,
                 output: Path | None = None,
                 verbose: bool = True) -> None:
     """

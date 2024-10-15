@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Collection
+from dataclasses import is_dataclass, asdict
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, NamedTuple
 
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
@@ -22,10 +23,10 @@ def uglob(directory: PathLike,
     """
     Use glob pattern to find the unique file in the directory.
 
-    :param directory: directory
-    :param pattern: glob pattern
+    :param directory: Directory
+    :param pattern: Glob pattern
     :param is_dir: Is the pattern point to a directory?
-    :return: unique path
+    :return: The unique path
     """
     directory = Path(directory)
 
@@ -55,10 +56,10 @@ def uglob(directory: PathLike,
 
 def filter_matched(pattern: str, strings: list[str]) -> list[str]:
     """
-    filter a list of string element that match the pattern.
+    Filter a list of string element that match the pattern.
 
-    :param pattern: regular expression
-    :param strings:
+    :param pattern: Regular expression
+    :param strings: List of strings to find the pattern
     :return:
     """
     return list(filter(re.compile(pattern).match, strings))
@@ -84,6 +85,7 @@ def ensure_dir(p: PathLike, verbose: bool = True) -> Path:
 
     return p
 
+
 def joinn(sep: str, *part: str | None) -> str:
     """join non-None str with sep."""
     return sep.join([str(it) for it in part if it is not None])
@@ -95,24 +97,40 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def keys_with_value(d: dict[KT, VT | Collection[VT]], value: VT) -> list[KT]:
+def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT) -> list[KT]:
     """
-    Get keys from a dict that associated with the value.
+    Get keys from a dict that are associated with the value.
 
-    supporting value type: str, int, float, and any collection types.
+    Supports value types: str, int, float (with tolerance), and any collection types.
 
-    :param d:
-    :param value:
-    :return:
+    :param dy: The value to match against the dictionary values
+    :param value: The value to match against the dictionary values
+    :return: A list of keys whose values match the provided value
     """
     matching_keys = []
-    for key, val in d.items():
-        if isinstance(d, (str, int, float)):  # TODO float should not be here
+
+    def _float_eq(v1, v2, tol=1e-9) -> bool:
+        return abs(v1 - v2) < tol
+
+    for key, val in dy.items():
+        if isinstance(val, float) and isinstance(value, float):
+            if _float_eq(val, value):
+                matching_keys.append(key)
+
+        elif isinstance(val, (str, int)):
             if val == value:
                 matching_keys.append(key)
-        # TODO NamedTuple and Dataclass cases, should I test with the instance or with their fields?
-        if isinstance(val, Collection):
+
+        elif isinstance(val, Collection) and not isinstance(val, str):
             if value in val:
+                matching_keys.append(key)
+
+        elif isinstance(type(val), type(NamedTuple)):
+            if value in val._asdict().values():
+                matching_keys.append(key)
+
+        elif is_dataclass(val):
+            if value in asdict(val).values():
                 matching_keys.append(key)
 
     return matching_keys

@@ -1,8 +1,11 @@
 import unittest
+from dataclasses import field
 from typing import NamedTuple
 
 import attrs
 import numpy as np
+from fontTools.misc.bezierTools import namedtuple
+from pydantic.dataclasses import dataclass
 
 from neuralib.util.deprecation import deprecated_class, deprecated_func, deprecated_aliases
 from neuralib.util.unstable import unstable
@@ -31,16 +34,30 @@ class TestUtilFunc(unittest.TestCase):
     def test_key_from_value(self):
         from neuralib.util.utils import keys_with_value
 
+        TestNt = namedtuple('TestNt', ['f1', 'f2', 'f3'])
+        NT = TestNt(3, 'nt', 11)
+
+        @dataclass
+        class TestDC:
+            f1: float
+            f2: str
+            f3: list = field(default_factory=list)
+
         dy = dict(
             a=[1, 2, 3],
             b=5,
             c=(4, 5, 3),
+            d=0.1 + 0.2,
+            e=NT,
+            f=TestDC(0.03, 'test', ['x', 'y', 'z'])
         )
 
-        self.assertListEqual(keys_with_value(dy, 3), ['a', 'c'])
+        self.assertListEqual(keys_with_value(dy, 3), ['a', 'c', 'e'])
         self.assertListEqual(keys_with_value(dy, 5), ['b', 'c'])
         self.assertListEqual(keys_with_value(dy, 7), [])
-
+        self.assertListEqual(keys_with_value(dy, 0.3), ['d'])
+        self.assertListEqual(keys_with_value(dy, 'nt'), ['e'])
+        self.assertListEqual(keys_with_value(dy, ['x', 'y', 'z']), ['f'])
 
     def test_deprecate_class(self):
         @deprecated_class(new='B', remarks='TEST REMARKS', removal_version='v0.0.10')
