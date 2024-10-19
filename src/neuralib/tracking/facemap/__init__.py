@@ -1,8 +1,8 @@
 """
-Facemap Tracking
-===========================
+Facemap
+==========
 
-This module provide Facemap result parsing
+This module provide ``Facemap`` result parsing
 Including keypoints and pupil diameter data
 
 

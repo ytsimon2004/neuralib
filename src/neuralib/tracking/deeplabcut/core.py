@@ -117,6 +117,13 @@ class DeepLabCutResult:
                  meta: DeepLabCutMeta,
                  filtered: bool,
                  time: np.ndarray | None = None):
+        """
+
+        :param dat: Deeplabcut results as polars dataframe
+        :param meta: Deeplabcut meta typeddict
+        :param filtered: If the Deeplabcut results is filtered or not
+        :param time: 1D time array for each tracked frames. If None, then assume stable DAQ and calculated from meta.
+        """
         self.dat = dat
         self._meta = meta
         self._filtered = filtered
@@ -124,6 +131,7 @@ class DeepLabCutResult:
         self._time = time if time is not None else self._default_time()
 
     def __getitem__(self, item: Joint) -> DeepLabCutJoint:
+        """Get data from a specific joint"""
         cols = ('x', 'y', 'likelihood')
         dat = self.dat[[f'{item}_{col}' for col in cols]]
         dat.columns = cols
@@ -152,6 +160,8 @@ class DeepLabCutResult:
 
     @property
     def time(self) -> np.ndarray:
+        if self._time.shape != self.dat.shape[0]:
+            raise ValueError('time array has wrong shape, mismatch with dat')
         return self._time
 
     def _default_time(self):

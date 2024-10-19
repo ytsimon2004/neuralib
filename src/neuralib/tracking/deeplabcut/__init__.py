@@ -1,8 +1,8 @@
 """
-Deeplabcut Tracking
-====================
+Deeplabcut
+=============
 
-This module provide Deeplabcut result parsing
+This module provide ``Deeplabcut`` result parsing
 Including model meta, and output .h5 or .csv
 
 
@@ -13,9 +13,9 @@ Example of load the results
 
     from neuralib.tracking.deeplabcut import *
 
-    file = ...  # .h5 or .csv filepath
+    file = ...  # .h5 or .csv file path
     meta = ... # .pickle meta file path
-    dlc = load_dlc_result(file, meta).with_global_lh_filter(lh=0.95)  # with likelihood filter > 0.95
+    dlc = load_dlc_result(file, meta).with_global_lh_filter(lh=0.95)  # with likelihood filter >= 0.95
 
     # Get polars dataframe
     print(dlc.dat)
@@ -35,9 +35,9 @@ Example of load the meta typeddict
 
     from neuralib.tracking.deeplabcut import *
 
-    file = ...  # .h5 or .csv filepath
+    file = ...  # .h5 or .csv file path
     meta = ... # .pickle meta file path
-    dlc = load_dlc_result(file, meta).with_global_lh_filter(lh=0.95)  # with likelihood filter > 0.95
+    dlc = load_dlc_result(file, meta).with_global_lh_filter(lh=0.95)  # with likelihood filter >= 0.95
 
     # See meta DeepLabCutMeta typeddict
     print(dlc.meta)
