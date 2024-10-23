@@ -160,7 +160,7 @@ class DeepLabCutResult:
 
     @property
     def time(self) -> np.ndarray:
-        if self._time.shape != self.dat.shape[0]:
+        if len(self._time) != self.dat.shape[0]:
             raise ValueError('time array has wrong shape, mismatch with dat')
         return self._time
 
