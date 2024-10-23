@@ -16,6 +16,7 @@ neuralib package
     neuralib.signal
     neuralib.scanner
     neuralib.segmentation
+    neuralib.morpho
     neuralib.tools
     neuralib.typing
     neuralib.util

@@ -176,6 +176,13 @@ Modules
 
 
 
+:mod:`neuralib.morpho`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Morphological reconstruction data presentation
+
+
+
 :mod:`neuralib.tracking`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -72,6 +72,10 @@
 
 - `neuralib.model.rastermap`: Run and result parser for [rastermap](https://github.com/MouseLand/rastermap)
 
+## morpho
+
+- Morphological reconstruction data presentation
+
 ## tracking
 
 - Module for other open-source tools wrapper
