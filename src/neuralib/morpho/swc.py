@@ -12,7 +12,7 @@ Swc morphology plot
 
 **3D view with radius**
 
-- Press ``Shift``+ ``s`` for vedo interactive saving
+- Press ``Shift+s`` for vedo interactive saving
 
 .. code-block:: console
 

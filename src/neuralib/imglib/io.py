@@ -96,10 +96,10 @@ def tif_to_gif(image_file: PathLike,
                output_path: PathLike,
                fps: int = 30,
                **kwargs) -> None:
-    """convert tif sequences to GIF"""
+    """Convert tif sequences to GIF"""
     import imageio
 
-    frames = imageio.mimread(image_file)
+    frames = imageio.mimread(image_file, memtest=False)
     frames = normalize_sequences(frames, **kwargs)
     imageio.mimsave(output_path, frames, duration=1 / fps)
 
