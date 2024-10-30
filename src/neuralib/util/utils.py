@@ -97,14 +97,15 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT) -> list[KT]:
+def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT, to_item: bool = False) -> list[KT] | KT:
     """
     Get keys from a dict that are associated with the value.
 
     Supports value types: str, int, float (with tolerance), and any collection types.
 
     :param dy: The value to match against the dictionary values
-    :param value: The value to match against the dictionary values
+    :param value: The value to match against the dictionary value
+    :param to_item: list of item to item if unique
     :return: A list of keys whose values match the provided value
     """
     matching_keys = []
@@ -133,7 +134,13 @@ def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT) -> list[KT]:
             if value in asdict(val).values():
                 matching_keys.append(key)
 
-    return matching_keys
+    if to_item:
+        if len(matching_keys) == 1:
+            return matching_keys[0]
+        else:
+            raise ValueError(f'multiple match keys: {matching_keys}')
+    else:
+        return matching_keys
 
 
 def cls_hasattr(cls: type, attr: str) -> bool:
