@@ -342,7 +342,7 @@ class GoogleSpreadSheet:
 def upload_dataframe_to_spreadsheet(df: DataFrame,
                                     gspread_name: SpreadSheetName,
                                     worksheet_name: WorkPageName,
-                                    service_account_path: Path | None = None,
+                                    service_account_path: Path | None,
                                     primary_key: str | tuple[str, ...] = 'Data') -> None:
     """
     Upload a dataframe to a gspread worksheet
@@ -355,10 +355,6 @@ def upload_dataframe_to_spreadsheet(df: DataFrame,
             If str type, it must be one of the column name.
             If tuple str type, the primary key is join using "_" per row
     """
-    if service_account_path is None:
-        from rscvp.util.io import IOConfig
-        service_account_path = IOConfig.load_from_json().gspread_auth
-
     gs = GoogleSpreadSheet(gspread_name, service_account_path, primary_key)
     spreadsheet = gs._sheet
 
