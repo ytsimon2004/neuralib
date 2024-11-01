@@ -15,7 +15,7 @@ __all__ = ['unstable']
 P = ParamSpec("P")
 R = TypeVar("R")
 F = TypeVar('F', bound=Callable[P, R])
-T = TypeVar('T', bound=Union[Type[R], F])
+T = TypeVar('T', Type[R], F)
 
 
 def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = True) -> Callable[[T], T]:
@@ -28,38 +28,39 @@ def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = True) -> C
     """
 
     def _decorator(obj: T) -> T:
+        if getattr(obj, '__unstable_marker', False):
+            return obj
+
+        try:
+            obj.__unstable_marker = True
+        except AttributeError:
+            # AttributeError: 'wrapper_descriptor' object has no attribute
+            pass
 
         if doc:
             new_doc = 'UNSTABLE.'
             if obj.__doc__ is not None:
                 new_doc += f'\n{obj.__doc__}'
 
-            obj.__doc__ = new_doc
+            try:
+                obj.__doc__ = new_doc
+            except AttributeError:
+                # AttributeError: 'wrapper_descriptor' object has no attribute
+                pass
 
-        # class
-        if isinstance(obj, type):
+
+        if isinstance(obj, type): # class
             if mark_all:
                 for meth in dir(obj):
-                    if callable(f := getattr(obj, meth, None)) and not meth.startswith('_'):
-                        setattr(obj, meth, unstable()(f))
-
-            if runtime:
-                original_init = obj.__init__
-
-                @functools.wraps(original_init)
-                def _unstable_init(self, *args: P.args, **kwargs: P.kwargs) -> None:
-                    warnings.warn(f"{obj.__qualname__} is unstable and under development.", stacklevel=2)
-                    original_init(self, *args, **kwargs)
-
-                obj.__init__ = _unstable_init
+                    if callable(f := getattr(obj, meth, None)) and (not meth.startswith('_') or meth in ('__init__',)):
+                        setattr(obj, meth, unstable(doc=doc, runtime=runtime, mark_all=mark_all)(f))
 
             return obj
 
-        # func/meth
-        else:
+        else: # func/meth
             if runtime:
                 @functools.wraps(obj)
-                def _unstable_meth(*args: P.args, **kwargs: P.kwargs) -> T:
+                def _unstable_meth(*args: P.args, **kwargs: P.kwargs) -> R:
                     warnings.warn(f"{obj.__qualname__} is unstable and under development.", stacklevel=2)
                     return obj(*args, **kwargs)
 
@@ -68,3 +69,4 @@ def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = True) -> C
                 return obj
 
     return _decorator
+
