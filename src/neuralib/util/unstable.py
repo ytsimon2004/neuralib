@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import sys
 import warnings
-from typing import TypeVar, Callable, Union, Type
+from typing import TypeVar, Callable, Type
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
@@ -18,13 +18,13 @@ F = TypeVar('F', bound=Callable[P, R])
 T = TypeVar('T', Type[R], F)
 
 
-def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = True) -> Callable[[T], T]:
+def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = False) -> Callable[[T], T]:
     """
     A decorator that mark class/function unstable.
 
     :param doc: Add unstable message in function/class document.
     :param runtime: Add runtime warning when invoking function/initialization.
-    :param mark_all: Mark all public methods when decorate on a class.
+    :param mark_all: Mark all public methods when decorate on a class, If False, then only mark ``__init__()``
     """
 
     def _decorator(obj: T) -> T:
@@ -48,16 +48,18 @@ def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = True) -> C
                 # AttributeError: 'wrapper_descriptor' object has no attribute
                 pass
 
-
-        if isinstance(obj, type): # class
+        if isinstance(obj, type):  # class
             if mark_all:
                 for meth in dir(obj):
                     if callable(f := getattr(obj, meth, None)) and (not meth.startswith('_') or meth in ('__init__',)):
                         setattr(obj, meth, unstable(doc=doc, runtime=runtime, mark_all=mark_all)(f))
+            else:
+                f = getattr(obj, '__init__', None)
+                setattr(obj, '__init__', unstable(doc=doc, runtime=runtime, mark_all=mark_all)(f))
 
             return obj
 
-        else: # func/meth
+        else:  # func/meth
             if runtime:
                 @functools.wraps(obj)
                 def _unstable_meth(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -69,4 +71,3 @@ def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = True) -> C
                 return obj
 
     return _decorator
-
