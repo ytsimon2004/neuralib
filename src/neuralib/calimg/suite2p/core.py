@@ -207,10 +207,10 @@ class Suite2PResult:
     """Directory contain all the s2p output files"""
 
     F: np.ndarray
-    """Transient activity 2D array. `Array[float, [N, F]]`"""
+    """Fluorescence traces 2D array. `Array[float, [N, F]]`"""
 
     FNeu: np.ndarray
-    """Neuropil activity 2D array. `Array[float, [N, F]]`"""
+    """Neuropil fluorescence traces 2D array. `Array[float, [N, F]]`"""
 
     spks: np.ndarray
     """Deconvolved activity 2D array. `Array[float, [N, F]]`"""

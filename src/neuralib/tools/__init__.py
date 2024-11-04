@@ -1,2 +1,2 @@
-from .gspread import *
-from .slack_bot import *
+# from .gspread import *
+# from .slack_bot import *

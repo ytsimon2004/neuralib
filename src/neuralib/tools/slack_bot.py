@@ -29,7 +29,7 @@ Module provide basic function for sending Slack messages with Python
 
 .. code-block:: python
 
-    from neuralib.tools import send_slack_message
+    from neuralib.tools.slack_bot import send_slack_message
     env_file = ...  # env file path
     send_slack_message(env_file, 'Hello, slack!')
 
