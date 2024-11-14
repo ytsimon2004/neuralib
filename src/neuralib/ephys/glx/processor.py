@@ -50,7 +50,18 @@ class ProcessedEphysRecordingMeta:
 Handler = TypeVar('Handler', bound=PersistenceHandler[ProcessedEphysRecordingMeta])
 
 
-def save(handler: Handler, meta: ProcessedEphysRecordingMeta, data: EphysArray):
+def save(handler: Handler, meta: str | ProcessedEphysRecordingMeta, data: EphysArray) -> ProcessedEphysRecordingMeta:
+    """
+    Save *data* with *meta*.
+
+    :param handler: persistence handler
+    :param meta: a filename or a meta with required attributes: filename and process.
+    :param data: the ephys data going to be saved.
+    :return: *meta*.
+    """
+    if isinstance(meta, str):
+        meta = ProcessedEphysRecordingMeta(meta, 'raw')
+
     meta.channel_list = data.channel_list
     meta.time_start = data.time_start
     meta.total_samples = data.total_samples
@@ -64,8 +75,18 @@ def save(handler: Handler, meta: ProcessedEphysRecordingMeta, data: EphysArray):
     with open(handler, meta) as mmap:
         mmap[:] = data[:]
 
+    return meta
+
 
 def load(handler: Handler, meta: ProcessedEphysRecordingMeta) -> EphysArray:
+    """
+    load data according to *meta*.
+
+    :param handler: persistence handler
+    :param meta:
+    :return:
+    :raise FileNotFoundError:
+    """
     meta_path = handler.filepath(meta)
     if not (data_path := meta_path.with_suffix('.bin')).exists():
         raise FileNotFoundError(data_path)
@@ -78,6 +99,13 @@ def load(handler: Handler, meta: ProcessedEphysRecordingMeta) -> EphysArray:
 
 @contextlib.contextmanager
 def open(handler: Handler, meta: ProcessedEphysRecordingMeta) -> Iterator[np.memmap]:
+    """
+    Open a memmap context according to the *meta*.
+
+    :param handler: persistence handler
+    :param meta:
+    :return: context manager that return a np.memmap.
+    """
     meta_path = handler.filepath(meta)
 
     data_path = meta_path.with_suffix('.bin')
@@ -100,6 +128,19 @@ def clone(dst: Union[str, ProcessedEphysRecordingMeta], src: ProcessedEphysRecor
           sample_rate: float = None,
           dtype: np.dtype = None,
           meta: dict[str, str] = None) -> ProcessedEphysRecordingMeta:
+    """
+    clone a meta.
+
+    :param dst: target or a process name.
+    :param src: source
+    :param channel_list: new channel array
+    :param time_start: new time start value.
+    :param total_samples: new total sample number
+    :param sample_rate: new sample rate
+    :param dtype: new data type
+    :param meta: new meta dict
+    :return:
+    """
     if isinstance(dst, str):
         dst = ProcessedEphysRecordingMeta(src.filename, dst)
 
@@ -117,6 +158,16 @@ def per_channel(handler: Handler,
                 func: Callable[[int, np.ndarray], np.ndarray],
                 meta: ProcessedEphysRecordingMeta, *,
                 chunk: int = 4) -> ProcessedEphysRecordingMeta:
+    """
+    process a ephys data per channel.
+
+    :param Handler: persistence handler
+    :param process: name of this process
+    :param func: data mapping function with the signature `(channel:int, data:Array[float, T]) -> Array[float, T]`
+    :param meta: source
+    :param chunk: read channels in a chunk to speed up the performance.
+    :return: processed meta
+    """
     ret = clone(process, meta)
 
     signals = load(handler, meta)
@@ -135,6 +186,14 @@ def per_channel(handler: Handler,
 def global_car(handler: Handler, meta: ProcessedEphysRecordingMeta, *,
                method: Literal['mean', 'median'] = 'median',
                chunk: int = 128) -> ProcessedEphysRecordingMeta:
+    """
+    Global common artifact removing.
+
+    :param handler: persistence handler
+    :param method: method of common artifact.
+    :param chunk: read samples in a chunk to speed up the performance.
+    :return: processed meta.
+    """
     if method == 'mean':
         method = np.mean
     elif method == 'median':
@@ -157,6 +216,15 @@ def local_car(handler: Handler, meta: ProcessedEphysRecordingMeta, *,
               method: Literal['mean', 'median'] = 'median',
               radius: Union[float, tuple[float, float]] = (30, 100),
               chunk: int = 128) -> ProcessedEphysRecordingMeta:
+    """
+    Local common artifact removing
+
+    :param handler: performance handler
+    :param method: method of common artifact
+    :param radius: the radius from an electrode consider a local.
+    :param chunk: read samples in a chunk to speed up the performance.
+    :return: processed meta.
+    """
     oper = build_local_car_operator(None, radius)  # TODO
 
     if method == 'mean':
@@ -181,9 +249,9 @@ def local_car(handler: Handler, meta: ProcessedEphysRecordingMeta, *,
 def build_local_car_operator(pos: np.ndarray, radius: Union[float, tuple[float, float]]) -> np.ndarray:
     """
 
-    :param pos: (C, 2) channel position array
+    :param pos: channel position `Array[float, [C, 2]]`
     :param radius:
-    :return: (C, C) operator
+    :return: operator `Array[float, [C, C]]`
     """
     x = pos[:, 0]
     y = pos[:, 1]
@@ -217,9 +285,9 @@ def build_local_car_operator(pos: np.ndarray, radius: Union[float, tuple[float, 
 def apply_local_car_median(oper: np.ndarray, data: np.ndarray) -> np.ndarray:
     """
 
-    :param oper: (C, C) operator
-    :param data: (C, S) array
-    :return: (C, S)
+    :param oper: operator `Array[float, [C, C]]`
+    :param data: data `Array[float, [C, T]]`
+    :return: processed `Array[float, [C, T]]`
     """
     c, _ = data.shape
     a, b = np.nonzero(oper < 0)

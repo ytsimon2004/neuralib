@@ -18,6 +18,11 @@ class ClusterInfo(DataFrameWrapper):
     """
 
     def __init__(self, df: pl.DataFrame):
+        """
+        Wrap a dataframe as a ClusterInfo.
+
+        :raise RuntimeError: *df* does not contain "cluster_id" column.
+        """
         if 'cluster_id' not in df.columns:
             raise RuntimeError('not a cluster info. miss "cluster_id" column.')
 
@@ -44,6 +49,9 @@ class ClusterInfo(DataFrameWrapper):
 
     @property
     def cluster_id(self) -> np.ndarray:
+        """
+        :return: cluster id `Array[int, C]`
+        """
         return self._df.get_column('cluster_id').to_numpy()
 
     @property
@@ -51,7 +59,7 @@ class ClusterInfo(DataFrameWrapper):
         """
         shank array of clusters.
 
-        :return:
+        :return: shank array `Array[shank:int, C]`
         :raise ColumnNotFoundError: shank
         """
         return self['shank'].to_numpy()
@@ -59,8 +67,9 @@ class ClusterInfo(DataFrameWrapper):
     @property
     def cluster_channel(self) -> np.ndarray:
         """
+        channel (the significant channel) array of clusters
 
-        :return:
+        :return: channel array `Array[channel:int, C]`
         :raise ColumnNotFoundError: channel
         """
         return self['channel'].to_numpy()
@@ -68,7 +77,7 @@ class ClusterInfo(DataFrameWrapper):
     @property
     def cluster_pos_x(self) -> np.ndarray:
         """
-        :return:
+        :return: channel x position `Array[float, C]`.
         :raise ColumnNotFoundError: pos_x
         """
         return self['pos_x'].to_numpy()
@@ -76,7 +85,7 @@ class ClusterInfo(DataFrameWrapper):
     @property
     def cluster_pos_y(self) -> np.ndarray:
         """
-        :return:
+        :return: channel y position `Array[float, C]`
         :raise ColumnNotFoundError: pos_y
         """
         return self['pos_y'].to_numpy()
@@ -88,8 +97,6 @@ class ClusterInfo(DataFrameWrapper):
                       strict: bool = False) -> Self:
         """
         select particular clusters and keep the ordering of *cluster*.
-
-        This method does not ensure every cluster in this are present in *cluster*.
 
         :param cluster:
         :param maintain_order: keep the ordering of *cluster* in the returned dataframe.
@@ -134,7 +141,7 @@ class ClusterInfo(DataFrameWrapper):
         number of cluster labeled as *label*.
 
         :param label:
-        :param column:
+        :param column: label column. default use `self.use_label_column`,
         :return: count
         :raise ColumnNotFoundError: *column*
         """
@@ -147,7 +154,7 @@ class ClusterInfo(DataFrameWrapper):
         """
 
         :param labels:
-        :param column:
+        :param column: label column. default use `self.use_label_column`,
         :return:
         :raise ColumnNotFoundError: *column*
         """

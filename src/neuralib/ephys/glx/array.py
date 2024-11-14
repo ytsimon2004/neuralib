@@ -20,9 +20,9 @@ class EphysArray(EphysRecording):
                  data: np.ndarray,
                  meta: dict[str, str] = None):
         """
-        :param time: A numpy array representing time points. Must be 1-dimensional.
-        :param channels: A numpy array representing channel identifiers. Must be 1-dimensional.
-        :param data: A 2-dimensional numpy array where rows correspond to channels and columns correspond to time points. Shape must match (len(channels), len(time)).
+        :param time: A numpy array representing time points. `Array[sec:float, T]`
+        :param channels: A numpy array representing channel identifiers. `Array[int, C]`
+        :param data: A 2-dimensional numpy array where rows correspond to channels and columns correspond to time points. `Array[D, [C, T]]`
         :param meta: An optional dictionary containing metadata as string key-value pairs. If provided, it will be used to update the internal metadata dictionary.
         """
         if time.ndim != 1 or channels.ndim != 1 or data.shape != (len(channels), len(time)):
@@ -41,10 +41,12 @@ class EphysArray(EphysRecording):
 
     @property
     def channel_list(self) -> np.ndarray:
+        """channel list `Array[int, C]`"""
         return self.__c
 
     @property
     def total_samples(self) -> int:
+        """total sample number `T`."""
         return len(self.__t)
 
     @property
@@ -61,10 +63,12 @@ class EphysArray(EphysRecording):
 
     @property
     def t(self) -> np.ndarray:
+        """`Array[sec:float, T]`"""
         return self.__t
 
     @property
     def dtype(self) -> np.dtype:
+        """Data type `D`"""
         return self.__d.dtype
 
     def __getitem__(self, item):
@@ -87,6 +91,11 @@ class EphysArray(EphysRecording):
     """time axis"""
 
     def with_time_range(self, t: tuple[float, float]) -> Self:
+        """
+
+        :param t: time range (start, end). unit: second
+        :return:
+        """
         x = np.nonzero(np.logical_and(t[0] <= self.__t, self.__t <= t[1]))[0]
 
         if np.all(x):
@@ -95,6 +104,16 @@ class EphysArray(EphysRecording):
         return EphysArray(self.__t[x], self.__c, allocating_barrier(self.__d, None, x))
 
     def with_time(self, t: Union[float, np.ndarray, Callable[[np.ndarray], np.ndarray]]) -> Self:
+        """
+        time mapping function:
+
+        * `float`: offset time with a constant value
+        * `Array[sec:float, T]`: replace with a new time array.
+        * `(t) -> t`: time mapping function.
+
+        :param t: time mapping function.
+        :return:
+        """
         if isinstance(t, (int, float, np.number)):
             t = self.__t + t
         elif isinstance(t, np.ndarray):
@@ -136,11 +155,24 @@ class EphysArray(EphysRecording):
     """signal"""
 
     def fma(self, a: float, b: float = 0) -> Self:
+        """
+        scale data by `new_data = old_data * a + b`
+
+        :param a: scale factor.
+        :param b: offset factor. default is 0.
+        :return:
+        """
         return EphysArray(self.__t, self.__c, allocating_barrier(self.__d) * a + b)
 
     def as_voltage(self) -> Self:
+        """
+        scale data to change unit from raw value to micro-voltage.
+
+        TODO Does other EphysRecording use different units?
+
+        :return:
+        """
         from .spikeglx import GlxRecording
-        # XXX Does other EphysRecording use different units?
         return EphysArray(self.__t, self.__c,
                           allocating_barrier(self.__d, dtype=np.float64) * GlxRecording.VOLTAGE_FACTOR)
 
@@ -156,12 +188,32 @@ ALLOCATION_LIMIT = None
 
 
 def allocation_limit() -> int:
+    """
+    Get current allocation limit number.
+
+    configurations:
+
+    * set module global variable `ALLOCATION_LIMIT`
+    * set environment variable `NEURALIB_NUMPY_ALLOCATION_LIMIT`
+
+    expression:
+
+    `[?G][?M][?K][?B]`
+
+    example:
+
+    ```bash
+    env NEURALIB_NUMPY_ALLOCATION_LIMIT=2G python ...
+    ```
+
+    :return: size in bytes.
+    """
     global ALLOCATION_LIMIT
     if ALLOCATION_LIMIT is not None:
         return ALLOCATION_LIMIT
 
     limit = os.environ.get('NEURALIB_NUMPY_ALLOCATION_LIMIT', '2G')
-    m = re.match(r'(?:(\d+)G)?(?:(\d+)M)?(?:(\d+)K)?(?:(\d+)B)?', limit)
+    m = re.match(r'(?:(.+?)G)?(?:(,+?)M)?(?:(.+?)K)?(?:\d+B)?', limit)
     if m is None:
         return 2 ** 30
 
@@ -169,7 +221,7 @@ def allocation_limit() -> int:
     m = m.group(2) or 0
     k = m.group(3) or 0
     b = m.group(4) or 0
-    ALLOCATION_LIMIT = int(g) * 2 ** 30 + int(m) * 2 ** 20 + int(k) * 2 ** 10 + int(b)
+    ALLOCATION_LIMIT = float(g) * 2 ** 30 + float(m) * 2 ** 20 + float(k) * 2 ** 10 + int(b)
     return ALLOCATION_LIMIT
 
 
@@ -177,6 +229,19 @@ def allocating_barrier(data: np.ndarray,
                        channels: int | slice | np.ndarray = None,
                        samples: int | slice | np.ndarray = None,
                        dtype: np.dtype = None) -> np.ndarray:
+    """
+    Give a barrier before creating a big array, to prevent the process
+    from out of memory and being crashing without any hint (program may
+    get killed immediately by OS).
+
+    :param data: source data `Array[?, [C, T]]`
+    :param channels: slice on channel axis (the first axis).
+    :param samples: slice on sample axis (the second axis).
+    :param dtype: data type for new array
+    :return: sliced data `Array[dtype, [C', T']]`
+    :raise TypeError: incorrent *channels* or *samples* type
+    :raise RuntimeError: new array over allocation limit.
+    """
     if data.ndim == 1:
         s = len(data)
         c = 1

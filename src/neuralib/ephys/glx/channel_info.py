@@ -11,12 +11,17 @@ __all__ = ['ChannelInfo']
 
 class ChannelInfo(DataFrameWrapper):
     """
-    Channel info data frame. Any polars with a columns "channel" could be considered ChannelInfo.
+    Channel info data frame. Any polars with a columns "channel" could be considered a `ChannelInfo`.
 
     It usually contains columns: [channel, shank, pos_x, pos_y]
     """
 
     def __init__(self, df: pl.DataFrame):
+        """
+        Wrap a dataframe as a ChannelInfo.
+
+        :raise RuntimeError: *df* does not contain "channel" column.
+        """
         if 'channel' not in df.columns:
             raise RuntimeError('not a cluster info. miss "channel" column.')
 
@@ -33,6 +38,9 @@ class ChannelInfo(DataFrameWrapper):
 
     @property
     def channel(self) -> np.ndarray:
+        """
+        :return: channel `Array[int, C]`.
+        """
         return self['channel'].to_numpy()
 
     @property
@@ -48,7 +56,7 @@ class ChannelInfo(DataFrameWrapper):
     def shank_set(self) -> np.ndarray:
         """
 
-        :return:
+        :return: unique shank `Array[shank:int, S]`
         :raise ColumnNotFoundError: shank
         """
         return self['shank'].unique().to_numpy()
@@ -57,7 +65,7 @@ class ChannelInfo(DataFrameWrapper):
     def shank(self) -> np.ndarray:
         """
 
-        :return:
+        :return: shank `Array[shank:int, C]`
         :raise ColumnNotFoundError: shank
         """
         return self['shank'].to_numpy()
@@ -65,7 +73,7 @@ class ChannelInfo(DataFrameWrapper):
     @property
     def pos_x(self) -> np.ndarray:
         """
-        :return:
+        :return: channel x position `Array[float, C]`
         :raise ColumnNotFoundError: pos_x
         """
         return self['pos_x'].to_numpy()
@@ -73,7 +81,7 @@ class ChannelInfo(DataFrameWrapper):
     @property
     def pos_y(self) -> np.ndarray:
         """
-        :return:
+        :return: channel y position `Array[float, C]`.
         :raise ColumnNotFoundError: pos_y
         """
         return self['pos_y'].to_numpy()
@@ -84,6 +92,7 @@ class ChannelInfo(DataFrameWrapper):
                       maintain_order: bool = False,
                       strict: bool = False) -> Self:
         """
+        Restrict channels in this dataframe.
 
         :param channel:
         :param maintain_order: keep the ordering of *channel* in the returned dataframe.
@@ -93,10 +102,12 @@ class ChannelInfo(DataFrameWrapper):
         return helper_with_index_column(self, 'channel', channel, maintain_order, strict)
 
     def drop_channels(self, channel: int | list[int] | np.ndarray) -> Self:
+        """ Remove channels from this dataframe."""
         channel = np.atleast_1d(channel)
         return self.filter(pl.col('channel').is_in(channel).not_())
 
     def with_shanks(self, shank: int | list[int] | np.ndarray) -> Self:
+        """Restrict shanks in this dataframe."""
         shank = np.atleast_1d(shank)
         return self.filter(pl.col('shank').is_in(shank))
 
@@ -109,6 +120,12 @@ class ChannelInfo(DataFrameWrapper):
     """position"""
 
     def mm(self) -> Self:
+        """
+        transform the channel position to unit mm.
+        do nothing when it has already been mm.
+
+        :return:
+        """
         if len(self) == 0:
             return self
 
@@ -122,6 +139,12 @@ class ChannelInfo(DataFrameWrapper):
         return self.with_columns(**columns)
 
     def um(self) -> Self:
+        """
+        transform the channel position to unit um.
+        do nothing when it has already been um,
+
+        :return:
+        """
         if len(self) == 0:
             return self
 

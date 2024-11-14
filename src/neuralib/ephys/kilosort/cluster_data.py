@@ -16,8 +16,15 @@ __all__ = ['Cluster', 'ClusterData']
 
 
 class Cluster(NamedTuple):
+    """
+    cluster data that contains spikes.
+    """
+
     i: dict[str, Any]
-    t: np.ndarray | None = None  # spike time in second, use glx time domain originally
+    """information dict"""
+
+    t: np.ndarray | None = None
+    """spike time in second, use glx time domain originally."""
 
     @property
     def cluster(self) -> int:
@@ -44,10 +51,12 @@ class Cluster(NamedTuple):
 
     @property
     def n_spikes(self) -> int:
+        """number of spikes."""
         return 0 if self.t is None else len(self.t)
 
     @property
     def duration(self) -> float:
+        """duration of the recording session."""
         if (ret := self.i.get('duration', None)) is not None:
             return ret
 
@@ -57,6 +66,7 @@ class Cluster(NamedTuple):
 
     @property
     def firing_rate(self) -> float:
+        """overall firing rate."""
         if (ret := self.i.get('fr', None)) is not None:
             return ret
 
@@ -70,6 +80,12 @@ class Cluster(NamedTuple):
         return (len(self.t) - 1) / self.duration
 
     def with_time_range(self, time_range: tuple[float, float]) -> Self:
+        """
+        taking spikes within the *time_range*.
+
+        :param time_range:
+        :return:
+        """
         if self.t is None:
             return self
 
@@ -77,6 +93,17 @@ class Cluster(NamedTuple):
         return self._replace(t=self.t[x])
 
     def with_time(self, offset: float | np.ndarray | Callable[[np.ndarray], np.ndarray]) -> Self:
+        """
+
+        time mapping function:
+
+        * `float`: offset time with a constant value
+        * `Array[sec:float, T]`: replace with a new time array.
+        * `(t) -> t`: time mapping function.
+
+        :param offset: time mapping function
+        :return:
+        """
         if self.t is None:
             return self
 
@@ -102,9 +129,17 @@ class Cluster(NamedTuple):
 
 
 class ClusterData(NamedTuple):
+    """
+    A group of cluster data contains spikes.
+
+    Do not create this class by youself. use `KilosortResult.cluster_data` instead.
+    """
+
     ks_data: 'KilosortResult'
     info: ClusterInfo
+
     spikes: np.ndarray
+    """Array[I, S]"""
 
     @property
     def n_cluster(self) -> int:
@@ -182,6 +217,12 @@ class ClusterData(NamedTuple):
 
     def with_firingrate(self, fr: float = None) -> Self:
         """
+        filter clusters according to its firingrate.
+
+        sign of *fr*:
+
+        * 'position': filter clusters which its firingrate above this value.
+        * 'negative': filter clusters wichi its firingrate below this value.
 
         :param fr:
         :return:
@@ -210,15 +251,31 @@ class ClusterData(NamedTuple):
             assert False, 'unreachable'
 
     def map_spike_data(self, a: np.ndarray, axis=0) -> np.ndarray:
+        """
+        :param a: `Array[V, [..., I, ...]]`
+        :param axis: index of I in *a*.
+        :return: `Array[V, [..., I', ...]]`
+        """
         return np.take(a, self.spikes, axis)
 
     def filter_time_range(self, time_range: tuple[float, float]) -> Self:
+        """
+        filter spikes within the *time_range*.
+
+        :param time_range:
+        :return:
+        """
         t = self.spike_time
         x = np.logical_and(time_range[0] <= t, t <= time_range[1])
         info = self.info.with_clusters(np.unique(self.spike_cluster[x]))
         return self._replace(info=info, spikes=self.spikes[x])
 
     def get_cluster(self, c: int) -> Cluster:
+        """
+        :param c: cluster id
+        :return: Cluster
+        :raise ValueError: *c* not in this.
+        """
         info = self.info.filter(pl.col('cluster_id') == c)
         if len(info) == 0:
             raise ValueError(f'no such cluster {c=}')

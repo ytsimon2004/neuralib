@@ -10,6 +10,10 @@ __all__ = ['EphysRecording']
 
 
 class EphysRecording(metaclass=abc.ABCMeta):
+    """
+    An ephys recording data that contains `C` channels and `T` samples.
+    """
+
     @property
     @abc.abstractmethod
     def data_path(self) -> Optional[Path]:
