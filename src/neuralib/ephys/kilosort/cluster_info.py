@@ -101,10 +101,11 @@ class ClusterInfo(DataFrameWrapper):
         """
         select particular clusters and keep the ordering of *cluster*.
 
-        :param cluster:
+        :param cluster: cluster ID, ID list, ID array, or a ClusterInfo.
         :param maintain_order: keep the ordering of *cluster* in the returned dataframe.
         :param strict: all *cluster* should present in the returned dataframe. Otherwise, an error will be raised.
         :return:
+        :raise RuntimeError: strict mode fail.
         """
         return helper_with_index_column(self, 'cluster_id', cluster, maintain_order, strict)
 

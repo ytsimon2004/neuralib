@@ -317,7 +317,7 @@ def helper_with_index_column(df: T,
     :param maintain_order: keep the ordering of *index* in the returned dataframe.
     :param strict: all index in *index* should present in the returned dataframe. Otherwise, an error will be raised.
     :return:
-    :raise RuntimeError:
+    :raise RuntimeError: strict mode fail.
     """
     if isinstance(index, (int, np.integer)):
         ret = df.filter(pl.col(column) == index)

@@ -101,6 +101,7 @@ class ChannelInfo(DataFrameWrapper):
         :param maintain_order: keep the ordering of *channel* in the returned dataframe.
         :param strict: all *channel* should present in the returned dataframe. Otherwise, an error will be raised.
         :return:
+        :raise RuntimeError: strict mode fail.
         """
         return helper_with_index_column(self, 'channel', channel, maintain_order, strict)
 

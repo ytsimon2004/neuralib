@@ -136,67 +136,131 @@ class ClusterData(NamedTuple):
     """
 
     ks_data: 'KilosortResult'
+
     info: ClusterInfo
+    """cluster info that contains `C` clusters."""
 
     spikes: np.ndarray
     """Array[I, S]"""
 
     @property
     def n_cluster(self) -> int:
+        """Number of clusters `C`"""
         return len(self.info)
 
     @property
     def cluster_list(self) -> np.ndarray:
+        """
+        :return: cluster id `Array[int, C]`
+        """
         return self.info.cluster_id
 
     @property
     def cluster_channel(self) -> np.ndarray:
+        """
+        channel (the significant channel) array of clusters
+
+        :return: channel array `Array[channel:int, C]`
+        :raise ColumnNotFoundError: channel
+        """
         return self.info.cluster_channel
 
     @property
     def cluster_shank(self) -> np.ndarray:
+        """
+        shank array of clusters.
+
+        :return: shank array `Array[shank:int, C]`
+        :raise ColumnNotFoundError: shank
+        """
         return self.info.cluster_shank
 
     @property
     def cluster_pos_x(self) -> np.ndarray:
+        """
+        :return: channel x position `Array[float, C]`.
+        :raise ColumnNotFoundError: pos_x
+        """
         return self.info.cluster_pos_x
 
     @property
     def cluster_pos_y(self) -> np.ndarray:
+        """
+        :return: channel y position `Array[float, C]`
+        :raise ColumnNotFoundError: pos_y
+        """
         return self.info.cluster_pos_y
 
     @property
     def spike_cluster(self) -> np.ndarray:
+        """
+
+        :return: cluster of spikes. `Array[C, S]`
+        """
         return self.ks_data.spike_cluster[self.spikes]
 
     @property
     def spike_time(self) -> np.ndarray:
+        """
+
+        :return: spike time (second). `Array[float, S]`
+        """
         return self.ks_data.spike_timestep[self.spikes] / self.ks_data.sample_rate
 
     @property
     def n_spikes(self) -> int:
+        """Number of spikes `S`."""
         return len(self.spikes)
 
-    def with_info(self, info: ClusterInfo) -> Self:
+    def with_info(self, info: ClusterInfo, strict=True) -> Self:
+        """
+
+        :param info:
+        :param strict: If true, drop clusters in *info* that do not present.
+        :return:
+        """
         spike_cluster = self.spike_cluster
         i = np.nonzero(np.logical_or.reduce([
             spike_cluster == it
             for it in info.cluster_id
         ]))[0]
 
-        info = info.with_clusters(np.unique(spike_cluster[i]))
+        if strict:
+            info = info.with_clusters(np.unique(spike_cluster[i]))
+
         return self._replace(info=info, spikes=self.spikes[i])
 
     def with_clusters(self, cluster: list[int] | np.ndarray | ClusterInfo, *,
                       maintain_order: bool = False,
                       strict: bool = False) -> Self:
+        """
+        select particular clusters.
+
+        :param cluster: cluster ID, ID list, ID array, or a ClusterInfo.
+        :param maintain_order: keep the ordering of *cluster* in the returned dataframe.
+        :param strict: all *cluster* should present in the returned dataframe. Otherwise, an error will be raised.
+        :return:
+        :raise RuntimeError: strict mode fail.
+        """
         info = self.info.with_clusters(cluster, maintain_order=maintain_order, strict=strict)
         return self.with_info(info)
 
     def with_cluster_shank(self, shank: int) -> Self:
+        """
+        select clusters on particular shank.
+
+        :param shank:
+        :return:
+        """
         return self.with_info(self.info.filter(pl.col('shank') == shank))
 
-    def with_cluster_label(self, label: str | list[str]):
+    def with_cluster_label(self, label: str | list[str]) -> Self:
+        """
+        select clusters with particular labels.
+
+        :param label: label or list of labels.
+        :return:
+        """
         return self.with_info(self.info.with_cluster_label(label))
 
     @property
@@ -204,6 +268,10 @@ class ClusterData(NamedTuple):
         return self.ks_data.time_duration
 
     def firingrate(self) -> np.ndarray:
+        """
+
+        :return: firing rate `Array[fr, C]`
+        """
         if 'fr' in self.info:
             return self.info['fr'].to_numpy()
 
@@ -217,12 +285,12 @@ class ClusterData(NamedTuple):
 
     def with_firingrate(self, fr: float = None) -> Self:
         """
-        filter clusters according to its firingrate.
+        filter clusters according to its firing-rate.
 
         sign of *fr*:
 
         * 'position': filter clusters which its firingrate above this value.
-        * 'negative': filter clusters wichi its firingrate below this value.
+        * 'negative': filter clusters which its firingrate below this value.
 
         :param fr:
         :return:
@@ -262,7 +330,7 @@ class ClusterData(NamedTuple):
         """
         filter spikes within the *time_range*.
 
-        :param time_range:
+        :param time_range: tuple of (start, stop). unit: second.
         :return:
         """
         t = self.spike_time
@@ -272,6 +340,7 @@ class ClusterData(NamedTuple):
 
     def get_cluster(self, c: int) -> Cluster:
         """
+
         :param c: cluster id
         :return: Cluster
         :raise ValueError: *c* not in this.
