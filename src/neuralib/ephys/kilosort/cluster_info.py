@@ -135,8 +135,8 @@ class ClusterInfo(DataFrameWrapper):
         other = pl.DataFrame({'cluster_id': cluster_id, **kwargs}, schema=self._df.schema)
         return self.dataframe(pl.concat([self._df, other], how='diagonal'))
 
-    def join(self, other: pl.DataFrame | DataFrameWrapper, on='cluster_id', how="inner", **kwargs) -> Self:
-        return super().join(other, on, how, **kwargs)
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on='cluster_id', **kwargs) -> Self:
+        return super().join(other, on, **kwargs)
 
     """label"""
 

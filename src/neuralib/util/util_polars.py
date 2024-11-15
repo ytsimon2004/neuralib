@@ -177,7 +177,7 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
         if isinstance(other, DataFrameWrapper):
             other = other.dataframe()
 
-        return self.dataframe(self.dataframe().join(other, *args, **kwargs))
+        return self.dataframe(self.dataframe().join(other, on, *args, **kwargs))
 
     def pipe(self, function: Callable[Concatenate[pl.DataFrame, P], pl.DataFrame],
              *args: P.args,

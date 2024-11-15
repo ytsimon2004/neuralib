@@ -163,8 +163,8 @@ class ChannelInfo(DataFrameWrapper):
 
     """other"""
 
-    def join(self, other: pl.DataFrame | DataFrameWrapper, on='channel', how="inner", **kwargs) -> Self:
-        return super().join(other, on, how, **kwargs)
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on='channel', **kwargs) -> Self:
+        return super().join(other, on, **kwargs)
 
     def partition_channel_by_shank(self) -> dict[int, Self]:
         return {
