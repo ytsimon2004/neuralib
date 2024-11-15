@@ -16,12 +16,15 @@ class ChannelInfo(DataFrameWrapper):
     It usually contains columns: [channel, shank, pos_x, pos_y]
     """
 
-    def __init__(self, df: pl.DataFrame):
+    def __init__(self, df: pl.DataFrame | DataFrameWrapper):
         """
         Wrap a dataframe as a ChannelInfo.
 
         :raise RuntimeError: *df* does not contain "channel" column.
         """
+        if isinstance(df, DataFrameWrapper):
+            df = df.dataframe()
+
         if 'channel' not in df.columns:
             raise RuntimeError('not a cluster info. miss "channel" column.')
 

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Sequence
-from typing import Callable, Literal, overload, TypeVar, Generic
+from typing import Callable, Literal, overload, TypeVar, Generic, Any, TYPE_CHECKING
 
 import numpy as np
 import polars as pl
-from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence, Iterable, Collection
+    from typing_extensions import Self, ParamSpec, Concatenate
+    from polars import _typing as pty
+
+    P = ParamSpec('P')
 
 __all__ = ['DataFrameWrapper']
 
@@ -54,6 +59,12 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
     def schema(self) -> pl.Schema:
         return self.dataframe().schema
 
+    def __array__(self, *args, **kwargs) -> np.ndarray:
+        return self.dataframe().__array__(*args, **kwargs)
+
+    def __dataframe__(self, *args, **kwargs):
+        return self.dataframe().__dataframe__(*args, **kwargs)
+
     def __getitem__(self, item):
         return self.dataframe().__getitem__(item)
 
@@ -63,71 +74,119 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
     def rename(self, mapping: dict[str, str] | Callable[[str], str]) -> Self:
         return self.dataframe(self.dataframe().rename(mapping))
 
-    def filter(self, *predicates, **constraints) -> Self:
+    def filter(self, *predicates: pty.IntoExprColumn | Iterable[pty.IntoExprColumn] | bool | list[bool] | np.ndarray,
+               **constraints: Any) -> Self:
         return self.dataframe(self.dataframe().filter(*predicates, **constraints))
 
+    def slice(self, offset: int, length: int | None = None) -> Self:
+        return self.dataframe(self.dataframe().slice(offset, length))
+
+    def head(self, n: int = 5) -> Self:
+        return self.dataframe(self.dataframe().head(n))
+
+    def tail(self, n: int = 5) -> Self:
+        return self.dataframe(self.dataframe().tail(n))
+
+    def limit(self, n: int = 5) -> Self:
+        return self.dataframe(self.dataframe().limit(n))
+
+    @overload
     def sort(self,
-             by, *more_by,
+             by: pty.IntoExpr | Iterable[[pty.IntoExpr]],
+             *more_by: pty.IntoExpr,
              descending: bool | Sequence[bool] = False,
              nulls_last: bool | Sequence[bool] = False,
              multithreaded: bool = True,
              maintain_order: bool = False) -> Self:
-        return self.dataframe(self.dataframe().sort(by, *more_by,
-                                                    descending=descending, nulls_last=nulls_last,
-                                                    multithreaded=multithreaded, maintain_order=maintain_order))
+        pass
 
-    def drop(self, *columns, strict: bool = True) -> Self:
+    def sort(self, by, *more_by, **kwargs) -> Self:
+        return self.dataframe(self.dataframe().sort(by, *more_by, **kwargs))
+
+    def drop(self, *columns: pty.ColumnNameOrSelector | Iterable[pty.ColumnNameOrSelector],
+             strict: bool = True) -> Self:
         return self.dataframe(self.dataframe().drop(*columns, strict=strict))
 
+    def drop_nulls(self, subset: pty.ColumnNameOrSelector | Collection[pty.ColumnNameOrSelector]) -> Self:
+        return self.dataframe(self.dataframe().drop_nulls(subset))
+
+    def fill_null(self, value: Any | pl.Expr | None = None,
+                  strategy: pty.FillNullStrategy | None = None,
+                  limit: int | None = None, **kwargs) -> Self:
+        return self.dataframe(self.dataframe().fill_null(value, strategy, limit, **kwargs))
+
+    def fill_nan(self, value: pl.Expr | int | float | None = None) -> Self:
+        return self.dataframe(self.dataframe().fill_nan(value))
+
+    def clear(self, n: int = 5) -> Self:
+        return self.dataframe(self.dataframe().clear(n))
+
+    def clone(self) -> Self:
+        return self.dataframe(self.dataframe(), may_inplace=False)
+
     @overload
-    def partition_by(self, by, *more_by,
+    def partition_by(self, by: pty.ColumnNameOrSelector | Iterable[pty.ColumnNameOrSelector],
+                     *more_by: pty.ColumnNameOrSelector,
                      maintain_order: bool = True,
                      include_key: bool = True,
                      as_dict: Literal[False] = ...) -> list[Self]:
         pass
 
     @overload
-    def partition_by(self, by, *more_by,
+    def partition_by(self, by: pty.ColumnNameOrSelector | Iterable[pty.ColumnNameOrSelector],
+                     *more_by: pty.ColumnNameOrSelector,
                      maintain_order: bool = ...,
                      include_key: bool = ...,
                      as_dict: Literal[True]) -> dict[tuple[object, ...], Self]:
         pass
 
-    def partition_by(self, by, *more_by,
-                     maintain_order: bool = True,
-                     include_key: bool = True,
-                     as_dict: bool = False):
-        dataframe = self.dataframe().partition_by(by, *more_by,
-                                                  maintain_order=maintain_order, include_key=include_key,
-                                                  as_dict=as_dict)
+    def partition_by(self, by, *more_by, as_dict=False, **kwargs):
+        dataframe = self.dataframe().partition_by(by, *more_by, as_dict=as_dict, **kwargs)
         if as_dict:
             return {k: self.dataframe(it, may_inplace=False) for k, it in dataframe.items()}
         else:
             return [self.dataframe(it, may_inplace=False) for it in dataframe]
 
-    def with_columns(self, *exprs, **named_exprs) -> Self:
+    def select(self, *exprs: pty.IntoExpr | Iterable[pty.IntoExpr],
+               **named_exprs: pty.IntoExpr) -> Self:
+        return self.dataframe(self.dataframe().select(*exprs, **named_exprs))
+
+    def with_columns(self, *exprs: pty.IntoExpr | Iterable[pty.IntoExpr],
+                     **named_exprs: pty.IntoExpr) -> Self:
         return self.dataframe(self.dataframe().with_columns(*exprs, **named_exprs))
 
-    def join(self, other: pl.DataFrame | DataFrameWrapper, on, how="inner", *,
+    def with_row_index(self, name: str = "index", offset: int = 0) -> Self:
+        return self.dataframe(self.dataframe().with_row_index(name, offset))
+
+    # def shift(self, n: int = 1, *, fill_value: pty.IntoExpr | None = None) -> Self:
+    #     return self.dataframe(self.dataframe().shift(n, fill_value=fill_value))
+
+    @overload
+    def join(self, other: pl.DataFrame | DataFrameWrapper,
+             on: str | pl.Expr | Sequence[str | pl.Expr],
+             how: pty.JoinStrategy = "inner", *,
              left_on=None,
              right_on=None,
              suffix: str = "_right",
-             validate="m:m",
+             validate: pty.JoinValidation = "m:m",
              join_nulls: bool = False,
              coalesce: bool | None = None) -> Self:
+        pass
+
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on, *args, **kwargs) -> Self:
         if isinstance(other, DataFrameWrapper):
             other = other.dataframe()
 
-        return self.dataframe(self.dataframe().join(other, on, how,
-                                                    left_on=left_on, right_on=right_on, suffix=suffix,
-                                                    validate=validate, join_nulls=join_nulls, coalesce=coalesce))
+        return self.dataframe(self.dataframe().join(other, *args, **kwargs))
 
-    def pipe(self, function, *args, **kwargs) -> Self:
+    def pipe(self, function: Callable[Concatenate[pl.DataFrame, P], pl.DataFrame],
+             *args: P.args,
+             **kwargs: P.kwargs) -> Self:
         return self.dataframe(self.dataframe().pipe(function, *args, **kwargs))
 
-    def group_by(self, *by,
+    def group_by(self, *by: pty.IntoExpr | Iterable[pty.IntoExpr],
                  maintain_order: bool = False,
-                 **named_by) -> pl.GroupBy:
+                 **named_by: pty.IntoExpr) -> pl.GroupBy:
         return self.dataframe().group_by(*by, maintain_order=maintain_order, **named_by)
 
 
@@ -135,9 +194,19 @@ T = TypeVar('T', bound=DataFrameWrapper)
 
 
 class LazyDataFrameWrapper(Generic[T]):
+    __slots__ = '__wrapper', '__lazy'
+
     def __init__(self, wrapper: T, lazy: pl.LazyFrame):
         self.__wrapper = wrapper
         self.__lazy = lazy
+
+    @property
+    def columns(self) -> list[str]:
+        return self.__lazy.columns
+
+    @property
+    def schema(self) -> pl.Schema:
+        return self.__lazy.schema
 
     def lazy(self) -> LazyDataFrameWrapper[T]:
         return self
@@ -148,42 +217,89 @@ class LazyDataFrameWrapper(Generic[T]):
     def rename(self, mapping: dict[str, str] | Callable[[str], str]) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.rename(mapping))
 
-    def filter(self, *predicates, **constraints) -> Self:
+    def slice(self, offset: int, length: int | None = None) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.slice(offset, length))
+
+    def head(self, n: int = 5) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.head(n))
+
+    def tail(self, n: int = 5) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.tail(n))
+
+    def limit(self, n: int = 5) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.limit(n))
+
+    def clear(self, n: int = 0) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.clear(n))
+
+    def filter(self, *predicates: pty.IntoExprColumn | Iterable[pty.IntoExprColumn] | bool | list[bool] | np.ndarray,
+               **constraints: Any) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.filter(*predicates, **constraints))
 
+    @overload
     def sort(self,
-             by, *more_by,
+             by: pty.IntoExpr | Iterable[[pty.IntoExpr]],
+             *more_by: pty.IntoExpr,
              descending: bool | Sequence[bool] = False,
              nulls_last: bool | Sequence[bool] = False,
              multithreaded: bool = True,
              maintain_order: bool = False) -> Self:
-        df = self.__lazy.sort(by, *more_by, descending=descending, nulls_last=nulls_last,
-                              multithreaded=multithreaded, maintain_order=maintain_order)
+        pass
+
+    def sort(self, by, *more_by, **kwargs) -> Self:
+        df = self.__lazy.sort(by, *more_by, **kwargs)
         return LazyDataFrameWrapper(self.__wrapper, df)
 
-    def drop(self, *columns, strict: bool = True) -> Self:
+    def drop(self, *columns: pty.ColumnNameOrSelector | Iterable[pty.ColumnNameOrSelector],
+             strict: bool = True) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.drop(*columns, strict=strict))
 
-    def with_columns(self, *exprs, **named_exprs) -> Self:
+    def drop_nulls(self, subset: pty.ColumnNameOrSelector | Collection[pty.ColumnNameOrSelector]) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.drop_nulls(subset))
+
+    def fill_null(self, value: Any | pl.Expr | None = None,
+                  strategy: pty.FillNullStrategy | None = None,
+                  limit: int | None = None, **kwargs) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.fill_null(value, strategy, limit, **kwargs))
+
+    def fill_nan(self, value: pl.Expr | int | float | None = None) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.fill_nan(value))
+
+    def select(self, *exprs: pty.IntoExpr | Iterable[pty.IntoExpr],
+               **named_exprs: pty.IntoExpr) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.select(*exprs, **named_exprs))
+
+    def with_columns(self, *exprs: pty.IntoExpr | Iterable[pty.IntoExpr],
+                     **named_exprs: pty.IntoExpr) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.with_columns(*exprs, **named_exprs))
 
-    def join(self, other: pl.DataFrame | pl.LazyFrame | DataFrameWrapper, on, how="inner", *,
+    def with_row_index(self, name: str = "index", offset: int = 0) -> Self:
+        return LazyDataFrameWrapper(self.__wrapper, self.__lazy.with_row_index(name, offset))
+
+    @overload
+    def join(self, other: pl.DataFrame | DataFrameWrapper,
+             on: str | pl.Expr | Sequence[str | pl.Expr],
+             how: pty.JoinStrategy = "inner", *,
              left_on=None,
              right_on=None,
              suffix: str = "_right",
-             validate="m:m",
+             validate: pty.JoinValidation = "m:m",
              join_nulls: bool = False,
              coalesce: bool | None = None) -> Self:
+        pass
+
+    def join(self, other: pl.DataFrame | DataFrameWrapper, on, *args, **kwargs) -> Self:
         if isinstance(other, DataFrameWrapper):
             other = other.dataframe()
         if not isinstance(other, pl.LazyFrame):
             other = other.lazy()
 
-        df = self.__lazy.join(other, on, how, left_on=left_on, right_on=right_on, suffix=suffix,
-                              validate=validate, join_nulls=join_nulls, coalesce=coalesce)
+        df = self.__lazy.join(other, on, *args, **kwargs)
         return LazyDataFrameWrapper(self.__wrapper, df)
 
-    def pipe(self, function, *args, **kwargs) -> Self:
+    def pipe(self, function: Callable[Concatenate[pl.LazyFrame, P], pl.LazyFrame],
+             *args: P.args,
+             **kwargs: P.kwargs) -> Self:
         return LazyDataFrameWrapper(self.__wrapper, self.__lazy.pipe(function, *args, **kwargs))
 
 

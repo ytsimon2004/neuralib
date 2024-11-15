@@ -17,12 +17,15 @@ class ClusterInfo(DataFrameWrapper):
     Cluster info data frame. Any polars with a columns "cluster_id" could be considered ClusterInfo.
     """
 
-    def __init__(self, df: pl.DataFrame):
+    def __init__(self, df: pl.DataFrame | DataFrameWrapper):
         """
         Wrap a dataframe as a ClusterInfo.
 
         :raise RuntimeError: *df* does not contain "cluster_id" column.
         """
+        if isinstance(df, DataFrameWrapper):
+            df = df.dataframe()
+
         if 'cluster_id' not in df.columns:
             raise RuntimeError('not a cluster info. miss "cluster_id" column.')
 
