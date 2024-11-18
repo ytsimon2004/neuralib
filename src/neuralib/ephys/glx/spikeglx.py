@@ -82,7 +82,7 @@ class GlxMeta:
 
 class GlxRecording(GlxMeta, EphysRecording):
     VOLTAGE_FACTOR: Final[float] = 0.195
-    """A constant factor for voltage conversion, in mV/1"""
+    """A constant factor for voltage conversion, in uV/1"""
 
     def __init__(self, path: Union[str, Path]):
         """
