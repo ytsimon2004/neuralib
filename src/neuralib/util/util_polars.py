@@ -65,6 +65,23 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
     def __dataframe__(self, *args, **kwargs):
         return self.dataframe().__dataframe__(*args, **kwargs)
 
+    @overload
+    def __getitem__(self, key: (
+            str
+            | tuple[[pty.MultiIndexSelector, pty.SingleColSelector]]
+    )) -> pl.Series:
+        pass
+
+    @overload
+    def __getitem__(self, key: (
+            pty.SingleIndexSelector
+            | pty.MultiIndexSelector
+            | pty.MultiColSelector
+            | tuple[pty.SingleIndexSelector, pty.MultiColSelector]
+            | tuple[pty.MultiIndexSelector, pty.MultiColSelector]
+    )) -> pl.DataFrame:
+        pass
+
     def __getitem__(self, item):
         return self.dataframe().__getitem__(item)
 
@@ -306,7 +323,7 @@ class LazyDataFrameWrapper(Generic[T]):
 def helper_with_index_column(df: T,
                              column: str,
                              index: int | list[int] | np.ndarray | T,
-                             maintain_order:bool=False,
+                             maintain_order: bool = False,
                              strict: bool = False) -> T:
     """
     A help function to do the filter on an index column.
@@ -331,7 +348,6 @@ def helper_with_index_column(df: T,
     if strict:
         if len(miss := np.setdiff1d(index, df.dataframe()[column].unique().to_numpy())) > 0:
             raise RuntimeError(f'missing {column}: {list(miss)}')
-
 
     if maintain_order:
         _column = '_' + column

@@ -1,25 +1,37 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import IO
+from typing import IO, TYPE_CHECKING
 
 import numpy as np
 import polars as pl
-from typing_extensions import Self
+from typing_extensions import Self, overload
 
 from neuralib.util.util_polars import DataFrameWrapper, helper_with_index_column
+
+if TYPE_CHECKING:
+    from polars import _typing as pty
+    from .result import KilosortResult
+    from neuralib.ephys.glx import EphysRecording
 
 __all__ = ['ClusterInfo']
 
 
 class ClusterInfo(DataFrameWrapper):
     """
-    Cluster info data frame. Any polars with a columns "cluster_id" could be considered ClusterInfo.
+    Cluster info data frame. Any polars with the column "cluster_id" could be considered `ClusterInfo`.
+
+    It sometimes contains `ChannelInfo`'s columns: `[cluster_id, channel, shank, pos_x, pos_y]`, which channel
+    is the most significant channel of corresponding clusters. However, depending on the methods,
+    what the most significant channel to a cluster is may be changed. For example, waveform-template-based and
+    mean-waveform-based methods may produce slightly different results. Note that, when we talk about the
+    channel of a cluster, we only focus on non-noise clusters.
     """
 
     def __init__(self, df: pl.DataFrame | DataFrameWrapper):
         """
-        Wrap a dataframe as a ClusterInfo.
+        Wrap a dataframe as a `ClusterInfo`.
 
         :raise RuntimeError: *df* does not contain "cluster_id" column.
         """
@@ -27,18 +39,66 @@ class ClusterInfo(DataFrameWrapper):
             df = df.dataframe()
 
         if 'cluster_id' not in df.columns:
-            raise RuntimeError('not a cluster info. miss "cluster_id" column.')
+            raise RuntimeError('not a cluster info dataframe. miss "cluster_id" column.')
 
         self._df = df
         self.use_label_column = 'label'
 
     @classmethod
-    def read_csv(cls, path: str | Path, **kwargs) -> ClusterInfo:
-        ret = pl.read_csv(path, separator='\t', **kwargs)
-        return ClusterInfo(ret)
+    @overload
+    def read_csv(cls, path: str | Path, *,
+                 # change default values
+                 separator: str = ",",
+                 comment_prefix: str | None = '#',
+                 quote_char: str | None = '"',
+                 skip_rows: int = 0,
+                 # common kwargs
+                 schema_overrides: Mapping[str, pty.PolarsDataType] | Sequence[pty.PolarsDataType] = None,
+                 null_values: str | Sequence[str] | dict[str, str] | None = None,
+                 # other kwargs
+                 **kwargs) -> ClusterInfo:
+        pass
 
-    def save(self, path: str | Path | IO | None):
-        self._df.write_csv(path, separator='\t')
+    @classmethod
+    def read_csv(cls, path: str | Path, *,
+                 separator: str = "\t",
+                 comment_prefix: str | None = '#',
+                 quote_char: str | None = '"',
+                 skip_rows: int = 0,
+                 **kwargs) -> ClusterInfo:
+        """
+        Read cluster csv dataframe.
+
+        It used to load Kilosort/Phy csv/tsv data, which has the following form.
+        
+        ```
+        $ head cluster_DATA.csv
+        cluster_id  DATA
+        0   0.0
+        1   1.0
+        ```
+
+        :param path:
+        :param separator:
+        :param comment_prefix:
+        :param quote_char:
+        :param skip_rows:
+        :param kwargs: polars.read_csv(kwargs)
+        :return:
+        """
+        return ClusterInfo(pl.read_csv(
+            path,
+            separator=separator,
+            comment_prefix=comment_prefix,
+            quote_char=quote_char,
+            skip_row=skip_rows,
+            **kwargs
+        ))
+
+    def save(self, path: str | Path | IO | None, *,
+             separator: str = "\t",
+             quote_char: str = '"', ):
+        self._df.write_csv(path, separator=separator, quote_char=quote_char)
 
     def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
         if dataframe is None:
@@ -156,10 +216,11 @@ class ClusterInfo(DataFrameWrapper):
 
     def with_cluster_label(self, labels: str | list[str], column: str = None) -> Self:
         """
+        Filter clusters with given labels.
 
         :param labels:
-        :param column: label column. default use `self.use_label_column`,
-        :return:
+        :param column: the name of the label column. default use `self.use_label_column`,
+        :return: self that only contains clusters with label in *labels*.
         :raise ColumnNotFoundError: *column*
         """
         if column is None:
@@ -169,3 +230,59 @@ class ClusterInfo(DataFrameWrapper):
             return self.filter(pl.col(column) == labels)
         else:
             return self.filter(pl.col(column).is_in(labels))
+
+
+def fix_cluster_info(info: ClusterInfo,
+                     ephys: EphysRecording | None = None,
+                     ks_result: KilosortResult | None = None) -> ClusterInfo:
+    """
+
+    This method will try to fix following things:
+
+    * change column name, such as 'ch' to 'channel', 'sh' to 'shank'
+    * map channel from channel index to channel number (*ks_result* is not None)
+    * replace with actual shank number (*ephys* is not None)
+
+    TODO check kilosort/phy still contain above issues.
+
+    :param info:
+    :param ephys:
+    :param ks_result:
+    :return:
+    """
+    ret = info
+
+    # rename columns
+    rename = {}
+    if 'ch' in ret.columns:
+        rename['ch'] = 'channel'
+    if 'sh' in ret.columns:
+        rename['sh'] = 'shank'
+    if 'depth' in ret.columns:
+        rename['depth'] = 'pos_y'
+
+    if len(rename):
+        ret = ret.rename(rename)
+
+    if ks_result is not None:
+        chmap = ks_result.channel_map
+        chmap = pl.DataFrame(dict(channel=np.arange(chmap), channel_value=chmap))
+        ret = (
+            ret
+            .join(chmap, on='channel', how='left')
+            .drop('channel')
+            .rename({'channel_value': 'channel'})
+        )
+
+    if ephys:
+        ret = (
+            ret
+            .join(ephys.channel_info(), on='channel', how='left')
+            .drop('shank', 'pos_y')
+            .rename({
+                'shank_right': 'shank',
+                'pos_y_right': 'pos_y',
+            })
+        )
+
+    return ret

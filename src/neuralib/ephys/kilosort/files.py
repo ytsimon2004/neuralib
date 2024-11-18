@@ -4,10 +4,8 @@ from pathlib import Path
 from typing import Union, Iterator, TYPE_CHECKING, Optional, Final
 
 import numpy as np
-import polars as pl
 
 from neuralib.ephys.glx import EphysRecording
-from neuralib.util.verbose import fprint
 from .cluster_info import ClusterInfo
 from .params import KilosortParameter
 
@@ -19,7 +17,16 @@ __all__ = ['KilosortFiles']
 
 
 class KilosortFiles:
-    def __init__(self, directory: Union[str, Path], ephys: EphysRecording):
+    """
+    A directory that stored the results from Kilosort and Phy.
+    """
+
+    def __init__(self, directory: Union[str, Path], ephys: EphysRecording | None = None):
+        """
+
+        :param directory: storage directory.
+        :param ephys: source ephys data.
+        """
         self.directory = Path(directory)
         self.ephys = ephys
 
@@ -34,10 +41,11 @@ class KilosortFiles:
     # ======== #
 
     def get_file(self, name: str, create=False) -> Path:
-        """Return found file with *name*.
+        """
+        Return found file with *name*.
 
         :param name: filename
-        :param create: does path is used for creating a new file?
+        :param create: Ignored. Used by `KilosortProcessedFiles`.
         :return: filepath
         """
         return self.directory / name
@@ -55,7 +63,15 @@ class KilosortFiles:
     def get_cluster_data_file(self, name: str) -> Path:
         return self.get_file(f'cluster_{name}.tsv')
 
-    def glob(self, glob: str) -> Iterator[Path]:
+    def glob(self, glob: str, *, recursive=True, unique=True) -> Iterator[Path]:
+        """
+        Find files by a *glob* pattern.
+
+        :param glob:
+        :param recursive: Ignored. Used by `KilosortProcessedFiles`.
+        :param unique: Ignored. Used by `KilosortProcessedFiles`.
+        :return:
+        """
         return self.directory.glob(glob)
 
     # ========= #
@@ -166,8 +182,6 @@ class KilosortFiles:
     def motion_file(self) -> Path:
         """
         kilosort3 specific file.
-
-        :return: Array[float, Batch, Block]
         """
         if not (p := self.get_file('motion.npy')).exists():
             raise FileNotFoundError(p)
@@ -177,8 +191,6 @@ class KilosortFiles:
     def options_file(self) -> Path:
         """
         kilosort4 specific file.
-
-        :return:
         """
         return self.get_file('ops.npy')
 
@@ -188,50 +200,42 @@ class KilosortFiles:
 
     @property
     def total_channels(self) -> int:
+        """n_channels_dat"""
         return KilosortParameter.get_total_channels(self.parameter_file)
 
     @property
     def recording_data_file(self) -> Path:
+        """dat_path"""
         return KilosortParameter.get_data_path(self.parameter_file)
 
     def parameter_data(self) -> KilosortParameter:
-        return KilosortParameter.of(self.parameter_file)
+        """param.py"""
+        return KilosortParameter.read(self.parameter_file)
 
     def options_data(self) -> Kilosort4Options:
+        """ops.npy"""
         if not (file := self.options_file).exists():
             raise FileNotFoundError(file)
         return np.load(file).item()
 
-    def cluster_info(self) -> ClusterInfo:
+    def cluster_info(self, *, raw=False) -> ClusterInfo:
         """
-        Read cluster info from cluster_info.tsv.
+        Read cluster info from `cluster_info.tsv`.
 
-        This method will try to fix following things:
-        * map channel from channel index to channel number
-        * replace with actual shank number
-
-        TODO check kilosort/phy still contain above issues.
+        :param raw: return dataframe without any fixing.
+        :return:
+        :raises FileNotFoundError: `cluster_info.tsv` is not yet created (usually by Phy).
+        :seealso: fix_cluster_info
         """
         ret = ClusterInfo.read_csv(self.cluster_info_file)
-        info = self.ephys.channel_info()
-        result = self.result()
-        chmap = result.channel_map
-        chmap = pl.DataFrame(dict(ch=np.arange(chmap), channel=chmap))
+        if raw:
+            return ret
 
-        def check_depth(df: pl.DataFrame) -> pl.DataFrame:
-            if np.any((df['depth'] != df['pos_y']).drop_nulls().to_numpy()):
-                fprint('cluster.depth does not match to channel.pos_y', vtype='warning', timestamp=False)
-            return df
-
-        return (
-            ret
-            .join(chmap, on='ch', how='left')
-            .join(info, on='channel', how='left')
-            .pipe(check_depth)
-            .drop('ch', 'sh')
-        )
+        from .cluster_info import fix_cluster_info
+        return fix_cluster_info(ret, self.ephys, self.result())
 
     def cluster_data(self, name: str) -> ClusterInfo:
+        """cluster_NAME.tsv"""
         return ClusterInfo.read_csv(self.get_cluster_data_file(name))
 
     # ====== #
@@ -244,9 +248,36 @@ class KilosortFiles:
 
 
 class KilosortProcessedFiles(KilosortFiles):
+    """
+    A directory that stored the post-processing results.
+
+    We do not put the post-processing results back to the original kilosort result directory,
+    which is considered secondary **raw data**. This class keep the KilosortFiles/KilosortResult
+    working in the same way, but just separated the raw kilosort results and the processed results.
+
+    * Benefits
+
+        * keep the original results, so changing the processing method (while testing) is much easily.
+
+    * Shortage
+
+        * TBD
+
+    """
+
     KS_SRC_MARK: Final[str] = '.ks_src'
 
     def __init__(self, directory: Path, ks_file: KilosortFiles = None, processed: Optional[bool] = None):
+        """
+
+        :param directory: post-processing directory
+        :param ks_file: source kilosort results. It could be another `KilosortProcessedFiles`,
+            but make sure use the same directory in after using. Otherwise, an error wii be raised.
+            It can be auto-instanced by reading `.ks_src` marker file.
+        :param processed: policy of finding the files.
+        :raises RuntimeError: First time create a post-processing directory without giving the source *ks_file*.
+            Or the giving *ks_file* does not match to the previous used source *ks_file*.
+        """
         ks_file = self._load_ks_file(directory, ks_file)
         super().__init__(directory, ks_file.ephys)
         self.ks_file = ks_file
@@ -259,16 +290,18 @@ class KilosortProcessedFiles(KilosortFiles):
             if ks_file is None:
                 raise RuntimeError('missing source KilosortFiles')
             else:
+                # write marker file
                 with ks_src.open('w') as f:
                     print(ks_file.directory.absolute(), file=f)
         else:
+            # read marker file
             ks_dir = Path(ks_src.read_text())
-            if ks_file is None:
+            if ks_file is None:  # auto-instanced KilosortFiles or KilosortProcessedFiles
                 if (ks_dir / cls.KS_SRC_MARK).exists():
                     ks_file = KilosortProcessedFiles(ks_dir)
                 else:
                     ks_file = KilosortFiles(ks_dir)
-            else:
+            else:  # check source
                 if ks_file.directory.absolute() != ks_dir:
                     raise RuntimeError(f'{directory} does not derivative from {ks_file}')
 
@@ -276,8 +309,20 @@ class KilosortProcessedFiles(KilosortFiles):
 
     def with_processed(self, processed: Optional[bool]) -> KilosortProcessedFiles:
         """
+        change the *processed* policy.
 
-        :param processed: behavior of finding file. Check :prop:`processed` docstring for details.
+        * `None` return the filepath under the post-processing directory if it is existed.
+            Otherwise, return the file path from the source directory.
+        * `True` always return the file path from the post-processing directory.
+        * `False` always return the file path from the source directory.
+
+        Use case:
+
+        * when reading the data: use *processed* `None` policy
+        * when post-processing: use *processed* `False` policy to read, and `True` to write.
+            Or using `get_file(create=True)` to get a creating-purposed a filepath under the post-processing directory.
+
+        :param processed: behavior of finding file.
         :return:
         """
         if processed == self.__processed:
@@ -285,6 +330,13 @@ class KilosortProcessedFiles(KilosortFiles):
         return KilosortProcessedFiles(self.directory, self.ks_file, processed)
 
     def get_file(self, name: str, create=False) -> Path:
+        """
+        Return found file with *name*.
+
+        :param name: filename
+        :param create: the file is used to be created, so pass the exist checking.
+        :return: filepath
+        """
         p = self.directory / name
         if self.__processed is True or create:
             return p
@@ -294,6 +346,34 @@ class KilosortProcessedFiles(KilosortFiles):
 
         return self.ks_file.get_file(name)
 
+    def glob(self, glob: str, *, recursive=True, unique=True) -> Iterator[Path]:
+        """
+        Find files by a *glob* pattern.
+
+        :param glob:
+        :param recursive: Also find files from source.
+        :param unique: unique on filename.
+        :return:
+        """
+        current = self.directory.glob(glob)
+        if not recursive:
+            return current
+
+        parent = self.ks_file.glob(glob, recursive=recursive, unique=unique)
+
+        if unique:
+            results = {p.name: p for p in parent}
+            for p in current:
+                results[p.name] = p  # may replace parent's result
+            ret = iter(results.values())
+
+        else:
+            results = list(parent)
+            results.extend(list(current))
+            ret = iter(results)
+
+        return ret
+
 
 def shadow_ks_directory(ks_file: KilosortFiles,
                         directory: Path,
@@ -302,16 +382,20 @@ def shadow_ks_directory(ks_file: KilosortFiles,
                         rename_files: dict[str, str] = None,
                         force: bool = False,
                         overwrite: bool = False) -> KilosortProcessedFiles:
-    """Prepare a shadowed kilosort result directory with some file modification.
+    """
+    Prepare a shadowed kilosort result directory with some file modification.
 
-    :param ks_file: original kilosort result
+    :param ks_file: source kilosort result
     :param directory: shadow directory
-    :param copy_files: copy file in list instead of making a link
-    :param ignore_files: ignore files in list
-    :param rename_files: file rename dictionary {old_name: new_name}
-    :param force: force create link even if source file is not existed.
-    :param overwrite: overwrite files. Link files are always relinked.
-    :return: shadowed kilosort result
+    :param copy_files: copy files instead of making a link
+    :param ignore_files: ignore files
+    :param rename_files: rename files. A dictionary with `{old_name: new_name}`.
+        Make sure *copy_files* and *ignore_files* use the *new_name* instead of the *old_name*.
+    :param force: force create link even if the source file is not existed.
+    :param overwrite: overwrite files in *copy_files*. Link files are always relinked.
+    :return: The shadowed kilosort result directory.
+    :seealso: shadow_phy_directory
+    :seealso: shadow_si_directory
     """
     import shutil
     copy_files = copy_files or []
@@ -346,24 +430,17 @@ def shadow_ks_directory(ks_file: KilosortFiles,
         "templates.npy",
         "whitening_mat_inv.npy",
         "whitening_mat.npy",
-        "recording.dat"
+        "recording.dat"  # TODO Is it always named as recording.dat?
         # ks_file.parameter_data().data_path.name
     ]
 
-    for cluster_data_file in ks_file.glob('cluster_*.tsv'):
+    for cluster_data_file in ks_file.glob('cluster_*.tsv', recursive=True, unique=True):
         # 'cluster_KSLabel.tsv',
         # 'cluster_group.tsv',
         filename_list.append(cluster_data_file.name)
 
-    if isinstance(ks_file, KilosortProcessedFiles):
-        for cluster_data_file in ks_file.ks_file.glob('cluster_*.tsv'):
-            if (filename := cluster_data_file.name) not in filename_list:
-                # 'cluster_Amplitude.tsv',
-                # 'cluster_ContamPct.tsv',
-                filename_list.append(filename)
-
     # params.py
-    param = KilosortParameter.of(ks_file.parameter_file)
+    param = KilosortParameter.read(ks_file.parameter_file)
     params_path = directory / 'params.py'
     params_path.unlink(missing_ok=True)  # avoid write content on link
 
@@ -375,8 +452,11 @@ def shadow_ks_directory(ks_file: KilosortFiles,
         print('sample_rate', '=', param.sample_rate, file=f)
         print('hp_filtered', '=', param.hp_filtered, file=f)
 
+    # copy/link/ignore files
+
     for filename in filename_list:
         filepath = directory / rename_files.get(filename, filename)
+
         if filename in ignore_files:
             pass
         elif not filepath.exists() or overwrite:
@@ -394,7 +474,13 @@ def shadow_ks_directory(ks_file: KilosortFiles,
 def shadow_phy_directory(ks_file: KilosortFiles,
                          tmp_directory: Path,
                          overwrite: bool = False) -> KilosortProcessedFiles:
-    """Create a shadow directory for phy.
+    """
+    Create a shadow directory for phy.
+
+    This function is used to create a temporary directory to save the phy's result, and
+    prevent from phy to modify `cluster_group.tsv` and `spike_clusters.npy` files.
+
+    Remember to copy the files mentioned in the above back after phy curation.
 
     :param ks_file: Which kilosort result directory need to be shadowed
     :param tmp_directory: shadow directory
@@ -413,7 +499,8 @@ def shadow_phy_directory(ks_file: KilosortFiles,
 def shadow_si_directory(ks_file: KilosortFiles,
                         tmp_directory: Path,
                         overwrite: bool = False) -> KilosortProcessedFiles:
-    """Create a shadow directory for spikeinterface.
+    """
+    Create a shadow directory for spikeinterface.
 
     :param ks_file: Which kilosort result directory need to be shadowed
     :param tmp_directory: shadow directory

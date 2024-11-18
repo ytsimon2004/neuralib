@@ -11,9 +11,9 @@ __all__ = ['ChannelInfo']
 
 class ChannelInfo(DataFrameWrapper):
     """
-    Channel info data frame. Any polars with a columns "channel" could be considered a `ChannelInfo`.
+    Channel info data frame. Any polars with the column "channel" could be considered a `ChannelInfo`.
 
-    It usually contains columns: [channel, shank, pos_x, pos_y]
+    It usually contains columns: `[channel, shank, pos_x, pos_y]`
     """
 
     def __init__(self, df: pl.DataFrame | DataFrameWrapper):
@@ -26,7 +26,7 @@ class ChannelInfo(DataFrameWrapper):
             df = df.dataframe()
 
         if 'channel' not in df.columns:
-            raise RuntimeError('not a cluster info. miss "channel" column.')
+            raise RuntimeError('not a channel info dataframe. miss "channel" column.')
 
         self._df = df
 

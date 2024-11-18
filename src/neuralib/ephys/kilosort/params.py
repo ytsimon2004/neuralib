@@ -31,7 +31,13 @@ class KilosortParameter(NamedTuple):
     """True/False, whether the data have already been filtered"""
 
     @classmethod
-    def of(cls, path: Union[str, Path]) -> KilosortParameter:
+    def read(cls, path: Union[str, Path]) -> KilosortParameter:
+        """
+        Open a `params.py` file.
+
+        :param path:
+        :return:
+        """
         var = {}
         exec(Path(path).read_text(), {}, var)
 
@@ -46,12 +52,24 @@ class KilosortParameter(NamedTuple):
 
     @classmethod
     def get_total_channels(cls, path: Union[str, Path]) -> int:
+        """
+        A quick function to read `n_channels_dat` field from the `params.py` file.
+
+        :param path:
+        :return:
+        """
         var = {}
         exec(Path(path).read_text(), {}, var)
         return int(var["n_channels_dat"])
 
     @classmethod
     def get_data_path(cls, path: Union[str, Path]) -> Path:
+        """
+        A quick function to read `dat_path` field from the `params.py` file.
+
+        :param path:
+        :return:
+        """
         var = {}
         exec(Path(path).read_text(), {}, var)
         data_file = var["dat_path"]

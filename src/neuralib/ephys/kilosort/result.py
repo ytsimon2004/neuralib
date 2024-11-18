@@ -19,6 +19,10 @@ class KilosortResult:
     * ``S`` number of spikes
     * ``U`` number of cluster/template ids
 
+    Terminology:
+
+    * `channel index`: an index array of channel number sequence which skipped the bad channel number.
+    * `channel`, `channel number`, `channel list`: a value correspond to the Ephys recording channel.
 
     """
 
@@ -29,10 +33,13 @@ class KilosortResult:
 
     @property
     def channel_number(self) -> int:
+        """total channel number"""
+        # TODO Is total of channel number or index?
         return self.para.channel_number
 
     @property
     def time_duration(self) -> Optional[float]:
+        """total recording duration in seconds."""
         if (ephys := self.file.ephys) is None:
             return None
 
@@ -44,6 +51,12 @@ class KilosortResult:
 
     @property
     def cluster_info(self) -> ClusterInfo:
+        """
+        read `cluster_info.tsv`.
+
+        :return:
+        :raises FileNotFoundError: `cluster_info.tsv` is not yet created (usually by Phy).
+        """
         return self.file.cluster_info()
 
     @property
@@ -55,7 +68,7 @@ class KilosortResult:
         """
         A mapping from channel index to channel number.
 
-        :return: (C,) channel array
+        :return: `Array[channel, C]`
         """
         info = self.file.ephys.channel_info()
         c_pos = np.column_stack([info.pos_x, info.pos_y])
@@ -125,7 +138,7 @@ class KilosortResult:
     def channel_pos(self) -> np.ndarray:
         """
 
-        :return: (C, 2) position array
+        :return: `Array[um, [C, 2]]`
         """
         # noinspection PyTypeChecker
         return np.load(self.file.channel_pos_file)
@@ -165,7 +178,7 @@ class KilosortResult:
     def spike_timestep(self) -> np.ndarray:
         """
 
-        :return: (S,) sample number array
+        :return: Array[sample:int, S]
         """
         return np.load(self.file.spike_time_file).ravel()
 
@@ -173,34 +186,37 @@ class KilosortResult:
     def spike_time(self) -> np.ndarray:
         """
 
-        :return: (S,) time (sec) array
+        :return: `Array[second:float, S]`
         """
         return self.spike_timestep / self.sample_rate
 
     @functools.cached_property
     def spike_cluster(self) -> np.ndarray:
-        """giving the cluster identity of each spike.
+        """
+        giving the cluster identity of each spike.
 
         This file is optional and if not provided will be automatically created the first time you run
         the template gui, taking the same values as spike_templates.npy until you do any merging or splitting.
 
-        :return: (S,) cluster id array
+        :return: `Array[U, S]`
         """
         return np.load(self.file.spike_cluster_file).ravel()
 
     @functools.cached_property
     def spike_amplitudes(self) -> np.ndarray:
-        """the amplitude scaling factor that was applied to the template when extracting that spike.
+        """
+        the amplitude scaling factor that was applied to the template when extracting that spike.
 
-        :return: (S,) amplitude array
+        :return: `Array[amplitude:float, S]`
         """
         return np.load(self.file.spike_amplitude_file).ravel()
 
     @functools.cached_property
     def spike_template(self) -> np.ndarray:
-        """specifying the identity of the template that was used to extract each spike
+        """
+        specifying the identity of the template that was used to extract each spike
 
-        :return: (S,) template id array
+        :return: `Array[U, S]`
         """
         return np.load(self.file.spike_template_file).ravel()
 
@@ -212,7 +228,7 @@ class KilosortResult:
         is not continuous anymore, so you cannot use new cluster ID to get to
         correspond template directly. Please use :meth:`get_template`
 
-        :return: (U, S, C)
+        :return: `Array[float, [U, S, C]]`
         """
         return np.load(self.file.template_file)
 
@@ -278,7 +294,8 @@ class KilosortResult:
 
 
 def _get_channel(self: KilosortResult, template: int) -> int:
-    """Get most strong channel index for a template.
+    """
+    Get most strong channel index for a template.
 
     The result may be different when doing the un-whitening or not.
 
