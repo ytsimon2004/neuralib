@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 import numpy as np
 
 from neuralib.ephys.kilosort.result import KilosortResult
@@ -6,6 +8,8 @@ __all__ = [
     'next_cluster_id',
     'nearby_channels',
     'template_peak_channel',
+    'iter_spike_time',
+    'iter_spike_data',
 ]
 
 
@@ -62,3 +66,32 @@ def template_peak_channel(template: np.ndarray) -> int | np.ndarray:
         return np.argmax(np.max(template, axis=1) - np.min(template, axis=1), axis=1)
     else:
         raise ValueError('wrong dimension')
+
+
+def iter_spike_time(ks_data: KilosortResult, cluster_list: np.ndarray) -> Iterator[np.ndarray]:
+    """
+
+    :param ks_data:
+    :param cluster_list:
+    :return: iterate spikes' time foreach clusters.
+    """
+    return iter_spike_data(ks_data, ks_data.spike_time, cluster_list)
+
+
+def iter_spike_data(ks_data: KilosortResult,
+                    spike_data: np.ndarray,
+                    cluster_list: np.ndarray = None) -> Iterator[np.ndarray]:
+    """
+
+    :param ks_data:
+    :param spike_data: Array[V, S]
+    :param cluster_list: Array[C:int, S]
+    :return: iterate spikes Array[V, S'] foreach clusters C.
+    """
+    if cluster_list is None:
+        cluster_list = np.unique(ks_data.spike_cluster)
+    elif spike_data.shape[0] != len(ks_data.spike_cluster):
+        raise ValueError('shape of spike data not equals to (N_Spike, ...)')
+
+    for c in cluster_list:
+        yield spike_data[ks_data.spike_cluster == int(c)]
