@@ -33,7 +33,7 @@ class WaveformResult(NamedTuple):
     """the cluster ID of this waveforms from. Could be a int, `Array[U, N]`, or `None` for undetermined."""
 
     channel_list: int | np.ndarray
-    """channel list C, `Array[int, C]`, or `Array[int, [N, C]]`"""
+    """channel, or a array  `Array[int, C]`, or `Array[int, [N, C]]`"""
 
     waveform: np.ndarray
     """raw signals `Array[R, [N, C, S]]`."""
@@ -120,6 +120,12 @@ class WaveformResult(NamedTuple):
         return self._replace(waveform=w)
 
     def with_cluster(self, c: int) -> WaveformResult:
+        """
+        Take cluster *c*'s waveform.
+
+        :param c:
+        :return:
+        """
         if self.spike_cluster is None:
             return self
         elif isinstance(self.spike_cluster, int):
@@ -138,6 +144,45 @@ class WaveformResult(NamedTuple):
 
         return self._replace(spike_time=self.spike_time[s], spike_cluster=c, channel_list=h, waveform=self.waveform[s])
 
+    def with_channel(self, c: int) -> WaveformResult:
+        """
+        Take waveform from given channel *c*.
+
+        :param c:
+        :return:
+        """
+        if isinstance(self.channel_list, int):
+            if self.channel_list == c:
+                return self
+            else:
+                return _empty_waveform_result(self, None, c)
+
+        elif self.channel_list.ndim == 1:
+            if np.count_nonzero(x := self.channel_list == c) == 1:
+                return self._replace(channel_list=c, waveform=self.waveform[:, x, :])
+            else:
+                # It is nonsense we have duplicated channels,
+                # so here should return an empty result.
+                return _empty_waveform_result(self, None, c)
+
+        elif self.channel_list.ndim == 2:
+            ni, ci = np.nonzero(self.channel_list == c)
+            if len(ni):
+                # It is nonsense we have duplicated channels for every sample,
+                # so ni should be a unique array
+                assert len(ni) == len(np.unique(ni))
+                t = self.spike_time[ni]
+
+                s = self.spike_cluster[ni]
+                if len(ss := np.unique(s)) == 1:
+                    s = int(ss[0])
+
+                return self._replace(spike_time=t, spike_cluster=s, channel_list=c, waveform=self.waveform[ni, ci, :])
+            else:
+                return _empty_waveform_result(self, None, c)
+        else:
+            assert False, 'unreachable'
+
     def __iter__(self) -> Iterator[WaveformResult]:
         if self.spike_cluster is None:
             return iter([self])
@@ -152,12 +197,22 @@ class WaveformResult(NamedTuple):
             yield self.with_cluster(c)
 
 
-def _empty_waveform_result(r: WaveformResult, c: int | None) -> WaveformResult:
-    w = np.empty((0, r.n_channels, r.n_sample), dtype=r.waveform.dtype)
+def _empty_waveform_result(r: WaveformResult, c: int | None = None, h: int | np.ndarray = None) -> WaveformResult:
+    if h is None:
+        n_channels = r.n_channels
 
-    h = r.channel_list
-    if isinstance(h, np.ndarray):
-        h = np.empty((0, r.n_channels), dtype=r.channel_list.dtype)
+        h = r.channel_list
+        if isinstance(h, np.ndarray):
+            h = np.empty((0, n_channels), dtype=r.channel_list.dtype)
+    elif isinstance(h, int):
+        n_channels = 1
+    elif h.ndim == 1:
+        n_channels = len(h)
+    else:
+        n_channels = h.shape[-1]
+        h = np.empty((0, n_channels), dtype=r.channel_list.dtype)
+
+    w = np.empty((0, n_channels, r.n_sample), dtype=r.waveform.dtype)
 
     return r._replace(spike_time=np.array([]), spike_cluster=c, channel_list=h, waveform=w)
 
@@ -251,6 +306,7 @@ def get_waveforms(ks_data: KilosortFiles | KilosortResult,
         if isinstance(cluster, int):
             channel = np.asarray(channel[cluster])
             n_channel = len(channel)
+            assert channel.ndim == 1
         else:
             n_channel = int(channels[0])
             channels = np.empty((n_spikes, n_channel), dtype=int)

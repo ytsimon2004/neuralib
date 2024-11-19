@@ -11,7 +11,7 @@ import numpy as np
 
 from neuralib.ephys.kilosort.result import KilosortResult
 from neuralib.util.verbose import fprint
-from .waveforms import WaveformResult
+from .waveforms import WaveformResult, get_waveforms
 
 __all__ = [
     'WaveformSpaceMetrics',
@@ -266,3 +266,56 @@ def is_outlier(a: np.ndarray, threshold: float) -> np.ndarray:
     median_dis = np.median(distance)
     z_score = 0.6745 * distance / median_dis
     return z_score > threshold
+
+
+def residual_variance(ks_data: KilosortResult,
+                      cluster: int | WaveformResult) -> np.ndarray:
+    """
+    TODO add reference
+
+    :param ks_data:
+    :param cluster:
+    :return:
+    """
+    waveform = None
+    if isinstance(cluster, WaveformResult):
+        waveform = cluster
+        cluster = waveform.spike_cluster
+        if cluster is None:
+            raise ValueError("waveform does not have major cluster")
+        if not isinstance(cluster, int):
+            raise ValueError("waveform does not from single cluster")
+
+    cluster = int(cluster)
+    channel_index = ks_data.get_channel(cluster=cluster)
+    if channel_index is None:
+        raise RuntimeError(f'cannot determine the major channel for cluster : {cluster}')
+    else:
+        channel_index = int(channel_index)
+        channel = int(ks_data.as_channel_list(channel_index))
+
+    template = ks_data.template_data[cluster, :, channel_index]  # (sample)
+    n_sample_t = len(template)
+
+    if waveform is None:
+        duration_ms = 1000 * n_sample_t / ks_data.sample_rate
+        waveform = get_waveforms(ks_data, cluster, channel, duration=duration_ms)
+    else:
+        waveform = waveform.with_channel(channel)
+
+    waveform_data = waveform.waveform[:, 0, :]  # (N, sample)
+
+    n_sample_w = waveform.n_sample
+    if n_sample_t != n_sample_w:
+        if n_sample_t < n_sample_w:
+            m = n_sample_w // 2
+            d = n_sample_t // 2
+            s = slice(m - d, m + d)
+            waveform_data = waveform_data[:, s]
+        else:
+            m = n_sample_t // 2
+            d = n_sample_w // 2
+            s = slice(m - d, m + d)
+            template = template[s]
+
+    return np.var(waveform_data - template, axis=1)

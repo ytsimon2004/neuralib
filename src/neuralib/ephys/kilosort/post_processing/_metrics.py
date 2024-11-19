@@ -3,6 +3,7 @@ reference::
 
     ecephys_spike_sorting.modules.quality_metrics.metrics
 """
+from typing import NamedTuple
 
 import numpy as np
 
@@ -11,6 +12,13 @@ __all__ = [
     'presence_ratio',
     'firing_rate',
     'amplitude_cutoff',
+
+    'IsiContaminationResult',
+    'isi_contamination',
+    'auto_correlogram',
+
+    'CcgContaminationResult',
+    'ccg_contamination',
 ]
 
 
@@ -128,3 +136,152 @@ def amplitude_cutoff(spike_amp: np.ndarray, bins=500, smooth=11) -> float:
 
     fraction_missing = min(0.5, np.sum(pdf[g:]) * bin_size)
     return fraction_missing
+
+
+class IsiContaminationResult(NamedTuple):
+    contamination: float
+    """% of spikes following within the refractory period of another"""
+
+    isi: np.ndarray
+    """inter spike intervals, `Array[float, N]`"""
+
+    bins: np.ndarray
+    """time bins (ms) `Array[float, N+1]`"""
+
+    @property
+    def t(self) -> np.ndarray:
+        """time (ms), shape `Array[float, N]`"""
+        return (self.bins[1:] + self.bins[:-1]) / 2
+
+
+def isi_contamination(spike_train: np.ndarray,
+                      refractory_period: int = 2,
+                      max_time: int = 50,
+                      bin_size: int = 1) -> IsiContaminationResult:
+    """Give the cluster contamination.
+
+    :param spike_train: spike times array, in second
+    :param refractory_period: refractory period, msec
+    :param max_time: msec
+    :param bin_size: msec
+    :return ContaminationResult
+    """
+    from spikeinterface.postprocessing import compute_isi_histograms_from_spiketrain
+    fs = 30000
+    _max_time = int(max_time * fs / 1000)
+    _bin_size = int(bin_size * fs / 1000)
+    isi, bins = compute_isi_histograms_from_spiketrain(
+        spike_train, max_time=_max_time, bin_size=_bin_size, sampling_f=fs
+    )
+
+    rp = int(refractory_period / bin_size)
+    contamination = 100 * np.sum(isi[:rp]) / np.sum(isi)
+
+    return IsiContaminationResult(contamination, isi, bins)
+
+
+class CcgContaminationResult(NamedTuple):
+    contamination: float | np.ndarray
+    """% of spikes following within the refractory period of another. float or `Array[float, [S, S]]`"""
+
+    auto: np.ndarray  # Array[int, [S, S], N]
+    """auto-correlation. `Array[int, N]` or `Array[int, [S, S, N]]`"""
+
+    bins: np.ndarray
+    """time bins (ms) `Array[float, N+1]`"""
+
+    @property
+    def t(self) -> np.ndarray:
+        return (self.bins[1:] + self.bins[:-1]) / 2
+
+
+def auto_correlogram(spike_time: np.ndarray,
+                     max_time: int = 100,
+                     bin_size: int = 1) -> tuple[np.ndarray, np.ndarray]:
+    """
+
+    :param spike_time:
+    :param max_time:
+    :param bin_size:
+    :return: (auto, bins), where bins in ms
+    """
+    fs = 30000
+    max_time = int(max_time * fs / 1000)
+    bin_size = int(bin_size * fs / 1000)
+    # spikeinterface compute_autocorrelogram_* newer version remove parameter fs,
+    # and we need to make bins by ourselves because they removed it
+    bins = np.arange(-max_time, max_time + bin_size, bin_size) * 1000 / fs  # ms
+
+    from spikeinterface.postprocessing import compute_autocorrelogram_from_spiketrain as cafs
+
+    spike_time = spike_time * fs
+    try:
+        auto = cafs(spike_time, max_time, bin_size)
+    except TypeError as e:
+        raise RuntimeError('numba is not installed') from e
+
+    return auto, bins
+
+
+def ccg_contamination(*spike_time: np.ndarray,
+                      max_time: int = 100,
+                      bin_size: int = 1) -> CcgContaminationResult:
+    """Give the cluster contamination.
+
+    reference: Kilosort2/postProcess/set_cutoff.m
+
+    :param spike_time: spike times array, in second
+    :param max_time: msec
+    :param bin_size: msec
+    :return ContaminationResult
+    """
+    s = len(spike_time)
+    if s == 0:
+        raise RuntimeError('empty list')
+    elif s == 1 and len(spike_time[0]) <= 10:
+        return CcgContaminationResult(np.nan, np.empty((0,)), np.empty((0, 2)))
+
+    from ._metrics_ccg import ccg
+
+    fs = 30000
+    max_time = int(max_time * fs / 1000)
+    bin_size = int(bin_size * fs / 1000)
+    # spikeinterface compute_autocorrelogram_* newer version remove parameter fs,
+    # and we need to make bins by ourselves because they removed it
+    bins = np.arange(-max_time, max_time + bin_size, bin_size) * 1000 / fs  # ms
+
+    if s == 1:
+        from spikeinterface.postprocessing import compute_autocorrelogram_from_spiketrain as cafs
+        spike_time = spike_time[0]
+        t = spike_time[-1] - spike_time[0]
+        a = len(spike_time) ** 2
+
+        try:
+            auto = cafs(spike_time * fs, max_time, bin_size)
+        except TypeError as e:
+            raise RuntimeError('numba is not installed') from e
+
+        result = ccg(t, a, auto, bins)
+        return CcgContaminationResult(100 * result.q, result.auto, bins)
+    else:
+        from spikeinterface.postprocessing import compute_crosscorrelogram_from_spiketrain as ccfs
+
+        nbins = int(2 * max_time / bin_size)
+        cont = np.zeros((s, s), dtype=float)
+        auto = np.zeros((s, s, nbins), dtype=float)
+
+        for a in range(s):
+            for b in range(s):
+                t = max(spike_time[a][-1], spike_time[b][-1]) - min(spike_time[a][0], spike_time[b][0])
+                ab = len(spike_time[a]) * len(spike_time[b])
+
+                try:
+                    _auto = ccfs(spike_time[a] * fs, spike_time[b] * fs, max_time, bin_size)
+                except TypeError as e:
+                    raise RuntimeError('numba is not installed') from e
+
+                result = ccg(t, ab, _auto, bins)
+                cont[a, b] = 100 * result.q
+                auto[a, b] = result.auto
+
+        return CcgContaminationResult(cont, auto, bins)
