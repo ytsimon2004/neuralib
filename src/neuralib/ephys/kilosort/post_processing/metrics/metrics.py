@@ -28,7 +28,8 @@ def isi_violation(spike_train: np.ndarray,
                   duration: float,
                   isi_threshold: float = 1.5,
                   min_isi: float = 0.0) -> tuple[float, int]:
-    """Calculate ISI violations for a spike train.
+    """
+    Calculate ISI violations for a spike train.
 
     Based on metric described in Hill et al. (2011) J Neurosci 31: 8699-8705
 
@@ -66,7 +67,8 @@ def isi_violation(spike_train: np.ndarray,
 def presence_ratio(spike_train: np.ndarray,
                    duration: float,
                    bins=101) -> float:
-    """Calculate fraction of time the unit is present within an epoch.
+    """
+    Calculate fraction of time the unit is present within an epoch.
 
     reference:
 
@@ -84,7 +86,8 @@ def presence_ratio(spike_train: np.ndarray,
 
 def firing_rate(spike_train: np.ndarray,
                 duration: float) -> float:
-    """Calculate firing rate for a spike train.
+    """
+    Calculate firing rate for a spike train.
 
     If no temporal bounds are specified, the first and last spike time are used.
 
@@ -101,7 +104,8 @@ def firing_rate(spike_train: np.ndarray,
 
 # TODO the result is large different from spikeinterface
 def amplitude_cutoff(spike_amp: np.ndarray, bins=500, smooth=11) -> float:
-    """Calculate approximate fraction of spikes missing from a distribution of amplitudes
+    """
+    Calculate approximate fraction of spikes missing from a distribution of amplitudes
 
     Assumes the amplitude histogram is symmetric (not valid in the presence of drift)
 
@@ -160,7 +164,8 @@ def isi_contamination(spike_train: np.ndarray,
                       refractory_period: int = 2,
                       max_time: int = 50,
                       bin_size: int = 1) -> IsiContaminationResult:
-    """Give the cluster contamination.
+    """
+    Calculate inter-spike interval contamination for a spike train.
 
     :param spike_train: spike times array, in second
     :param refractory_period: refractory period, msec
@@ -228,7 +233,8 @@ def auto_correlogram(spike_time: np.ndarray,
 def ccg_contamination(*spike_time: np.ndarray,
                       max_time: int = 100,
                       bin_size: int = 1) -> CcgContaminationResult:
-    """Give the cluster contamination.
+    """
+    Calculate the cross-correlation contamination for spike trains.
 
     reference: Kilosort2/postProcess/set_cutoff.m
 
@@ -241,6 +247,7 @@ def ccg_contamination(*spike_time: np.ndarray,
     if s == 0:
         raise RuntimeError('empty list')
     elif s == 1 and len(spike_time[0]) <= 10:
+        # spikes too few
         return CcgContaminationResult(np.nan, np.empty((0,)), np.empty((0, 2)))
 
     from .ccg import ccg

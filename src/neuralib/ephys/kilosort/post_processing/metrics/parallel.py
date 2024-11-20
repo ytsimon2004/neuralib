@@ -19,6 +19,7 @@ __all__ = [
 ]
 
 
+
 @overload
 def isi_violation(ks_data: KilosortResult,
                   cluster_list: np.ndarray, *,
@@ -30,6 +31,15 @@ def isi_violation(ks_data: KilosortResult,
 def isi_violation(ks_data: KilosortResult,
                   cluster_list: np.ndarray,
                   **kwargs) -> np.ndarray:
+    """
+    Calculate ISI violations for clusters.
+
+    :param ks_data:
+    :param cluster_list: cluster `Array[int, C]`
+    :param kwargs: pass to metrics.isi_violation
+    :return: `Array[float, C]`
+    :seealso: metrics.isi_violation
+    """
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
     return np.array(Parallel()(
@@ -48,6 +58,15 @@ def presence_ratio(ks_data: KilosortResult,
 def presence_ratio(ks_data: KilosortResult,
                    cluster_list: np.ndarray,
                    **kwargs) -> np.ndarray:
+    """
+    Calculate fraction of time the unit is present within an epoch.
+
+    :param ks_data:
+    :param cluster_list: cluster `Array[int, C]`
+    :param kwargs: pass to metrics.presence_ratio
+    :return: `Array[float, C]`
+    :seealso: metrics.presence_ratio
+    """
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
     return np.array(Parallel()(
@@ -58,6 +77,14 @@ def presence_ratio(ks_data: KilosortResult,
 
 def firing_rate(ks_data: KilosortResult,
                 cluster_list: np.ndarray) -> np.ndarray:
+    """
+    Calculate firing rate for clusters
+
+    :param ks_data:
+    :param cluster_list: cluster `Array[int, C]`
+    :return: `Array[float, C]`
+    :seealso: metrics.firing_rate
+    """
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
     return np.array(Parallel()(
@@ -77,6 +104,15 @@ def amplitude_cutoff(ks_data: KilosortResult,
 def amplitude_cutoff(ks_data: KilosortResult,
                      cluster_list: np.ndarray,
                      **kwargs) -> np.ndarray:
+    """
+    Calculate approximate fraction of spikes missing from a distribution of amplitudes
+
+    :param ks_data:
+    :param cluster_list: cluster `Array[int, C]`
+    :param kwargs: pass to metrics.amplitude_cutoff
+    :return: `Array[float, C]`
+    :seealso: metrics.amplitude_cutoff
+    """
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
     return np.array(Parallel()(
@@ -100,6 +136,15 @@ def isi_contamination(ks_data: KilosortResult,
 def isi_contamination(ks_data: KilosortResult,
                       cluster_list: np.ndarray,
                       **kwargs) -> list[IsiContaminationResult]:
+    """
+    Calculate inter-spike interval contamination for clusters.
+
+    :param ks_data:
+    :param cluster_list:
+    :param kwargs: pass to metrics.isi_contamination
+    :return:
+    :seealso: metrics.isi_contamination
+    """
     from joblib import Parallel, delayed
     return Parallel()(
         delayed(metrics.isi_contamination)(spike_trains, **kwargs)
@@ -121,6 +166,15 @@ def ccg_contamination(ks_data: KilosortResult,
 def ccg_contamination(ks_data: KilosortResult,
                       cluster_list: np.ndarray = None,
                       **kwargs) -> list[CcgContaminationResult]:
+    """
+    Calculate the auto-cross-correlation contamination for clusters.
+
+    :param ks_data:
+    :param cluster_list:
+    :param kwargs: pass to metrics.ccg_contamination
+    :return:
+    :seealso: metrics.ccg_contamination
+    """
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
     return Parallel()(

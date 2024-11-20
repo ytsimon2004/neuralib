@@ -20,7 +20,8 @@ class CCG(NamedTuple):
 
     @property
     def q(self) -> float:
-        """ measure of refractoriness
+        """
+        measure of refractoriness
 
         https://github.com/MouseLand/Kilosort/blob/main/kilosort/CCG.py#L70
 
@@ -35,7 +36,8 @@ class CCG(NamedTuple):
 
     @property
     def r(self) -> float:
-        """the estimated probability that any of the center bins are refractory.
+        """
+        the estimated probability that any of the center bins are refractory.
 
         https://github.com/MouseLand/Kilosort/blob/main/kilosort/CCG.py#L71
 
