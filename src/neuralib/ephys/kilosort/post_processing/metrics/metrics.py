@@ -3,6 +3,8 @@ reference::
 
     ecephys_spike_sorting.modules.quality_metrics.metrics
 """
+from __future__ import annotations
+
 from typing import NamedTuple
 
 import numpy as np
@@ -241,7 +243,7 @@ def ccg_contamination(*spike_time: np.ndarray,
     elif s == 1 and len(spike_time[0]) <= 10:
         return CcgContaminationResult(np.nan, np.empty((0,)), np.empty((0, 2)))
 
-    from ._metrics_ccg import ccg
+    from .ccg import ccg
 
     fs = 30000
     max_time = int(max_time * fs / 1000)

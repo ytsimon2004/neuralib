@@ -9,9 +9,9 @@ from typing import NamedTuple
 
 import numpy as np
 
+from neuralib.ephys.kilosort.post_processing.waveforms import WaveformResult, get_waveforms
 from neuralib.ephys.kilosort.result import KilosortResult
 from neuralib.util.verbose import fprint
-from .waveforms import WaveformResult, get_waveforms
 
 __all__ = [
     'WaveformSpaceMetrics',

@@ -1,9 +1,9 @@
 import numpy as np
 from typing_extensions import overload
 
+from neuralib.ephys.kilosort.post_processing.utils import iter_spike_time
 from neuralib.ephys.kilosort.result import KilosortResult
-from . import _metrics
-from .utils import iter_spike_time
+from . import metrics
 
 __all__ = [
     'isi_violation',
@@ -19,8 +19,6 @@ __all__ = [
 ]
 
 
-# TODO check all joblib call
-
 @overload
 def isi_violation(ks_data: KilosortResult,
                   cluster_list: np.ndarray, *,
@@ -34,10 +32,10 @@ def isi_violation(ks_data: KilosortResult,
                   **kwargs) -> np.ndarray:
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
-    return Parallel()(
-        delayed(_metrics.isi_violation)(spike_trains, duration, **kwargs)
+    return np.array(Parallel()(
+        delayed(metrics.isi_violation)(spike_trains, duration, **kwargs)
         for spike_trains in iter_spike_time(ks_data, cluster_list)
-    )
+    ))
 
 
 @overload
@@ -52,20 +50,20 @@ def presence_ratio(ks_data: KilosortResult,
                    **kwargs) -> np.ndarray:
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
-    return Parallel()(
-        delayed(_metrics.presence_ratio)(spike_trains, duration, **kwargs)
+    return np.array(Parallel()(
+        delayed(metrics.presence_ratio)(spike_trains, duration, **kwargs)
         for spike_trains in iter_spike_time(ks_data, cluster_list)
-    )
+    ))
 
 
 def firing_rate(ks_data: KilosortResult,
                 cluster_list: np.ndarray) -> np.ndarray:
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
-    return Parallel()(
-        delayed(_metrics.firing_rate)(spike_trains, duration)
+    return np.array(Parallel()(
+        delayed(metrics.firing_rate)(spike_trains, duration)
         for spike_trains in iter_spike_time(ks_data, cluster_list)
-    )
+    ))
 
 
 @overload
@@ -81,13 +79,13 @@ def amplitude_cutoff(ks_data: KilosortResult,
                      **kwargs) -> np.ndarray:
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
-    return Parallel()(
-        delayed(_metrics.amplitude_cutoff)(spike_trains, duration, **kwargs)
+    return np.array(Parallel()(
+        delayed(metrics.amplitude_cutoff)(spike_trains, duration, **kwargs)
         for spike_trains in iter_spike_time(ks_data, cluster_list)
-    )
+    ))
 
 
-IsiContaminationResult = _metrics.IsiContaminationResult
+IsiContaminationResult = metrics.IsiContaminationResult
 
 
 @overload
@@ -104,12 +102,12 @@ def isi_contamination(ks_data: KilosortResult,
                       **kwargs) -> list[IsiContaminationResult]:
     from joblib import Parallel, delayed
     return Parallel()(
-        delayed(_metrics.isi_contamination)(spike_trains, **kwargs)
+        delayed(metrics.isi_contamination)(spike_trains, **kwargs)
         for spike_trains in iter_spike_time(ks_data, cluster_list)
     )
 
 
-CcgContaminationResult = _metrics.CcgContaminationResult
+CcgContaminationResult = metrics.CcgContaminationResult
 
 
 @overload
@@ -126,6 +124,6 @@ def ccg_contamination(ks_data: KilosortResult,
     from joblib import Parallel, delayed
     duration = ks_data.time_duration
     return Parallel()(
-        delayed(_metrics.ccg_contamination)(spike_trains, duration, **kwargs)
+        delayed(metrics.ccg_contamination)(spike_trains, duration, **kwargs)
         for spike_trains in iter_spike_time(ks_data, cluster_list)
     )

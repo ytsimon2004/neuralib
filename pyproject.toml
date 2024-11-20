@@ -40,7 +40,6 @@ dependencies = [
     'gdown',
     "rich",
     "typing_extensions",
-    "spikeinterface",
 ]
 
 
@@ -52,6 +51,11 @@ atlas = [
     "iblatlas",
     "anytree",
     "plotly",
+]
+
+ephys = [
+    "spikeinterface",
+    "neurocarto",
 ]
 
 scanner = [
