@@ -4,7 +4,6 @@ import attrs
 
 __all__ = ['CliArgs']
 
-
 @attrs.define
 class CliArgs:
     flag: str | None = attrs.field(default=None)
@@ -12,15 +11,15 @@ class CliArgs:
 
     # noinspection PyUnresolvedReferences
     @flag.validator
-    def _check_flag(self, attribute, value: str) -> None:
+    def _check_flag(self, attribute, value: str | None) -> None:
         if value is None:
             return
 
         if not isinstance(value, str):
-            raise TypeError('')
+            raise TypeError(f'flag not a str: "{value}"')
 
-        valid1 = value.startswith('-') and value[1:].isalpha()
-        valid2 = value.startswith('--') and value[2].isalpha()
+        valid1 = value.startswith('-') and len(value) > 1
+        valid2 = value.startswith('--') and len(value) > 2
         if not (valid1 or valid2):
             raise ValueError(f'{self} {attribute.name} not valid')
 

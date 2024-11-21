@@ -27,6 +27,9 @@ def uglob(directory: PathLike,
     :param pattern: Glob pattern
     :param is_dir: Is the pattern point to a directory?
     :return: The unique path
+    :raise FileNotFoundError: the unique path is not existed.
+    :raise NotADirectoryError: *directory* is not a directory
+    :raise RuntimeError: more than one path are found.
     """
     directory = Path(directory)
 

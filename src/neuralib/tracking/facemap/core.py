@@ -227,6 +227,7 @@ class FaceMapResult:
         svd_path = uglob(directory, f'{file_pattern}*.npy')
 
         cmds = ['conda', 'run', '-n', f'{env_name}', 'python', '-m', 'facemap']
+        # TODO why not cmds.extend(['--proc_npy', str(svd_path)])
         cmds.extend(CliArgs('--proc_npy', str(svd_path)).as_command())
 
         if with_keypoints:
