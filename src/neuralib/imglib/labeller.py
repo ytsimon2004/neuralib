@@ -67,10 +67,12 @@ from typing_extensions import Self
 
 from neuralib.io import csv_header
 from neuralib.typing import PathLike
+from neuralib.util.deprecation import deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = ['SequenceLabeller']
 
+# TODO give the logger a name
 Logger = logging.getLogger()
 
 
@@ -152,6 +154,7 @@ def get_keymapping() -> KeyMapping:
         return WIN_KEYMAPPING
 
 
+@deprecated_func(new='utils.keys_with_value', remarks="Isn't it?")
 def find_key_from_value(dy: KeyMapping, value: int) -> str | bool | None:
     ret = []
     for k, v in dy.items():
@@ -168,15 +171,19 @@ def find_key_from_value(dy: KeyMapping, value: int) -> str | bool | None:
 
 @attrs.define
 class FrameInfo:
+
     filename: str
     """name of the an image/frame"""
+
     image: np.ndarray
-    """`Array[float, [H, W]|[H, W, 3])`"""
+    """`Array[uint, [H, W]|[H, W, 3])`"""
+
     notes: str | None = attrs.field(default=None)
     """notes for the image"""
 
     @property
     def itype(self) -> Literal['gray', 'rgb']:
+        """image color type"""
         if self.image.ndim == 2:
             return 'gray'
         elif self.image.ndim == 3:
@@ -185,7 +192,7 @@ class FrameInfo:
             raise TypeError('')
 
     @property
-    def text_color(self) -> float | tuple[int, int, int]:
+    def text_color(self) -> int | tuple[int, int, int]:
         if self.itype == 'gray':
             return 2 ** 16 - 1
         elif self.itype == 'rgb':
@@ -204,7 +211,9 @@ class FrameInfo:
 
 class CloseSaveInterrupt(KeyboardInterrupt):
     """write & quiet triggered"""
-    pass
+
+    def __init__(self, mode: Literal[':wq', ':q', ':q!']):
+        self.mode = mode
 
 
 class SequenceLabeller:
@@ -234,7 +243,7 @@ class SequenceLabeller:
         :return:
         """
         if isinstance(seqs, np.ndarray):
-            seqs = [it for it in seqs]
+            seqs = list(seqs)
 
         n_frames = len(seqs)
 
@@ -248,14 +257,14 @@ class SequenceLabeller:
     @classmethod
     def load_from_dir(cls, directory: PathLike,
                       file_suffix: str = '.tif',
-                      sort_func: Callable[[str], Any] | None = None,
+                      sort_func: Callable[[Path], Any] | None = None,
                       single_frame_per_file: bool = True,
                       output: PathLike | None = None) -> Self:
         """
 
         :param directory: directory contain image sequences
         :param file_suffix: sequence file suffix
-        :param sort_func: sorted function
+        :param sort_func: sorted function with signature `(filename:Path) -> Comparable`
         :param single_frame_per_file:
         :param output:
         :return:
@@ -422,7 +431,7 @@ class SequenceLabeller:
 
         if command == ':h':
             self.enqueue_message(':h : print this document')
-            self.enqueue_message(':q! : quit (without save)')
+            self.enqueue_message(':q! : quit (without save)')  # TODO where is ":q" ?
             self.enqueue_message(':wq : save notes and quit')
             self.enqueue_message(':c : clear current note')
             self.enqueue_message(':i : print current file index')
@@ -439,15 +448,13 @@ class SequenceLabeller:
             match = re.search(r'^:(\d)', command)
             self.go_to(int(match.group(1)))
         elif command.startswith('+'):
-            self.write_note(command[1:], append=True)
+            self.write_note(command[1:], append_mode=True)
         elif not command.startswith(':'):
             self.write_note(command)
-        elif command == ':q!':
-            raise KeyboardInterrupt
-        elif command == ':wq':
-            raise CloseSaveInterrupt
+        elif command in (':wq', ':q', ':q!'):
+            raise CloseSaveInterrupt(command)
         else:
-            raise RuntimeError(f'unknown command : {command}')
+            raise RuntimeError(f'unknown command : "{command}"')
 
     # ============ #
     # Msg / Buffer #
@@ -485,13 +492,19 @@ class SequenceLabeller:
 
         try:
             while True:
-                self._loop()
-        except CloseSaveInterrupt:
-            if self.output is not None:
-                self.save_note()
-                fprint(f'SAVE csv -> {str(self.output)}!', vtype='io')
-        except KeyboardInterrupt:
-            pass
+                try:
+                    while True:
+                        self._loop()
+                except CloseSaveInterrupt as e:
+                    if e.mode == ':wq':
+                        if self.output is not None:
+                            self.save_note()
+                            fprint(f'SAVE csv -> {str(self.output)}!', vtype='io')
+                        break
+                    elif e.mode == ':q!':
+                        break
+                    elif e.mode == ':q':
+                        raise RuntimeError('TODO')
         finally:
             cv2.destroyWindow(self.window_title)
 

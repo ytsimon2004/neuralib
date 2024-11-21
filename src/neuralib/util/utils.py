@@ -4,7 +4,7 @@ import re
 from collections.abc import Collection
 from dataclasses import is_dataclass, asdict
 from pathlib import Path
-from typing import TypeVar, NamedTuple
+from typing import TypeVar, NamedTuple, overload, Literal, Any
 
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
@@ -97,7 +97,17 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT, to_item: bool = False) -> list[KT] | KT:
+@overload
+def keys_with_value(dy: dict[KT, Any | Collection[VT]], value: VT, to_item: Literal[False] = False) -> list[KT]:
+    pass
+
+
+@overload
+def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT, to_item: Literal[True]) -> KT:
+    pass
+
+
+def keys_with_value(dy, value, to_item=False):
     """
     Get keys from a dict that are associated with the value.
 

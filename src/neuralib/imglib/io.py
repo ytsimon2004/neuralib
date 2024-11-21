@@ -25,7 +25,7 @@ def read_sequences(avi_file: PathLike,
 
     :param avi_file: Path to the AVI file.
     :param grey_scale: Whether to convert frames to grayscale.
-    :return: Sequences array. `Array[float, [F, W, H]|[F, W, H, 3]]`
+    :return: Sequences array. `Array[uint8, [F, W, H]|[F, W, H, 3]]`
     """
     cap = cv2.VideoCapture(str(avi_file))
     if not cap.isOpened():
@@ -141,7 +141,7 @@ def write_avi(file_path: str, frames: np.ndarray, fps: int = 30.0) -> None:
     Write a sequence of frames to an AVI file.
 
     :param file_path: The path where the AVI file will be saved.
-    :param frames: `Array[float, [F, W, H]|[F, W, H, 3]]` containing the frames.
+    :param frames: `Array[uint, [F, W, H]|[F, W, H, 3]]` containing the frames.
     :param fps: The frames per second (frame rate) of the output video.
     """
     if not file_path.endswith('avi'):
