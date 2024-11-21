@@ -201,7 +201,12 @@ def load_dlc_result(file: PathLike,
     meta = _load_meta(meta_file)
 
     if file.suffix in ('.h5', '.hdf5'):
-        df = _load_dlc_h5(file, meta)
+        try:
+            import pytables
+            import pandas
+            df = _load_dlc_h5_table(file)
+        except ImportError:
+            df = _load_dlc_h5(file, meta)
     elif file.suffix == '.csv':
         df = _load_dlc_csv(file)
     else:
@@ -245,3 +250,31 @@ def _load_meta(meta_file) -> DeepLabCutMeta:
     meta['training_set_fraction'] = meta['training set fraction']
 
     return meta
+
+
+def _load_dlc_h5_table(file) -> pl.DataFrame:
+    import pandas as pd
+
+    df = pd.read_hdf(file)
+
+    scorers = list(df.columns.levels[0])
+    bodyparts = list(df.columns.levels[1])
+    coords = list(df.columns.levels[2])
+
+    assert len(scorers) == 1
+    scorer = scorers[0]
+
+    data = {
+        f'{b}_{c}': df[(scorer, b, c)]
+        for b in bodyparts
+        for c in coords
+    }
+
+    ret = pl.DataFrame(data)
+
+    # ret = ret.select([
+    #     pl.struct([f'{b}_{c}' for c in coords]).struct.rename_fields(coords).alias(b)
+    #     for b in bodyparts
+    # ])
+
+    return ret
