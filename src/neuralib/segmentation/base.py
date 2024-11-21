@@ -14,26 +14,56 @@ __all__ = ['AbstractSegmentationOption']
 class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
     DESCRIPTION = 'ABC for cellular segmentation'
 
-    file: Path = argument('-F', '--file', help='image file path')
-    directory: Path = argument('-D', '--dir', help='images directory for batch processing')
-    directory_suffix: str = argument('--suffix', default='.tif',
-                                     choices=['.tif', '.tiff', '.png'],
-                                     help='suffix in batch mode')
-    save_ij_roi: bool = argument('--ij-roi', '--roi', help='if save also the imageJ/Fiji compatible .roi file')
-    force_re_eval: bool = argument('--force-eval', '--re', help='force re-evaluate the result')
+    EX_GROUP_SOURCE = 'EX_GROUP_SOURCE'
 
-    model: str = argument('-M', '--model', metavar='MODEL', help='which pretrained model')
-    no_normalize: bool = argument('--no-norm', help='NOT DO Percentile-based image normalization for eval')
-    napari_view: bool = argument('--napari', help='view in napari')
+    file: Path = argument(
+        '-F', '--file',
+        required=True,
+        ex_group=EX_GROUP_SOURCE,
+        help='image file path'
+    )
+
+    directory: Path = argument(
+        '-D', '--dir',
+        ex_group=EX_GROUP_SOURCE,
+        help='images directory for batch processing'
+    )
+
+    directory_suffix: str = argument(
+        '--suffix',
+        default='.tif',
+        choices=['.tif', '.tiff', '.png'],
+        help='suffix in batch mode'
+    )
+
+    save_ij_roi: bool = argument(
+        '--ij-roi',
+        '--roi',
+        help='if save also the imageJ/Fiji compatible .roi file'
+    )
+
+    force_re_eval: bool = argument(
+        '--force-eval', '--re',
+        help='force re-evaluate the result'
+    )
+
+    model: str = argument(
+        '-M', '--model', metavar='MODEL',
+        help='which pretrained model'
+    )
+
+    no_normalize: bool = argument(
+        '--no-norm',
+        help='NOT DO Percentile-based image normalization for eval'
+    )
+
+    napari_view: bool = argument(
+        '--napari',
+        help='view in napari'
+    )
 
     def post_parsing(self):
         """check args is valid"""
-        if not self.file_mode and not self.batch_mode:
-            raise ValueError('Either use "-F in file" or "-D in directory" for processing')
-
-        if self.file and self.directory:
-            raise ValueError('Only "-F in file" or "-D in directory" should be specified, not both')
-
         if self.directory and self.napari_view:
             raise ValueError('napari view only used in single file mode')
 
