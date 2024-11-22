@@ -4,7 +4,9 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+import polars as pl
 from numpy.testing import assert_array_equal
+from polars.testing import assert_frame_equal
 
 from neuralib.util import util_h5py
 
@@ -76,6 +78,9 @@ class TestH5pyDataWrapperRead(unittest.TestCase):
 
 
 class TestH5pyDataWrapperWrite(unittest.TestCase):
+    def tearDown(self):
+        Path(TestH5pyDataWrapperRead.TMP_FILE).unlink(missing_ok=True)
+
     def test_write(self):
         data = ReadData(TestH5pyDataWrapperRead.TMP_FILE, 'w')
         data.a = 1
@@ -93,6 +98,36 @@ class TestH5pyDataWrapperWrite(unittest.TestCase):
         main.test_group()
         main.test_set_attr()
         main.test_set_array()
+
+
+class TestH5pyDataWrapperTable(unittest.TestCase):
+    TMP_FILE = 'TestH5pyDataWrapperTable.h5'
+
+    def tearDown(self):
+        Path(self.TMP_FILE).unlink(missing_ok=True)
+
+    def test_read_write_table_default(self):
+        class Test(util_h5py.H5pyDataWrapper):
+            df: pl.DataFrame = util_h5py.table()
+
+        df = pl.DataFrame(data=dict(
+            a=[0, 1, 2, 3],
+            b=[0.0, 0.1, 1.0, 10.0],
+            c=['a', 'b', 'c', 'd']
+        ))
+
+        test = Test(self.TMP_FILE, 'w')
+        test.df = df
+        test = None
+
+        test = Test(self.TMP_FILE, 'r')
+        ret = test.df
+
+        assert_frame_equal(df, ret)
+
+    @unittest.skip('TODO test_read_write_table_pytables')
+    def test_read_write_table_pytables(self):
+        pass
 
 
 if __name__ == '__main__':

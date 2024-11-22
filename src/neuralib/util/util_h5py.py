@@ -1,22 +1,21 @@
 from __future__ import annotations
 
+import abc
 from pathlib import Path
-from typing import Literal, get_type_hints, overload, ClassVar
+from typing import Literal, get_type_hints, overload, ClassVar, Generic, TypeVar, Any
 
 import h5py
 import numpy as np
+import polars as pl
+from numpy.core.numerictypes import issubdtype
 
 from neuralib.util.verbose import fprint
 
-# if TYPE_CHECKING:
-#     import polars as pl
-#     import pandas as pd
-
 __all__ = [
-    'H5pyDataWrapper', 'attr', 'group', 'array'
+    'H5pyDataWrapper', 'attr', 'group', 'array', 'table'
 ]
 
-
+T = TypeVar('T')
 OPEN = Literal['r', 'r+', 'w', 'x', 'a']
 
 
@@ -84,8 +83,15 @@ def array(key: str = None, **kwargs) -> np.ndarray:
     return H5pyDataWrapperArray(key, **kwargs)
 
 
-# def table(key: str = None, **kwargs) -> pd.DataFrame | pl.Dataframe:
-#     return H5pyDataWrapperTable(key, **kwargs)
+def table(key: str = None, backend: Literal['default', 'pytables'] = 'default', **kwargs) -> T:
+    if backend == 'default':
+        return H5pyDataWrapperTableDefault(key, **kwargs)
+    elif backend == 'pytables':
+        return H5pyDataWrapperTablePyTable(key, **kwargs)
+    else:
+        fprint(f'unknown util_h5py.table(backend={backend}). use default.', vtype='warning')
+        return H5pyDataWrapperTableDefault(key, **kwargs)
+
 
 class H5pyDataWrapperAttr:
     __slots__ = '__attr', '__type'
@@ -94,7 +100,7 @@ class H5pyDataWrapperAttr:
         self.__attr = name
         self.__type = None
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: type[H5pyDataWrapper], name: str):
         if not issubclass(owner, H5pyDataWrapper):
             raise TypeError('owner type not H5pyDataWrapper')
 
@@ -137,7 +143,7 @@ class H5pyDataWrapperGroup:
         self.__group = group
         self.__type = None
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: type[H5pyDataWrapper], name):
         if not issubclass(owner, H5pyDataWrapper):
             raise TypeError('owner type not H5pyDataWrapper')
 
@@ -156,16 +162,7 @@ class H5pyDataWrapperGroup:
         else:
             file: h5py.File = instance.file
 
-            try:
-                return self.__type(file[self.__group])
-            except KeyError:
-                if instance.READ_ONLY:
-                    raise
-
-            try:
-                return self.__type(file.create_group(self.__group))
-            except ValueError as e:
-                raise AttributeError(self.__group) from e
+            return self.__type(file.require_group(self.__group))
 
 
 class H5pyDataWrapperArray:
@@ -175,7 +172,7 @@ class H5pyDataWrapperArray:
         self.__key = key
         self.__kwargs = kwargs
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: type[H5pyDataWrapper], name):
         if not issubclass(owner, H5pyDataWrapper):
             raise TypeError('owner type not H5pyDataWrapper')
 
@@ -235,60 +232,133 @@ class H5pyDataWrapperLazyArray:
     def __getitem__(self, item):
         return np.asarray(self.__data[item])
 
-# class H5pyDataWrapperTable:
-#     __slots__ = '__key', '__table', '__kwargs'
-#
-#     def __init__(self, key: str = None, **kwargs):
-#         self.__key = key
-#         self.__table = None
-#         self.__kwargs = kwargs
-#
-#     def __set_name__(self, owner, name):
-#         if not issubclass(owner, H5pyDataWrapper):
-#             raise TypeError('owner type not H5pyDataWrapper')
-#
-#         if self.__key is None:
-#             self.__key = name
-#
-#         table_type = get_type_hints(owner).get(name, None)
-#
-#         try:
-#             import pandas as pd
-#             if issubclass(table_type, pd.DataFrame):
-#                 self.__table = pd.read_hdf
-#         except ImportError:
-#             pass
-#
-#         if self.__table is None:
-#             try:
-#                 import polars as pl
-#                 if issubclass(table_type, pl.DataFrame):
-#                     def polars_table(df, **kwargs):
-#                         import pandas as pd
-#                         return pl.from_pandas(pd.read_hdf(df, **kwargs))
-#
-#                     self.__table = polars_table
-#             except ImportError:
-#                 pass
-#
-#     def __get__(self, instance: H5pyDataWrapper, owner):
-#         if instance is None:
-#             return self
-#         else:
-#             file: h5py.File = instance.file
-#
-#             try:
-#                 ret = file[self.__key]
-#             except KeyError:
-#                 pass
-#             else:
-#                 return self.__table(ret, **self.__kwargs)
-#
-#             return None
-#
-#     def __set__(self, instance: H5pyDataWrapper, value: np.ndarray):
-#         raise RuntimeError('unsupported now')
-#
-#     def __delete__(self, instance: H5pyDataWrapper):
-#         file: h5py.File = instance.file
-#         del file[self.__key]
+
+class H5pyDataWrapperTable(Generic[T], metaclass=abc.ABCMeta):
+    __slots__ = '__key', '_type', '_kwargs'
+
+    def __init__(self, key: str = None, **kwargs):
+        self.__key = key
+        self._type = None
+        self._kwargs = kwargs
+
+    def __set_name__(self, owner, name):
+        if not issubclass(owner, H5pyDataWrapper):
+            raise TypeError('owner type not H5pyDataWrapper')
+
+        if self.__key is None:
+            self.__key = name
+
+        self._type = get_type_hints(owner).get(name, None)
+
+    @abc.abstractmethod
+    def _get_table(self, table: h5py.Group) -> T:
+        pass
+
+    @abc.abstractmethod
+    def _set_table(self, group: h5py.Group, table: T):
+        pass
+
+    def __get__(self, instance: H5pyDataWrapper, owner) -> T:
+        if instance is None:
+            return self
+        else:
+            file: h5py.File = instance.file
+
+            try:
+                ret = file[self.__key]
+            except KeyError:
+                pass
+            else:
+                return self._get_table(ret)
+
+            return None
+
+    def __set__(self, instance: H5pyDataWrapper, value: T):
+        file: h5py.File = instance.file
+
+        try:
+            ret = file[self.__key]
+            if not isinstance(ret, h5py.Group):
+                del file[self.__key]
+                raise KeyError
+        except KeyError:
+            ret = file.create_group(self.__key)
+
+        self._set_table(ret, value)
+
+    def __delete__(self, instance: H5pyDataWrapper):
+        file: h5py.File = instance.file
+        del file[self.__key]
+
+
+class H5pyDataWrapperTableDefault(H5pyDataWrapperTable[pl.DataFrame]):
+
+    def _get_table(self, table: h5py.Group) -> pl.DataFrame:
+        import polars.datatypes as pty
+
+        attrs = table['schema'].attrs
+        content = table['table']
+
+        schema = {
+            name: getattr(pty, attrs[name])
+            for name in attrs
+        }
+
+        data = {
+            name: np.asarray(content[name])
+            for name in schema
+        }
+
+        return pl.DataFrame(data=data, schema_overrides=schema)
+
+    def _set_table(self, group: h5py.Group, table: pl.DataFrame):
+        for name in table.schema:
+            if (dtype := table.schema[name]).is_nested():
+                raise RuntimeError(f'Do not support nested data type : {name} <{dtype}>')
+
+        try:
+            schema = group.create_group('schema')
+        except ValueError:
+            del group['schema']
+            schema = group.create_group('schema')
+
+        try:
+            content = group.create_group('table')
+        except ValueError:
+            del group['table']
+            content = group.create_group('table')
+
+        for name in table.schema:
+            schema.attrs[name] = str(table.schema[name])
+
+        for name in table.columns:
+            content.create_dataset(name, data=table[name].to_numpy())
+
+
+class H5pyDataWrapperTablePyTable(H5pyDataWrapperTable[Any]):
+    def __init__(self, key: str = None, **kwargs):
+        super().__init__(key, **kwargs)
+
+    def _get_table(self, table: h5py.Group):
+        import pandas as pd
+        df = pd.read_hdf(table, **self._kwargs)
+        if issubdtype(self._type, pd.DataFrame):
+            return df
+
+        import polars as pl
+        df = pl.from_pandas(df)
+        if issubdtype(self._type, pl.DataFrame):
+            return df
+
+        try:
+            from neuralib.util.util_polars import DataFrameWrapper
+            if issubdtype(self._type, DataFrameWrapper):
+                return self._type(df)
+        except ImportError:
+            # in ts-dev branch
+            pass
+
+        return df
+
+    def _set_table(self, group: h5py.Group, table):
+        raise RuntimeError('unsupported now')
