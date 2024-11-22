@@ -11,11 +11,11 @@ from polars.testing import assert_frame_equal
 from neuralib.util import util_h5py
 
 
-class GroupData(util_h5py.H5pyDataWrapper):
+class GroupData(util_h5py.H5pyData):
     e: float = util_h5py.attr()
 
 
-class ReadData(util_h5py.H5pyDataWrapper):
+class ReadData(util_h5py.H5pyData):
     a: int = util_h5py.attr()
     b: int = util_h5py.attr()
     c: float = util_h5py.attr()
@@ -107,7 +107,7 @@ class TestH5pyDataWrapperTable(unittest.TestCase):
         Path(self.TMP_FILE).unlink(missing_ok=True)
 
     def test_read_write_table_default(self):
-        class Test(util_h5py.H5pyDataWrapper):
+        class Test(util_h5py.H5pyData):
             df: pl.DataFrame = util_h5py.table()
 
         df = pl.DataFrame(data=dict(

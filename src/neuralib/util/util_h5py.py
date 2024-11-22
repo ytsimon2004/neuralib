@@ -12,14 +12,14 @@ from numpy.core.numerictypes import issubdtype
 from neuralib.util.verbose import fprint
 
 __all__ = [
-    'H5pyDataWrapper', 'attr', 'group', 'array', 'table'
+    'H5pyData', 'attr', 'group', 'array', 'table'
 ]
 
 T = TypeVar('T')
 OPEN = Literal['r', 'r+', 'w', 'x', 'a']
 
 
-class H5pyDataWrapper:
+class H5pyData:
     READ_ONLY: ClassVar[bool]
 
     def __init_subclass__(cls, read_only=False, **kwargs):
@@ -59,11 +59,11 @@ class H5pyDataWrapper:
 
 
 def attr(name: str = None):
-    return H5pyDataWrapperAttr(name)
+    return _H5pyAttr(name)
 
 
 def group(name: str = None):
-    return H5pyDataWrapperGroup(name)
+    return _H5pyGroup(name)
 
 
 @overload
@@ -80,35 +80,35 @@ def array(key: str = None,
 
 
 def array(key: str = None, **kwargs) -> np.ndarray:
-    return H5pyDataWrapperArray(key, **kwargs)
+    return _H5pyArray(key, **kwargs)
 
 
 def table(key: str = None, backend: Literal['default', 'pytables'] = 'default', **kwargs) -> T:
     if backend == 'default':
-        return H5pyDataWrapperTableDefault(key, **kwargs)
+        return _H5PyTable_Default(key, **kwargs)
     elif backend == 'pytables':
-        return H5pyDataWrapperTablePyTable(key, **kwargs)
+        return _H5pyTable_PyTable(key, **kwargs)
     else:
         fprint(f'unknown util_h5py.table(backend={backend}). use default.', vtype='warning')
-        return H5pyDataWrapperTableDefault(key, **kwargs)
+        return _H5PyTable_Default(key, **kwargs)
 
 
-class H5pyDataWrapperAttr:
+class _H5pyAttr:
     __slots__ = '__attr', '__type'
 
     def __init__(self, name: str = None):
         self.__attr = name
         self.__type = None
 
-    def __set_name__(self, owner: type[H5pyDataWrapper], name: str):
-        if not issubclass(owner, H5pyDataWrapper):
+    def __set_name__(self, owner: type[H5pyData], name: str):
+        if not issubclass(owner, H5pyData):
             raise TypeError('owner type not H5pyDataWrapper')
 
         if self.__attr is None:
             self.__attr = name
         self.__type = get_type_hints(owner).get(name, None)
 
-    def __get__(self, instance: H5pyDataWrapper, owner):
+    def __get__(self, instance: H5pyData, owner):
         if instance is None:
             return self
         else:
@@ -123,40 +123,40 @@ class H5pyDataWrapperAttr:
                 ret = self.__type(ret)
             return ret
 
-    def __set__(self, instance: H5pyDataWrapper, value):
+    def __set__(self, instance: H5pyData, value):
         try:
             instance.file.attrs[self.__attr] = value
         except OSError as e:
             raise AttributeError(self.__attr) from e
 
-    def __delete__(self, instance: H5pyDataWrapper):
+    def __delete__(self, instance: H5pyData):
         try:
             del instance.file.attrs[self.__attr]
         except OSError as e:
             raise AttributeError(self.__attr) from e
 
 
-class H5pyDataWrapperGroup:
+class _H5pyGroup:
     __slots__ = '__group', '__type'
 
     def __init__(self, group: str = None):
         self.__group = group
         self.__type = None
 
-    def __set_name__(self, owner: type[H5pyDataWrapper], name):
-        if not issubclass(owner, H5pyDataWrapper):
+    def __set_name__(self, owner: type[H5pyData], name):
+        if not issubclass(owner, H5pyData):
             raise TypeError('owner type not H5pyDataWrapper')
 
         if self.__group is None:
             self.__group = name
 
         self.__type = get_type_hints(owner).get(name, None)
-        if self.__type is not None and not issubclass(self.__type, H5pyDataWrapper):
+        if self.__type is not None and not issubclass(self.__type, H5pyData):
             raise TypeError(f'h5py_group {name} type not H5pyDataWrapper')
         if self.__type is None:
-            self.__type = H5pyDataWrapper
+            self.__type = H5pyData
 
-    def __get__(self, instance: H5pyDataWrapper, owner):
+    def __get__(self, instance: H5pyData, owner):
         if instance is None:
             return self
         else:
@@ -165,21 +165,21 @@ class H5pyDataWrapperGroup:
             return self.__type(file.require_group(self.__group))
 
 
-class H5pyDataWrapperArray:
+class _H5pyArray:
     __slots__ = '__key', '__kwargs'
 
     def __init__(self, key: str = None, **kwargs):
         self.__key = key
         self.__kwargs = kwargs
 
-    def __set_name__(self, owner: type[H5pyDataWrapper], name):
-        if not issubclass(owner, H5pyDataWrapper):
+    def __set_name__(self, owner: type[H5pyData], name):
+        if not issubclass(owner, H5pyData):
             raise TypeError('owner type not H5pyDataWrapper')
 
         if self.__key is None:
             self.__key = name
 
-    def __get__(self, instance: H5pyDataWrapper, owner):
+    def __get__(self, instance: H5pyData, owner):
         if instance is None:
             return self
         else:
@@ -190,11 +190,11 @@ class H5pyDataWrapperArray:
             except KeyError:
                 pass
             else:
-                return H5pyDataWrapperLazyArray(ret)
+                return _H5pyLazyArray(ret)
 
             return None
 
-    def __set__(self, instance: H5pyDataWrapper, value: np.ndarray):
+    def __set__(self, instance: H5pyData, value: np.ndarray):
         file: h5py.File = instance.file
         try:
             file[self.__key]
@@ -205,12 +205,12 @@ class H5pyDataWrapperArray:
 
         file.create_dataset(self.__key, data=value, **self.__kwargs)
 
-    def __delete__(self, instance: H5pyDataWrapper):
+    def __delete__(self, instance: H5pyData):
         file: h5py.File = instance.file
         del file[self.__key]
 
 
-class H5pyDataWrapperLazyArray:
+class _H5pyLazyArray:
     def __init__(self, data: h5py.Dataset):
         self.__data = data
 
@@ -233,7 +233,7 @@ class H5pyDataWrapperLazyArray:
         return np.asarray(self.__data[item])
 
 
-class H5pyDataWrapperTable(Generic[T], metaclass=abc.ABCMeta):
+class _H5pyTable(Generic[T], metaclass=abc.ABCMeta):
     __slots__ = '__key', '_type', '_kwargs'
 
     def __init__(self, key: str = None, **kwargs):
@@ -242,7 +242,7 @@ class H5pyDataWrapperTable(Generic[T], metaclass=abc.ABCMeta):
         self._kwargs = kwargs
 
     def __set_name__(self, owner, name):
-        if not issubclass(owner, H5pyDataWrapper):
+        if not issubclass(owner, H5pyData):
             raise TypeError('owner type not H5pyDataWrapper')
 
         if self.__key is None:
@@ -258,7 +258,7 @@ class H5pyDataWrapperTable(Generic[T], metaclass=abc.ABCMeta):
     def _set_table(self, group: h5py.Group, table: T):
         pass
 
-    def __get__(self, instance: H5pyDataWrapper, owner) -> T:
+    def __get__(self, instance: H5pyData, owner) -> T:
         if instance is None:
             return self
         else:
@@ -273,7 +273,7 @@ class H5pyDataWrapperTable(Generic[T], metaclass=abc.ABCMeta):
 
             return None
 
-    def __set__(self, instance: H5pyDataWrapper, value: T):
+    def __set__(self, instance: H5pyData, value: T):
         file: h5py.File = instance.file
 
         try:
@@ -286,12 +286,12 @@ class H5pyDataWrapperTable(Generic[T], metaclass=abc.ABCMeta):
 
         self._set_table(ret, value)
 
-    def __delete__(self, instance: H5pyDataWrapper):
+    def __delete__(self, instance: H5pyData):
         file: h5py.File = instance.file
         del file[self.__key]
 
 
-class H5pyDataWrapperTableDefault(H5pyDataWrapperTable[pl.DataFrame]):
+class _H5PyTable_Default(_H5pyTable[pl.DataFrame]):
 
     def _get_table(self, table: h5py.Group) -> pl.DataFrame:
         import polars.datatypes as pty
@@ -335,7 +335,7 @@ class H5pyDataWrapperTableDefault(H5pyDataWrapperTable[pl.DataFrame]):
             content.create_dataset(name, data=table[name].to_numpy())
 
 
-class H5pyDataWrapperTablePyTable(H5pyDataWrapperTable[Any]):
+class _H5pyTable_PyTable(_H5pyTable[Any]):
     def __init__(self, key: str = None, **kwargs):
         super().__init__(key, **kwargs)
 
