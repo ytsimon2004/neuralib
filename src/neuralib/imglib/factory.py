@@ -157,7 +157,7 @@ class ImageProcFactory:
         i.e., used in roi selection of the neuron before counting
 
         :param channel: color of image
-        :return: `Array[float, [H, W]]`
+        :return: `Array[float, [H, W]]`  # TODO Is it float?
         """
         from skimage.morphology import local_maxima
 

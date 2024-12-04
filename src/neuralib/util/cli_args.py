@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import attrs
 
+from neuralib.util.deprecation import deprecated_func
+
 __all__ = ['CliArgs']
 
+
+@deprecated_func(remarks='over engineering')
 @attrs.define
 class CliArgs:
     flag: str | None = attrs.field(default=None)

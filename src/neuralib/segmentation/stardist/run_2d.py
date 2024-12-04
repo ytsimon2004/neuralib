@@ -43,7 +43,7 @@ class StarDistResult:
     """Source image file name"""
 
     labels: np.ndarray
-    """Image with label. `Array[float, [H, W]]`"""
+    """Image with label. `Array[float, [H, W]]`"""  # TODO Is it float?
 
     cords: np.ndarray
     """Coordinates. `Array[float, [N, 2, E]]`"""

@@ -231,6 +231,7 @@ class FaceMapResult:
 
         if with_keypoints:
             data_path = uglob(directory, '*.h5')
+            # TODO why not cmds.extend(['--keypoints', str(data_path)])
             cmds.extend(CliArgs('--keypoints', str(data_path)).as_command())
 
         fprint(f'{cmds=}')

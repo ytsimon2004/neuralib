@@ -14,7 +14,7 @@ class CellPoseSubprocOption(AbstractCellPoseOption):
     def run(self):
         self.eval()
 
-    def eval(self):
+    def eval(self) -> int:
         cmds = self.build_cli()
         code = subprocess.check_call(cmds)
         return code
@@ -23,6 +23,7 @@ class CellPoseSubprocOption(AbstractCellPoseOption):
         ret = ['python', '-m', 'cellpose', '--verbose']
 
         #
+        # TODO why not ret.extend([...])
         if self.file_mode:
             ret.extend(CliArgs('--image_path', str(self.file)).as_command())
         elif self.batch_mode:
@@ -46,7 +47,7 @@ class CellPoseSubprocOption(AbstractCellPoseOption):
         if check_nvidia_cuda_available(backend='torch') or check_mps_available(backend='torch'):
             ret.extend(CliArgs('--use_gpu').as_command())
 
-            if check_mps_available():
+            if check_mps_available():  # XXX
                 ret.extend(CliArgs('--gpu_device', 'mps').as_command())
 
         fprint(ret)

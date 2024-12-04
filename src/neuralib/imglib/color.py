@@ -14,7 +14,7 @@ def grey2rgb(im: np.ndarray, rgb: int | tuple[int, ...]) -> np.ndarray:
 
     :param im: grey scale image (2d array)
     :param rgb: {0, 1, 2} indicates rgb, tuple represent merge color
-    :return: RGB image. `Array[float, [H, W, 3]]`
+    :return: RGB image. `Array[float, [H, W, 3]]`  # TODO Is it float?
     """
 
     if im.ndim != 2:

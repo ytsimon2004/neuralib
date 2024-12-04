@@ -112,7 +112,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         :param source_type: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
         :param plane: `PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
         :param resolution: um/pixel
-        :param reference: Array[float, [AP, DV, ML]]
+        :param reference: Array[float, [AP, DV, ML]]  # TODO Is it float?
         """
         self.source_type = source_type
         self.plane_type = plane
