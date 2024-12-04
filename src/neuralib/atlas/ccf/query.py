@@ -27,7 +27,7 @@ class RoiAreaQuery:
         :param source_order: order of the unique sources
         :param force_set_show_col_level: force set show col to which level.
             use case: if a low level area name is classified and show in high level (i.e., TH).
-            Then directly specify the level number instead of auto inferred by hierarchical_query()
+            Then directly specify the level number instead of auto inferred by ``_hierarchical_query()``
 
             **Please use carefully**
 
@@ -71,7 +71,7 @@ class RoiAreaQuery:
         :param source_order: order of the unique sources
         :param force_set_show_col_level: force set show col to which level.
             use case: if a low level area name is classified and show in high level (i.e., TH).
-            Then directly specify the level number instead of auto inferred by hierarchical_query()
+            Then directly specify the level number instead of auto inferred by ``_hierarchical_query()``
 
             **Please use carefully**
 

@@ -202,8 +202,8 @@ def load_dlc_result(file: PathLike,
 
     if file.suffix in ('.h5', '.hdf5'):
         try:
-            import pytables
-            import pandas
+            import pytables  # noqa: F401
+            import pandas  # noqa: F401
             df = _load_dlc_h5_table(file)
         except ImportError:
             df = _load_dlc_h5(file, meta)
@@ -213,6 +213,29 @@ def load_dlc_result(file: PathLike,
         raise ValueError(f'Unsupported file type: {file.suffix}')
 
     return DeepLabCutResult(df, meta, filtered=('filtered' in file.name), time=time)
+
+
+def _load_dlc_h5_table(file) -> pl.DataFrame:
+    import pandas as pd
+
+    df = pd.read_hdf(file)
+
+    scorers = list(df.columns.levels[0])
+    bodyparts = list(df.columns.levels[1])
+    coords = list(df.columns.levels[2])
+
+    assert len(scorers) == 1
+    scorer = scorers[0]
+
+    data = {
+        f'{b}_{c}': df[(scorer, b, c)]
+        for b in bodyparts
+        for c in coords
+    }
+
+    ret = pl.DataFrame(data)
+
+    return ret
 
 
 def _load_dlc_h5(file, meta) -> pl.DataFrame:
@@ -250,31 +273,3 @@ def _load_meta(meta_file) -> DeepLabCutMeta:
     meta['training_set_fraction'] = meta['training set fraction']
 
     return meta
-
-
-def _load_dlc_h5_table(file) -> pl.DataFrame:
-    import pandas as pd
-
-    df = pd.read_hdf(file)
-
-    scorers = list(df.columns.levels[0])
-    bodyparts = list(df.columns.levels[1])
-    coords = list(df.columns.levels[2])
-
-    assert len(scorers) == 1
-    scorer = scorers[0]
-
-    data = {
-        f'{b}_{c}': df[(scorer, b, c)]
-        for b in bodyparts
-        for c in coords
-    }
-
-    ret = pl.DataFrame(data)
-
-    # ret = ret.select([
-    #     pl.struct([f'{b}_{c}' for c in coords]).struct.rename_fields(coords).alias(b)
-    #     for b in bodyparts
-    # ])
-
-    return ret

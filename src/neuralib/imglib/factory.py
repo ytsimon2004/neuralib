@@ -25,35 +25,30 @@ class ImageProcFactory:
     """Factory for basic imaging processing"""
 
     image: np.ndarray
-    """image array. `Array[uint, [H, W]|[H, W, 3]|[H, W, 4]]`"""
+    """Image array. `Array[uint, [H, W]|[H, W, 3]|[H, W, 4]]`"""
 
     mode: Literal['r', 'g', 'b', 'RGB', 'RGBA', 'gray']
+    """Color mode"""
 
     @classmethod
     def load(cls, file: PathLike,
-             mode: Literal['RGB', 'RGBA', 'BGR'] = 'BGR',
-             alpha=False) -> Self:
+             alpha: bool = False) -> Self:
         """
         Load the image file
 
-        :param file: filepath of the image
-        :param mode: source image color mode.
-        :param alpha: keep alpha channel
-        :return:
+        :param file: Filepath of the image
+        :param alpha: Keep alpha channel
+        :return: ``ImageProcFactory``
         """
 
         img = cv2.imread(str(file))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        mode = 'RGB'
 
-        if mode == 'BGR':
-            if alpha:
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
-                img = np.array(img, dtype=np.uint8)
-                mode = 'RGBA'
-            else:
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                mode = 'RGB'
-        else:
-            raise RuntimeError('TODO')
+        if alpha:
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+            img = np.array(img, dtype=np.uint8)
+            mode = 'RGBA'
 
         return ImageProcFactory(img, mode)
 
@@ -148,10 +143,12 @@ class ImageProcFactory:
 
     def de_noise(self, h: int = 10, temp_win_size: int = 7, search_win_size: int = 21) -> Self:
         gray_img = self.cvt_gray().image
-        dn = cv2.fastNlMeansDenoising(gray_img,
-                                      h=h,
-                                      templateWindowSize=temp_win_size,
-                                      searchWindowSize=search_win_size)
+        dn = cv2.fastNlMeansDenoising(
+            gray_img,
+            h=h,
+            templateWindowSize=temp_win_size,
+            searchWindowSize=search_win_size
+        )
         return attrs.evolve(self, image=dn)
 
     def local_maxima_image(self, channel: IMAGE_CHANNEL_TYPE, **kwargs) -> Self:

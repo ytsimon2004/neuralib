@@ -148,7 +148,9 @@ def keys_with_value(dy, value, to_item=False):
                 matching_keys.append(key)
 
     if to_item:
-        if len(matching_keys) == 1:
+        if len(matching_keys) == 0:
+            raise KeyError(f'{value} does not match any keys')
+        elif len(matching_keys) == 1:
             return matching_keys[0]
         else:
             raise ValueError(f'multiple match keys: {matching_keys}')

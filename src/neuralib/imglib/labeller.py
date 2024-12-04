@@ -61,19 +61,19 @@ import attrs
 import cv2
 import numpy as np
 import polars as pl
+from polars.testing import assert_frame_equal
 from tifffile import tifffile
 from tqdm import tqdm
 from typing_extensions import Self
 
 from neuralib.io import csv_header
 from neuralib.typing import PathLike
-from neuralib.util.deprecation import deprecated_func
+from neuralib.util.utils import keys_with_value
 from neuralib.util.verbose import fprint
 
 __all__ = ['SequenceLabeller']
 
-# TODO give the logger a name
-Logger = logging.getLogger()
+Logger = logging.getLogger(__name__)
 
 
 # ================ #
@@ -154,24 +154,8 @@ def get_keymapping() -> KeyMapping:
         return WIN_KEYMAPPING
 
 
-@deprecated_func(new='utils.keys_with_value', remarks="Isn't it?")
-def find_key_from_value(dy: KeyMapping, value: int) -> str | bool | None:
-    ret = []
-    for k, v in dy.items():
-        if v == value:
-            ret.append(k)
-
-    if len(ret) == 0:
-        return
-    elif len(ret) == 1:
-        return ret[0]
-    else:
-        raise False
-
-
 @attrs.define
 class FrameInfo:
-
     filename: str
     """name of the an image/frame"""
 
@@ -340,11 +324,13 @@ class SequenceLabeller:
             for seq in self.seqs_info:
                 csv(str(seq.filename), seq.notes, t)
 
+    _prev_note: pl.DataFrame | None = None  # for checking changes
+
     def load_note(self):
         """read image-related notes from file"""
         from neuralib.util.verbose import printdf
 
-        df = pl.read_csv(self.output, dtypes={'filename': pl.Utf8})
+        df = self._prev_note = pl.read_csv(self.output, schema_overrides={'filename': pl.Utf8})
         printdf(df)
         for i, info in enumerate(self.seqs_info):
             note = df.filter(pl.col('filename') == info.filename)['notes'].item()
@@ -368,6 +354,25 @@ class SequenceLabeller:
     def clear_note(self):
         self.seqs_info[self.current_frame_index].notes = None
 
+    def check_note_changes(self) -> bool:
+        """True if any changes in notes"""
+        if self._prev_note is None:
+            if any([seq.notes is not None for seq in self.seqs_info]):
+                return True
+        else:
+            prev_note = self._prev_note.select('filename', 'notes')
+            cur_note = pl.DataFrame([
+                [str(seq.filename), seq.notes]
+                for seq in self.seqs_info
+            ], schema=['filename', 'notes'], orient='row')
+
+            try:
+                assert_frame_equal(prev_note, cur_note)
+            except AssertionError:
+                return True
+
+        return False
+
     # ============= #
     # Key & Command #
     # ============= #
@@ -385,8 +390,6 @@ class SequenceLabeller:
         self.current_frame_index = i
 
     def handle_keycode(self, k: int):
-        # Logger.debug(f'Key: {k}')
-
         mapping = get_keymapping()
         ret = self._handle_keymapping(mapping, k)
         if ret is not None:  # printable
@@ -395,43 +398,46 @@ class SequenceLabeller:
     def _handle_keymapping(self, mapping: KeyMapping, value: int) -> int | None:
         """
         Handling the keyboard mapping
+
         :param mapping:
         :param value:
         :return: int value if cannot find key in keymapping, otherwise return None
         """
-        ret = find_key_from_value(mapping, value)
-        if not ret:
+        try:
+            ret = keys_with_value(mapping, value, to_item=True)
+        except (KeyError, ValueError):
             return value
-
-        if ret == 'left':
-            self.current_frame_index -= 1
-        elif ret == 'right':
-            self.current_frame_index += 1
-        elif ret == 'left_square_bracket':
-            self.current_frame_index += 10
-        elif ret == 'right_square_bracket':
-            self.current_frame_index -= 10
-        elif ret == 'backspace':
-            if len(self.buffer) > 0:
-                self.buffer = self.buffer[:-1]
-        elif ret == 'enter':  # handle command in buffer
-            command = self._proc_image_command = self.buffer
-            self.buffer = ''
-            try:
-                self.handle_command(command)
-            except KeyboardInterrupt:
-                raise
-            except BaseException as e:
-                self.enqueue_message(f'command "{command}" {type(e).__name__}: {e}')
-        elif ret == 'escape':
-            self.buffer = ''
+        else:
+            if ret == 'left':
+                self.current_frame_index -= 1
+            elif ret == 'right':
+                self.current_frame_index += 1
+            elif ret == 'left_square_bracket':
+                self.current_frame_index += 10
+            elif ret == 'right_square_bracket':
+                self.current_frame_index -= 10
+            elif ret == 'backspace':
+                if len(self.buffer) > 0:
+                    self.buffer = self.buffer[:-1]
+            elif ret == 'enter':  # handle command in buffer
+                command = self._proc_image_command = self.buffer
+                self.buffer = ''
+                try:
+                    self.handle_command(command)
+                except KeyboardInterrupt:
+                    raise
+                except BaseException as e:
+                    self.enqueue_message(f'command "{command}" {type(e).__name__}: {e}')
+            elif ret == 'escape':
+                self.buffer = ''
 
     def handle_command(self, command: str):
         Logger.debug(f'command: {command}')
 
         if command == ':h':
             self.enqueue_message(':h : print this document')
-            self.enqueue_message(':q! : quit (without save)')  # TODO where is ":q" ?
+            self.enqueue_message(':q : quit (unable if not save the changes)')
+            self.enqueue_message(':q! : quit (without save)')
             self.enqueue_message(':wq : save notes and quit')
             self.enqueue_message(':c : clear current note')
             self.enqueue_message(':i : print current file index')
@@ -504,7 +510,11 @@ class SequenceLabeller:
                     elif e.mode == ':q!':
                         break
                     elif e.mode == ':q':
-                        raise RuntimeError('TODO')
+                        if self.check_note_changes():
+                            self.enqueue_message('please save the note using :wq, or force quit using :q!')
+                            continue
+                        else:
+                            break
         finally:
             cv2.destroyWindow(self.window_title)
 
