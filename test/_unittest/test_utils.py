@@ -49,7 +49,10 @@ class TestUtilFunc(unittest.TestCase):
             c=(4, 5, 3),
             d=0.1 + 0.2,
             e=NT,
-            f=TD
+            f=TD,
+            g=[],
+            h=(),
+            i={},
         )
 
         self.assertListEqual(keys_with_value(dy, 3), ['a', 'c', 'e'])
@@ -66,8 +69,12 @@ class TestUtilFunc(unittest.TestCase):
         self.assertListEqual(keys_with_value(dy, 11.111), [])
         self.assertListEqual(keys_with_value(dy, 11.1100000000001), [])  # TODO Is it what you expect?
         self.assertListEqual(keys_with_value(dy, TestNt), [])
+        self.assertListEqual(keys_with_value(dy, ['x']), [])
         self.assertListEqual(keys_with_value(dy, ['x', 'y', 'z']), ['f'])
         self.assertListEqual(keys_with_value(dy, TD), [])  # TODO Is it what you expect?
+        self.assertListEqual(keys_with_value(dy, []), ['g'])
+        self.assertListEqual(keys_with_value(dy, ()), ['h'])
+        self.assertListEqual(keys_with_value(dy, {}), ['i'])
 
     def test_deprecate_class(self):
         @deprecated_class(new='B', remarks='TEST REMARKS', removal_version='v0.0.10')
