@@ -6,6 +6,7 @@ from .alias import ArrayLike
 
 __all__ = [
     'is_iterable',
+    'is_namedtuple',
     'flatten_arraylike',
     'array2str'
 ]
@@ -19,6 +20,15 @@ def is_iterable(val: Any) -> bool:
     """
     from collections.abc import Iterable
     return isinstance(val, Iterable) and not isinstance(val, str)
+
+
+# noinspection PyProtectedMember
+def is_namedtuple(obj: Any) -> bool:
+    if isinstance(obj, tuple) and hasattr(obj, '_fields'):
+        if isinstance(obj._fields, tuple):
+            return True
+
+    return False
 
 
 def flatten_arraylike(ls: list[ArrayLike]) -> list[Any]:

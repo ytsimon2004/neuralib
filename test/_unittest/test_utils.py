@@ -29,7 +29,7 @@ class TestUtilFunc(unittest.TestCase):
         self.assertTrue(cls_hasattr(Child, 'a'))
         self.assertTrue(cls_hasattr(Child, 'e'))
 
-    def test_key_from_value(self):
+    def test_key_with_value(self):
         from neuralib.util.utils import keys_with_value
 
         TestNt = namedtuple('TestNt', ['f1', 'f2', 'f3'])
@@ -55,23 +55,15 @@ class TestUtilFunc(unittest.TestCase):
             i={},
         )
 
-        self.assertListEqual(keys_with_value(dy, 3), ['a', 'c', 'e'])
-        self.assertListEqual(keys_with_value(dy, 4), ['c'])
-        self.assertListEqual(keys_with_value(dy, 5), ['b', 'c'])
-        self.assertListEqual(keys_with_value(dy, (4, 5, 3)), [])  # TODO Is it what you expect?
+        self.assertListEqual(keys_with_value(dy, 5), ['b'])
+        self.assertListEqual(keys_with_value(dy, [1, 2, 3]), ['a'])
+        self.assertListEqual(keys_with_value(dy, (4, 5, 3)), ['c'])
         self.assertListEqual(keys_with_value(dy, 7), [])
         self.assertListEqual(keys_with_value(dy, 0.3), ['d'])
         self.assertListEqual(keys_with_value(dy, 0.33), [])
         self.assertListEqual(keys_with_value(dy, 0.30000000000001), ['d'])
-        self.assertListEqual(keys_with_value(dy, 'nt'), ['e'])
-        self.assertListEqual(keys_with_value(dy, NT), [])  # TODO Is it what you expect?
-        self.assertListEqual(keys_with_value(dy, 11.11), ['e'])
-        self.assertListEqual(keys_with_value(dy, 11.111), [])
-        self.assertListEqual(keys_with_value(dy, 11.1100000000001), [])  # TODO Is it what you expect?
-        self.assertListEqual(keys_with_value(dy, TestNt), [])
-        self.assertListEqual(keys_with_value(dy, ['x']), [])
-        self.assertListEqual(keys_with_value(dy, ['x', 'y', 'z']), ['f'])
-        self.assertListEqual(keys_with_value(dy, TD), [])  # TODO Is it what you expect?
+        self.assertListEqual(keys_with_value(dy, NT), ['e'])
+        self.assertListEqual(keys_with_value(dy, TD), ['f'])
         self.assertListEqual(keys_with_value(dy, []), ['g'])
         self.assertListEqual(keys_with_value(dy, ()), ['h'])
         self.assertListEqual(keys_with_value(dy, {}), ['i'])
@@ -101,7 +93,7 @@ class TestUtilFunc(unittest.TestCase):
         self.assertIn('TestUtilFunc.test_deprecate_function.<locals>.test_deprecate '
                       'is deprecated and will be removed in a future release (after version v1.0.0). '
                       'Please use "new()" instead.', str(warns.warning)
-        )
+                      )
 
     def test_deprecate_aliases(self):
         @deprecated_aliases(old='new')

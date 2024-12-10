@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Collection
-from dataclasses import is_dataclass, asdict
+from dataclasses import is_dataclass
 from pathlib import Path
-from typing import TypeVar, NamedTuple, overload, Literal, Any
+from typing import TypeVar, overload, Literal, Any
 
 from neuralib.typing import PathLike
+from neuralib.typing.func import is_namedtuple
 from neuralib.util.verbose import fprint
 
 __all__ = ['uglob',
@@ -101,12 +102,16 @@ VT = TypeVar('VT')
 
 
 @overload
-def keys_with_value(dy: dict[KT, Any | Collection[VT]], value: VT, to_item: Literal[False] = False) -> list[KT]:
+def keys_with_value(dy: dict[KT, Any | Collection[VT]],
+                    value: VT,
+                    to_item: Literal[False] = False) -> list[KT]:
     pass
 
 
 @overload
-def keys_with_value(dy: dict[KT, VT | Collection[VT]], value: VT, to_item: Literal[True]) -> KT:
+def keys_with_value(dy: dict[KT, VT | Collection[VT]],
+                    value: VT,
+                    to_item: Literal[True] = True) -> KT:
     pass
 
 
@@ -118,7 +123,7 @@ def keys_with_value(dy, value, to_item=False):
 
     :param dy: The value to match against the dictionary values
     :param value: The value to match against the dictionary value
-    :param to_item: list of item to item if unique
+    :param to_item: List of item to item if unique
     :return: A list of keys whose values match the provided value
     """
     matching_keys = []
@@ -130,21 +135,8 @@ def keys_with_value(dy, value, to_item=False):
         if isinstance(val, float) and isinstance(value, float):
             if _float_eq(val, value):
                 matching_keys.append(key)
-
-        elif isinstance(val, (str, int)):
+        elif isinstance(val, (str, int, Collection)) | is_namedtuple(val) | is_dataclass(val):
             if val == value:
-                matching_keys.append(key)
-
-        elif isinstance(val, Collection) and not isinstance(val, str):
-            if value in val:
-                matching_keys.append(key)
-
-        elif isinstance(type(val), type(NamedTuple)):
-            if value in val._asdict().values():
-                matching_keys.append(key)
-
-        elif is_dataclass(val):
-            if value in asdict(val).values():
                 matching_keys.append(key)
 
     if to_item:
