@@ -9,7 +9,6 @@ import numpy as np
 from typing_extensions import TypeAlias, Self
 
 from neuralib.typing import PathLike
-from neuralib.util.cli_args import CliArgs
 from neuralib.util.utils import uglob
 from neuralib.util.verbose import fprint
 
@@ -231,8 +230,7 @@ class FaceMapResult:
 
         if with_keypoints:
             data_path = uglob(directory, '*.h5')
-            # TODO why not cmds.extend(['--keypoints', str(data_path)])
-            cmds.extend(CliArgs('--keypoints', str(data_path)).as_command())
+            cmds.extend(['--keypoints', str(data_path)])
 
         fprint(f'{cmds=}')
         subprocess.check_call(cmds)

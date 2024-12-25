@@ -135,7 +135,7 @@ def keys_with_value(dy, value, to_item=False):
         if isinstance(val, float) and isinstance(value, float):
             if _float_eq(val, value):
                 matching_keys.append(key)
-        elif isinstance(val, (str, int, Collection)) | is_namedtuple(val) | is_dataclass(val):
+        elif isinstance(val, (str, int, Collection)) or is_namedtuple(val) or is_dataclass(val):
             if val == value:
                 matching_keys.append(key)
 

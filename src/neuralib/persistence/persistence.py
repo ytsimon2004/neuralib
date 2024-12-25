@@ -137,8 +137,8 @@ from typing import Type, TypeVar, Union, Callable, Optional, Generic, Any, Itera
 
 import numpy as np
 
-from neuralib.util.func import create_fn
 from neuralib.typing import is_iterable
+from neuralib.util.func import create_fn
 from neuralib.util.verbose import fprint
 
 __all__ = [
@@ -826,8 +826,7 @@ class PersistenceConcatError(Exception):
     pass
 
 
-def validate_concat_etl_persistence(data: list[T],
-                                    field_check: Optional[tuple[str, ...]] = None) -> None:
+def validate_concat_etl_persistence(data: list[T], field_check: tuple[str, ...] | None = None) -> None:
     """
 
     :param data:

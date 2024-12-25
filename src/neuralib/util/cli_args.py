@@ -7,7 +7,7 @@ from neuralib.util.deprecation import deprecated_func
 __all__ = ['CliArgs']
 
 
-@deprecated_func(remarks='over engineering')
+@deprecated_func(remarks='over engineering', removal_version="0.4.0")
 @attrs.define
 class CliArgs:
     flag: str | None = attrs.field(default=None)
