@@ -132,8 +132,9 @@ from __future__ import annotations
 
 import abc
 import inspect
+import sys
 from pathlib import Path
-from typing import Type, TypeVar, Union, Callable, Optional, Generic, Any, Iterable, get_type_hints
+from typing import Type, TypeVar, Union, Callable, Generic, Any, Iterator, get_type_hints
 
 import numpy as np
 
@@ -190,7 +191,7 @@ def autoinc_field(filename_prefix: str = '') -> int:
     :return:
     """
     # noinspection PyTypeChecker
-    return PersistentField(validator=True, filename_prefix=filename_prefix, filename=True, init=False, autoinc=True)
+    return PersistentField(validator=True, filename_prefix=filename_prefix, filename=True, init=True, autoinc=True)
 
 
 class PersistentField(Generic[T]):
@@ -210,12 +211,19 @@ class PersistentField(Generic[T]):
         :param filename_prefix: prefix word of *filename*
         :param filename: display this value on filename. Can be a callable that return the string.
         :param init: put this field into class __init__
+        :param autoinc:
+        :param optional: does this field has default value
         """
         self.validator = validator
+        """Is this field a identify?"""
         self.filename_prefix = filename_prefix
+        """The filename prefix word of this field value"""
         self.filename = filename
+        """Does this field show in filename?"""
         self.init = init
+        """Does this field is a __init__ argument?"""
         self.autoinc = autoinc
+        """Does this field is auto incremental field?"""
 
     def __set_name__(self, owner: Type, name: str):
         self.field_name = name
@@ -223,7 +231,7 @@ class PersistentField(Generic[T]):
             if (field_type := get_type_hints(owner).get(name, Any)) != int:
                 raise RuntimeError(f'type of autoinc field {name} should be int, but {field_type}')
         else:
-            self.field_type = owner.__annotations__.get(name, Any)
+            self.field_type = get_type_hints(owner).get(name, Any)
 
     def validate(self, v: T, u: T) -> bool:
         """Validate this two value.
@@ -243,6 +251,11 @@ class PersistentField(Generic[T]):
 
 
 class AutoIncFieldNotResolvedError(RuntimeError):
+    """Raised when a persistence's autoinc field is not resolved,
+    and it is unable to do following operations.
+
+    """
+
     def __init__(self, instance, field: Union[str, PersistentField], message: str = None):
         if isinstance(field, PersistentField):
             field = field.field_name
@@ -299,6 +312,11 @@ def persistence_class(cls: Type = None, /, *,
             cls.__repr__ = _persistence_class_repr(pc)
         if hasattr(cls, '_replace'):
             cls._replace = _persistence_class_replace(pc)
+
+        if sys.version_info >= (3, 10):
+            if not hasattr(cls, '__match_args__'):
+                cls.__match_args__ = tuple([it.field_name for it in pc.fields])
+
         return cls
 
     if cls is None:
@@ -308,7 +326,7 @@ def persistence_class(cls: Type = None, /, *,
 
 
 class PersistentClass(Generic[T]):
-    """persistence info class"""
+    """persistence information class"""
 
     __slots__ = ('persistence_cls', 'cls_name', 'filename_field_splitter', 'fields')
 
@@ -324,24 +342,24 @@ class PersistentClass(Generic[T]):
     def fields_name(self) -> list[str]:
         return [it.field_name for it in self.fields]
 
-    def get_field(self, name: str) -> Optional[PersistentField]:
+    def get_field(self, name: str) -> PersistentField | None:
         for f in self.fields:
             if f.field_name == name:
                 return f
         return None
 
-    def autoinc_field(self) -> Optional[PersistentField]:
+    def autoinc_field(self) -> PersistentField | None:
         for f in self.fields:
             if f.autoinc:
                 return f
         return None
 
-    def is_autoinc_field_resolved(self, result: Optional[T], **kwargs) -> bool:
+    def is_autoinc_field_resolved(self, result: T | None, **kwargs) -> bool:
         if (af := self.autoinc_field()) is None:
             return True
-        return getattr(result, af.field_name, missing) is not missing or af.field_name in kwargs
+        return getattr(result, af.field_name, None) is not None or af.field_name in kwargs
 
-    def validate(self, v: T, u: Union[T, dict[str, Any]]) -> bool:
+    def validate(self, v: T, u: T | dict[str, Any]) -> bool:
         """validate that does data u is as same as data v.
 
         :param v: reference data
@@ -362,7 +380,7 @@ class PersistentClass(Generic[T]):
 
         return True
 
-    def filename(self, data: Optional[T], **kwargs) -> str:
+    def filename(self, data: T | None, **kwargs) -> str:
         """build filename for persistence instance.
 
         :param data: persistence instance.
@@ -376,21 +394,23 @@ class PersistentClass(Generic[T]):
 
         for f in self.fields:
             if f.filename:
-                if (field_value := kwargs.get(f.field_name, missing)) is missing:
-                    if data is not None:
-                        field_value = getattr(data, f.field_name, None)
-                    else:
+                if f.field_name in kwargs:
+                    field_value = kwargs[f.field_name]
+                else:
+                    if data is None or not hasattr(data, f.field_name):
                         raise RuntimeError(f'field {f.field_name} is required for filename')
 
+                    field_value = getattr(data, f.field_name)
+
                 if field_value is missing:
-                    if f.autoinc:
-                        s = '{}'
-                    else:
-                        s = '*'
+                    s = '*'
                 elif f.filename is True:
                     s = str(field_value)
                 elif callable(f.filename):
-                    s = str(f.filename(field_value))
+                    if (s := f.filename(field_value)) is not None:
+                        s = str(s)
+                    else:
+                        continue
                 else:
                     raise TypeError()
 
@@ -400,21 +420,25 @@ class PersistentClass(Generic[T]):
 
 
 def _persistence_class_init(pc: PersistentClass):
-    init_fields = ['self'] + [f.field_name for f in pc.fields if f.init]
+    """generate an __init__ function for persistent class."""
+    init_fields = ['self'] + [
+        (f.field_name, None, 'None') if f.autoinc else f.field_name
+        for f in pc.fields if f.init
+    ]
     code = []
     for name in init_fields[1:]:
         code.append(f'self.{name} = {name}')
-    if (af := pc.autoinc_field()) is not None:
-        code.append(f'self.{af.field_name} = missing')
     return create_fn('__init__', init_fields, '\n'.join(code),
                      locals=dict(missing=missing))
 
 
 def _persistence_class_str(pc: PersistentClass):
-    return create_fn('__str__', (['self'], str), 'return filename(self)', locals={'filename': filename})
+    """generate a __str__ function for persistent class."""
+    return create_fn('__str__', (['self'], str), 'return pc.filename(self)', locals={'pc': pc})
 
 
 def _persistence_class_repr(pc: PersistentClass):
+    """generate a __repr__ function for persistent class."""
     init_fields = [f.field_name for f in pc.fields if f.init]
 
     code = [f'return ("{pc.cls_name}' + '{"']
@@ -427,6 +451,7 @@ def _persistence_class_repr(pc: PersistentClass):
 
 
 def _persistence_class_replace(pc: PersistentClass):
+    """generate a _replace function for persistent class."""
     init_fields = [f.field_name for f in pc.fields if f.init]
     data_fields = [f.field_name for f in pc.fields if not f.init and not f.autoinc]
     code = [f'ret = {pc.cls_name}(']
@@ -443,9 +468,10 @@ def _persistence_class_replace(pc: PersistentClass):
                      locals={pc.cls_name: pc.persistence_cls, 'missing': missing})
 
 
-def auto_generated_content():
+def auto_generated_content(**kwargs):
     """It is used to mark the function which its function body is auto generated.
 
+    :param kwargs: blackhole
     :return: nothing
     """
     raise RuntimeError('It is auto generated content')
@@ -524,6 +550,7 @@ def from_dict(data_cls: type[T], d: dict[str, Any]) -> T:
 
 
 def _from_dict_builtin(ret: T, info: PersistentClass, d: dict[str, Any]) -> T:
+    """After initialized *ret*, set attributes for remind fields."""
     for f in info.fields:
         if not f.init:
             try:
@@ -536,6 +563,7 @@ def _from_dict_builtin(ret: T, info: PersistentClass, d: dict[str, Any]) -> T:
 
 
 def _from_dict_factory(data_cls: type[T], info: PersistentClass, d: dict[str, Any]) -> T:
+    """When *data_cls* initialize failed, try invoking `from_dict` function."""
     kwargs = {}
     for f in info.fields:
         try:
@@ -582,7 +610,7 @@ def load_by(data_cls: type[T], path: P, **kwargs) -> T:
     return handler.load_persistence(handler.filepath(None, **kwargs))
 
 
-def filename(result: Union[T, type[T]], **kwargs) -> str:
+def filename(result: T | Type[T], **kwargs) -> str:
     """Get data persistence filename.
 
     :param result:
@@ -590,6 +618,7 @@ def filename(result: Union[T, type[T]], **kwargs) -> str:
     :return: filename
     :raise RuntimeError: *result*'s autoinc field not resolved, or filename field missing.
     :raise TypeError: wrong field.filename type.
+    :raise AutoIncFieldNotResolvedError: *result*'s autoinc field not resolved.
     """
     cls_info = ensure_persistence_class(result)
     if isinstance(result, type):
@@ -597,7 +626,7 @@ def filename(result: Union[T, type[T]], **kwargs) -> str:
 
     if not cls_info.is_autoinc_field_resolved(result, **kwargs):
         af = cls_info.autoinc_field()
-        raise RuntimeError(f'cannot generate filepath without autoinc field {af.field_name} keywords')
+        raise AutoIncFieldNotResolvedError(result, af, f'cannot generate filepath without autoinc field {af.field_name} keywords')
 
     name = cls_info.filename(result, **kwargs)
 
@@ -610,6 +639,7 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def persistence_class(self) -> type[T]:
+        """:return: type T"""
         pass
 
     @property
@@ -623,47 +653,47 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
         """saving directory"""
         pass
 
-    def filename(self, cache: Optional[T], **kwargs) -> str:
+    def filename(self, result: T | None, **kwargs) -> str:
         """build filename for persistence instance.
 
-        :param cache: persistence instance
+        :param result: persistence instance
         :param kwargs: overwrite field value in *result*.
         :return: file name of *result*, may contains '{}' if *result*'s autoinc field not resolved
         """
         cls_info = ensure_persistence_class(self.persistence_class)
-        return cls_info.filename(cache, **kwargs)
+        return cls_info.filename(result, **kwargs)
 
-    def filepath(self, cache: Optional[T], **kwargs) -> Path:
+    def filepath(self, result: T | None, **kwargs) -> Path:
         """build filepath for persistence instance.
 
-        :param cache: persistence instance
+        :param result: persistence instance
         :param kwargs: overwrite field value in *result*.
         :return: file path of *result*
         :raise RuntimeError: *result*'s autoinc field not resolved, or errors from :meth:`filename`
         """
         info = ensure_persistence_class(self.persistence_class)
-        if not info.is_autoinc_field_resolved(cache, **kwargs):
+        if not info.is_autoinc_field_resolved(result, **kwargs):
             af = info.autoinc_field()
-            raise AutoIncFieldNotResolvedError(cache, af,
+            raise AutoIncFieldNotResolvedError(result, af,
                                                f'cannot generate filepath without autoinc field {af.field_name} keywords')
 
-        name = self.filename(cache, **kwargs)
+        name = self.filename(result, **kwargs)
         return self.save_root / name
 
-    def save_persistence(self, cache: T, path: Union[str, Path] = None) -> T:
+    def save_persistence(self, result: T, path: str | Path = None) -> T:
         """save persistence *result* under **path**.
 
-        :param cache:
+        :param result:
         :param path: save path.
         :return: *result*. autoinc field will be resolved after saving.
         :raise AutoIncFieldNotResolvedError:
         """
-        info = ensure_persistence_class(cache)
+        info = ensure_persistence_class(result)
 
         if path is None:
-            if not info.is_autoinc_field_resolved(cache):
+            if not info.is_autoinc_field_resolved(result):
                 f = info.autoinc_field()
-                found = [it for _, it in self.load_all(cache, **{f.field_name: '*'})]
+                found = [it for _, it in self.load_all(result, **{f.field_name: '*'})]
 
                 u = max([
                     value
@@ -671,13 +701,13 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
                     if isinstance(value := getattr(it, f.field_name, 0), int)
                 ], default=-1) + 1
 
-                setattr(cache, f.field_name, u)
+                setattr(result, f.field_name, u)
 
-            path = self.filepath(cache)
+            path = self.filepath(result)
 
         else:
-            if not info.is_autoinc_field_resolved(cache):
-                raise AutoIncFieldNotResolvedError(cache, info.autoinc_field())
+            if not info.is_autoinc_field_resolved(result):
+                raise AutoIncFieldNotResolvedError(result, info.autoinc_field())
 
             if isinstance(path, str):
                 path = Path(path)
@@ -686,14 +716,14 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
             raise IsADirectoryError(str(path))
 
         path.parent.mkdir(parents=True, exist_ok=True)
-        self._save_persistence(cache, path)
-        return cache
+        self._save_persistence(result, path)
+        return result
 
     @abc.abstractmethod
-    def _save_persistence(self, cache: T, path: Path):
+    def _save_persistence(self, result: T, path: Path):
         pass
 
-    def load_persistence(self, path: Union[Path, T, dict[str, Any]]) -> T:
+    def load_persistence(self, path: Path | T | dict[str, Any]) -> T:
         """Load data as **data_cls** from **path**.
 
         :param path: load from path.
@@ -719,8 +749,16 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
     def _load_persistence(self, path: Path) -> T:
         pass
 
-    def load_all(self, cache: Optional[T], **kwargs) -> Iterable[tuple[Path, T]]:
-        for file in self.save_root.glob(self.filename(cache, **kwargs)):
+    def load_all(self, result: T | None, **kwargs) -> Iterator[tuple[Path, T]]:
+        """load all persistent result under *save_root*.
+        *missing* is used to make a field becomes a wildcard field.
+
+        >>> template = Example(use_animal='A00', use_session='test', use_date='20200101')
+        >>> # find all animal A00's persistent result.
+        >>> found = PickleHandler(Example, Path('.')).load_all(template, use_date=missing)
+
+        """
+        for file in self.save_root.glob(self.filename(result, **kwargs)):
             yield file, self.load_persistence(file)
 
 
@@ -745,7 +783,7 @@ class PickleHandler(PersistenceHandler[T]):
     def save_root(self) -> Path:
         return self._save_path
 
-    def filename(self, result: Optional[T], **kwargs) -> str:
+    def filename(self, result: T | None, **kwargs) -> str:
         return super().filename(result, **kwargs) + self._ext
 
     def _save_persistence(self, result: T, path: Path):
@@ -792,7 +830,7 @@ class GzipHandler(PersistenceHandler[T]):
     def save_root(self) -> Path:
         return self._save_path
 
-    def filename(self, result: Optional[T], **kwargs) -> str:
+    def filename(self, result: T | None, **kwargs) -> str:
         return super().filename(result, **kwargs) + self._ext
 
     def _save_persistence(self, result: T, path: Path):
