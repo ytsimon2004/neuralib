@@ -425,12 +425,12 @@ class Suite2PResult:
 
     @property
     def image_mean(self) -> np.ndarray:
-        """mean image for chan0(1st). `Array[float, [H, W]]`"""  # TODO Is it float?
+        """mean image for chan0(1st). `Array[float, [H, W]]`"""
         return self.ops['meanImg'].T
 
     @property
     def image_mean_ch2(self) -> np.ndarray:
-        """mean image for chan1(2nd). `Array[float, [H, W]]`"""  # TODO Is it float?
+        """mean image for chan1(2nd). `Array[float, [H, W]]`"""
         return self.ops['meanImg_chan2'].T
 
     @property
@@ -440,17 +440,17 @@ class Suite2PResult:
 
     @property
     def rigid_x_offsets(self) -> np.ndarray:
-        """x-shifts of recording at each timepoint. `Array[float, F]`"""  # TODO Is it float?
+        """x-shifts of recording at each timepoint. `Array[int, F]`"""
         return self.ops['xoff']
 
     @property
     def rigid_y_offsets(self) -> np.ndarray:
-        """y-shifts of recording at each timepoint. `Array[float, F]`"""  # TODO Is it float?
+        """y-shifts of recording at each timepoint. `Array[int, F]`"""
         return self.ops['yoff']
 
     @property
     def rigid_xy_offset(self) -> np.ndarray:
-        """peak of phase correlation between frame and reference image at each timepoint. `Array[float, F]`"""  # TODO Is it float?
+        """peak of phase correlation between frame and reference image at each timepoint. `Array[float, F]`"""
         return self.ops['corrXY']
 
     @property
