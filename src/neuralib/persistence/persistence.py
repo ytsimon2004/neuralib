@@ -193,14 +193,15 @@ def autoinc_field(filename_prefix: str = '') -> int:
 class PersistentField(Generic[T]):
     """exported field of persistence class."""
 
-    __slots__ = ('field_name', 'field_type', 'validator', 'filename_prefix', 'filename', 'init', 'autoinc')
+    __slots__ = ('field_name', 'field_type', 'validator', 'filename_prefix', 'filename', 'init', 'autoinc', 'optional')
 
     def __init__(self,
                  validator: Union[bool, VALIDATOR] = False,
                  filename_prefix: str = '',
                  filename: Union[bool, Callable[..., str]] = False,
                  init=True,
-                 autoinc=False):
+                 autoinc=False,
+                 optional=False):
         """
 
         :param validator: validate this field. use __eq__ by default. Can be a callable as a customized validator.
@@ -220,6 +221,9 @@ class PersistentField(Generic[T]):
         """Does this field is a __init__ argument?"""
         self.autoinc = autoinc
         """Does this field is auto incremental field?"""
+        self.optional = optional
+        """Does this field has default value?"""
+
 
     def __set_name__(self, owner: Type, name: str):
         self.field_name = name
@@ -291,6 +295,7 @@ def persistence_class(cls: Type = None, /, *,
                 f = PersistentField(init=False)
                 f.field_name = attr_name
                 f.field_type = attr_type
+                f.optional = attr_value is not None
 
             if f.autoinc:
                 if prev_autoinc_field is None:
@@ -473,7 +478,7 @@ def auto_generated_content(**kwargs):
     raise RuntimeError('It is auto generated content')
 
 
-def ensure_persistence_class(data: Union[T, type[T]]) -> PersistentClass[T]:
+def ensure_persistence_class(data: T | Type[T]) -> PersistentClass[T]:
     """ensure **data** is a persistence class.
 
     :param data: instance or type

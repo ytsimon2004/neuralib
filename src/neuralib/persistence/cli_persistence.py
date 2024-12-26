@@ -49,11 +49,13 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
                 return get_args(t)[0]
         raise TypeError('unable to retrieve cache class T')
 
-    def cache_path(self, dest: Path = None) -> Path:
-        return dest
+    def persistence_handler(self, dest: Path) -> PersistenceHandler[T]:
+        """
 
-    def persistence_handler(self, dest: Path = None) -> PersistenceHandler[T]:
-        return PickleHandler(self.persistence_class, self.cache_path(dest))
+        :param dest: save root directory.
+        :return:
+        """
+        return PickleHandler(self.persistence_class, dest)
 
     @abc.abstractmethod
     def empty_cache(self) -> T:
@@ -63,7 +65,7 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
         """
         pass
 
-    def find_cache(self, cache: T, dest: Path = None, validator=False) -> list[T]:
+    def find_cache(self, result: T, dest: Path = None, validator=False) -> list[T]:
         """Find the persistence.
 
         for all fields
@@ -73,7 +75,8 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
         >>> template.b = field_missing # want to find all cache and don't matter what `b` is
         >>> found = self.find_cache(template)
 
-        :param cache:
+        :param result:
+        :param dest: save root directory.
         :param validator:
         :return:
         """
@@ -81,7 +84,7 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
 
         ret = []
 
-        for file, found in handler.load_all(cache):
+        for file, found in handler.load_all(result):
             if validator:
                 if not self.validate_cache(file, found):
                     continue
@@ -90,37 +93,44 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
 
         return ret
 
-    def save_cache(self, cache: T, dest: Path = None, force=True):
-        save_path = self.cache_path(dest) / persistence_filename(cache)
+    def save_cache(self, result: T, dest: Path, force=True):
+        """
+        
+        :param result:
+        :param dest: save root directory.
+        :param force:
+        :return:
+        """
+        save_path = dest / persistence_filename(result)
         if save_path.exists() and not force:
             raise FileExistsError(str(save_path))
 
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        persistence.save(cache, save_path)
+        persistence.save(result, save_path)
 
     def load_cache(self,
-                   cache: T = None,
+                   result: T = None,
                    error_when_missing=False,
                    dest: Path = None,
                    **kwargs) -> T:
         """load persistence from disk according to *result*'s required fields.
 
-        :param cache: cache object with necessary fields filled.
+        :param result: persistence instance with necessary fields filled.
         :param error_when_missing: do not try to generate the cache when cache missing.
-        :param dest:
+        :param dest: save root directory.
         :param kwargs: overwrite field value in *result*.
-        :return: cache instance.
+        :return: persistence instance.
         :raise FileNotFoundError: error_when_missing and file not found.
         """
         do_load = not self.invalid_cache
         handler = self.persistence_handler(dest)
 
-        if cache is None:
-            cache = self.empty_cache()
+        if result is None:
+            result = self.empty_cache()
 
         # load/save path
         try:
-            output_file = handler.filepath(cache, **kwargs)
+            output_file = handler.filepath(result, **kwargs)
         except AutoIncFieldNotResolvedError as e:
             if error_when_missing:
                 raise FileNotFoundError from e
@@ -130,42 +140,47 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
         if do_load:
             try:
                 print_load(output_file)
-                cache = handler.load_persistence(output_file)
-                if self.validate_cache(output_file, cache):
-                    return cache
+                result = handler.load_persistence(output_file)
+                if self.validate_cache(output_file, result):
+                    return result
             except FileNotFoundError:
                 if error_when_missing:
                     raise
-            except TypeError as e:
+            except (TypeError, ValueError, KeyError, AttributeError, RuntimeError) as e:
                 fprint(repr(e), vtype='error')
 
         elif error_when_missing:
             raise FileNotFoundError(output_file)
 
-        cache = self.compute_cache(cache)
-        handler.save_persistence(cache, output_file)
-        output_file = handler.filepath(cache)
+        result = self.compute_cache(result)
+        handler.save_persistence(result, output_file)
+        output_file = handler.filepath(result)
         print_save(output_file)
 
-        return cache
+        return result
 
-    def validate_cache(self, cache_path: Path, cache: T) -> bool:
+    def validate_cache(self, result_path: Path, result: T) -> bool:
         """Validating loaded cache instance.
 
         Once validating fail (return False), goto :meth:`_compute_cache`.
 
-        :param cache_path:
-        :param cache: loaded cache instance
+        :param result_path:
+        :param result:
         :return: False if validating fail.
+        :raise TypeError: if validating fail.
+        :raise ValueError: if validating fail.
+        :raise KeyError: if validating fail.
+        :raise AttributeError: if validating fail.
+        :raise RuntimeError: if validating fail.
         """
         return True
 
     @abc.abstractmethod
-    def compute_cache(self, cache: T) -> T:
+    def compute_cache(self, result: T) -> T:
         """Compute cache according to *cache*'s required fields.
 
-        :param cache: cached instance
-        :return: computed cached instance
+        :param result:
+        :return: computed result
         """
         pass
 
