@@ -100,7 +100,8 @@ class CliDatabase(Database, AbstractParser):
     list_table: str = argument('--table', metavar='NAME', default=None, const='', nargs='?')
     from_file: bool = argument('-f', '--file')
     action: Literal['import', 'export'] = argument('--action', default=None)
-    pretty: bool = argument('-p', '--pretty')
+    pretty: bool = argument('-p', '--pretty', help='as polars dataframe')
+    print_all: bool = argument('-a', '--all', help='print all dataframe if --pretty')
 
     USAGE = """\
 %(prog)s -d FILE --table [NAME]
@@ -241,13 +242,20 @@ class CliDatabase(Database, AbstractParser):
     def _print_result(self, connection, cursor: sqlite3.Cursor):
         if self.pretty:
             from neuralib.sqlp.stat import Cursor
-            print(Cursor(connection, cursor).fetch_polars())
+            df = Cursor(connection, cursor).fetch_polars()
+
+            if self.print_all:
+                from neuralib.util.verbose import printdf
+                printdf(df)
+            else:
+                print(df)
         else:
             header = cursor.description
             if header is not None:
                 print('--', tuple([it[0] for it in header]))
             for data in cursor:
                 print(data)
+
 
 if __name__ == '__main__':
     CliDatabase().main()
