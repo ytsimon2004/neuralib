@@ -440,12 +440,12 @@ class Suite2PResult:
 
     @property
     def rigid_x_offsets(self) -> np.ndarray:
-        """x-shifts of recording at each timepoint. `Array[float, F]`"""
+        """x-shifts of recording at each timepoint. `Array[int, F]`"""
         return self.ops['xoff']
 
     @property
     def rigid_y_offsets(self) -> np.ndarray:
-        """y-shifts of recording at each timepoint. `Array[float, F]`"""
+        """y-shifts of recording at each timepoint. `Array[int, F]`"""
         return self.ops['yoff']
 
     @property

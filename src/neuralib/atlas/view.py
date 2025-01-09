@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import math
-from typing import Final, Union, ClassVar
+from typing import Final, ClassVar
 
 import attrs
 import matplotlib.pyplot as plt
@@ -25,7 +25,8 @@ __all__ = [
 
 
 def load_slice_view(source: DATA_SOURCE_TYPE,
-                    plane_type: PLANE_TYPE, *,
+                    plane_type: PLANE_TYPE,
+                    *,
                     output_dir: PathLike | None = None,
                     allen_annotation_res: int = 10) -> AbstractSliceView:
     """
@@ -111,7 +112,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         :param source_type: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
         :param plane: `PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
         :param resolution: um/pixel
-        :param reference: Array[float, [AP, DV, ML]]
+        :param reference: Array[uint16, [AP, DV, ML]]
         """
         self.source_type = source_type
         self.plane_type = plane
@@ -206,7 +207,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         y_frame = np.round(np.linspace(-v, v, self.height)).astype(int)
         return np.add.outer(y_frame, x_frame)
 
-    def plane(self, offset: Union[int, tuple[int, int, int], np.ndarray]) -> np.ndarray:
+    def plane(self, offset: int | tuple[int, int, int] | np.ndarray) -> np.ndarray:
         """Get image plane.
 
         :param offset: Array[int, height, width] or tuple (plane, dh, dv)
@@ -507,10 +508,16 @@ class SlicePlane:
         if extent is None:
             extent = self._get_xy_range(to_um)
 
-        ann_img = load_slice_view('ccf_annotation',
-                                  self.view.plane_type,
-                                  allen_annotation_res=self.view.resolution).plane(self.plane_offset)
-        ann = ImageProcFactory(ann_img).cvt_gray().edge_detection(10, 0).image
+        ann_img = (
+            load_slice_view('ccf_annotation', self.view.plane_type, allen_annotation_res=self.view.resolution)
+            .plane(self.plane_offset)
+        )
+
+        ann = (
+            ImageProcFactory(ann_img, 'RGB')
+            .cvt_gray()
+            .edge_detection(10, 0).image
+        )
 
         ann = ann.astype(float)
         ann[ann <= 10] = np.nan

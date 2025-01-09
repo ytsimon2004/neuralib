@@ -24,7 +24,7 @@ def test_image_factory():
     rh = atlas_example + '5-2-0.jpg?siTop=13568&siLeft=160&siWidth=16368&siHeight=11056&filter=rgb&filterVals=0.5,0.5,0.5'
 
     image = get_image_url(lh, rh)
-    ipf = ImageProcFactory(image)
+    ipf = ImageProcFactory(image, 'RGB')
 
     with plot_figure(None, 3, 3, figsize=(10, 10), sharex=True, sharey=True) as _ax:
         #

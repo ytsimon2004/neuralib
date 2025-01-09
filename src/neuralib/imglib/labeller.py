@@ -61,17 +61,19 @@ import attrs
 import cv2
 import numpy as np
 import polars as pl
+from polars.testing import assert_frame_equal
 from tifffile import tifffile
 from tqdm import tqdm
 from typing_extensions import Self
 
 from neuralib.io import csv_header
 from neuralib.typing import PathLike
+from neuralib.util.utils import keys_with_value
 from neuralib.util.verbose import fprint
 
 __all__ = ['SequenceLabeller']
 
-Logger = logging.getLogger()
+Logger = logging.getLogger(__name__)
 
 
 # ================ #
@@ -152,31 +154,20 @@ def get_keymapping() -> KeyMapping:
         return WIN_KEYMAPPING
 
 
-def find_key_from_value(dy: KeyMapping, value: int) -> str | bool | None:
-    ret = []
-    for k, v in dy.items():
-        if v == value:
-            ret.append(k)
-
-    if len(ret) == 0:
-        return
-    elif len(ret) == 1:
-        return ret[0]
-    else:
-        raise False
-
-
 @attrs.define
 class FrameInfo:
     filename: str
     """name of the an image/frame"""
+
     image: np.ndarray
-    """`Array[float, [H, W]|[H, W, 3])`"""
+    """`Array[uint, [H, W]|[H, W, 3])`"""
+
     notes: str | None = attrs.field(default=None)
     """notes for the image"""
 
     @property
     def itype(self) -> Literal['gray', 'rgb']:
+        """image color type"""
         if self.image.ndim == 2:
             return 'gray'
         elif self.image.ndim == 3:
@@ -185,7 +176,7 @@ class FrameInfo:
             raise TypeError('')
 
     @property
-    def text_color(self) -> float | tuple[int, int, int]:
+    def text_color(self) -> int | tuple[int, int, int]:
         if self.itype == 'gray':
             return 2 ** 16 - 1
         elif self.itype == 'rgb':
@@ -204,7 +195,9 @@ class FrameInfo:
 
 class CloseSaveInterrupt(KeyboardInterrupt):
     """write & quiet triggered"""
-    pass
+
+    def __init__(self, mode: Literal[':wq', ':q', ':q!']):
+        self.mode = mode
 
 
 class SequenceLabeller:
@@ -234,7 +227,7 @@ class SequenceLabeller:
         :return:
         """
         if isinstance(seqs, np.ndarray):
-            seqs = [it for it in seqs]
+            seqs = list(seqs)
 
         n_frames = len(seqs)
 
@@ -248,14 +241,14 @@ class SequenceLabeller:
     @classmethod
     def load_from_dir(cls, directory: PathLike,
                       file_suffix: str = '.tif',
-                      sort_func: Callable[[str], Any] | None = None,
+                      sort_func: Callable[[Path], Any] | None = None,
                       single_frame_per_file: bool = True,
                       output: PathLike | None = None) -> Self:
         """
 
         :param directory: directory contain image sequences
         :param file_suffix: sequence file suffix
-        :param sort_func: sorted function
+        :param sort_func: sorted function with signature `(filename:Path) -> Comparable`
         :param single_frame_per_file:
         :param output:
         :return:
@@ -331,11 +324,13 @@ class SequenceLabeller:
             for seq in self.seqs_info:
                 csv(str(seq.filename), seq.notes, t)
 
+    _prev_note: pl.DataFrame | None = None  # for checking changes
+
     def load_note(self):
         """read image-related notes from file"""
         from neuralib.util.verbose import printdf
 
-        df = pl.read_csv(self.output, dtypes={'filename': pl.Utf8})
+        df = self._prev_note = pl.read_csv(self.output, schema_overrides={'filename': pl.Utf8})
         printdf(df)
         for i, info in enumerate(self.seqs_info):
             note = df.filter(pl.col('filename') == info.filename)['notes'].item()
@@ -359,6 +354,25 @@ class SequenceLabeller:
     def clear_note(self):
         self.seqs_info[self.current_frame_index].notes = None
 
+    def check_note_changes(self) -> bool:
+        """True if any changes in notes"""
+        if self._prev_note is None:
+            if any([seq.notes is not None for seq in self.seqs_info]):
+                return True
+        else:
+            prev_note = self._prev_note.select('filename', 'notes')
+            cur_note = pl.DataFrame([
+                [str(seq.filename), seq.notes]
+                for seq in self.seqs_info
+            ], schema=['filename', 'notes'], orient='row')
+
+            try:
+                assert_frame_equal(prev_note, cur_note)
+            except AssertionError:
+                return True
+
+        return False
+
     # ============= #
     # Key & Command #
     # ============= #
@@ -376,8 +390,6 @@ class SequenceLabeller:
         self.current_frame_index = i
 
     def handle_keycode(self, k: int):
-        # Logger.debug(f'Key: {k}')
-
         mapping = get_keymapping()
         ret = self._handle_keymapping(mapping, k)
         if ret is not None:  # printable
@@ -386,42 +398,45 @@ class SequenceLabeller:
     def _handle_keymapping(self, mapping: KeyMapping, value: int) -> int | None:
         """
         Handling the keyboard mapping
+
         :param mapping:
         :param value:
         :return: int value if cannot find key in keymapping, otherwise return None
         """
-        ret = find_key_from_value(mapping, value)
-        if not ret:
+        try:
+            ret = keys_with_value(mapping, value, to_item=True)
+        except (KeyError, ValueError):
             return value
-
-        if ret == 'left':
-            self.current_frame_index -= 1
-        elif ret == 'right':
-            self.current_frame_index += 1
-        elif ret == 'left_square_bracket':
-            self.current_frame_index += 10
-        elif ret == 'right_square_bracket':
-            self.current_frame_index -= 10
-        elif ret == 'backspace':
-            if len(self.buffer) > 0:
-                self.buffer = self.buffer[:-1]
-        elif ret == 'enter':  # handle command in buffer
-            command = self._proc_image_command = self.buffer
-            self.buffer = ''
-            try:
-                self.handle_command(command)
-            except KeyboardInterrupt:
-                raise
-            except BaseException as e:
-                self.enqueue_message(f'command "{command}" {type(e).__name__}: {e}')
-        elif ret == 'escape':
-            self.buffer = ''
+        else:
+            if ret == 'left':
+                self.current_frame_index -= 1
+            elif ret == 'right':
+                self.current_frame_index += 1
+            elif ret == 'left_square_bracket':
+                self.current_frame_index += 10
+            elif ret == 'right_square_bracket':
+                self.current_frame_index -= 10
+            elif ret == 'backspace':
+                if len(self.buffer) > 0:
+                    self.buffer = self.buffer[:-1]
+            elif ret == 'enter':  # handle command in buffer
+                command = self._proc_image_command = self.buffer
+                self.buffer = ''
+                try:
+                    self.handle_command(command)
+                except KeyboardInterrupt:
+                    raise
+                except BaseException as e:
+                    self.enqueue_message(f'command "{command}" {type(e).__name__}: {e}')
+            elif ret == 'escape':
+                self.buffer = ''
 
     def handle_command(self, command: str):
         Logger.debug(f'command: {command}')
 
         if command == ':h':
             self.enqueue_message(':h : print this document')
+            self.enqueue_message(':q : quit (unable if not save the changes)')
             self.enqueue_message(':q! : quit (without save)')
             self.enqueue_message(':wq : save notes and quit')
             self.enqueue_message(':c : clear current note')
@@ -439,15 +454,13 @@ class SequenceLabeller:
             match = re.search(r'^:(\d)', command)
             self.go_to(int(match.group(1)))
         elif command.startswith('+'):
-            self.write_note(command[1:], append=True)
+            self.write_note(command[1:], append_mode=True)
         elif not command.startswith(':'):
             self.write_note(command)
-        elif command == ':q!':
-            raise KeyboardInterrupt
-        elif command == ':wq':
-            raise CloseSaveInterrupt
+        elif command in (':wq', ':q', ':q!'):
+            raise CloseSaveInterrupt(command)
         else:
-            raise RuntimeError(f'unknown command : {command}')
+            raise RuntimeError(f'unknown command : "{command}"')
 
     # ============ #
     # Msg / Buffer #
@@ -485,13 +498,23 @@ class SequenceLabeller:
 
         try:
             while True:
-                self._loop()
-        except CloseSaveInterrupt:
-            if self.output is not None:
-                self.save_note()
-                fprint(f'SAVE csv -> {str(self.output)}!', vtype='io')
-        except KeyboardInterrupt:
-            pass
+                try:
+                    while True:
+                        self._loop()
+                except CloseSaveInterrupt as e:
+                    if e.mode == ':wq':
+                        if self.output is not None:
+                            self.save_note()
+                            fprint(f'SAVE csv -> {str(self.output)}!', vtype='io')
+                        break
+                    elif e.mode == ':q!':
+                        break
+                    elif e.mode == ':q':
+                        if self.check_note_changes():
+                            self.enqueue_message('please save the note using :wq, or force quit using :q!')
+                            continue
+                        else:
+                            break
         finally:
             cv2.destroyWindow(self.window_title)
 

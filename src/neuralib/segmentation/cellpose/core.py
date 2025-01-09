@@ -196,7 +196,7 @@ class CellPoseEvalResult:
 
     # Overwrite while calling save
     outlines: np.ndarray = attrs.field(default=np.array([]), kw_only=True)
-    """outlines of ROIs. `Array[float, [H, W]]`"""
+    """outlines of ROIs. `Array[uint16, [H, W]]`"""
 
     ismanual: np.ndarray = attrs.field(default=np.array([]), kw_only=True)
     """whether or not mask k was manually drawn or computed by the cellpose algorithm. `Array[bool, N]`"""

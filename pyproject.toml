@@ -46,7 +46,7 @@ dependencies = [
 
 [project.optional-dependencies]
 atlas = [
-    #    "allensdk"  # matplotlib build error, thus use pip install allensdk if needed
+    #    "allensdk"  # unexpected build error, thus use pip install allensdk if needed
     "brainrender",
     "iblatlas",
     "anytree",

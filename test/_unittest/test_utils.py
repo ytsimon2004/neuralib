@@ -29,11 +29,11 @@ class TestUtilFunc(unittest.TestCase):
         self.assertTrue(cls_hasattr(Child, 'a'))
         self.assertTrue(cls_hasattr(Child, 'e'))
 
-    def test_key_from_value(self):
+    def test_key_with_value(self):
         from neuralib.util.utils import keys_with_value
 
         TestNt = namedtuple('TestNt', ['f1', 'f2', 'f3'])
-        NT = TestNt(3, 'nt', 11)
+        NT = TestNt(3, 'nt', 11.11)
 
         @dataclass
         class TestDC:
@@ -41,21 +41,32 @@ class TestUtilFunc(unittest.TestCase):
             f2: str
             f3: list = field(default_factory=list)
 
+        TD = TestDC(0.03, 'test', ['x', 'y', 'z'])
+
         dy = dict(
             a=[1, 2, 3],
             b=5,
             c=(4, 5, 3),
             d=0.1 + 0.2,
             e=NT,
-            f=TestDC(0.03, 'test', ['x', 'y', 'z'])
+            f=TD,
+            g=[],
+            h=(),
+            i={},
         )
 
-        self.assertListEqual(keys_with_value(dy, 3), ['a', 'c', 'e'])
-        self.assertListEqual(keys_with_value(dy, 5), ['b', 'c'])
+        self.assertListEqual(keys_with_value(dy, 5), ['b'])
+        self.assertListEqual(keys_with_value(dy, [1, 2, 3]), ['a'])
+        self.assertListEqual(keys_with_value(dy, (4, 5, 3)), ['c'])
         self.assertListEqual(keys_with_value(dy, 7), [])
         self.assertListEqual(keys_with_value(dy, 0.3), ['d'])
-        self.assertListEqual(keys_with_value(dy, 'nt'), ['e'])
-        self.assertListEqual(keys_with_value(dy, ['x', 'y', 'z']), ['f'])
+        self.assertListEqual(keys_with_value(dy, 0.33), [])
+        self.assertListEqual(keys_with_value(dy, 0.30000000000001), ['d'])
+        self.assertListEqual(keys_with_value(dy, NT), ['e'])
+        self.assertListEqual(keys_with_value(dy, TD), ['f'])
+        self.assertListEqual(keys_with_value(dy, []), ['g'])
+        self.assertListEqual(keys_with_value(dy, ()), ['h'])
+        self.assertListEqual(keys_with_value(dy, {}), ['i'])
 
     def test_deprecate_class(self):
         @deprecated_class(new='B', remarks='TEST REMARKS', removal_version='v0.0.10')
@@ -65,9 +76,9 @@ class TestUtilFunc(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as warns:
             A()
 
-        self.assertIn(
-            'TestUtilFunc.test_deprecate_class.<locals>.A is deprecated and will be removed in a future release (after version v0.0.10). Please use "B" instead. NOTE: TEST REMARKS.',
-            str(warns.warning))
+        self.assertIn('TestUtilFunc.test_deprecate_class.<locals>.A '
+                      'is deprecated and will be removed in a future release (after version v0.0.10). '
+                      'Please use "B" instead. NOTE: TEST REMARKS.', str(warns.warning))
 
         self.assertIn('TEST REMARKS', str(warns.warning))
 
@@ -79,10 +90,10 @@ class TestUtilFunc(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as warns:
             test_deprecate()
 
-        self.assertIn(
-            'TestUtilFunc.test_deprecate_function.<locals>.test_deprecate is deprecated and will be removed in a future release (after version v1.0.0). Please use "new()" instead.',
-            str(warns.warning)
-        )
+        self.assertIn('TestUtilFunc.test_deprecate_function.<locals>.test_deprecate '
+                      'is deprecated and will be removed in a future release (after version v1.0.0). '
+                      'Please use "new()" instead.', str(warns.warning)
+                      )
 
     def test_deprecate_aliases(self):
         @deprecated_aliases(old='new')

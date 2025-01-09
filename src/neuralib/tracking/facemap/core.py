@@ -9,7 +9,6 @@ import numpy as np
 from typing_extensions import TypeAlias, Self
 
 from neuralib.typing import PathLike
-from neuralib.util.cli_args import CliArgs
 from neuralib.util.utils import uglob
 from neuralib.util.verbose import fprint
 
@@ -227,11 +226,11 @@ class FaceMapResult:
         svd_path = uglob(directory, f'{file_pattern}*.npy')
 
         cmds = ['conda', 'run', '-n', f'{env_name}', 'python', '-m', 'facemap']
-        cmds.extend(CliArgs('--proc_npy', str(svd_path)).as_command())
+        cmds.extend(['--proc_npy', str(svd_path)])
 
         if with_keypoints:
             data_path = uglob(directory, '*.h5')
-            cmds.extend(CliArgs('--keypoints', str(data_path)).as_command())
+            cmds.extend(['--keypoints', str(data_path)])
 
         fprint(f'{cmds=}')
         subprocess.check_call(cmds)
