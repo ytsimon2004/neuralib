@@ -45,8 +45,8 @@ def get_neuron_signal(s2p: Suite2PResult,
     if n is None:
         n = list(range(s2p.n_neurons))
 
-    f = s2p.F[n]
-    fneu = s2p.FNeu[n]
+    f = s2p.f_raw[n]
+    fneu = s2p.f_neu[n]
 
     if signal_type == 'df_f':
 

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import datetime
 from pathlib import Path
-from typing import Literal, TypedDict, final, Annotated
+from typing import Literal, TypedDict, final
 
 import attrs
 import numpy as np
-from numpy.typing import NDArray
+import polars as pl
 
 from neuralib.calimg.cellular import CellularCoordinates
 from neuralib.typing import PathLike
@@ -206,17 +206,17 @@ class Suite2PResult:
     directory: Path
     """Directory contain all the s2p output files"""
 
-    F: np.ndarray
+    f_raw: np.ndarray
     """Fluorescence traces 2D array. `Array[float, [N, F]]`"""
 
-    FNeu: np.ndarray
+    f_neu: np.ndarray
     """Neuropil fluorescence traces 2D array. `Array[float, [N, F]]`"""
 
     spks: np.ndarray
     """Deconvolved activity 2D array. `Array[float, [N, F]]`"""
 
-    stat: Annotated[NDArray[Suite2pRoiStat], 'N']
-    """GUI imaging after registration, i.e., x, ypixel., etc. `Array[float, N]`"""
+    stat: np.ndarray
+    """GUI imaging after registration, i.e., x, ypixel., etc. `Array[Suite2pRoiStat, N]`"""
 
     ops: Suite2pGUIOptions
     """GUI options"""
@@ -224,10 +224,13 @@ class Suite2PResult:
     iscell: np.ndarray
     """Cell probability for each ROI. `Array[float, [N, 2]]`"""
 
-    redcell: np.ndarray | None
+    cell_prob: float | None
+    """Cell probability threshold for loading the data"""
+
+    redcell: np.ndarray | None = attrs.field(default=None)
     """Red cell probability 2D array. `Array[float, [N, 2]]`"""
 
-    redcell_threshold: float | None
+    redcell_threshold: float | None = attrs.field(default=None)
     """Red cell probability threshold"""
 
     runtime_frate_check: float | None = attrs.field(default=None)
@@ -262,7 +265,7 @@ class Suite2PResult:
     def load(
             cls,
             directory: PathLike,
-            cell_prob: bool | float = 0.5,
+            cell_prob: float | None = 0.5,
             red_cell_threshold: float = 0.65,
             channel: int = 0,
             runconfig_frate: float | None = 30.0,
@@ -270,14 +273,11 @@ class Suite2PResult:
         """
         Load suite2p result from directory
 
-        :param directory: directory contain all the s2p output files.
-                e.g., <SUITE2P_OUTPUT>/suite2p/plane<P>
-        :param cell_prob: cell probability,
-                    bool type: use the binary criteria in GUI output
-                    float type: value in ``iscell[:, 1]``
-        :param red_cell_threshold: red cell threshold
-        :param channel: channel (PMT) number for the functional channel.
-                    i.e., 0 if GCaMP, 1 if jRGECO in scanbox setting
+        :param directory: Directory contain all the s2p output files. e.g., */suite2p/plane[P]
+        :param cell_prob: Cell probability. If float type, mask for the value in ``iscell[:, 1]``.
+                    If None, use the binary criteria in GUI output
+        :param red_cell_threshold: Red cell threshold
+        :param channel: channel (PMT) Number for the functional channel. i.e., 0 if GCaMP, 1 if jRGECO in scanbox setting
         :param runconfig_frate: if not None, check frame rate lower-bound to make sure the s2p runconfig
         :return: :class:`Suite2PResult`
         """
@@ -309,27 +309,20 @@ class Suite2PResult:
             raise IndexError(f'{channel} unknown')
 
         #
-        if cell_prob is True:
+        if cell_prob is None:
             x = iscell[:, 0] == 1
-            F = F[x]
-            FNeu = FNeu[x]
-            spks = spks[x]
-            stat = stat[x]
-            iscell = iscell[x]
-            if redcell is not None:
-                redcell = redcell[x]
-
         elif isinstance(cell_prob, float):
             x = iscell[:, 1] >= cell_prob
-            F = F[x]
-            FNeu = FNeu[x]
-            spks = spks[x]
-            stat = stat[x]
-            iscell = iscell[x]
-            if redcell is not None:
-                redcell = redcell[x]
         else:
             raise TypeError(f'invalid type: {type(cell_prob)}')
+
+        F = F[x]
+        FNeu = FNeu[x]
+        spks = spks[x]
+        stat = stat[x]
+        iscell = iscell[x]
+        if redcell is not None:
+            redcell = redcell[x]
 
         return Suite2PResult(
             directory,
@@ -339,6 +332,7 @@ class Suite2PResult:
             stat,
             ops,
             iscell,
+            cell_prob,
             redcell,
             red_cell_threshold if channel == 1 else None,
             runconfig_frate
@@ -356,12 +350,12 @@ class Suite2PResult:
         """number of neurons after load.
         could be less than GUI ROI number if use higher cell_prob in
         :meth:`~neuralib.calimg.suite2p.core.Suite2PResult.load()`"""
-        return self.F.shape[0]
+        return self.f_raw.shape[0]
 
     @property
     def n_frame(self) -> int:
         """number of frame number"""
-        return self.F.shape[1]
+        return self.f_raw.shape[1]
 
     @property
     def cell_prob(self) -> np.ndarray:
@@ -496,6 +490,23 @@ class Suite2PResult:
             ret[i] = np.array([x, y])
 
         return ret
+
+    def get_neuron_id_mapping(self) -> pl.DataFrame:
+        """
+        Retrieves a mapping between neuron IDs and their corresponding raw indices
+        based on whether the cell detection probabilities meet a specified threshold.
+        If no cell detection probabilities are provided, the mapping assumes all
+        indices are valid neurons.
+
+        :return: A Polars DataFrame containing two columns: `neuron_id` and  `raw_index`.
+        """
+        n = np.arange(len(self.f_raw))
+        if self.cell_prob is None:
+            return pl.DataFrame([n, n], schema=['neuron_id', 'raw_index'], orient='col')
+        else:
+            iscell = np.load(self.directory / 'iscell.npy', allow_pickle=True)
+            mx = np.nonzero(iscell[:, 1] >= self.cell_prob)[0]
+            return pl.DataFrame([n, mx], schema=['neuron_id', 'raw_index'], orient='col')
 
 
 def get_s2p_coords(s2p: Suite2PResult,
