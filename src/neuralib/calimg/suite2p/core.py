@@ -224,7 +224,7 @@ class Suite2PResult:
     iscell: np.ndarray
     """Cell probability for each ROI. `Array[float, [N, 2]]`"""
 
-    cell_prob: float | None
+    cell_prob_thres: float | None
     """Cell probability threshold for loading the data"""
 
     redcell: np.ndarray | None = attrs.field(default=None)
@@ -265,7 +265,7 @@ class Suite2PResult:
     def load(
             cls,
             directory: PathLike,
-            cell_prob: float | None = 0.5,
+            cell_prob_thres: float | None = 0.5,
             red_cell_threshold: float = 0.65,
             channel: int = 0,
             runconfig_frate: float | None = 30.0,
@@ -274,7 +274,7 @@ class Suite2PResult:
         Load suite2p result from directory
 
         :param directory: Directory contain all the s2p output files. e.g., */suite2p/plane[P]
-        :param cell_prob: Cell probability. If float type, mask for the value in ``iscell[:, 1]``.
+        :param cell_prob_thres: Cell probability. If float type, mask for the value in ``iscell[:, 1]``.
                     If None, use the binary criteria in GUI output
         :param red_cell_threshold: Red cell threshold
         :param channel: channel (PMT) Number for the functional channel. i.e., 0 if GCaMP, 1 if jRGECO in scanbox setting
@@ -309,12 +309,12 @@ class Suite2PResult:
             raise IndexError(f'{channel} unknown')
 
         #
-        if cell_prob is None:
+        if cell_prob_thres is None:
             x = iscell[:, 0] == 1
-        elif isinstance(cell_prob, float):
-            x = iscell[:, 1] >= cell_prob
+        elif isinstance(cell_prob_thres, float):
+            x = iscell[:, 1] >= cell_prob_thres
         else:
-            raise TypeError(f'invalid type: {type(cell_prob)}')
+            raise TypeError(f'invalid type: {type(cell_prob_thres)}')
 
         F = F[x]
         FNeu = FNeu[x]
@@ -332,7 +332,7 @@ class Suite2PResult:
             stat,
             ops,
             iscell,
-            cell_prob,
+            cell_prob_thres,
             redcell,
             red_cell_threshold if channel == 1 else None,
             runconfig_frate
