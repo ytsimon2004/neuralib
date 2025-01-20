@@ -11,7 +11,7 @@ which is web-based, interactive and python communicate-able.
 Simple Example
 --------------
 
->>> from neuralib.bokeh_model import BokehServer, View
+>>> from neuralib.dashboard import BokehServer, View
 >>> class Top(View):
 ...     def setup(self):
 ...         from bokeh.models import Div
