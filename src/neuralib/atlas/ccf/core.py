@@ -18,6 +18,10 @@ from neuralib.util.utils import uglob, joinn
 from neuralib.util.verbose import fprint
 
 __all__ = [
+    #
+    'CCF_GLOB_TYPE',
+    'CHANNEL_SUFFIX',
+    #
     'AbstractCCFDir',
     'CoronalCCFDir',
     'CoronalCCFOverlapDir',
@@ -115,11 +119,11 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
     ):
         r"""
 
-        :param root: root path (i.e., \*/ANIMAL_001)
-        :param with_overlap_sources:
-        :param plane_type:
-        :param hemisphere_type:
-        :param auto_mkdir:
+        :param root: Root path (i.e., \*/ANIMAL_001)
+        :param with_overlap_sources: If there is overlap channel labeling (for dir making).
+        :param plane_type: {'coronal', 'sagittal', 'transverse'}
+        :param hemisphere_type: {'ipsi', 'contra', 'both'}
+        :param auto_mkdir: If auto make folder structure for the pipeline.
         """
         self.root: Final[Path] = root
         self.with_overlap_sources = with_overlap_sources
@@ -344,7 +348,7 @@ class CoronalCCFDir(AbstractCCFDir):
         elif glob_type == 'zproj':
             return uglob(self.zproj_folder, f'{name}.*')
         elif glob_type == 'resize':
-            return uglob(self.zproj_folder, f'{name}_resize.*')
+            return uglob(self.resize_folder, f'{name}_resize.*')
         elif glob_type == 'transformation_matrix':
             return uglob(self.transformed_folder, f'{name}*.mat')
         elif glob_type == 'transformation_img':
