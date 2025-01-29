@@ -426,9 +426,14 @@ def _persistence_class_init(pc: PersistentClass):
         (f.field_name, None, 'None') if f.autoinc else f.field_name
         for f in pc.fields if f.init
     ]
+
     code = []
     for name in init_fields[1:]:
+        if isinstance(name, tuple):
+            name = name[0]
+
         code.append(f'self.{name} = {name}')
+
     return create_fn('__init__', init_fields, '\n'.join(code),
                      locals=dict(missing=missing))
 
