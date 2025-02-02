@@ -6,6 +6,8 @@ Dynamic function generator
     Ta-Shun Su
 
 """
+from __future__ import annotations
+
 import inspect
 import textwrap
 from typing import Union, Type, Callable, TypeVar, Any
@@ -69,7 +71,7 @@ def _create_fn_para_from_func(func: Callable) -> str:
     return f'({para}){ret_ann}'
 
 
-def _create_fn_para_from_list(sign: Union[PARA_TYPE_LIST, tuple[PARA_TYPE_LIST, RET_TYPE]]) -> str:
+def _create_fn_para_from_list(sign: PARA_TYPE_LIST | tuple[PARA_TYPE_LIST, RET_TYPE]) -> str:
     para = []
 
     if isinstance(sign, list):

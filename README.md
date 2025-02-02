@@ -5,6 +5,7 @@
 [![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Document Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/index.html)
 
 ## Utility tools for rodent system neuroscience research, including Open Source Wrapper or Parser
@@ -15,23 +16,81 @@
 
 # Installation
 
-- First, install common dependencies in the conda env with Python>=3.9 (>=3.11 not yet tested)
-    - `pip install neura-library`
+## conda environment
 
-- Install all dependencies using
-    - `pip install neura-library[all]`
+- Create and activate a new conda environment (Python >=3.9, but >=3.11 not yet tested), then install:
 
-- Install the minimal required dependencies according to usage purpose . For example:
-    - Choices
-      in `[]`: `atlas`, `scanner`, `calimg`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
-      `all`
-  - Use `atlas` module: `pip install neura-library[atlas]`
-  - Use `segmentation` module: `pip install neura-library[segmentation]`
+```shell
+conda create -n neuralib python=3.9
+conda activate neuralib
+pip install neura-library
+```
 
-- For developer for anyone want to contribute, run also:
-    - `pip install neura-library[dev]`
-    - Setup pre-commit by: `pre-commit install`
-    - Do dry run `ruff` lint check by: `ruff check .`
+- If you wish to install **all dependencies**, run:
+
+```shell
+pip install neura-library[all]
+```
+
+- If you wish to install the **minimal required dependencies** according to usage purpose:
+
+Choices in []: atlas, scanner, calimg, segmentation, model, track, gpu, profile, imagelib, tools, full
+Example of using the atlas module:
+
+```shell
+pip install neura-library[atlas]
+```
+
+- If installing in developer mode (Install pre-commit and linter check by ruff)
+
+```shell
+pip install neura-library[dev]
+pre-commit install
+ruff check .
+```
+
+## uv virtual environment
+
+- Install uv, run in Unix or git bash (Windows):
+
+```shell
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+- Follow uv project structure [doc](https://docs.astral.sh/uv/guides/projects/#creating-a-new-project):
+
+```shell
+uv init
+```
+
+- Make sure python version (>=3.9, but >=3.11 not yet tested), both in `pyproject.py` and `.python-version`
+
+```shell
+uv python install 3.9
+```
+
+- If you wish to install **all dependencies**, run:
+
+```shell
+uv add neura-library[all]
+```
+
+- If you wish to install the **minimal required dependencies** according to usage purpose:
+
+Choices in []: atlas, scanner, calimg, segmentation, model, track, gpu, profile, imagelib, tools, full
+Example of using the atlas module:
+
+```shell
+uv add neura-library[atlas]
+```
+
+- If installing in developer mode (Install pre-commit and linter check by ruff)
+
+```shell
+uv add neura-library[dev]
+pre-commit install
+ruff check .
+```
 
 ----------------------------
 

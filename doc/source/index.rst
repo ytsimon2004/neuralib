@@ -29,59 +29,94 @@ Release Notes
 Installation
 -----------------------
 
-Install common dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. tabs::
 
-- First run for the common dependencies (Python>=3.9, but >=3.11 not yet tested)
+    .. tab:: conda environment
 
-.. code-block:: console
+        Create and activate a new conda environment (Python>=3.9, but >=3.11 not yet tested), then install:
 
-    pip install neura-library
+        .. code-block:: console
 
-
-Install all dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: console
-
-    pip install neura-library[all]
-
-Install the minimal required dependencies according to usage purpose
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
-
-- Example of using ``atlas`` module:
-
-.. code-block:: console
-
-    pip install neura-library[atlas]
-
-- Example of using ``segmentation`` module:
-
-.. code-block:: console
-
-    pip install neura-library[segmentation]
+            conda create -n neuralib python=3.9
+            conda activate neuralib
+            pip install neura-library
 
 
-Install pre-commit and linter check (For developer only)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        If you wish to install **all dependencies**, run:
 
-.. code-block:: console
+        .. code-block:: console
 
-    pip install neura-library[dev]
+            pip install neura-library[all]
 
--  Setup pre-commit by:
 
-.. code-block:: console
+        If you wish to install the **minimal required dependencies** according to usage purpose:
 
-    pre-commit install
+        - Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
 
--  Do dry run ``ruff`` lint check by:
+        - Example of using ``atlas`` module:
 
-.. code-block:: console
+        .. code-block:: console
 
-    ruff check .
+            pip install neura-library[atlas]
+
+
+        If install as developer mode (Install pre-commit and linter check by `ruff <https://github.com/astral-sh/ruff>`_):
+
+        .. code-block:: console
+
+            pip install neura-library[dev]
+            pre-commit install
+            ruff check .
+
+
+    .. tab:: uv virtual environment
+
+        Install uv, run in Unix or git bash (Windows):
+
+        .. code-block::
+
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+
+
+        Follow uv project structure `doc <https://docs.astral.sh/uv/guides/projects/#creating-a-new-project>`_:
+
+
+        .. code-block::
+
+            uv init
+
+
+        Make sure python version (>=3.9, but >=3.11 not yet tested), both in ``pyproject.py`` and ``.python-version``
+
+        .. code-block::
+
+            uv python install 3.9
+
+
+        If you wish to install **all dependencies**, run:
+
+        .. code-block:: console
+
+            uv add neura-library[all]
+
+        If you wish to install the **minimal required dependencies** according to usage purpose:
+
+        - Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
+
+        - Example of using ``atlas`` module:
+
+        .. code-block:: console
+
+            uv add neura-library[atlas]
+
+        If install as developer mode (Install pre-commit and linter check by `ruff <https://github.com/astral-sh/ruff>`_):
+
+        .. code-block:: console
+
+            uv add neura-library[dev]
+            pre-commit install
+            ruff check .
+
 
 
 CLI project.scripts

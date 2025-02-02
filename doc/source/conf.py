@@ -15,6 +15,7 @@ author = 'Yu-Ting Wei'
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
+              'sphinx_tabs.tabs',
               'nbsphinx',
               'sphinx_toolbox.more_autodoc.autotypeddict']
 
