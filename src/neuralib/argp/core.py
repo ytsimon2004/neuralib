@@ -36,7 +36,7 @@ Actions = Literal[
     'count',
     'help',
     'version',
-    #
+        #
     'boolean'
 ]
 
@@ -72,8 +72,8 @@ class AbstractParser:
         """
         return new_parser(cls, **kwargs)
 
-    def main(self, args: Union[list[str], tuple[list[str], list[str]]] = None, *,
-             exit_on_error=True):
+    def main(self, args: list[str] | tuple[list[str] | list[str]] | None = None, *,
+             exit_on_error: bool = True):
         """parsing the commandline input *args* and set the argument attributes,
         then call :meth:`.run()`.
 
@@ -96,7 +96,9 @@ class AbstractParser:
                 raise TypeError('')
 
         parser = self.new_parser(reset=True)
+        self._action_validate(parser)
 
+        #
         try:
             result = parser.parse_args(args)
         except SystemExit as e:
@@ -108,6 +110,18 @@ class AbstractParser:
             set_options(self, result)
             self.post_parsing()
             self.run()
+
+    @staticmethod
+    def _action_validate(parser: argparse.ArgumentParser):
+        for action in parser._actions:
+            try:
+                parser._get_formatter()._format_action(action)
+            except ValueError as e:
+                print("Error formatting help for argument:")
+                print("  Option strings:", action.option_strings)
+                print("  Destination:", action.dest)
+                print("  Help text:", action.help)
+                raise RuntimeError(repr(e))
 
     def run(self):
         """called when all argument attributes are set"""

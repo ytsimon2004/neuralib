@@ -15,6 +15,7 @@ from neuralib.util.verbose import fprint
 __all__ = [
     'SIGNAL_TYPE',
     'CALCIUM_TYPE',
+    #
     'Suite2pGUIOptions',
     'Suite2pRoiStat',
     'Suite2PResult',

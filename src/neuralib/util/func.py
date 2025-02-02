@@ -114,8 +114,9 @@ def _create_fn_para_from_list(sign: Union[PARA_TYPE_LIST, tuple[PARA_TYPE_LIST, 
 
 
 def create_fn(name: str,
-              sign: Union[PARA_TYPE_LIST, tuple[PARA_TYPE_LIST, RET_TYPE], Callable],
-              body: str = 'pass', *,
+              sign: PARA_TYPE_LIST | tuple[PARA_TYPE_LIST, RET_TYPE] | Callable,
+              body: str = 'pass',
+              *,
               globals=None,
               locals: dict[str, Any] = None) -> Callable[..., T]:
     """
