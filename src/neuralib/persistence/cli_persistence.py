@@ -140,8 +140,9 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
         if do_load:
             try:
                 print_load(output_file)
+                ref = result
                 result = handler.load_persistence(output_file)
-                if self.validate_cache(output_file, result):
+                if handler.validate(ref, result) and self.validate_cache(output_file, result):
                     return result
             except FileNotFoundError:
                 if error_when_missing:

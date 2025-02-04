@@ -139,7 +139,6 @@ from typing import Type, TypeVar, Union, Callable, Generic, Any, Iterator, get_t
 import numpy as np
 
 from neuralib.util.func import create_fn
-from neuralib.util.verbose import fprint
 
 __all__ = [
     'field',
@@ -223,7 +222,6 @@ class PersistentField(Generic[T]):
         """Does this field is auto incremental field?"""
         self.optional = optional
         """Does this field has default value?"""
-
 
     def __set_name__(self, owner: Type, name: str):
         self.field_name = name
@@ -376,8 +374,7 @@ class PersistentClass(Generic[T]):
                 fu = getattr(u, f.field_name, None)
 
             if not f.validate(fv, fu):
-                fprint(f'{self.cls_name}.{f.field_name} validate fail: {fv} != {fu}')
-                return False
+                raise FileNotFoundError(f'{self.cls_name}.{f.field_name} validate fail: {fv} != {fu}')
 
         return True
 
@@ -632,7 +629,8 @@ def filename(result: T | Type[T], **kwargs) -> str:
 
     if not cls_info.is_autoinc_field_resolved(result, **kwargs):
         af = cls_info.autoinc_field()
-        raise AutoIncFieldNotResolvedError(result, af, f'cannot generate filepath without autoinc field {af.field_name} keywords')
+        raise AutoIncFieldNotResolvedError(result, af,
+                                           f'cannot generate filepath without autoinc field {af.field_name} keywords')
 
     name = cls_info.filename(result, **kwargs)
 
@@ -686,6 +684,9 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
         name = self.filename(result, **kwargs)
         return self.save_root / name
 
+    def validate(self, ref: T, res: T) -> bool:
+        return ensure_persistence_class(ref).validate(ref, res)
+
     def save_persistence(self, result: T, path: str | Path = None) -> T:
         """save persistence *result* under **path**.
 
@@ -730,7 +731,7 @@ class PersistenceHandler(Generic[T], metaclass=abc.ABCMeta):
         pass
 
     def load_persistence(self, path: Path | T | dict[str, Any]) -> T:
-        """Load data as **data_cls** from **path**.
+        """Load data as **data_cls** from **path** without validation.
 
         :param path: load from path.
         :return: persistence instance
