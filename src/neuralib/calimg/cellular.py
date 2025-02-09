@@ -109,17 +109,9 @@ class CellularCoordinates:
 
         if fov.rotation_angle_ml != 0:
             rx, ry = self.ml_rotate(zelf.ml, zelf.ap, fov.rotation_angle_ml)
-            return attrs.evolve(
-                self,
-                ap=fov.am[1] - ry,
-                ml=fov.am[0] - rx
-            )
+            return attrs.evolve(self, ap=fov.am[1] - ry, ml=fov.am[0] - rx)
         else:
-            return attrs.evolve(
-                self,
-                ap=fov.am[1] - zelf.ap,
-                ml=fov.am[0] - zelf.ml
-            )
+            return attrs.evolve(self, ap=fov.am[1] - zelf.ap, ml=fov.am[0] - zelf.ml)
 
     # ========================= #
     # Handle Objective rotation #

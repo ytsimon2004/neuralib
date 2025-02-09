@@ -54,15 +54,15 @@ class ObjectiveFov:
     @property
     def ap_distance(self) -> float:
         """anterior to posterior distance of the FOV"""
-        a = np.max(self.am[1], self.al[1])
-        p = np.max(self.pm[1], self.pl[1])
+        a = np.max([self.am[1], self.al[1]])
+        p = np.max([self.pm[1], self.pl[1]])
         return np.abs(p - a)
 
     @property
     def ml_distance(self) -> float:
         """medial to lateral distance of the FOV"""
-        m = np.max(self.am[0], self.pm[0])
-        l = np.max(self.al[0], self.pl[0])  # noqa: E741
+        m = np.max([self.am[0], self.pm[0]])
+        l = np.max([self.al[0], self.pl[0]])  # noqa: E741
         return np.abs(l - m)
 
     def to_um(self) -> Self:
