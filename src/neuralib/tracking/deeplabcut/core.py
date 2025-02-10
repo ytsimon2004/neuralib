@@ -191,8 +191,8 @@ def load_dlc_result(file: PathLike,
     """
     Load DeepLabCut result from file
 
-    :param file: DeepLabCut result filepath. supports both .h5 and .csv
-    :param meta_file: DeepLabCut meta filepath. should be the .pickle
+    :param file: DeepLabCut result filepath. supports both `.h5` and `.csv`
+    :param meta_file: DeepLabCut meta filepath. should be the `.pickle`. TODO Cannot it be inferred according to file?
     :param time: time array for each sample point. If None, then assume stable DAQ for using total frames and fps info in meta
     :return: ``DeepLabCutResult``
     """
