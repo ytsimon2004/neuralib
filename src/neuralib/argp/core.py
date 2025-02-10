@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import sys
 from typing import (
     Iterable, Sequence, Type, TypeVar, Union, Literal, Callable,
@@ -151,16 +152,18 @@ class Argument(object):
 
     """
 
-    def __init__(self, *options, group: str = None, **kwargs):
+    def __init__(self, *options, group: str = None, ex_group: str = None, **kwargs):
         """
 
         :param options: options
         :param group: argument group.
+        :param ex_group: mutually exclusive group.
         :param kwargs:
         """
         self.attr = None
         self.attr_type = Any
         self.group = group
+        self.ex_group = ex_group
         self.options = options
         self.kwargs = kwargs
 
@@ -249,6 +252,9 @@ class Argument(object):
         attr_type = self.attr_type
         kwargs = dict(self.kwargs)
 
+        if self.ex_group is not None:
+            kwargs.pop('required', False)  # has passed to the add_mutually_exclusive_group
+
         if 'type' not in kwargs:
             if attr_type == bool:
                 if 'action' not in kwargs:
@@ -318,6 +324,7 @@ class Argument(object):
         """
         kw = dict(self.kwargs)
         kw['group'] = self.group
+        kw['ex_group'] = self.ex_group
         kw.update(kwargs)
 
         for k in list(kw.keys()):
@@ -369,6 +376,7 @@ def argument(*options: str,
              required: bool = None,
              help: str = None,
              group: str = None,
+             ex_group: str = None,
              metavar: str = None) -> T:
     pass
 
@@ -446,19 +454,50 @@ def new_parser(instance: Union[T, type[T]], reset=False, **kwargs) -> argparse.A
 
     ap = argparse.ArgumentParser(**kwargs)
 
-    gp = {}
+    groups: dict[str, list[Argument]] = collections.defaultdict(list)
+
+    # setup non-grouped arguments
+    mu_ex_groups: dict[str, argparse._ActionsContainer] = {}
     for arg in foreach_arguments(instance):
         if instance is not None and not isinstance(instance, type) and reset:
             arg.__delete__(instance)
 
-        if arg.group is None:
-            tp = ap
-        elif arg.group in gp:
-            tp = gp[arg.group]
+        if arg.group is not None:
+            groups[arg.group].append(arg)
+            continue
+        elif arg.ex_group is not None:
+            try:
+                tp = mu_ex_groups[arg.ex_group]
+            except KeyError:
+                # XXX current Python does not support add title and description into mutually exclusive group
+                #   so the message in ex_group is dropped.
+                mu_ex_groups[arg.ex_group] = tp = ap.add_mutually_exclusive_group()
+
+            if arg.required:
+                tp.required = True
         else:
-            gp[arg.group] = tp = ap.add_argument_group(arg.group)
+            tp = ap
 
         arg.add_argument(tp, instance)
+
+    # setup grouped arguments
+    for group, args in groups.items():
+        pp = ap.add_argument_group(group)
+        mu_ex_groups: dict[str, argparse._ActionsContainer] = {}
+
+        for arg in args:
+            if arg.ex_group is not None:
+                try:
+                    tp = mu_ex_groups[arg.ex_group]
+                except KeyError:
+                    mu_ex_groups[arg.ex_group] = tp = pp.add_mutually_exclusive_group()
+
+                if arg.required:
+                    tp.required = True
+            else:
+                tp = pp
+
+            arg.add_argument(tp, instance)
 
     return ap
 
