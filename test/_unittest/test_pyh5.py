@@ -8,19 +8,19 @@ import polars as pl
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
 
-from neuralib.util import util_h5py
+from neuralib.io import pyh5
 
 
-class GroupData(util_h5py.H5pyData):
-    e: float = util_h5py.attr()
+class GroupData(pyh5.H5pyData):
+    e: float = pyh5.attr()
 
 
-class ReadData(util_h5py.H5pyData):
-    a: int = util_h5py.attr()
-    b: int = util_h5py.attr()
-    c: float = util_h5py.attr()
-    d: np.ndarray = util_h5py.array()
-    g: GroupData = util_h5py.group()
+class ReadData(pyh5.H5pyData):
+    a: int = pyh5.attr()
+    b: int = pyh5.attr()
+    c: float = pyh5.attr()
+    d: np.ndarray = pyh5.array()
+    g: GroupData = pyh5.group()
 
 
 class TestH5pyDataWrapperRead(unittest.TestCase):
@@ -107,8 +107,8 @@ class TestH5pyDataWrapperTable(unittest.TestCase):
         Path(self.TMP_FILE).unlink(missing_ok=True)
 
     def test_read_write_table_default(self):
-        class Test(util_h5py.H5pyData):
-            df: pl.DataFrame = util_h5py.table()
+        class Test(pyh5.H5pyData):
+            df: pl.DataFrame = pyh5.table()
 
         df = pl.DataFrame(data=dict(
             a=[0, 1, 2, 3],
