@@ -5,10 +5,9 @@ from typing import TypedDict
 
 import attrs
 import numpy as np
-from typing_extensions import Self
-
 from neuralib.typing import PathLike
-from neuralib.util.verbose import fprint
+from neuralib.util.verbose import print_save, print_load
+from typing_extensions import Self
 
 __all__ = ['UserCluster',
            'RasterOptions',
@@ -114,7 +113,7 @@ class RasterMapResult:
         :return: :class:`RasterMapResult`
         """
         dat = np.load(path, allow_pickle=True).item()
-        fprint(f'LOAD ->{path}', vtype='io')
+        print_load(path)
 
         return RasterMapResult(
             filename=dat['filename'],
@@ -139,7 +138,7 @@ class RasterMapResult:
         }
 
         np.save(path, proc, allow_pickle=True)
-        fprint(f'SAVE ->{path}', vtype='io')
+        print_save(path)
 
     @property
     def n_super(self) -> int:

@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Union, Callable
+from typing import Literal, Callable
 
+import h5py
 import pandas as pd
 import polars as pl
 from colorama import Fore, Style
-
-from neuralib.typing import DataFrame
+from neuralib.typing import DataFrame, PathLike
 
 __all__ = ['fprint',
            'printdf',
+           'print_h5py',
            'print_load',
            'print_save',
            'publish_annotation']
@@ -103,7 +104,23 @@ def printdf(df: DataFrame,
         raise TypeError('')
 
 
-def print_load(file: Union[str, Path], verb='LOAD') -> Path:
+def print_h5py(group: h5py.Group | PathLike, indent: int = 0) -> None:
+    if isinstance(group, PathLike):
+        group = h5py.File(group)
+
+    for key in group:
+        item = group[key]
+        prefix = " " * indent
+        if isinstance(item, h5py.Group):
+            print(f"{prefix}Group: {key}")
+            print_h5py(item, indent=indent + 4)
+        elif isinstance(item, h5py.Dataset):
+            print(f"{prefix}Dataset: {key} (shape: {item.shape}, dtype: {item.dtype})")
+        else:
+            print(f"{prefix}{key}: Unknown type {type(item)}")
+
+
+def print_load(file: PathLike, verb='LOAD') -> Path:
     """print message for loading file.
 
     If *file* is not existed, '!' will add after *verb*.
@@ -134,7 +151,7 @@ def print_load(file: Union[str, Path], verb='LOAD') -> Path:
     return file
 
 
-def print_save(file: Union[str, Path], verb='SAVE') -> Path:
+def print_save(file: PathLike, verb='SAVE') -> Path:
     """print message for saving file.
 
     If *file* is not existed, '+' will add after *verb*.
@@ -193,8 +210,8 @@ def publish_annotation(level: Literal['main', 'sup', 'appendix', 'test'],
 
         if as_doc:
             doc += '\n\n' + '\n\n'.join([
-                f'.. note:: ',
-                f'\t**Publish Annotation**',
+                '.. note:: ',
+                '\t**Publish Annotation**',
                 f'\tProject: {project}',
                 f'\tFigure: {figure}',
                 f'\tLevel: {level} ',

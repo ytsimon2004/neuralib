@@ -7,15 +7,12 @@ from typing import Literal, get_type_hints, overload, ClassVar, Generic, TypeVar
 import h5py
 import numpy as np
 import polars as pl
-from numpy.core.numerictypes import issubdtype
-
-from neuralib.typing import PathLike
 from neuralib.util.unstable import unstable
 from neuralib.util.verbose import fprint
+from numpy.core.numerictypes import issubdtype
 
 __all__ = [
-    'H5pyData', 'attr', 'group', 'array', 'table',
-    'print_h5py'
+    'H5pyData', 'attr', 'group', 'array', 'table'
 ]
 
 T = TypeVar('T')
@@ -368,19 +365,3 @@ class _H5pyTable_PyTable(_H5pyTable[Any]):
 
     def _set_table(self, group: h5py.Group, table):
         raise RuntimeError('unsupported now')
-
-
-def print_h5py(group: h5py.Group | PathLike, indent: int = 0) -> None:
-    if isinstance(group, PathLike):
-        group = h5py.File(group)
-
-    for key in group:
-        item = group[key]
-        prefix = " " * indent
-        if isinstance(item, h5py.Group):
-            print(f"{prefix}Group: {key}")
-            print_h5py(item, indent=indent + 4)
-        elif isinstance(item, h5py.Dataset):
-            print(f"{prefix}Dataset: {key} (shape: {item.shape}, dtype: {item.dtype})")
-        else:
-            print(f"{prefix}{key}: Unknown type {type(item)}")
