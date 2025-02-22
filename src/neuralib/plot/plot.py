@@ -8,18 +8,24 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.patches import Polygon
 from scipy.stats import pearsonr
 
 from neuralib.plot._dotplot import DotPlot
-from neuralib.typing import ArrayLikeStr
+from neuralib.typing import ArrayLikeStr, ArrayLike
 from neuralib.typing import PathLike, DataFrame
+from neuralib.util.deprecation import deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = [
     'dotplot',
     'scatter_histogram',
+    'scatter_histplot',
     'scatter_binx_plot',
     'hist_cutoff',
+    'axvline_histplot',
+    'diag_histplot',
+    'diag_heatmap',
     'violin_boxplot',
     'grid_subplots',
 ]
@@ -121,6 +127,7 @@ def _ax_size_legend(ax: Axes,
 # Regression #
 # ========== #
 
+@deprecated_func(new='scatter_histplot', removal_version='0.4.0')
 def scatter_histogram(x: np.ndarray,
                       y: np.ndarray,
                       bins: int | Sequence[float] | str = 15,
@@ -144,7 +151,7 @@ def scatter_histogram(x: np.ndarray,
     :return:
     """
 
-    sns.set(style='white', font_scale=1.2)
+    sns.set_theme(style='white', font_scale=1.2)
 
     g = sns.JointGrid(x=x, y=y, height=5)
 
@@ -170,6 +177,10 @@ def scatter_histogram(x: np.ndarray,
         plt.savefig(output)
     else:
         plt.show()
+
+
+def scatter_histplot(*args, **kwargs):
+    scatter_histogram(*args, **kwargs)
 
 
 def scatter_binx_plot(ax: Axes,
@@ -254,11 +265,157 @@ def _hist_line_plot(ax,
     ax.plot(x, bin_values, 'r--', alpha=0.5)
 
 
+# ============= #
+# Diagonal Plot #
+# ============= #
+
+
+def diag_histplot(x: ArrayLike,
+                  y: ArrayLike,
+                  bins: int | Sequence[float] | str = 30,
+                  *,
+                  anchor: Literal['above', 'below'] = 'above',
+                  hist_width: float = 0.3,
+                  scatter_kws: dict | None = None,
+                  polygon_kws: dict | None = None,
+                  ax: Axes | None = None):
+    """
+    Scatter plot with an overlaid histogram along the diagonal
+
+    `Dimension parameters`:
+
+        N = number of sample points
+
+    :param x: Numerical array. `Array[float, N]`
+    :param y: Numerical array. `Array[float, N]`
+    :param bins:  Number of bins (or bin specification) for ``np.histogram()``
+    :param anchor: Whether the histogram bars extend above or below the main diagonal
+    :param hist_width: Maximum length of histogram bars in the rotated space
+    :param scatter_kws: Keyword arguments passed to ``ax.scatter()``
+    :param polygon_kws: Keyword arguments passed to each ``Polygon()`` patch
+    :param ax: ``Axes``
+    :return:
+    """
+    if ax is None:
+        _, ax = plt.subplots()
+
+    x = np.array(x)
+    y = np.array(y)
+
+    if scatter_kws is None:
+        scatter_kws = {'s': 0.5, 'c': 'k', 'marker': '.'}
+    ax.scatter(x, y, **scatter_kws)
+
+    #
+    if polygon_kws is None:
+        polygon_kws = {'facecolor': 'gray', 'edgecolor': 'none', 'alpha': 0.3}
+
+    X = (x - y) / np.sqrt(2)  # Rotate by +45°
+    Y_anchor = 1 / np.sqrt(2)
+
+    # Compute histogram in rotated X coordinate (perpendicular to the anti-diagonal)
+    counts, edges = np.histogram(X, bins=bins)
+    max_count = counts.max() if counts.max() > 0 else 1
+
+    sign = 1 if anchor == 'above' else -1
+
+    R_inv = np.array([
+        [1 / np.sqrt(2), 1 / np.sqrt(2)],
+        [-1 / np.sqrt(2), 1 / np.sqrt(2)]
+    ])
+
+    for i in range(bins):
+        c = counts[i]
+        if c == 0:
+            continue
+
+        X0, X1 = edges[i], edges[i + 1]  # Bin edges in X (rotated coordinates)
+        bar_height = (c / max_count) * hist_width  # Bar height is scaled by the bin count
+
+        # Define the corners of the rectangle in (X, Y) space.
+        # The rectangle is anchored at Y_anchor.
+        # Its corners: (X0, Y_anchor), (X1, Y_anchor), (X1, Y_anchor + sign*bar_height), (X0, Y_anchor + sign*bar_height)
+        corners_rot = np.array([
+            [X0, X1, X1, X0],
+            [Y_anchor, Y_anchor, Y_anchor + sign * bar_height, Y_anchor + sign * bar_height]
+        ])
+
+        # Transform the corners back to original (x,y) coordinates
+        corners_xy = R_inv @ corners_rot  # shape (2,4)
+
+        poly = Polygon(corners_xy.T, **polygon_kws)
+        ax.add_patch(poly)
+
+    vmin = np.min([x, y])
+    vmax = np.max([x, y])
+
+    ax.axline((0.5, 0.5), slope=1, color='k', alpha=0.5, lw=1)
+    ax.set(xlim=(vmin, vmax), ylim=(vmin, vmax))
+    ax.set_aspect('equal', adjustable='box')
+
+
+def diag_heatmap(x: ArrayLike,
+                 y: ArrayLike,
+                 cmap: str = 'gist_earth',
+                 *,
+                 grid_xy: tuple[complex, complex] = (100j, 100j),
+                 scatter_kws: dict | None = None,
+                 imshow_kws: dict | None = None,
+                 ax: Axes | None = None):
+    """
+
+    :param x:
+    :param y:
+    :param cmap:
+    :param grid_xy:
+    :param scatter_kws:
+    :param imshow_kws:
+    :param ax:
+    :return:
+    """
+    if ax is None:
+        _, ax = plt.subplots()
+
+    x = np.array(x)
+    y = np.array(y)
+
+    if scatter_kws is None:
+        scatter_kws = {'s': 0.5, 'c': 'k', 'marker': '.'}
+    ax.scatter(x, y, **scatter_kws)
+
+    #
+    kde = _create_kde_map(x, y, grid_xy)
+    xmin, xmax = np.min(x), np.max(x)
+    ymin, ymax = np.min(y), np.max(y)
+
+    if imshow_kws is None:
+        imshow_kws = {'origin': 'lower'}
+    ax.imshow(np.rot90(kde), cmap=cmap, extent=(xmin, xmax, ymin, ymax), **imshow_kws)
+
+    ax.axline((0.5, 0.5), slope=1, color='k', alpha=0.5, lw=1)
+    ax.set_aspect('equal', adjustable='box')
+
+
+def _create_kde_map(x, y, grid_xy) -> np.ndarray:
+    from scipy import stats
+
+    xmin, xmax = np.min(x), np.max(x)
+    ymin, ymax = np.min(y), np.max(y)
+    xstep, ystep = grid_xy
+
+    X, Y = np.mgrid[xmin:xmax:xstep, ymin:ymax:ystep]
+    positions = np.vstack([X.ravel(), Y.ravel()])
+    values = np.vstack([x, y])
+    kernel = stats.gaussian_kde(values)
+
+    return np.reshape(kernel(positions).T, X.shape)
+
+
 # ====== #
 # Others #
 # ====== #
 
-
+@deprecated_func(new='axvline_histplot', removal_version='0.4.0')
 def hist_cutoff(ax: Axes,
                 values: np.ndarray,
                 cutoff: float,
@@ -288,6 +445,10 @@ def hist_cutoff(ax: Axes,
     sns.histplot(values, bins=bins, kde=True, color='grey', stat='percent', element='step', ax=ax)
     ax.axvline(cutoff, color='r', linestyle='--', zorder=1)
     ax.set(**kwargs)
+
+
+def axvline_histplot(*args, **kwargs):
+    hist_cutoff(*args, **kwargs)
 
 
 def violin_boxplot(ax: Axes,
