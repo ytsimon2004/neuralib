@@ -5,8 +5,11 @@ from typing import Literal, Union, Iterable
 
 import numpy as np
 
+from neuralib.typing import ArrayLike
+
 __all__ = [
     'SegmentLike',
+    'segment_bool_mask',
     'is_sorted',
     'segment_mask',
     'segment_epochs',
@@ -41,11 +44,27 @@ __all__ = [
     'grouped_iter'
 ]
 
-from neuralib.typing import ArrayLike
-
 Segment = np.ndarray  # (N, 2) value array ([(start, stop)]), as a segment.
 SegmentLike = Union[Segment, tuple[float, float], list[tuple[float, float]]]
 SegmentGroup = np.ndarray  # (N,) int array, where a unique value indicate a unique group/segment.
+
+
+def segment_bool_mask(mx: np.ndarray) -> Segment:
+    """
+    :param mx: `Array[bool, N]`
+    :return: ``Segment``. `Array[int, [N, 2]]`
+    """
+    if mx.ndim != 1:
+        raise ValueError('not a (N, 1) segment')
+
+    if mx.dtype != np.bool_:
+        raise TypeError('not a bool array')
+
+    diff = np.diff(mx.astype(int), prepend=0, append=0)
+    starts = np.where(diff == 1)[0]
+    ends = np.where(diff == -1)[0]
+
+    return np.column_stack((starts, ends))
 
 
 def is_sorted(a: np.ndarray, strict: bool = False) -> bool:
