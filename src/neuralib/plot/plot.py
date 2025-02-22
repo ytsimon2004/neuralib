@@ -278,7 +278,7 @@ def diag_histplot(x: ArrayLike,
                   hist_width: float = 0.3,
                   scatter_kws: dict | None = None,
                   polygon_kws: dict | None = None,
-                  ax: Axes | None = None):
+                  ax: Axes | None = None) -> None:
     """
     Scatter plot with an overlaid histogram along the diagonal
 
@@ -359,18 +359,21 @@ def diag_heatmap(x: ArrayLike,
                  cmap: str = 'gist_earth',
                  *,
                  grid_xy: tuple[complex, complex] = (100j, 100j),
+                 extent: tuple[float, float, float, float] | None = None,
                  scatter_kws: dict | None = None,
                  imshow_kws: dict | None = None,
-                 ax: Axes | None = None):
+                 ax: Axes | None = None) -> None:
     """
+    Scatter plot with an overlaid kernel density heatmap
 
-    :param x:
-    :param y:
-    :param cmap:
-    :param grid_xy:
-    :param scatter_kws:
-    :param imshow_kws:
-    :param ax:
+    :param x: Numerical array. `Array[float, N]`
+    :param y: Numerical array. `Array[float, N]`
+    :param cmap: Colormap used for the heatmap
+    :param grid_xy: Grid specification for generating the heatmap
+    :param extent: extent for the ``ax.imshow()``
+    :param scatter_kws: Keyword arguments passed to ``ax.scatter()``
+    :param imshow_kws: Keyword arguments passed to ``ax.imshow()``
+    :param ax: ``Axes``
     :return:
     """
     if ax is None:
@@ -384,26 +387,34 @@ def diag_heatmap(x: ArrayLike,
     ax.scatter(x, y, **scatter_kws)
 
     #
-    kde = _create_kde_map(x, y, grid_xy)
-    xmin, xmax = np.min(x), np.max(x)
-    ymin, ymax = np.min(y), np.max(y)
+    if extent is None:
+        x1, x2 = np.min(x), np.max(x)
+        y1, y2 = np.min(y), np.max(y)
+    else:
+        x1, x2, y1, y2 = extent
+
+    kde = _create_kde_map(x, y, grid_xy, extent=(x1, x2, y1, y2))
 
     if imshow_kws is None:
-        imshow_kws = {'origin': 'lower'}
-    ax.imshow(np.rot90(kde), cmap=cmap, extent=(xmin, xmax, ymin, ymax), **imshow_kws)
+        imshow_kws = {}
+    ax.imshow(np.rot90(kde), cmap=cmap, extent=(x1, x2, y1, y2), **imshow_kws)
 
     ax.axline((0.5, 0.5), slope=1, color='k', alpha=0.5, lw=1)
     ax.set_aspect('equal', adjustable='box')
 
 
-def _create_kde_map(x, y, grid_xy) -> np.ndarray:
+def _create_kde_map(x, y, grid_xy, extent) -> np.ndarray:
     from scipy import stats
 
-    xmin, xmax = np.min(x), np.max(x)
-    ymin, ymax = np.min(y), np.max(y)
+    if extent is None:
+        x1, x2 = np.min(x), np.max(x)
+        y1, y2 = np.min(y), np.max(y)
+    else:
+        x1, x2, y1, y2 = extent
+
     xstep, ystep = grid_xy
 
-    X, Y = np.mgrid[xmin:xmax:xstep, ymin:ymax:ystep]
+    X, Y = np.mgrid[x1:x2:xstep, y1:y2:ystep]
     positions = np.vstack([X.ravel(), Y.ravel()])
     values = np.vstack([x, y])
     kernel = stats.gaussian_kde(values)
