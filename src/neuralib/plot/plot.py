@@ -303,15 +303,18 @@ def diag_histplot(x: ArrayLike,
     y = np.array(y)
 
     if scatter_kws is None:
-        scatter_kws = {'s': 0.5, 'c': 'k', 'marker': '.'}
+        scatter_kws = {'s': 3, 'c': 'gray', 'marker': '.', 'edgecolors': 'none'}
     ax.scatter(x, y, **scatter_kws)
 
     #
     if polygon_kws is None:
         polygon_kws = {'facecolor': 'gray', 'edgecolor': 'none', 'alpha': 0.3}
 
-    X = (x - y) / np.sqrt(2)  # Rotate by +45°
-    Y_anchor = 1 / np.sqrt(2)
+    vmin = np.min([x, y])
+    vmax = np.max([x, y])
+
+    X = (x - y) / np.sqrt(2) * vmax  # Rotate by +45°
+    Y_anchor = vmax / np.sqrt(2)
 
     # Compute histogram in rotated X coordinate (perpendicular to the anti-diagonal)
     counts, edges = np.histogram(X, bins=bins)
@@ -345,9 +348,6 @@ def diag_histplot(x: ArrayLike,
 
         poly = Polygon(corners_xy.T, **polygon_kws)
         ax.add_patch(poly)
-
-    vmin = np.min([x, y])
-    vmax = np.max([x, y])
 
     ax.axline((0.5, 0.5), slope=1, color='k', alpha=0.5, lw=1)
     ax.set(xlim=(vmin, vmax), ylim=(vmin, vmax))
@@ -383,7 +383,7 @@ def diag_heatmap(x: ArrayLike,
     y = np.array(y)
 
     if scatter_kws is None:
-        scatter_kws = {'s': 0.5, 'c': 'k', 'marker': '.'}
+        scatter_kws = {'s': 3, 'c': 'gray', 'marker': '.', 'edgecolors': 'none'}
     ax.scatter(x, y, **scatter_kws)
 
     #

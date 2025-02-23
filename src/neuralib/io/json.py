@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from neuralib.typing import PathLike
+from neuralib.util.verbose import print_save, print_load
 
 __all__ = ['JsonEncodeHandler',
            'load_json',
@@ -43,6 +44,7 @@ def load_json(filepath: PathLike, **kwargs) -> dict[str, Any]:
     :return:
     """
     with open(filepath, "r") as file:
+        print_load(filepath)
         return json.load(file, **kwargs)
 
 
@@ -55,4 +57,5 @@ def save_json(filepath: PathLike, dict_obj: dict[str, Any], **kwargs) -> None:
     :param kwargs: additional arguments to ``json.dump()``
     """
     with open(filepath, "w") as outfile:
+        print_save(filepath)
         json.dump(dict_obj, outfile, sort_keys=True, indent=4, cls=JsonEncodeHandler, **kwargs)

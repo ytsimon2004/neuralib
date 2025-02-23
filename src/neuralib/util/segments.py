@@ -280,7 +280,7 @@ def segment_universe() -> Segment:
 
     :return: segment of [-inf, inf]
     """
-    return np.array([[-np.Inf, np.Inf]])
+    return np.array([[-np.inf, np.inf]])
 
 
 def segment_flatten(segs: SegmentLike, closed: bool = True) -> Segment:
@@ -334,7 +334,7 @@ def _segment_invert(segs: Segment) -> Segment:
     if len(segs) == 0:
         return segment_universe()
 
-    a = np.concatenate([[-np.Inf], segs.ravel(), [np.Inf]]).reshape((-1, 2))
+    a = np.concatenate([[-np.inf], segs.ravel(), [np.inf]]).reshape((-1, 2))
 
     d = []
     if np.all(np.isinf(a[0])):

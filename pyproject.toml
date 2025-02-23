@@ -27,7 +27,7 @@ dependencies = [
     "colorlog",
     "matplotlib",
     "seaborn",
-    "numpy>=1.26.0, <2.0",
+    "numpy",
     "scipy",
     "scikit-image",
     "pandas",
