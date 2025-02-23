@@ -274,7 +274,7 @@ class Suite2PResult:
         """
         Load suite2p result from directory
 
-        :param directory: Directory contain all the s2p output files. e.g., */suite2p/plane[P]
+        :param directory: Directory contain all the s2p output files. e.g., \*/suite2p/plane[P]
         :param cell_prob_thres: Cell probability. If float type, mask for the value in ``iscell[:, 1]``.
                     If None, use the binary criteria in GUI output
         :param red_cell_threshold: Red cell threshold

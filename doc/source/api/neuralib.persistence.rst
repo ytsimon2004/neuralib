@@ -10,4 +10,5 @@ neuralib.persistence
     
     neuralib.persistence.cli_persistence
     neuralib.persistence.persistence
+    neuralib.persistence.validator
 

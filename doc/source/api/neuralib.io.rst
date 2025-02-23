@@ -13,4 +13,5 @@ neuralib.io
     neuralib.io.csv_header
     neuralib.io.dataset
     neuralib.io.json
+    neuralib.io.pyh5
 

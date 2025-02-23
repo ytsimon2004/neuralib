@@ -283,7 +283,7 @@ class BokehServer:
         """start serving.
 
         :param viewer: top view
-        :param open_url
+        :param open_url:
         """
         if BokehServer.INSTANCE is None:
             BokehServer.INSTANCE = self

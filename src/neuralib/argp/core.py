@@ -316,7 +316,7 @@ class Argument(object):
 
         general form:
 
-        ``() | (dict?, ...?, *str)``
+            ``() | (dict?, ...?, *str)``
 
         :param options: change option flags
         :param kwargs: change keyword parameters, use `...` to unset parameter
