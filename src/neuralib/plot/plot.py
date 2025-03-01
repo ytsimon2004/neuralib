@@ -303,12 +303,12 @@ def diag_histplot(x: ArrayLike,
     y = np.array(y)
 
     if scatter_kws is None:
-        scatter_kws = {'s': 3, 'c': 'gray', 'marker': '.', 'edgecolors': 'none'}
+        scatter_kws = {'s': 3, 'c': 'black', 'marker': '.', 'edgecolors': 'none'}
     ax.scatter(x, y, **scatter_kws)
 
     #
     if polygon_kws is None:
-        polygon_kws = {'facecolor': 'gray', 'edgecolor': 'none', 'alpha': 0.3}
+        polygon_kws = {'facecolor': 'gray', 'edgecolor': 'none', 'zorder': -1}
 
     vmin = np.min([x, y])
     vmax = np.max([x, y])
