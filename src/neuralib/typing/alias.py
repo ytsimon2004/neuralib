@@ -26,6 +26,7 @@ __all__ = [
 # ===== #
 
 T = TypeVar('T')
+"""Numeric"""
 
 ArrayLike = Union[NDArray[T], list[T], tuple[T, ...], pd.Series, pl.Series]
 """Alias for array-like objects, including numpy arrays, lists, tuples, and series"""

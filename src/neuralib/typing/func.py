@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
 from .alias import ArrayLike
 
 __all__ = [
     'is_iterable',
     'is_namedtuple',
+    'is_numeric_arraylike',
     'flatten_arraylike',
     'array2str'
 ]
@@ -22,8 +25,22 @@ def is_iterable(val: Any) -> bool:
     return isinstance(val, Iterable) and not isinstance(val, str)
 
 
+def is_numeric_arraylike(arr: ArrayLike) -> bool:
+    """
+    Check if is a numeric arraylike object
+
+    :param arr: ArrayLike object
+    :return:
+    """
+    if not isinstance(arr, np.ndarray):
+        arr = np.asarray(arr)
+
+    return np.issubdtype(arr.dtype, np.number)
+
+
 # noinspection PyProtectedMember
 def is_namedtuple(obj: Any) -> bool:
+    """Check if is a namedtuple object"""
     if isinstance(obj, tuple) and hasattr(obj, '_fields'):
         if isinstance(obj._fields, tuple):
             return True
