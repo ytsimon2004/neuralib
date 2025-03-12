@@ -1,8 +1,6 @@
 import unittest
 
-from neuralib.argp import (
-    argument, parse_args, int_tuple_type, str_tuple_type, as_dict
-)
+from neuralib.argp import argument, parse_args, int_tuple_type, str_tuple_type, as_dict
 
 
 class TestValidator(unittest.TestCase):

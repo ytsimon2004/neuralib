@@ -456,8 +456,29 @@ def argument(*options: str, **kwargs):
     ...     # create a multiple value option
     ...     list_value: list[str] = argument('-l', metavar='VALUE', nargs=2, action='append')
 
+    Validate Example:
 
-    :param kwargs: Please see ``argparse.ArgumentParser.add_argument`` for detailed.
+    >>> from neuralib.argp import int_tuple_type, str_tuple_type
+    >>> class Example:
+    ...     # create a int option that greater than 0
+    ...     int_value: int = argument('-i', metavar='VALUE', gt=0)
+    ...     # create a tuple option which at least three elements
+    ...     tuple_int_value: tuple[int, ...] = argument('-a', type=int_tuple_type, min_length=3)
+    ...     # create a tuple option which has callable validator
+    ...     tuple_str_value: tuple[str, ...] = argument('-a', type=str_tuple_type, validator=lambda it: it[0] == 'first')
+
+
+    :param kwargs: Additional keyword parameters passed to ``argparse.ArgumentParser.add_argument``.
+    In addition to standard argparse parameters, the following extra keywords are supported:
+        - ``gt``: For numerical scalar values; the value must be greater than this.
+        - ``lt``: For numerical scalar values; the value must be less than this.
+        - ``min_length``: For list/tuple arguments; the sequence must have at least this many elements.
+        - ``max_length``: For list/tuple arguments; the sequence must have at most this many elements.
+        - ``validator``: A callable for custom validation. The callable can either:
+            - Return a boolean, where True indicates success and False indicates failure (raising a ValueError), or
+            - Return a transformed value which will replace the original.
+    :return: The constructed Argument descriptor.
+
     """
     if not all([it.startswith('-') for it in options]):
         raise RuntimeError(f'options should startswith "-". {options}')
