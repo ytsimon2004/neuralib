@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import collections
 import sys
+import warnings
 from typing import (
     Iterable, Sequence, Type, TypeVar, Union, Literal, Callable,
     overload, get_origin, get_args, Any, Optional, get_type_hints
@@ -218,13 +219,62 @@ class Argument(object):
         raise AttributeError(self.attr)
 
     def __set__(self, instance, value):
-        instance.__dict__[f'__{self.attr}'] = value
+        validated_value = self._validate(value)
+        instance.__dict__[f'__{self.attr}'] = validated_value
 
     def __delete__(self, instance):
         try:
             del instance.__dict__[f'__{self.attr}']
         except KeyError:
             pass
+
+    def _validate(self, value):
+        if value is None:
+            return value
+
+        def _apply_validator(val):
+            ret = self.kwargs['validator'](val)
+            if isinstance(ret, bool):
+                if not ret:
+                    raise ValueError(f"Validation failed: {self.attr}")
+                return val
+            else:
+                return ret
+
+        # for sequences, apply length validations and then a custom validator if provided.
+        if isinstance(value, (list, tuple)):
+            min_len = self.kwargs.get('min_length')
+            max_len = self.kwargs.get('max_length')
+            if min_len is not None and len(value) < min_len:
+                raise ValueError(f"Length of '{self.attr}' must be at least {min_len}, got {len(value)}.")
+            if max_len is not None and len(value) > max_len:
+                raise ValueError(f"Length of '{self.attr}' must be at most {max_len}, got {len(value)}.")
+            if 'validator' in self.kwargs:
+                value = _apply_validator(value)
+
+            return value
+        else:
+            if 'min_length' in self.kwargs or 'max_length' in self.kwargs:
+                warnings.warn("Length validation only applicable for sequence", UserWarning)
+
+        # numerical validators
+        gt = self.kwargs.get('gt')
+        lt = self.kwargs.get('lt')
+        if gt is not None and lt is not None:
+            if not (gt < value < lt):
+                raise ValueError(f"Value for '{self.attr}' must be between {gt} and {lt}, got {value}.")
+        elif gt is not None:
+            if not (value > gt):
+                raise ValueError(f"Value for '{self.attr}' must be greater than {gt}, got {value}.")
+        elif lt is not None:
+            if not (value < lt):
+                raise ValueError(f"Value for '{self.attr}' must be less than {lt}, got {value}.")
+
+        # custom validator
+        if 'validator' in self.kwargs:
+            value = _apply_validator(value)
+
+        return value
 
     def add_argument(self, ap: argparse.ArgumentParser, instance):
         """Add this into `argparse.ArgumentParser`.
@@ -284,6 +334,9 @@ class Argument(object):
                     raise RuntimeError(f"cannot infer type. {self.attr} missing keyword type.")
             elif callable(attr_type):
                 kwargs['type'] = attr_type
+
+        for key in ('gt', 'lt', 'min_length', 'max_length', 'validator'):
+            kwargs.pop(key, None)
 
         return kwargs
 
@@ -377,7 +430,12 @@ def argument(*options: str,
              help: str = None,
              group: str = None,
              ex_group: str = None,
-             metavar: str = None) -> T:
+             metavar: str = None,
+             gt: int | float = None,
+             lt: int | float = None,
+             max_length: int = None,
+             min_length: int = None,
+             validator: Callable[[Any], Any] = None) -> T:
     pass
 
 
