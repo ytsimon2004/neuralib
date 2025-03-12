@@ -18,13 +18,17 @@ F = TypeVar('F', bound=Callable[P, R])
 T = TypeVar('T', Type[R], F)
 
 
-def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = False) -> Callable[[T], T]:
+def unstable(doc: bool = True,
+             runtime: bool = True,
+             mark_all: bool = False,
+             method: str = '__init__') -> Callable[[T], T]:
     """
     A decorator that mark class/function unstable.
 
     :param doc: Add unstable message in function/class document.
     :param runtime: Add runtime warning when invoking function/initialization.
-    :param mark_all: Mark all public methods when decorate on a class, If False, then only mark ``__init__()``
+    :param mark_all: Mark all public methods when decorate on a class, If False, then only mark ``method_name``
+    :param method: Name of method in class to be marked. defaults to '__init__'
     """
 
     def _decorator(obj: T) -> T:
@@ -54,8 +58,11 @@ def unstable(doc: bool = True, runtime: bool = True, mark_all: bool = False) -> 
                     if callable(f := getattr(obj, meth, None)) and (not meth.startswith('_') or meth in ('__init__',)):
                         setattr(obj, meth, unstable(doc=doc, runtime=runtime, mark_all=mark_all)(f))
             else:
-                f = getattr(obj, '__init__', None)
-                setattr(obj, '__init__', unstable(doc=doc, runtime=runtime, mark_all=mark_all)(f))
+                f = obj.__dict__.get(method)
+                if f is not None:
+                    setattr(obj, method, unstable(doc=doc, runtime=runtime, mark_all=mark_all)(f))
+                else:
+                    raise RuntimeError(f'Method {method} in {obj.__qualname__} not found')
 
             return obj
 
