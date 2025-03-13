@@ -43,7 +43,7 @@ class StarDistResult:
     """Source image file name"""
 
     labels: np.ndarray
-    """Image with label. `Array[float, [H, W]]`"""  # TODO Is it float?
+    """Image with label. `Array[float, [H, W]]`"""
 
     cords: np.ndarray
     """Coordinates. `Array[float, [N, 2, E]]`"""
@@ -129,6 +129,7 @@ class StarDistResult:
         )
 
         roi.tofile(output_file)
+        Logger.log(LOGGING_IO_LEVEL, f'save roi results to {output_file}')
 
     def get_index_value(self) -> tuple[np.ndarray, np.ndarray]:
         """

@@ -186,6 +186,8 @@ Modules
 
 - Module for neuronal segmentation
 
+- If encounter dependencies problem (i.e., python version, cuda build ...), create a separated env is recommended.
+
     - :mod:`neuralib.segmentation.cellpose`: Result parser and batch running for `cellpose <https://github.com/MouseLand/cellpose>`_
 
     - :mod:`neuralib.segmentation.stardist`: Result parser and batch running for `stardist <https://github.com/stardist/stardist>`_

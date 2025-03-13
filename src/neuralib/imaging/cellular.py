@@ -7,7 +7,7 @@ import attrs
 import numpy as np
 from typing_extensions import Self
 
-from neuralib.calimg import ObjectiveFov
+from neuralib.imaging import ObjectiveFov
 
 __all__ = ['CellularCoordinates']
 

@@ -8,7 +8,7 @@ import attrs
 import numpy as np
 import polars as pl
 
-from neuralib.calimg.cellular import CellularCoordinates
+from neuralib.imaging.cellular import CellularCoordinates
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
 

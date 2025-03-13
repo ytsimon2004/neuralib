@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from matplotlib.axes import Axes
 
-from neuralib.calimg.suite2p import Suite2PResult
+from neuralib.imaging.suite2p import Suite2PResult
 
 __all__ = ['get_soma_pixel',
            'plot_soma_center']

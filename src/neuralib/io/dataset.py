@@ -11,8 +11,8 @@ import numpy as np
 import polars as pl
 from PIL import Image
 
-from neuralib.calimg.scanbox import SBXInfo
-from neuralib.calimg.suite2p import Suite2PResult
+from neuralib.imaging.scanbox import SBXInfo
+from neuralib.imaging.suite2p import Suite2PResult
 from neuralib.io import NEUROLIB_CACHE_DIRECTORY
 from neuralib.tracking.deeplabcut.core import DeepLabCutResult, load_dlc_result
 from neuralib.typing import PathLike
