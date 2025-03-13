@@ -26,7 +26,7 @@ argument ``--ANIMAL`` which accept one argument. ``EXP_DATE`` as is another opti
 And ``OUTPUT_DIR`` are a potional argument because it doesn't have dashed options.
 
 >>> opt = parse_args(ExampleOptions())
-... print(opt.animal)
+... print(opt.ANIMAL)
 
 After class declared, you can use :meth:`~neuralib.argp.core.parse_args()` to parse cli arguments. This
 function will create an ``ArgumentParser`` and find out all argument attributes.
@@ -46,6 +46,7 @@ In bash, you can call this option class ::
 Or use ``-h`` options ::
 
     python -m module.path -h
+
 
 Annotation type infering
 ~~~~~~~~~~~~~~~~~~~~~~~~
