@@ -14,15 +14,12 @@ from scipy.stats import pearsonr
 from neuralib.plot._dotplot import DotPlot
 from neuralib.typing import ArrayLikeStr, ArrayLike
 from neuralib.typing import PathLike, DataFrame
-from neuralib.util.deprecation import deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = [
     'dotplot',
-    'scatter_histogram',
     'scatter_histplot',
     'scatter_binx_plot',
-    'hist_cutoff',
     'axvline_histplot',
     'diag_histplot',
     'diag_heatmap',
@@ -127,14 +124,13 @@ def _ax_size_legend(ax: Axes,
 # Regression #
 # ========== #
 
-@deprecated_func(new='scatter_histplot', removal_version='0.4.0')
-def scatter_histogram(x: np.ndarray,
-                      y: np.ndarray,
-                      bins: int | Sequence[float] | str = 15,
-                      *,
-                      linear_reg: bool = True,
-                      output: Path | None = None,
-                      **kwargs):
+def scatter_histplot(x: np.ndarray,
+                     y: np.ndarray,
+                     bins: int | Sequence[float] | str = 15,
+                     *,
+                     linear_reg: bool = True,
+                     output: Path | None = None,
+                     **kwargs):
     """
     plot the linear correlation scatter and histogram between two variables
 
@@ -150,7 +146,6 @@ def scatter_histogram(x: np.ndarray,
     :param kwargs: additional args pass through ``ax.set()``
     :return:
     """
-
     sns.set_theme(style='white', font_scale=1.2)
 
     g = sns.JointGrid(x=x, y=y, height=5)
@@ -177,10 +172,6 @@ def scatter_histogram(x: np.ndarray,
         plt.savefig(output)
     else:
         plt.show()
-
-
-def scatter_histplot(*args, **kwargs):
-    scatter_histogram(*args, **kwargs)
 
 
 def scatter_binx_plot(ax: Axes,
@@ -426,14 +417,13 @@ def _create_kde_map(x, y, grid_xy, extent) -> np.ndarray:
 # Others #
 # ====== #
 
-@deprecated_func(new='axvline_histplot', removal_version='0.4.0')
-def hist_cutoff(ax: Axes,
-                values: np.ndarray,
-                cutoff: float,
-                bins: int = 30,
-                *,
-                mask: np.ndarray | None = None,
-                **kwargs) -> None:
+def axvline_histplot(ax: Axes,
+                     values: np.ndarray,
+                     cutoff: float,
+                     bins: int = 30,
+                     *,
+                     mask: np.ndarray | None = None,
+                     **kwargs) -> None:
     """
     Plot the histogram with a cutoff value
 
@@ -456,10 +446,6 @@ def hist_cutoff(ax: Axes,
     sns.histplot(values, bins=bins, kde=True, color='grey', stat='percent', element='step', ax=ax)
     ax.axvline(cutoff, color='r', linestyle='--', zorder=1)
     ax.set(**kwargs)
-
-
-def axvline_histplot(*args, **kwargs):
-    hist_cutoff(*args, **kwargs)
 
 
 def violin_boxplot(ax: Axes,
