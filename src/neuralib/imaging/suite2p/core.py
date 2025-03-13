@@ -350,7 +350,7 @@ class Suite2PResult:
     def n_neurons(self) -> int:
         """number of neurons after load.
         could be less than GUI ROI number if use higher cell_prob in
-        :meth:`~neuralib.calimg.suite2p.core.Suite2PResult.load()`"""
+        :meth:`~neuralib.imaging.suite2p.core.Suite2PResult.load()`"""
         return self.f_raw.shape[0]
 
     @property
@@ -521,7 +521,7 @@ def get_s2p_coords(s2p: Suite2PResult,
     :param neuron_list: neuron index or index list/arr. If None, then load all neurons
     :param plane_index: optic plane index
     :param factor: pixel to mm factor
-    :return: :class:`~neuralib.calimg.cellular_cords.CellularCoordinates`
+    :return: :class:`~neuralib.imaging.cellular_cords.CellularCoordinates`
     """
     if neuron_list is None:
         neuron_list = np.arange(s2p.n_neurons)

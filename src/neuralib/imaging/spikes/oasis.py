@@ -23,7 +23,7 @@ This script adapted from ``suite2p.suite2p.extraction.dcnv``
 
 .. code-block:: python
 
-    from neuralib.calimg.spikes.oasis import oasis_dcnv
+    from neuralib.imaging.spikes.oasis import oasis_dcnv
 
     # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
     dff = ...

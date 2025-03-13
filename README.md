@@ -34,7 +34,7 @@ pip install neura-library[all]
 
 - If you wish to install the **minimal required dependencies** according to usage purpose:
 
-Choices in []: atlas, scanner, calimg, segmentation, model, track, gpu, profile, imagelib, tools, full
+Choices in []: atlas, scanner, imaging, segmentation, model, track, gpu, profile, imagelib, tools, full
 Example of using the atlas module:
 
 ```shell
@@ -77,7 +77,7 @@ uv add neura-library[all]
 
 - If you wish to install the **minimal required dependencies** according to usage purpose:
 
-Choices in []: atlas, scanner, calimg, segmentation, model, track, gpu, profile, imagelib, tools, full
+Choices in []: atlas, scanner, imaging, segmentation, model, track, gpu, profile, imagelib, tools, full
 Example of using the atlas module:
 
 ```shell
@@ -107,15 +107,15 @@ ruff check .
       for [ibllib](https://github.com/int-brain-lab/ibllib?tab=readme-ov-file)
       and [iblatlas](https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html)
 
-## calimg
+## imaging
 
 - Module for 2photon calcium imaging acquisition and result parsing
-    - `neuralib.calimg.scan_image`: Data acquired from [ScanImage](https://www.mbfbioscience.com/products/scanimage/) (
+    - `neuralib.imaging.scan_image`: Data acquired from [ScanImage](https://www.mbfbioscience.com/products/scanimage/) (
       under
       DEV)
-    - `neuralib.calimg.scanbox`: Data acquired from [Scanbox](https://scanbox.org/tag/two-photon/)
-    - `neuralib.calimg.suite2p`:  Result parser for [suite2p](https://github.com/MouseLand/suite2p)
-  - `neuralib.calimg.spikes`: dF/F to spike activity (OASIS/Cascade)
+    - `neuralib.imaging.scanbox`: Data acquired from [Scanbox](https://scanbox.org/tag/two-photon/)
+    - `neuralib.imaging.suite2p`:  Result parser for [suite2p](https://github.com/MouseLand/suite2p)
+    - `neuralib.imaging.spikes`: dF/F to spike activity (OASIS/Cascade)
 
 ## segmentation
 
@@ -159,8 +159,6 @@ ruff check .
 - `neuralib.tools.gspread`: Google spreadsheet API wrapper for read/write
 
 - `neuralib.tools.slack_bot`: Real-time slack notification bot for analysis pipeline
-
-- `neuralib.util.cli_args`: run script as subprocess
 
 - `neuralib.util.color_logging`: logging with color format
 

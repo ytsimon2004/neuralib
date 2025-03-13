@@ -17,11 +17,11 @@ See also the source example from the authors
 
 **Example of usage**
 
-- See available model in :meth:`~neuralib.calimg.spikes.cascade.CascadeSpikePrediction.get_available_models()`
+- See available model in :meth:`~neuralib.imaging.spikes.cascade.CascadeSpikePrediction.get_available_models()`
 
 .. code-block:: python
 
-    from neuralib.calimg.spikes.cascade import cascade_predict
+    from neuralib.imaging.spikes.cascade import cascade_predict
 
     # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
     dff = ...

@@ -7,13 +7,12 @@ neuralib package
 
     neuralib.atlas
     neuralib.dashboard
-    neuralib.calimg
+    neuralib.imaging
     neuralib.imglib
     neuralib.io
     neuralib.model
     neuralib.locomotion
     neuralib.plot
-    neuralib.signal
     neuralib.scanner
     neuralib.segmentation
     neuralib.morpho
@@ -41,7 +40,7 @@ Utilities Modules
     :maxdepth: 1
     :caption: Notebook Demo
 
-    ../notebooks/example_calimg
+    ../notebooks/example_imaging_2p
 
     ../notebooks/example_facemap
     ../notebooks/example_rastermap_2p

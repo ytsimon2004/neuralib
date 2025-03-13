@@ -37,7 +37,7 @@ Installation
 
         .. code-block:: console
 
-            conda create -n neuralib python=3.9
+            conda create -n neuralib python=3.10
             conda activate neuralib
             pip install neura-library
 
@@ -51,7 +51,7 @@ Installation
 
         If you wish to install the **minimal required dependencies** according to usage purpose:
 
-        - Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
+        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``track``, ``gpu``, ``imagelib``, ``tools``
 
         - Example of using ``atlas`` module:
 
@@ -90,7 +90,7 @@ Installation
 
         .. code-block::
 
-            uv python install 3.9
+            uv python install 3.10
 
 
         If you wish to install **all dependencies**, run:
@@ -101,7 +101,7 @@ Installation
 
         If you wish to install the **minimal required dependencies** according to usage purpose:
 
-        - Choices in ``[]``: ``atlas``, ``scanner``, ``calimg``, ``segmentation``, ``model``, ``track``, ``gpu``, ``profile``, ``imagelib``, ``tools``, ``full``
+        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``track``, ``gpu``, ``imagelib``, ``tools``
 
         - Example of using ``atlas`` module:
 
@@ -118,13 +118,37 @@ Installation
             ruff check .
 
 
+.. note::
+    The GPU-related modules are **recommended to be installed separately**.
+    For example:
+
+    - ``pip install tensorflow``: Used in **cascade spike prediction**, **stardist cellular segmentation**
+    - ``pip install torch``: Used in **cellpose cellular segmentation**, **facemap keypoint extraction**
+
+.. warning::
+    The command ``pip install neura-library[all]`` **does NOT include** ``segmentation``, ``track``, or ``gpu`` dependencies.
+    These modules are mainly used for wrapper and contain:
+
+    1. **Old package dependencies** (e.g., ``numpy < 2.0``)
+    2. **Heavy packages** (e.g., ``torch``, ``tensorflow``)
+
+    **Recommended installation approach:**
+    Create a separate conda environment for the specific job, for example you need to run segmentation:
+
+    .. code-block:: console
+
+        conda create -n neuralib_seg python=3.10
+        conda activate neuralib_seg
+        pip install neura-library[segmentation]
+
+
 
 CLI project.scripts
 ---------------------------
 
 .. code-block:: console
 
-    brender -h
+    neuralib_brainrender -h
 
 
 - See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
@@ -137,7 +161,7 @@ Notebook Demo
 .. toctree::
     :maxdepth: 1
 
-    ../notebooks/example_calimg
+    ../notebooks/example_imaging_2p
 
     ../notebooks/example_facemap
     ../notebooks/example_rastermap_2p
@@ -167,18 +191,18 @@ Modules
     - :mod:`neuralib.atlas.ibl`: Slice view plotting wrapper for `ibllib <https://github.com/int-brain-lab/ibllib?tab=readme-ov-file>`_ and `iblatlas <https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html>`_
 
 
-:mod:`neuralib.calimg`
+:mod:`neuralib.imaging`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Module for 2-photon calcium imaging acquisition and result parsing
 
-    - :mod:`neuralib.calimg.scan_image`: Data acquired from `ScanImage <https://www.mbfbioscience.com/products/scanimage/>`_ (under DEV)
+    - :mod:`neuralib.imaging.scan_image`: Data acquired from `ScanImage <https://www.mbfbioscience.com/products/scanimage/>`_ (under DEV)
 
-    - :mod:`neuralib.calimg.scanbox`: Data acquired from `Scanbox <https://scanbox.org/tag/two-photon/>`_
+    - :mod:`neuralib.imaging.scanbox`: Data acquired from `Scanbox <https://scanbox.org/tag/two-photon/>`_
 
-    - :mod:`neuralib.calimg.suite2p`: Result parser for `suite2p <https://github.com/MouseLand/suite2p>`_
+    - :mod:`neuralib.imaging.suite2p`: Result parser for `suite2p <https://github.com/MouseLand/suite2p>`_
 
-    - :mod:`neuralib.calimg.spikes`: dF/F to spike activity (OASIS/Cascade)
+    - :mod:`neuralib.imaging.spikes`: dF/F to spike activity (OASIS/Cascade)
 
 
 :mod:`neuralib.segmentation`
@@ -275,11 +299,6 @@ Utilities Modules
 :mod:`neuralib.tools.slack_bot`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     - Real-time Slack notification bot for analysis pipeline
-
-
-:mod:`neuralib.util.cli_args`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    - Run script as subprocess
 
 
 :mod:`neuralib.util.color_logging`

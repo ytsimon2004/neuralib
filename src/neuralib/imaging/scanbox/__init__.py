@@ -17,7 +17,7 @@ See all the info
 
 .. code-block:: python
 
-    from neuralib.calimg.scanbox import SBXInfo
+    from neuralib.imaging.scanbox import SBXInfo
 
     file = ...  # scanbox .mat output file
     sbx = SBXInfo.load(file)
@@ -30,7 +30,7 @@ Save as Json
 
 .. code-block:: python
 
-   from neuralib.calimg.scanbox import sbx_to_json
+   from neuralib.imaging.scanbox import sbx_to_json
 
    file = ...  # scanbox .mat output file
    output_file = ...  # *.json
@@ -44,7 +44,7 @@ Screen Shot file to tiff
 
 .. code-block:: python
 
-    from neuralib.calimg.scanbox import screenshot_to_tiff
+    from neuralib.imaging.scanbox import screenshot_to_tiff
 
     file = ...  # scanbox .mat screenshot output file
     output = ... # *.tiff
@@ -63,17 +63,17 @@ Use CLI
 
 See help::
 
-    python -m neuralib.calimg.scanbox.viewer -h
+    python -m neuralib.imaging.scanbox.viewer -h
 
 
 Example playing the 100-200 frames::
 
-    python -m neuralib.calimg.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
+    python -m neuralib.imaging.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
 
 
 Example save 100-200 Frames as tiff::
 
-    python -m neuralib.calimg.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
+    python -m neuralib.imaging.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
 
 
 
@@ -82,7 +82,7 @@ Use API call
 
 .. code-block:: python
 
-    from neuralib.calimg.scanbox.viewer import SBXViewer
+    from neuralib.imaging.scanbox.viewer import SBXViewer
 
     directory  = ...  # directory contain the .sbx and .mat output from scanbox
     sbx_viewer = SBXViewer(directory)

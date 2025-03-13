@@ -58,11 +58,10 @@ scanner = [
     "aicspylibczi"
 ]
 
-calimg = [
+imaging = [
     "scanimage-tiff-reader",
     "suite2p",
     "sbxreader",
-    "tensorflow", # cascade spike prediction
     "ruamel.yaml",
     "numba"  # oasis dcnv batch processing
 ]
@@ -74,7 +73,8 @@ segmentation = [
     "stardist",
     "csbdeep",
     "roifile",
-    "napari"
+    "napari",
+    "numpy<2.0; extra == 'segmentation'"
 ]
 
 model = [
@@ -86,18 +86,14 @@ plot = [
 ]
 
 track = [
-    "facemap"
+    "facemap",
+    "numpy<2.0; extra == 'track'"
 ]
 
 gpu = [
     "torch",
-    "tensorflow",
+    "tensorflow", # cascade spike prediction
     "psutil"
-]
-
-profile = [
-    "memory_profiler",
-    "numba"
 ]
 
 imagelib = [
@@ -115,12 +111,9 @@ all = [
     "bokeh",
     "neura-library[atlas]",
     "neura-library[scanner]",
-    "neura-library[calimg]",
-    "neura-library[segmentation]",
+    "neura-library[imaging]",
     "neura-library[plot]",
     "neura-library[model]",
-    "neura-library[track]",
-    "neura-library[gpu]",
     "neura-library[profile]",
     "neura-library[imagelib]",
     "neura-library[tools]",
@@ -130,6 +123,9 @@ all = [
 dev = [
     'pre-commit',
     'ruff',
+    "neura-library[segmentation]",
+    "neura-library[track]",
+    "neura-library[gpu]",
     "neura-library[all]"
 ]
 
@@ -140,7 +136,10 @@ doc = [
     "nbsphinx",
     "sphinx-toolbox",
     "sphinx-rtd-theme",
-    "neura-library[all]"
+    "neura-library[segmentation]",
+    "neura-library[track]",
+    "neura-library[gpu]",
+    "neura-library[all]",
 ]
 
 [project.urls]
@@ -155,4 +154,4 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools>=61.0"]
 
 [project.scripts]
-brender = "neuralib.atlas.brainrender.main_app:main"
+neuralib_brainrender = "neuralib.atlas.brainrender.main_app:main"

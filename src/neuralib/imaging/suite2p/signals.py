@@ -35,7 +35,7 @@ def get_neuron_signal(s2p: Suite2PResult,
 
     :param s2p: suite 2p result
     :param n: neuron index (`int`) or index arraylike (`Array[int, N]`). If None, then use all neurons
-    :param signal_type: signal type. :data:`~neuralib.calimg.suite2p.core.SIGNAL_TYPE` {'df_f', 'spks'}
+    :param signal_type: signal type. :data:`~neuralib.imaging.suite2p.core.SIGNAL_TYPE` {'df_f', 'spks'}
     :param normalize: 01 normalization for each neuron
     :param dff: normalize to the baseline fluorescence changed (dF/F)
     :param correct_neuropil: do the neuropil correction
@@ -180,7 +180,7 @@ def calc_signal_baseline(signal: np.ndarray,
     .. seealso:: source code from suite2p: ``suite2p.extraction.dcnv.preprocess``
 
     :param signal: signal activity. i.e., fcorr
-    :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
+    :param s2p: :class:`~neuralib.imaging.suite2p.core.Suite2PResult`
     :param method: BASELINE_METHOD
     :return:
         f0 baseline for the df/f calculation
@@ -238,7 +238,7 @@ def sync_s2p_rigevent(image_time: np.ndarray,
     \* ASSUME sequential scanning pattern. i.e., 0, 1, 2, 3 ETL scanning order
 
     :param image_time: imaging time hardware pulses. `Array[float, P]`
-    :param s2p: :class:`~neuralib.calimg.suite2p.core.Suite2PResult`
+    :param s2p: :class:`~neuralib.imaging.suite2p.core.Suite2PResult`
     :param plane: number of optical plane
     :return: image_time: with same len as s2p results `Array[float, F]`
     """

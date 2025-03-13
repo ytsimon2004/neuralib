@@ -33,7 +33,7 @@ class SBXViewer:
     """
 
     info: SBXInfo
-    """:class:`~neuralib.calimg.scanbox.core.SBXInfo`"""
+    """:class:`~neuralib.imaging.scanbox.core.SBXInfo`"""
 
     sbx_map: sbxreader.sbx_memmap
     """`Array[float, [F, P, C, W, H]]`"""

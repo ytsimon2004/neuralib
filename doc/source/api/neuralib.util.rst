@@ -8,7 +8,6 @@ neuralib.util
     :maxdepth: 1
     :caption: Modules:
     
-    neuralib.util.cli_args
     neuralib.util.color_logging
     neuralib.util.deprecation
     neuralib.util.func
@@ -21,4 +20,5 @@ neuralib.util
     neuralib.util.version
     neuralib.util.segments
     neuralib.util.unstable
+    neuralib.util.interp
 

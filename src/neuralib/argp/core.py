@@ -467,7 +467,7 @@ def argument(*options: str, **kwargs):
     ...     # create a tuple option which has callable validator
     ...     tuple_str_value: tuple[str, ...] = argument('-a', type=str_tuple_type, validator=lambda it: it[0] == 'first')
 
-
+    :param options: options
     :param kwargs: Additional keyword parameters passed to ``argparse.ArgumentParser.add_argument``.
     In addition to standard argparse parameters, the following extra keywords are supported:
         - ``gt``: For numerical scalar values; the value must be greater than this.

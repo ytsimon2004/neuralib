@@ -98,7 +98,7 @@ class CellularCoordinates:
         """TODO check
         register cellular coordinates to IBL coordinates space
 
-        :param fov: :class:`~neuralib.calimg.fov.ObjectiveFov`
+        :param fov: :class:`~neuralib.imaging.fov.ObjectiveFov`
         """
         if fov.rotation_angle_ap != 0:
             raise NotImplementedError('')
