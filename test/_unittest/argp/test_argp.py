@@ -120,7 +120,7 @@ class TypeAnnotationTest(unittest.TestCase):
 
         opt = parse_args(Opt(), [])
         # self.assertListEqual(opt.a, [])
-        self.assertIsNone(opt.a) # should it be a []
+        self.assertIsNone(opt.a)  # should it be a []
 
         opt = parse_args(Opt(), ['-a=1'])
         self.assertListEqual(opt.a, ['1'])
@@ -134,6 +134,81 @@ class TypeAnnotationTest(unittest.TestCase):
 
         opt = parse_args(Opt(), ['12', '34'])
         self.assertListEqual(opt.a, [12, 34])
+
+
+class TestValidator(unittest.TestCase):
+    def test_validator(self):
+        class Opt:
+            a: str = argument('-a', validator=lambda it: len(it) > 0)
+
+        opt = parse_args(Opt(), ['-a=1'])
+        self.assertEqual(opt.a, '1')
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-a='])
+
+        opt.a = '2'
+        self.assertEqual(opt.a, '2')
+
+        with self.assertRaises(ValueError):
+            opt.a = ''
+
+        with self.assertRaises(ValueError):
+            opt.a = None
+
+    def test_validate_on_parse(self):
+        class Opt:
+            a: str = argument('-a', validator=lambda it: len(it) > 0, validate_on_set=False)
+
+        opt = parse_args(Opt(), ['-a=1'])
+        self.assertEqual(opt.a, '1')
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-a='])
+
+        opt.a = '2'
+        self.assertEqual(opt.a, '2')
+        opt.a = ''
+        self.assertEqual(opt.a, '')
+        opt.a = None
+        self.assertIsNone(opt.a, None)
+
+    def test_validator_with_type_caster(self):
+        class Opt:
+            a: int = argument('-a', validator=lambda it: it >= 0)
+
+        opt = parse_args(Opt(), ['-a=1'])
+        self.assertEqual(opt.a, 1)
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-a=-1'])
+
+        opt.a = 1
+        self.assertEqual(opt.a, 1)
+
+        with self.assertRaises(ValueError):
+            opt.a = -1
+
+    def test_validate_on_set_on_normal_attr(self):
+        class Opt:
+            a: str = argument('-a', validator=lambda it: len(it) > 0)
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-a='])
+
+        with self.assertRaises(ValueError):
+            Opt().a = ''
+
+    def test_validate_on_set_on_protected_attr(self):
+        class Opt:
+            _a: str = argument('-a', validator=lambda it: len(it) > 0)
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-a='])
+
+        opt = Opt()
+        opt._a = ''
+        self.assertEqual(opt._a, '')
 
 
 class WithDefaultTest(unittest.TestCase):

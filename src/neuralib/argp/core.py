@@ -152,7 +152,13 @@ class Argument(object):
 
     """
 
-    def __init__(self, *options, group: str = None, ex_group: str = None, **kwargs):
+    def __init__(self, *options,
+                 validator: Callable[[T], bool] = None,
+                 validate_on_set: bool = None,
+                 group: str = None,
+                 ex_group: str = None,
+                 hidden: bool = False,
+                 **kwargs):
         """
 
         :param options: options
@@ -164,7 +170,10 @@ class Argument(object):
         self.attr_type = Any
         self.group = group
         self.ex_group = ex_group
+        self.validator = validator
+        self.validate_on_set = validate_on_set
         self.options = options
+        self.hidden = hidden
         self.kwargs = kwargs
 
     @property
@@ -205,6 +214,12 @@ class Argument(object):
         self.attr = name
         self.attr_type = get_type_hints(owner).get(name, Any)
 
+        if self.validate_on_set is None:
+            if name.startswith('_'):
+                self.validate_on_set = False
+            else:
+                self.validate_on_set = True
+
     def __get__(self, instance, owner=None):
         if instance is None:
             if owner is not None:  # ad-hoc for the document building
@@ -218,6 +233,15 @@ class Argument(object):
         raise AttributeError(self.attr)
 
     def __set__(self, instance, value):
+        if self.validate_on_set and (validator := self.validator) is not None:
+            try:
+                fail = not validator(value)
+            except BaseException as e:
+                raise ValueError('validator fail') from e
+            else:
+                if fail:
+                    raise ValueError('validator fail')
+
         instance.__dict__[f'__{self.attr}'] = value
 
     def __delete__(self, instance):
@@ -234,6 +258,9 @@ class Argument(object):
         :return:
         """
         kwargs = self.complete_kwargs()
+
+        if self.hidden:
+            kwargs['help'] = argparse.SUPPRESS
 
         try:
             return ap.add_argument(*self.options, **kwargs, dest=self.attr)
@@ -285,6 +312,19 @@ class Argument(object):
             elif callable(attr_type):
                 kwargs['type'] = attr_type
 
+        if (type_validator := self.validator) is not None:
+            type_caster = kwargs.get('type', None)
+
+            def _type_caster(value: str):
+                raw_value = value
+                if type_caster is not None:
+                    value = type_caster(value)
+                if not type_validator(value):
+                    raise ValueError(f'fail validation : "{raw_value}"')
+                return value
+
+            kwargs['type'] = _type_caster
+
         return kwargs
 
     @overload
@@ -296,8 +336,11 @@ class Argument(object):
                      const: T = None,
                      default: T = None,
                      type: Union[Type, Callable[[str], T]] = None,
+                     validator: Callable[[T], bool] = None,
+                     validate_on_set: bool = None,
                      choices: Sequence[str] = None,
                      required: bool = None,
+                     hidden: bool = None,
                      help: str = None,
                      group: str = None,
                      metavar: str = None) -> 'Argument':
@@ -325,34 +368,38 @@ class Argument(object):
         kw = dict(self.kwargs)
         kw['group'] = self.group
         kw['ex_group'] = self.ex_group
+        kw['validator'] = self.validator
+        kw['validate_on_set'] = self.validate_on_set
+        kw['hidden'] = self.hidden
         kw.update(kwargs)
 
         for k in list(kw.keys()):
             if kw[k] is ...:
                 del kw[k]
 
-        if len(self.options) > 0:
-            if len(options) == 0:
-                return Argument(*self.options, **kw)
-            elif options[0] is ...:
-                return Argument(*self.options, *options[1:], **kw)
-            elif isinstance(options[0], dict):
-                if len(options) == 1:
-                    return Argument(*self._map_options(options[0], False), **kw)
-                if len(options) == 2 and options[1] is ...:
-                    return Argument(*self._map_options(options[0], True), **kw)
-                if options[1] is ...:
-                    return Argument(*self._map_options(options[0], True), *options[2:], **kw)
-                else:
-                    return Argument(*self._map_options(options[0], False), *options[1:], **kw)
-            else:
-                return Argument(*options, **kw)
+        cls = type(self)
 
+        if len(self.options) > 0:
+            match options:
+                case ():
+                    return cls(*self.options, **kw)
+                case (e, *o) if e is ...:
+                    return cls(*self.options, *o, **kw)
+                case (dict(d), ):
+                    return cls(*self._map_options(d, False), **kw)
+                case (dict(d), e) if e is ...:
+                    return cls(*self._map_options(d, True), **kw)
+                case (dict(d), e, *o) if e is ...:
+                    return cls(*self._map_options(d, True), *o, **kw)
+                case (dict(d), *o):
+                    return cls(*self._map_options(d, False), *o, **kw)
+                case _:
+                    return cls(*options, **kw)
         else:
             if len(options) > 0:
                 raise RuntimeError('cannot change positional argument to optional')
 
-            return Argument(**kw)
+            return cls(**kw)
 
     def _map_options(self, mapping: dict[str, str], keep: bool) -> list[str]:
         new_opt = []
@@ -367,17 +414,20 @@ class Argument(object):
 
 @overload
 def argument(*options: str,
-             action: Actions = None,
-             nargs: Union[int, Nargs] = None,
-             const: T = None,
-             default: T = None,
-             type: Union[Type, Callable[[str], T]] = None,
-             choices: Sequence[str] = None,
-             required: bool = None,
-             help: str = None,
+             action: Actions = ...,
+             nargs: Union[int, Nargs] = ...,
+             const: T = ...,
+             default: T = ...,
+             type: Union[Type, Callable[[str], T]] = ...,
+             validator: Callable[[T], bool] = ...,
+             validate_on_set: bool = True,
+             choices: Sequence[str] = ...,
+             required: bool = False,
+             hidden: bool = False,
+             help: str = ...,
              group: str = None,
              ex_group: str = None,
-             metavar: str = None) -> T:
+             metavar: str = ...) -> T:
     pass
 
 
