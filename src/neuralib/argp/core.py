@@ -167,6 +167,13 @@ class Argument(object):
         :param ex_group: mutually exclusive group.
         :param kwargs:
         """
+        from .validator import Validator
+        if len(options) > 0 and isinstance(options[-1], Validator):
+            if validator is not None:
+                raise RuntimeError()
+            validator = options[-1]
+            options = options[:-1]
+
         self.attr = None
         self.attr_type = Any
         self.group = group
@@ -235,8 +242,11 @@ class Argument(object):
 
     def __set__(self, instance, value):
         if self.validate_on_set and (validator := self.validator) is not None:
+            from .validator import ValidatorFailError
             try:
                 fail = not validator(value)
+            except ValidatorFailError:
+                raise
             except BaseException as e:
                 raise ValueError('validator fail') from e
             else:
@@ -452,7 +462,7 @@ def argument(*options: str, **kwargs):
 
     :param kwargs: Please see ``argparse.ArgumentParser.add_argument`` for detailed.
     """
-    if not all([it.startswith('-') for it in options]):
+    if not all([it.startswith('-') for it in options if isinstance(it, str)]):
         raise RuntimeError(f'options should startswith "-". {options}')
     return Argument(*options, **kwargs)
 

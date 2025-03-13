@@ -231,6 +231,16 @@ class TestValidator(unittest.TestCase):
         opt._a = ''
         self.assertEqual(opt._a, '')
 
+    def test_check_str(self):
+        class Opt:
+            a: str = argument('-a', validator.str.length_in_range(2))
+
+        opt = Opt()
+        opt.a = '12'
+
+        with self.assertRaises(ValueError):
+            opt.a = ''
+
 
 class WithDefaultTest(unittest.TestCase):
     def test_bool(self):
