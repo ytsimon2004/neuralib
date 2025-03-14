@@ -44,6 +44,15 @@ class TypeAnnotationTest(unittest.TestCase):
         opt = parse_args(Opt(), [])
         self.assertIsNone(opt.a)
 
+    def test_optional_pipeline_int(self):
+        class Opt:
+            a: int | None = argument('-a')
+
+        opt = parse_args(Opt(), ['-a', '1'])
+        self.assertEqual(opt.a, 1)
+        opt = parse_args(Opt(), [])
+        self.assertIsNone(opt.a)
+
     def test_int(self):
         class Opt:
             a: int = argument('-a')
@@ -120,7 +129,7 @@ class TypeAnnotationTest(unittest.TestCase):
 
         opt = parse_args(Opt(), [])
         # self.assertListEqual(opt.a, [])
-        self.assertIsNone(opt.a) # should it be a []
+        self.assertIsNone(opt.a)  # should it be a []
 
         opt = parse_args(Opt(), ['-a=1'])
         self.assertListEqual(opt.a, ['1'])
