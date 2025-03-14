@@ -16,6 +16,9 @@
 
 # Installation
 
+- MODULE_OPTION: `atlas`, `scanner`, `imaging`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
+  `all`
+
 ## conda environment
 
 - Create and activate a new conda environment (Python >=3.10, but >=3.12 not yet tested), then install:
@@ -34,19 +37,8 @@ pip install neura-library[all]
 
 - If you wish to install the **minimal required dependencies** according to usage purpose:
 
-Choices in []: atlas, scanner, imaging, segmentation, model, track, gpu, profile, imagelib, tools, full
-Example of using the atlas module:
-
 ```shell
-pip install neura-library[atlas]
-```
-
-- If installing in developer mode (Install pre-commit and linter check by ruff)
-
-```shell
-pip install neura-library[dev]
-pre-commit install
-ruff check .
+pip install neura-library[MODULE_OPTION]
 ```
 
 ## uv virtual environment
@@ -72,22 +64,5 @@ uv python install 3.10
 - If you wish to install **all dependencies**, run:
 
 ```shell
-uv add neura-library[all]
-```
-
-- If you wish to install the **minimal required dependencies** according to usage purpose:
-
-Choices in []: atlas, scanner, imaging, segmentation, model, track, gpu, profile, imagelib, tools, full
-Example of using the atlas module:
-
-```shell
-uv add neura-library[atlas]
-```
-
-- If installing in developer mode (Install pre-commit and linter check by ruff)
-
-```shell
-uv add neura-library[dev]
-pre-commit install
-ruff check .
+uv add neura-library[MODULE_OPTION]
 ```
