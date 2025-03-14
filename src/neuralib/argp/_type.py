@@ -1,4 +1,4 @@
-from typing import TypeVar, Callable, Union
+from typing import TypeVar, Callable, Union, overload, Literal, get_origin, get_args
 
 __all__ = [
     'try_int_type',
@@ -90,8 +90,40 @@ def try_int_type(arg: str) -> Union[int, str, None]:
 
 def try_float_type(arg: str) -> Union[float, str, None]:
     if len(arg) == 0:
-        return
+        return None
     try:
         return float(arg)
     except ValueError:
         return arg
+
+
+@overload
+def literal_type(candidate: type[Literal], *, complete: bool = False):
+    pass
+
+
+@overload
+def literal_type(*candidate: str, complete: bool = False):
+    pass
+
+
+def literal_type(*candidate, complete: bool = False):
+    if len(candidate) == 1 and not isinstance(candidate[0], str) and get_origin(candidate[0]) == Literal:
+        candidate = get_args(candidate[0])
+
+    def _literal_type(arg: str):
+        if arg in candidate:
+            return arg
+
+        if not complete:
+            raise ValueError
+
+        match [it for it in candidate if it.startswith(arg)]:
+            case []:
+                raise ValueError()
+            case [match]:
+                return match
+            case possible:
+                raise ValueError(f'confused {possible}')
+
+    return _literal_type

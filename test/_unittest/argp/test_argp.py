@@ -231,16 +231,171 @@ class TestValidator(unittest.TestCase):
         opt._a = ''
         self.assertEqual(opt._a, '')
 
-    def test_check_str(self):
+
+class TestValidateBuilder(unittest.TestCase):
+    def test_str_in_range(self):
         class Opt:
-            a: str = argument('-a', validator.str.length_in_range(2))
+            a: str = argument('-a', validator.str.length_in_range(2, None))
+            b: str = argument('-b', validator.str.length_in_range(None, 2))
+            c: str = argument('-c', validator.str.length_in_range(2, 4))
 
         opt = Opt()
         opt.a = '12'
+        opt.b = '12'
+        opt.c = '12'
 
         with self.assertRaises(ValueError):
             opt.a = ''
+        with self.assertRaises(ValueError):
+            opt.b = '1234'
+        with self.assertRaises(ValueError):
+            opt.c = ''
+        with self.assertRaises(ValueError):
+            opt.c = '12345678'
 
+    def test_int_in_range(self):
+        class Opt:
+            a: int = argument('-a', validator.int.in_range(2, None))
+            b: int = argument('-b', validator.int.in_range(None, 2))
+            c: int = argument('-c', validator.int.in_range(2, 4))
+
+        opt = Opt()
+        opt.a = 2
+        opt.b = 2
+        opt.c = 2
+
+        with self.assertRaises(ValueError):
+            opt.a = 0
+        with self.assertRaises(ValueError):
+            opt.b = 10
+        with self.assertRaises(ValueError):
+            opt.c = 0
+        with self.assertRaises(ValueError):
+            opt.c = 10
+
+    def test_float_positive(self):
+        class Opt:
+            a: float = argument('-a', validator.float.positive())
+            b: float = argument('-b', validator.float.negative())
+
+        opt = Opt()
+
+        opt.a = 10
+        with self.assertRaises(ValueError):
+            opt.a = -10
+
+        opt.b = -10
+        with self.assertRaises(ValueError):
+            opt.b = 10
+
+        opt.a = 0
+        opt.b = 0
+
+    def test_float_allow_nan(self):
+        class Opt:
+            a: float = argument('-a', validator.float.allow_nan(True))
+            b: float = argument('-b', validator.float.allow_nan(False))
+
+        opt = Opt()
+        opt.a = float('nan')
+
+        with self.assertRaises(ValueError):
+            opt.b = float('nan')
+
+    def test_float_allow_nan_then(self):
+        class Opt:
+            a: float = argument('-a', validator.float.allow_nan(False).positive())
+
+        opt = Opt()
+        opt.a = 10
+
+        with self.assertRaises(ValueError):
+            opt.a = float('nan')
+
+        with self.assertRaises(ValueError):
+            opt.a = -10
+
+    def test_list_element_type(self):
+        # TODO
+        pass
+
+    def test_list_element_validating(self):
+        # TODO
+        pass
+
+    def test_tuple_element_type(self):
+        class Opt:
+            a: tuple[str, int, float] = argument(
+                '-a',
+                validator.tuple(str, int, float)
+            )
+
+        opt = Opt()
+        opt.a = ('', 0, 0.0)
+
+        with self.assertRaises(ValueError):
+            opt.a = ()
+
+        with self.assertRaises(ValueError):
+            opt.a = ('', 0)
+        with self.assertRaises(ValueError):
+            opt.a = ('', 0, 0)
+
+        with self.assertRaises(ValueError):
+            opt.a = (0, 0)
+
+    def test_tuple_element_type_var_length(self):
+        class Opt:
+            a: tuple[str, int, ...] = argument(
+                '-a',
+                validator.tuple(str, int, ...)
+            )
+
+        opt = Opt()
+        opt.a = ('', 0)
+        opt.a = ('', 0, 0)
+        opt.a = ('', 0, 0, 0)
+
+        with self.assertRaises(ValueError):
+            opt.a = ()
+
+        with self.assertRaises(ValueError):
+            opt.a = ('',)
+
+        with self.assertRaises(ValueError):
+            opt.a = (0, 0)
+
+    def test_tuple_element_validating(self):
+        class Opt:
+            a: tuple[str, int, float] = argument(
+                '-a',
+                validator.tuple(str, int, float) \
+                    .on_item(0, validator.str.length_in_range(None, 2)) \
+                    .on_item(1, validator.int.in_range(0, 10))
+            )
+
+        opt = Opt()
+        opt.a = ('', 0, 0.0)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = ('1234', 0, 0.0)
+        print(capture.exception.args)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = ('12', 100, 0.0)
+        print(capture.exception.args)
+
+    def test_optional(self):
+        # TODO
+        pass
+
+    def test_or(self):
+        # TODO
+        pass
+
+    def test_and(self):
+        # TODO
+        pass
 
 class WithDefaultTest(unittest.TestCase):
     def test_bool(self):
