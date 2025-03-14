@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import collections
 import sys
+from types import UnionType
 import warnings
 from typing import (
     Iterable, Sequence, Type, TypeVar, Union, Literal, Callable,
@@ -318,7 +319,7 @@ class Argument(object):
             elif get_origin(attr_type) == Literal:
                 kwargs.setdefault('choices', get_args(attr_type))
 
-            elif get_origin(attr_type) is Union:
+            elif get_origin(attr_type) is Union or get_origin(attr_type) is UnionType:
                 type_args = get_args(attr_type)
                 if len(type_args) == 2 and type_args[1] is type(None):
                     if get_origin(type_args[0]) == Literal:
