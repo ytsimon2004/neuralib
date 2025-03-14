@@ -156,6 +156,18 @@ class TestValidator(unittest.TestCase):
         with self.assertRaises(ValueError):
             opt.a = None
 
+    def test_validator_tuple(self):
+        class Opt:
+            a: tuple[str, str] = argument('-a', type=str_tuple_type, validator=lambda it: len(it) == 2)
+            b: tuple[int, ...] | None = argument('-b', type=int_tuple_type,
+                                                 validator=lambda it: it is None or all([i < 5 for i in it]))
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-a=10,2,3'])
+
+        with self.assertRaises(SystemExit):
+            parse_args(Opt(), ['-b=6,2'])
+
     def test_validate_on_parse(self):
         class Opt:
             a: str = argument('-a', validator=lambda it: len(it) > 0, validate_on_set=False)
