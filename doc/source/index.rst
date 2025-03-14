@@ -33,7 +33,7 @@ Installation
 
     .. tab:: conda environment
 
-        Create and activate a new conda environment (Python>=3.9, but >=3.11 not yet tested), then install:
+        Create and activate a new conda environment (Python>=3.10, but >=3.12 not yet tested), then install:
 
         .. code-block:: console
 
@@ -86,7 +86,7 @@ Installation
             uv init
 
 
-        Make sure python version (>=3.9, but >=3.11 not yet tested), both in ``pyproject.py`` and ``.python-version``
+        Make sure python version (>=3.10, but >=3.12 not yet tested), both in ``pyproject.py`` and ``.python-version``
 
         .. code-block::
 

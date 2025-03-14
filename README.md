@@ -18,10 +18,10 @@
 
 ## conda environment
 
-- Create and activate a new conda environment (Python >=3.9, but >=3.11 not yet tested), then install:
+- Create and activate a new conda environment (Python >=3.10, but >=3.12 not yet tested), then install:
 
 ```shell
-conda create -n neuralib python=3.9
+conda create -n neuralib python=3.10
 conda activate neuralib
 pip install neura-library
 ```
@@ -63,10 +63,10 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv init
 ```
 
-- Make sure python version (>=3.9, but >=3.11 not yet tested), both in `pyproject.py` and `.python-version`
+- Make sure python version (>=3.10, but >=3.12 not yet tested), both in `pyproject.py` and `.python-version`
 
 ```shell
-uv python install 3.9
+uv python install 3.10
 ```
 
 - If you wish to install **all dependencies**, run:
