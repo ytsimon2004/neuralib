@@ -4,7 +4,6 @@ import argparse
 import collections
 import sys
 from types import UnionType
-import warnings
 from typing import (
     Iterable, Sequence, Type, TypeVar, Union, Literal, Callable,
     overload, get_origin, get_args, Any, Optional, get_type_hints
@@ -357,7 +356,7 @@ class Argument(object):
         2. ``('-a', '-b')`` : replace options
         3. ``(..., '-c')`` : append options
         4. ``({'-a': '-A'})`` : rename options
-        4. ``({'-a': '-A'}, ...)`` : rename options, keep options if not in the dict.
+        5. ``({'-a': '-A'}, ...)`` : rename options, keep options if not in the dict.
 
         general form:
 

@@ -161,6 +161,7 @@ Notebook Demo
 .. toctree::
     :maxdepth: 1
 
+    ../notebooks/example_argp
     ../notebooks/example_imaging_2p
 
     ../notebooks/example_facemap

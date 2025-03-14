@@ -40,6 +40,7 @@ Utilities Modules
     :maxdepth: 1
     :caption: Notebook Demo
 
+    ../notebooks/example_argp
     ../notebooks/example_imaging_2p
 
     ../notebooks/example_facemap
