@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from io import BufferedIOBase, BufferedReader
 from pathlib import Path
 from typing import TypeVar, Union, BinaryIO

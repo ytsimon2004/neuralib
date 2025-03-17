@@ -115,6 +115,7 @@ def exists(x, *where: bool | expr.SqlExpr) -> expr.SqlExpr:
         x = select_from(1, from_table=x).where(*where)
     return expr.SqlExistsOper('EXISTS', x)
 
+
 def asc(x) -> expr.SqlExpr:
     """
     ascending ordering Used by **ORDER BY**.

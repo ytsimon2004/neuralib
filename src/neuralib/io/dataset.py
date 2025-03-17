@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import pickle
 import shutil
 from contextlib import contextmanager
@@ -10,7 +8,6 @@ import gdown
 import numpy as np
 import polars as pl
 from PIL import Image
-
 from neuralib.imaging.scanbox import SBXInfo
 from neuralib.imaging.suite2p import Suite2PResult
 from neuralib.io import NEUROLIB_CACHE_DIRECTORY

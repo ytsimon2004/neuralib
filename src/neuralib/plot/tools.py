@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 from typing import Literal, Sequence
 
@@ -7,7 +6,6 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.offsetbox import AnchoredOffsetbox
 from matplotlib.transforms import Transform
-
 from neuralib.typing import ArrayLike, PathLike
 
 __all__ = [

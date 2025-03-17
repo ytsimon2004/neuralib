@@ -6,8 +6,6 @@ covers
 * https://www.sqlite.org/lang_aggfunc.html
 * https://www.sqlite.org/lang_mathfunc.html
 """
-from __future__ import annotations
-
 from typing import overload, TypeVar, Any
 
 from typing_extensions import LiteralString

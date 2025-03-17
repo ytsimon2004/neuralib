@@ -2,7 +2,6 @@
 Output files parsing for the scanimage dataset
 https://docs.scanimage.org/
 """
-from __future__ import annotations
 
 import re
 from pathlib import Path
@@ -10,10 +9,12 @@ from typing import Any
 
 import numpy as np
 from ScanImageTiffReader import ScanImageTiffReader
+from neuralib.util.unstable import unstable
 
 __all__ = ['ScanImageWrapper']
 
 
+@unstable()
 class ScanImageWrapper:
     META_INFO: dict[str, Any] = {}
 

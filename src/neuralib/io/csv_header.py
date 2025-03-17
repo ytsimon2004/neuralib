@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from neuralib.typing import PathLike
 
 __all__ = ['CsvContextManager', 'csv_header']

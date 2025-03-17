@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 from brainrender._colors import get_random_colors
 
@@ -20,3 +19,5 @@ def get_color(i, color_pattern: str | tuple[str, ...] | list[str]) -> str:
         return color_pattern[i]
     elif isinstance(color_pattern, str):
         return color_pattern
+    else:
+        raise TypeError(f'{type(color_pattern)}')

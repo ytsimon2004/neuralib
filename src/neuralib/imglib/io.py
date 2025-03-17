@@ -1,14 +1,11 @@
-from __future__ import annotations
-
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
-
 from neuralib.imglib.norm import normalize_sequences
 from neuralib.typing import PathLike
+from tqdm import tqdm
 
 __all__ = [
     'read_sequences',

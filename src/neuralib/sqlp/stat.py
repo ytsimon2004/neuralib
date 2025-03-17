@@ -48,6 +48,7 @@ def catch_error(f=None, *, attr: str = None):
     else:
         return _catch_error_decorator(f)
 
+
 class SqlStat(Generic[T]):
     """Abstract SQL statement."""
 
@@ -378,7 +379,8 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
         self.add('JOIN')
         self.table = None
 
-        if len(args) == 2 and isinstance(table := args[0], type) and (callable(constraint := args[1]) or isinstance(constraint, ForeignConstraint)):
+        if len(args) == 2 and isinstance(table := args[0], type) and (
+                callable(constraint := args[1]) or isinstance(constraint, ForeignConstraint)):
             if not isinstance(constraint, ForeignConstraint):
                 if (constraint := table_foreign_field(constraint)) is None:
                     raise RuntimeError('not a foreign constraint')
@@ -395,16 +397,19 @@ class SqlSelectStat(SqlStat[T], SqlWhereStat, SqlLimitStat, Generic[T]):
             self.add(stat)
             self.__join(None, *args[1:])
 
-        elif len(args) == 2 and isinstance(table := args[0], SqlAlias) and (callable(constraint := args[1]) or isinstance(constraint, ForeignConstraint)):
+        elif len(args) == 2 and isinstance(table := args[0], SqlAlias) and (
+                callable(constraint := args[1]) or isinstance(constraint, ForeignConstraint)):
             if not isinstance(constraint, ForeignConstraint):
                 if (constraint := table_foreign_field(constraint)) is None:
                     raise RuntimeError('not a foreign constraint')
             self.__join_foreign(constraint, table)
 
-        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) and isinstance(table._value, type) and isinstance(table._name, str):
+        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) and isinstance(table._value, type) and isinstance(
+                table._name, str):
             self.__join(table, *args[1:])
 
-        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) and isinstance(expr := table._value, SqlCteExpr) and isinstance(table._name, str):
+        elif len(args) > 0 and isinstance(table := args[0], SqlAlias) and isinstance(expr := table._value,
+                                                                                     SqlCteExpr) and isinstance(table._name, str):
             self._stat.insert(0, expr)
             self.__join(table, *args[1:])
 

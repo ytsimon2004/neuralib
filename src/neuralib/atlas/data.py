@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 from pathlib import Path
 from typing import Literal
@@ -9,7 +7,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
-
 from neuralib.io.core import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
 from neuralib.typing import PathLike
 from neuralib.util.tqdm import download_with_tqdm

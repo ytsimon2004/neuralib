@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Literal, Callable, Sequence
 
@@ -9,12 +7,11 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import Polygon
-from scipy.stats import pearsonr
-
 from neuralib.plot._dotplot import DotPlot
 from neuralib.typing import ArrayLikeStr, ArrayLike
 from neuralib.typing import PathLike, DataFrame
 from neuralib.util.verbose import fprint
+from scipy.stats import pearsonr
 
 __all__ = [
     'dotplot',

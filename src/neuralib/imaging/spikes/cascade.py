@@ -30,8 +30,6 @@ See also the source example from the authors
     spks = cascade_predict(dff, model_type='Global_EXC_30Hz_smoothing100ms')
 
 """
-from __future__ import annotations
-
 import re
 import zipfile
 from pathlib import Path
@@ -42,13 +40,12 @@ import numpy as np
 import requests
 import tensorflow as tf
 import tensorflow.keras
-from ruamel.yaml import YAML
-from scipy.ndimage import binary_dilation, gaussian_filter
-
 from neuralib.io import CASCADE_MODEL_CACHE_DIRECTORY
 from neuralib.typing import PathLike
 from neuralib.util.utils import ensure_dir
 from neuralib.util.verbose import fprint
+from ruamel.yaml import YAML
+from scipy.ndimage import binary_dilation, gaussian_filter
 
 __all__ = [
     'CASCADE_MODEL_TYPE',

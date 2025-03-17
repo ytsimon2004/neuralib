@@ -6,11 +6,10 @@ from typing import TypedDict, Generator, overload, final, Final, Literal
 import attrs
 import h5py
 import numpy as np
-from typing_extensions import TypeAlias, Self
-
 from neuralib.typing import PathLike
 from neuralib.util.utils import uglob
 from neuralib.util.verbose import fprint
+from typing_extensions import TypeAlias, Self
 
 __all__ = [
     'FACEMAP_TRACK_TYPE',

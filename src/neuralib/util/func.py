@@ -6,7 +6,6 @@ Dynamic function generator
     Ta-Shun Su
 
 """
-from __future__ import annotations
 
 import inspect
 import textwrap

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abc
 import math
 from typing import Final, ClassVar
@@ -10,12 +8,11 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage
 from matplotlib.transforms import CompositeGenericTransform
-from typing_extensions import Self
-
 from neuralib.atlas.data import DATA_SOURCE_TYPE, load_ccf_annotation, load_ccf_template, load_allensdk_annotation
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
 from neuralib.typing import PathLike
+from typing_extensions import Self
 
 __all__ = [
     'load_slice_view',
@@ -28,7 +25,7 @@ def load_slice_view(source: DATA_SOURCE_TYPE,
                     plane_type: PLANE_TYPE,
                     *,
                     output_dir: PathLike | None = None,
-                    allen_annotation_res: int = 10) -> AbstractSliceView:
+                    allen_annotation_res: int = 10) -> 'AbstractSliceView':
     """
     Load the mouse brain slice view
 
@@ -193,7 +190,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         """
         pass
 
-    def plane_at(self, slice_index: int) -> SlicePlane:
+    def plane_at(self, slice_index: int) -> 'SlicePlane':
         return SlicePlane(slice_index, int(self.width // 2), int(self.height // 2), 0, 0, self)
 
     def offset(self, h: int, v: int) -> np.ndarray:
@@ -487,7 +484,7 @@ class SlicePlane:
     def plot_annotation(self,
                         ax: Axes,
                         *,
-                        aff_trans: Axes.transData | None = None,
+                        aff_trans=None,
                         to_um: bool = True,
                         cmap: str = 'binary',
                         alpha: float = 0.3,

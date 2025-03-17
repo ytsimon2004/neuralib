@@ -27,8 +27,6 @@ Swc morphology plot
 
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import NamedTuple, Iterator
 
@@ -37,10 +35,9 @@ import numpy as np
 import vedo
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle
-from typing_extensions import Self, overload
-
 from neuralib.argp import AbstractParser, argument
 from neuralib.typing import PathLike
+from typing_extensions import Self, overload
 
 __all__ = [
     'SwcNode',

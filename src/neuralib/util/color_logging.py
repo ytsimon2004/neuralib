@@ -24,8 +24,6 @@ Example:
     logger.log(LOGGING_IO_LEVEL, 'io information message')
 
 """
-from __future__ import annotations
-
 import logging
 
 __all__ = [

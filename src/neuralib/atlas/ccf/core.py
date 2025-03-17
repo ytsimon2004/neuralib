@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abc
 from pathlib import Path
 from typing import NamedTuple, Final, Any, Literal, get_args, Iterable
@@ -7,15 +5,14 @@ from typing import NamedTuple, Final, Any, Literal, get_args, Iterable
 import attrs
 import numpy as np
 import polars as pl
-from scipy.io import loadmat
-from scipy.io.matlab import MatlabOpaque
-
 from neuralib.atlas.typing import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, load_slice_view
 from neuralib.typing import PathLike
 from neuralib.util.utils import uglob, joinn
 from neuralib.util.verbose import fprint
+from scipy.io import loadmat
+from scipy.io.matlab import MatlabOpaque
 
 __all__ = [
     #
@@ -301,10 +298,9 @@ class AbstractCCFDir(metaclass=abc.ABCMeta):
             ret += f'_{channel}'
         return ret
 
-    def get_transformation_matrix(self,
-                                  glass_id: int,
+    def get_transformation_matrix(self, glass_id: int,
                                   slice_id: int,
-                                  plane_type: PLANE_TYPE) -> CCFTransMatrix:
+                                  plane_type: PLANE_TYPE) -> 'CCFTransMatrix':
         return load_transform_matrix(
             self.glob(glass_id, slice_id, 'transformation_matrix'),
             plane_type
@@ -552,7 +548,7 @@ class MatMatrix(NamedTuple):
 def load_transform_matrix(filepath: PathLike,
                           plane_type: PLANE_TYPE,
                           resolution: int = 10,
-                          default_name: str = 'test') -> CCFTransMatrix:
+                          default_name: str = 'test') -> 'CCFTransMatrix':
     """
     matrix for image transformation
 

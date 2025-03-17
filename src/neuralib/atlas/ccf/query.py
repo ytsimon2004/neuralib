@@ -1,13 +1,10 @@
-from __future__ import annotations
-
 import attrs
 import polars as pl
-from typing_extensions import Self, Final, final
-
 from neuralib.atlas.ccf.classifier import supply_overlap_dataframe
 from neuralib.atlas.typing import Source, Area
 from neuralib.atlas.util import get_margin_merge_level
 from neuralib.util.verbose import fprint
+from typing_extensions import Self, Final, final
 
 __all__ = ['RoiAreaQuery', 'SubregionResult']
 
@@ -108,8 +105,7 @@ class RoiAreaQuery:
 
         return self.parsed_df.filter(pl.col(self.query_col) == self.area)
 
-    def get_subregion_result(self, unit: str,
-                             supply_overlap: bool = True) -> SubregionResult:
+    def get_subregion_result(self, unit: str, supply_overlap: bool = True) -> 'SubregionResult':
         """
         Get subregion results
 

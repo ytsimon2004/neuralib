@@ -48,9 +48,6 @@ Load sequences from sequences array
     labeller.main()
 
 """
-
-from __future__ import annotations
-
 import logging
 import re
 import sys
@@ -61,15 +58,14 @@ import attrs
 import cv2
 import numpy as np
 import polars as pl
-from polars.testing import assert_frame_equal
-from tifffile import tifffile
-from tqdm import tqdm
-from typing_extensions import Self
-
 from neuralib.io import csv_header
 from neuralib.typing import PathLike
 from neuralib.util.utils import keys_with_value
 from neuralib.util.verbose import fprint
+from polars.testing import assert_frame_equal
+from tifffile import tifffile
+from tqdm import tqdm
+from typing_extensions import Self
 
 __all__ = ['SequenceLabeller']
 

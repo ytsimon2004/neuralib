@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import shutil
 from pathlib import Path
 from typing import TypedDict, Final, Literal, get_args, Iterable
@@ -7,8 +5,6 @@ from typing import TypedDict, Final, Literal, get_args, Iterable
 import attrs
 import numpy as np
 import polars as pl
-from typing_extensions import Self, TypeAlias
-
 from neuralib.atlas.ccf.core import (
     AbstractCCFDir,
     SagittalCCFDir,
@@ -22,6 +18,7 @@ from neuralib.atlas.typing import Area, HEMISPHERE_TYPE, Source, Channel
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.util.color_logging import setup_clogger, LOGGING_IO_LEVEL
 from neuralib.util.utils import uglob
+from typing_extensions import Self, TypeAlias
 
 __all__ = [
     'FluorReprType',
@@ -337,7 +334,7 @@ class RoiClassifier:
             supply_overlap: bool = True,
             hemisphere: HEMISPHERE_TYPE = 'both',
             area: Area | list[Area] | None = None
-    ) -> RoiClassifiedNormTable:
+    ) -> 'RoiClassifiedNormTable':
         """
         processed data for plotting / visualization
 

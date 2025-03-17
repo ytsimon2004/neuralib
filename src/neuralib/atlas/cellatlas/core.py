@@ -1,17 +1,16 @@
-from __future__ import annotations
-
 import dataclasses
 import io
 from pathlib import Path
 
 import pandas as pd
 import polars as pl
-
 from neuralib.atlas.data import load_structure_tree
 from neuralib.io.core import ATLAS_CACHE_DIRECTORY
 from neuralib.util.verbose import fprint
 
 __all__ = ['CellAtlas']
+
+from typing_extensions import Self
 
 
 @dataclasses.dataclass
@@ -35,10 +34,9 @@ class CellAtlas:
     """
 
     @classmethod
-    def load_from_csv(cls,
-                      file: Path | None = None,
+    def load_from_csv(cls, file: Path | None = None,
                       ignore_cell_types_info: bool = True,
-                      ignore_detail_info: bool = True) -> CellAtlas:
+                      ignore_detail_info: bool = True) -> Self:
         """
         Load/Download the csv file
 
