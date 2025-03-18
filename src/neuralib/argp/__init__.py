@@ -133,5 +133,5 @@ In bash::
 
 """
 from ._type import *
+from ._validator import *
 from .core import *
-from .validator import validator

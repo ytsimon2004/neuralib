@@ -316,12 +316,32 @@ class TestValidateBuilder(unittest.TestCase):
             opt.a = -10
 
     def test_list_element_type(self):
-        # TODO
-        pass
+        class Opt:
+            a: list[int] = argument('-a', validator.list(int))
+
+        opt = Opt()
+        opt.a = []
+        opt.a = [1, 2]
+
+        with self.assertRaises(ValueError):
+            opt.a = ['a']
 
     def test_list_element_validating(self):
-        # TODO
-        pass
+        class Opt:
+            a: list[int] = argument('-a', validator.list(int).on_item(validator.int.positive(include_zero=True)))
+
+        opt = Opt()
+        opt.a = []
+        opt.a = [1, 2]
+
+        with self.assertRaises(ValueError):
+            opt.a = [-1]
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = [1, -1]
+
+        self.assertEqual(capture.exception.args[0],
+                         'at index 1, not a non-negative value : -1')
 
     def test_tuple_element_type(self):
         class Opt:
@@ -338,6 +358,7 @@ class TestValidateBuilder(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             opt.a = ('', 0)
+
         with self.assertRaises(ValueError):
             opt.a = ('', 0, 0)
 
@@ -379,23 +400,209 @@ class TestValidateBuilder(unittest.TestCase):
 
         with self.assertRaises(ValueError) as capture:
             opt.a = ('1234', 0, 0.0)
-        print(capture.exception.args)
+        self.assertEqual(capture.exception.args[0],
+                         'at index 0, str length over 2: "1234"')
 
         with self.assertRaises(ValueError) as capture:
             opt.a = ('12', 100, 0.0)
-        print(capture.exception.args)
+        self.assertEqual(capture.exception.args[0],
+                         'at index 1, value out of range [0, 10]: 100')
 
     def test_optional(self):
-        # TODO
-        pass
+        class Opt:
+            a: int = argument('-a', validator.int)
+            b: int | None = argument('-b', validator.int.optional())
+            c: int | None = argument('-c', validator.any(validator.optional(), validator.int))
 
-    def test_or(self):
-        # TODO
-        pass
+        opt = Opt()
+        opt.a = 0
+        opt.b = 0
+        opt.c = 0
 
-    def test_and(self):
-        # TODO
-        pass
+        with self.assertRaises(ValueError):
+            opt.a = None
+        opt.b = None
+        opt.c = None
+
+    def test_any(self):
+        class Opt:
+            a: int | str = argument('-a', validator.any(
+                validator.int.in_range(0, 10),
+                validator.str.length_in_range(0, 10)
+            ))
+
+        opt = Opt()
+        opt.a = 3
+        opt.a = '123'
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = 30
+
+        self.assertEqual(capture.exception.args[0],
+                         'value out of range [0, 10]: 30')
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = '1' * 13
+
+        self.assertEqual(capture.exception.args[0],
+                         'str length out of range [0, 10]: "1111111111111"')
+
+    def test_any_literal(self):
+        class Opt:
+            a: int | str = argument('-a', (
+                    validator.int.in_range(0, 10) | validator.str.length_in_range(0, 10)
+            ))
+
+        opt = Opt()
+        opt.a = 3
+        opt.a = '123'
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = 30
+
+        self.assertEqual(capture.exception.args[0],
+                         'value out of range [0, 10]: 30')
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = '1' * 13
+
+        self.assertEqual(capture.exception.args[0],
+                         'str length out of range [0, 10]: "1111111111111"')
+
+    def test_all(self):
+        class Opt:
+            a: int = argument('-a', validator.all(
+                validator.int.positive(include_zero=True),
+                validator.int.negative(include_zero=True),
+            ))
+
+        opt = Opt()
+        opt.a = 0
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = 1
+
+        self.assertEqual(capture.exception.args[0],
+                         'not a non-positive value : 1')
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = -1
+
+        self.assertEqual(capture.exception.args[0],
+                         'not a non-negative value : -1')
+
+    def test_all_literal(self):
+        class Opt:
+            a: int = argument('-a', (
+                    validator.int.positive(include_zero=True) & validator.int.negative(include_zero=True)
+            ))
+
+        opt = Opt()
+        opt.a = 0
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = 1
+
+        self.assertEqual(capture.exception.args[0],
+                         'not a non-positive value : 1')
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = -1
+
+        self.assertEqual(capture.exception.args[0],
+                         'not a non-negative value : -1')
+
+    def test_tuple_union_length(self):
+        class Opt:
+            a: tuple[int, int] | tuple[int, int, int] = argument(
+                '-a',
+                validator.tuple(int, int) | validator.tuple(int, int, int)
+            )
+
+        opt = Opt()
+        opt.a = (0, 1)
+        opt.a = (0, 1, 2)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = (0,)
+        # print(capture.exception.args)
+        # length not match to 2 : (0,); length not match to 3 : (0,)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = (0, 1, 2, 3)
+        # print(capture.exception.args)
+        # length not match to 2 : (0, 1, 2, 3); length not match to 3 : (0, 1, 2, 3)
+
+    def test_nested_list(self):
+        class Opt:
+            a: list[tuple[int, list[list[int]]]] = argument('-a', validator.list(
+                validator.tuple(int, None)
+                .on_item(0, validator.int)
+                .on_item(1, validator.list().on_item(validator.list(int)))
+            ))
+
+        opt = Opt()
+        opt.a = []
+        opt.a = [(0, [[0]]), (1, [[1]])]
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = [([[0]])]
+        self.assertEqual(capture.exception.args[0],
+                         'not a tuple : [[0]]')
+        with self.assertRaises(ValueError) as capture:
+            opt.a = [(0, [0])]
+        self.assertEqual(capture.exception.args[0],
+                         'at index 1, at index 0, not a list : 0')
+
+    def test_tuple_on_multiple_item(self):
+        class Opt:
+            a: tuple[int, float, int, float] = argument(
+                '-a',
+                validator.tuple() \
+                    .on_item([0, 2], validator.int.positive()) \
+                    .on_item(1, v := validator.float.positive()) \
+                    .on_item(3, v)
+            )
+
+        opt = Opt()
+        opt.a = (1, 1, 1, 1)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = (1, 1, -1, 1)
+        with self.assertRaises(ValueError) as capture:
+            opt.a = (1, 1, 1, -1)
+
+    def test_tuple_fix_length(self):
+        class Opt:
+            a: tuple[int, int] = argument(
+                '-a',
+                validator.tuple(2)
+            )
+
+        opt = Opt()
+        opt.a = (0, 1)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = (0,)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = (0, 1, 2)
+
+        opt.a = ('0', '1')
+
+    def test_tuple_on_all_item(self):
+        class Opt:
+            a: tuple[int, int] = argument(
+                '-a',
+                validator.tuple(2).on_item(None, validator.int)
+            )
+
+        opt = Opt()
+        opt.a = (0, 1)
+
+        with self.assertRaises(ValueError) as capture:
+            opt.a = ('0', '1')
+
 
 class WithDefaultTest(unittest.TestCase):
     def test_bool(self):

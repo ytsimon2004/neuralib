@@ -2,14 +2,22 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from typing import Any, TypeVar, Generic, final, overload, Self
+from typing import Any, TypeVar, Generic, final, overload
 
-__all__ = ['validator']
+from typing_extensions import Self
 
 T = TypeVar('T')
 
 
 class ValidatorFailError(ValueError):
+    pass
+
+
+class ValidatorFailOnTypeError(ValidatorFailError):
+    """
+    A special ValidatorFailError that is raised when type validation failure.
+    It is used for Validator#any() to exclude some error message.
+    """
     pass
 
 
@@ -52,6 +60,7 @@ class LambdaValidator(Validator, Generic[T]):
     def __or__(self, validator: Callable[[Any], bool]) -> OrValidatorBuilder:
         return OrValidatorBuilder(self, validator)
 
+
 @final
 class ValidatorBuilder:
     @property
@@ -66,8 +75,16 @@ class ValidatorBuilder:
     def float(self) -> FloatValidatorBuilder:
         return FloatValidatorBuilder()
 
-    # noinspection PyMethodMayBeStatic
+    @overload
+    def tuple(self, element_type: int) -> TupleValidatorBuilder:
+        pass
+
+    @overload
     def tuple(self, *element_type: type[T]) -> TupleValidatorBuilder:
+        pass
+
+    # noinspection PyMethodMayBeStatic
+    def tuple(self, *element_type) -> TupleValidatorBuilder:
         return TupleValidatorBuilder(element_type)
 
     # noinspection PyMethodMayBeStatic
@@ -95,9 +112,6 @@ class ValidatorBuilder:
         return LambdaValidator(validator, message)
 
 
-validator = ValidatorBuilder()
-
-
 class AbstractTypeValidatorBuilder(Validator, Generic[T]):
     def __init__(self, value_type: type[T] | tuple[type[T], ...] = None):
         self.__value_type = value_type
@@ -111,8 +125,9 @@ class AbstractTypeValidatorBuilder(Validator, Generic[T]):
             else:
                 raise ValidatorFailError('None')
 
+        # noinspection PyTypeHints
         if self.__value_type is not None and not isinstance(value, self.__value_type):
-            raise ValidatorFailError(f'not instance of {self.__value_type.__name__} : {value}')
+            raise ValidatorFailOnTypeError(f'not instance of {self.__value_type.__name__} : {value}')
 
         for validator in self.__validators:
             if not validator(value):
@@ -128,15 +143,20 @@ class AbstractTypeValidatorBuilder(Validator, Generic[T]):
     def _add(self, validator: Callable[[T], bool], message: str | Callable[[T], str] = None):
         pass
 
-    def _add(self, validator, message = None):
+    def _add(self, validator, message=None):
         if not isinstance(validator, LambdaValidator):
             validator = LambdaValidator(validator, message)
         self.__validators.append(validator)
 
-
     def optional(self) -> Self:
         self.__allow_none = True
         return self
+
+    def __and__(self, validator: Callable[[Any], bool]) -> AndValidatorBuilder:
+        return AndValidatorBuilder(self, validator)
+
+    def __or__(self, validator: Callable[[Any], bool]) -> OrValidatorBuilder:
+        return OrValidatorBuilder(self, validator)
 
 
 class StrValidatorBuilder(AbstractTypeValidatorBuilder[str]):
@@ -256,30 +276,37 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
     def __init__(self, element_type: type[T] = None):
         super().__init__()
         self.__element_type = element_type
+        self.__allow_empty = True
 
     def length_in_range(self, a: int | None, b: int | None, /) -> ListValidatorBuilder:
         match (a, b):
             case (int(a), None):
                 self._add(lambda it: a <= len(it),
-                           lambda it: f'list length less than {a}: {len(it)}')
+                          lambda it: f'list length less than {a}: {len(it)}')
             case (None, int(b)):
                 self._add(lambda it: len(it) <= b,
-                           lambda it: f'list length over {b}: {len(it)}')
+                          lambda it: f'list length over {b}: {len(it)}')
             case (int(a), int(b)):
                 self._add(lambda it: a <= len(it) <= b,
-                           lambda it: f'list length out of range [{a}, {b}]: {len(it)}')
+                          lambda it: f'list length out of range [{a}, {b}]: {len(it)}')
             case _:
                 raise TypeError()
 
         return self
 
-    def on_item(self, validator: Callable[[Any], bool]) -> TupleValidatorBuilder:
+    def allow_empty(self, allow: bool = True):
+        self.__allow_empty = allow
+
+    def on_item(self, validator: Callable[[Any], bool]) -> ListValidatorBuilder:
         self._add(ListItemValidatorBuilder(validator))
         return self
 
     def __call__(self, value: Any) -> bool:
         if not isinstance(value, (tuple, list)):
-            raise ValidatorFailError(f'not a list : {value}')
+            raise ValidatorFailOnTypeError(f'not a list : {value}')
+
+        if not self.__allow_empty and len(value) == 0:
+            raise ValidatorFailError(f'empty list : {value}')
 
         if (element_type := self.__element_type) is not None:
             for i, element in enumerate(value):
@@ -290,32 +317,37 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
 
 
 class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
-    def __init__(self, element_type: tuple[type[T], ...]):
+    def __init__(self, element_type: tuple[int] | tuple[type[T], ...]):
         super().__init__()
+
+        match element_type:
+            case (int(length), ):
+                element_type = (None,) * length
+
         self.__element_type = element_type
 
-    def length_in_range(self, a: int | None, b: int | None, /) -> TupleValidatorBuilder:
-        match (a, b):
-            case (int(a), None):
-                self._add(lambda it: a <= len(it),
-                           lambda it: f'list length less than {a}: {len(it)}')
-            case (None, int(b)):
-                self._add(lambda it: len(it) <= b,
-                           lambda it: f'list length over {b}: {len(it)}')
-            case (int(a), int(b)):
-                self._add(lambda it: a <= len(it) <= b,
-                           lambda it: f'list length out of range [{a}, {b}]: {len(it)}')
-            case _:
-                raise TypeError()
-        return self
+    def on_item(self, item: int | list[int] | None, validator: Callable[[Any], bool]) -> TupleValidatorBuilder:
+        if item is None:
+            pass
+        elif isinstance(item, int):
+            if item < 0:
+                raise ValueError('should always use positive index')
+        else:
+            for index in item:
+                if index < 0:
+                    raise ValueError('should always use positive index')
 
-    def on_item(self, item: int, validator: Callable[[Any], bool]) -> TupleValidatorBuilder:
-        if item < 0:
-            raise ValueError('should always use positive index')
-
-        et = self.__element_type[item]  # check range
-        if et is ...:
-            raise IndexError()
+        # check range
+        if item is not None and len(self.__element_type) > 0:
+            if isinstance(item, int):
+                et = self.__element_type[item]
+                if et is ...:
+                    raise IndexError()
+            else:
+                for index in item:
+                    et = self.__element_type[index]
+                    if et is ...:
+                        raise IndexError()
 
         self._add(TupleItemValidatorBuilder(item, validator))
 
@@ -323,7 +355,7 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
 
     def __call__(self, value: Any) -> bool:
         if not isinstance(value, tuple):
-            raise ValidatorFailError(f'not a tuple : {value}')
+            raise ValidatorFailOnTypeError(f'not a tuple : {value}')
 
         if len(element_type := self.__element_type) > 0:
             if element_type[-1] is ...:
@@ -332,7 +364,7 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
                     raise ValidatorFailError(f'length less than {at_least_length} : {value}')
 
                 for i, e, t in zip(range(at_least_length), value, element_type):
-                    if not element_isinstance(e, t):
+                    if t is not None and not element_isinstance(e, t):
                         raise ValidatorFailError(f'wrong element type at {i} : {e}')
 
                 if at_least_length > 0:
@@ -346,7 +378,7 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
                     raise ValidatorFailError(f'length not match to {len(element_type)} : {value}')
 
                 for i, e, t in zip(range(len(element_type)), value, element_type):
-                    if not element_isinstance(e, t):
+                    if t is not None and not element_isinstance(e, t):
                         raise ValidatorFailError(f'wrong element type at {i} : {e}')
 
         return super().__call__(value)
@@ -366,20 +398,34 @@ class ListItemValidatorBuilder(LambdaValidator):
 
 
 class TupleItemValidatorBuilder(LambdaValidator):
-    def __init__(self, item: int, validator: Callable[[Any], bool]):
+    def __init__(self, item: int | list[int] | None, validator: Callable[[Any], bool]):
         super().__init__(validator)
         self.__item = item
 
     def __call__(self, value: Any) -> bool:
+        if self.__item is None:
+            for index in range(len(value)):
+                if not self.__call_on_index__(index, value):
+                    return False
+            return True
+        elif isinstance(self.__item, int):
+            return self.__call_on_index__(self.__item, value)
+        else:
+            for index in self.__item:
+                if not self.__call_on_index__(index, value):
+                    return False
+            return True
+
+    def __call_on_index__(self, index: int, value: Any) -> bool:
         try:
-            element = value[self.__item]
+            element = value[index]
         except IndexError as e:
-            raise ValidatorFailError(f'index {self.__item} out of size {len(value)}') from e
+            raise ValidatorFailError(f'index {index} out of size {len(value)}') from e
 
         try:
             return super().__call__(element)
         except BaseException as e:
-            raise ValidatorFailError(f'at index {self.__item}, ' + e.args[0]) from e
+            raise ValidatorFailError(f'at index {index}, ' + e.args[0]) from e
 
 
 class OrValidatorBuilder(Validator):
@@ -395,6 +441,8 @@ class OrValidatorBuilder(Validator):
             try:
                 if validator(value):
                     return True
+            except ValidatorFailOnTypeError:
+                pass
             except BaseException as e:
                 if len(e.args):
                     coll.append(e.args[0])
@@ -414,7 +462,7 @@ class OrValidatorBuilder(Validator):
 
 class AndValidatorBuilder(Validator):
     def __init__(self, *validator: Callable[[Any], bool]):
-        self.__validators = validator
+        self.__validators = list(validator)
 
     def __call__(self, value: Any) -> bool:
         if len(self.__validators) == 0:
@@ -435,6 +483,7 @@ class AndValidatorBuilder(Validator):
 
     def __or__(self, validator: Callable[[Any], bool]) -> OrValidatorBuilder:
         return OrValidatorBuilder(self, validator)
+
 
 def element_isinstance(e, t) -> bool:
     if isinstance(t, type):
