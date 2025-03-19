@@ -26,6 +26,7 @@ dependencies = [
     "colorama",
     "colorlog",
     "matplotlib",
+    "matplotlib_venn",
     "seaborn",
     "numpy",
     "scipy",
@@ -80,9 +81,6 @@ model = [
     "rastermap"
 ]
 
-plot = [
-    "matplotlib_venn"
-]
 
 gpu = [
     "torch",
@@ -107,9 +105,7 @@ all = [
     "neura-library[atlas]",
     "neura-library[scanner]",
     "neura-library[imaging]",
-    "neura-library[plot]",
     "neura-library[model]",
-    "neura-library[profile]",
     "neura-library[imagelib]",
     "neura-library[tools]",
 ]
