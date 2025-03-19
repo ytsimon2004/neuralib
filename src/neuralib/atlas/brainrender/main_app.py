@@ -14,9 +14,9 @@ def main():
         description='brainrender view',
         usage="""
         Example: 
-        >> brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
-        >> brender roi -F <FILE>
-        >> brender probe -F <FILE> --depth <DEPTH in um>
+        >> neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
+        >> neuralib_brainrender roi -F <FILE>
+        >> neuralib_brainrender probe -F <FILE> --depth <DEPTH in um>
         """
     )
 

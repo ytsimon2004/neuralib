@@ -16,7 +16,7 @@ Plot brain regions
 
 Example of reconstruct the Visual Cortex ::
 
-    brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
+    neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
 
 
 |brender area|
@@ -24,7 +24,7 @@ Example of reconstruct the Visual Cortex ::
 
 See the available options use `-h` option ::
 
-    brender area -h
+    neuralib_brainrender area -h
 
 
 
@@ -35,7 +35,7 @@ Plot brain regions with ROIs label
 
 Example of reconstruct ROIs in the Somatosensory Cortex for ipsilateral hemisphere(assume right hemisphere)::
 
-    brender roi -F <CSV_FILE>
+    neuralib_brainrender roi -F <CSV_FILE>
 
 
 |brender roi|
@@ -74,7 +74,7 @@ Example ccf data folder structure in (:class:`~neuralib.atlas.ccf.core.AbstractC
 
 See the available options use ``-h`` option ::
 
-    brender roi -h
+    neuralib_brainrender roi -h
 
 
 
@@ -110,7 +110,7 @@ Prepare CSV file from ccf pipeline::
 
 Example of Above csv file for targeting the left Entorhinal cortex (ENT) using 4 shanks NeuroPixel probe::
 
-    brender probe -F <CSV_FILE> -D 3000 -P sagittal -R ENT -H left
+    neuralib_brainrender probe -F <CSV_FILE> -D 3000 -P sagittal -R ENT -H left
 
 
 
@@ -122,7 +122,7 @@ Example of Above csv file for targeting the left Entorhinal cortex (ENT) using 4
 
 See the available options use ``-h`` option ::
 
-    brender probe -h
+    neuralib_brainrender probe -h
 
 
 
