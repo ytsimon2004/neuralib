@@ -6,10 +6,12 @@ from typing import TypedDict, Generator, overload, final, Final, Literal
 import attrs
 import h5py
 import numpy as np
+from typing_extensions import Self
+
 from neuralib.typing import PathLike
+from neuralib.util.deprecation import deprecated_func
 from neuralib.util.utils import uglob
 from neuralib.util.verbose import fprint
-from typing_extensions import TypeAlias, Self
 
 __all__ = [
     'FACEMAP_TRACK_TYPE',
@@ -113,7 +115,7 @@ class KeyPointsMeta(TypedDict):
 # FaceMap Result #
 # ============== #
 
-KeyPoint: TypeAlias = str
+KeyPoint = str
 """keypoint name"""
 
 
@@ -202,6 +204,7 @@ class FaceMapResult:
             raise RuntimeError(f'.npy svd file not found in the {directory}')
 
     @classmethod
+    @deprecated_func(removal_version='0.5.0', remarks='lightening facemap dependency, use a separated env')
     def launch_facemap_gui(cls, directory: PathLike,
                            with_keypoints: bool,
                            *,
@@ -235,8 +238,7 @@ class FaceMapResult:
         subprocess.check_call(cmds)
 
     @classmethod
-    def _modify_video_filenames_field(cls,
-                                      directory: PathLike, *,
+    def _modify_video_filenames_field(cls, directory: PathLike, *,
                                       file_pattern: str = ''):
         """brute force rewrite ``filenames`` field in raw file"""
         svd_path = uglob(directory, f'{file_pattern}*.npy')

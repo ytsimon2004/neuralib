@@ -84,11 +84,6 @@ plot = [
     "matplotlib_venn"
 ]
 
-track = [
-    "facemap",
-    "numpy<2.0; extra == 'track'"
-]
-
 gpu = [
     "torch",
     "tensorflow", # cascade spike prediction
@@ -124,7 +119,6 @@ dev = [
     'pre-commit',
     'ruff',
     "neura-library[segmentation]",
-    "neura-library[track]",
     "neura-library[gpu]",
     "neura-library[all]"
 ]
@@ -137,7 +131,6 @@ doc = [
     "sphinx-toolbox",
     "sphinx-rtd-theme",
     "neura-library[segmentation]",
-    "neura-library[track]",
     "neura-library[gpu]",
     "neura-library[all]",
 ]

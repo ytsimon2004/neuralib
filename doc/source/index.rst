@@ -51,7 +51,7 @@ Installation
 
         If you wish to install the **minimal required dependencies** according to usage purpose:
 
-        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``track``, ``gpu``, ``imagelib``, ``tools``
+        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``gpu``, ``imagelib``, ``tools``
 
         - Example of using ``atlas`` module:
 
@@ -101,7 +101,7 @@ Installation
 
         If you wish to install the **minimal required dependencies** according to usage purpose:
 
-        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``track``, ``gpu``, ``imagelib``, ``tools``
+        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``gpu``, ``imagelib``, ``tools``
 
         - Example of using ``atlas`` module:
 
@@ -126,7 +126,7 @@ Installation
     - ``pip install torch``: Used in **cellpose cellular segmentation**, **facemap keypoint extraction**
 
 .. warning::
-    The command ``pip install neura-library[all]`` **does NOT include** ``segmentation``, ``track``, or ``gpu`` dependencies.
+    The command ``pip install neura-library[all]`` **does NOT include** ``segmentation``, or ``gpu`` dependencies.
     These modules are mainly used for wrapper and contain:
 
     1. **Old package dependencies** (e.g., ``numpy < 2.0``)
