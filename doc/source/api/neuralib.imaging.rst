@@ -14,4 +14,5 @@ neuralib.imaging
     neuralib.imaging.scanbox
     neuralib.imaging.spikes
     neuralib.imaging.suite2p
+    neuralib.imaging.widefield
 

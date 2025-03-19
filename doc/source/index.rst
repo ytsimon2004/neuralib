@@ -146,12 +146,25 @@ Installation
 CLI project.scripts
 ---------------------------
 
+neuralib_brainrender
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
+
 .. code-block:: console
 
     neuralib_brainrender -h
 
 
-- See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
+neuralib_widefield
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- See example in  `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.imaging.widefield.html>`_
+
+.. code-block:: console
+
+    neuralib_widefield -h
+
 
 
 
