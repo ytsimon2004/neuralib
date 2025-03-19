@@ -60,7 +60,6 @@ scanner = [
 
 imaging = [
     "scanimage-tiff-reader",
-    "suite2p",
     "sbxreader",
     "ruamel.yaml",
     "numba"  # oasis dcnv batch processing

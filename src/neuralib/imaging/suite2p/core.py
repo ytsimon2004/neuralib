@@ -5,10 +5,12 @@ from typing import Literal, TypedDict, final
 import attrs
 import numpy as np
 import polars as pl
+from typing_extensions import Self
+
 from neuralib.imaging.cellular import CellularCoordinates
 from neuralib.typing import PathLike
+from neuralib.util.deprecation import deprecated_func
 from neuralib.util.verbose import fprint
-from typing_extensions import Self
 
 __all__ = [
     'SIGNAL_TYPE',
@@ -247,6 +249,7 @@ class Suite2PResult:
             raise RuntimeError('fs and n_plane are not set properly in suite2p')
 
     @classmethod
+    @deprecated_func(removal_version='0.5.0', remarks='lightening dependency: suite2p, use an separated env')
     def launch_gui(cls, directory: PathLike) -> None:
         """
         launch the suite2p GUI
