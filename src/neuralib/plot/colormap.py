@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colorbar import ColorbarBase
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 __all__ = [
     'DiscreteColorMapper',
@@ -84,22 +84,17 @@ def get_customized_cmap(name: str,
 
 def insert_colorbar(ax: Axes, im: ScalarMappable, **kwargs) -> ColorbarBase:
     """
-    Insert colormap in ``inset_axes``
+    Insert colormap
 
     :param ax: ``Axes``
     :param im: ``ScalarMappable``
     :param kwargs: Additional args pass to ``ax.figure.colorbar``
     :return:
     """
-    cax = inset_axes(
-        ax,
-        width="5%",
-        height="25%",
-        loc='upper left',
-        bbox_to_anchor=(1.01, 0., 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="7%", pad=0.1)
+
     return ax.figure.colorbar(im, cax=cax, **kwargs)
 
 
@@ -121,7 +116,7 @@ def insert_cyclic_colorbar(ax: Axes,
     :param num_labels: Number of labels in the cyclic colorbar
     :param width: Width of the each color
     :param inner_diameter: The size of the inner circle
-    :param vmin: Min value of the colormap, qual to ``vmax`` in cyclic data
+    :param vmin: Min value of the colormap, equal to ``vmax`` in cyclic data
     :param vmax: Max value of the colormap, equal to ``vmin`` in cyclic data
     """
     polar_ax = ax.inset_axes((1.1, 0.65, 0.4, 0.4), polar=True)
@@ -146,7 +141,7 @@ def insert_cyclic_colorbar(ax: Axes,
     values = np.linspace(vmin, vmax, num_labels, endpoint=False)
 
     for angle, value in zip(angles, values):
-        polar_ax.text(angle, 2, f'{value:.1f}', horizontalalignment='center', verticalalignment='center')
+        polar_ax.text(angle, 3, f'{value:.1f}', horizontalalignment='center', verticalalignment='center')
 
     polar_ax.set_yticklabels([])
     polar_ax.set_xticks([])  # remove angle labels
