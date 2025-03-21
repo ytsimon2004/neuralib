@@ -1,10 +1,12 @@
 from neuralib.argp import parse_command_args
+from neuralib.imaging.widefield.align import NapariAlignmentOptions
 
 from .fft_view import WideFieldFFTViewOption
 
 
 def main():
     parsers = dict(
+        align=NapariAlignmentOptions,
         fft=WideFieldFFTViewOption
     )
 
@@ -15,10 +17,10 @@ def main():
         Usage Examples:
 
         View HSV map in FFT:
-        $ neuralib_widefield fft -F <FILE>
+        $ neuralib_widefield fft <FILE>
         
         Alignment napari for image sequence
-        $ neuralib_widefield align -F <FILE>
+        $ neuralib_widefield align <FILE>
         
         """
     )

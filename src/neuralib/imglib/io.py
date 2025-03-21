@@ -3,9 +3,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
+
 from neuralib.imglib.norm import normalize_sequences
 from neuralib.typing import PathLike
-from tqdm import tqdm
 
 __all__ = [
     'read_sequences',
@@ -16,8 +17,7 @@ __all__ = [
 ]
 
 
-def read_sequences(avi_file: PathLike,
-                   grey_scale: bool = True) -> np.ndarray:
+def read_sequences(avi_file: PathLike, grey_scale: bool = True) -> np.ndarray:
     """Read an sequences file (i.e., AVI/MP4) into an array, converting to grayscale if specified.
 
     :param avi_file: Path to the AVI file.

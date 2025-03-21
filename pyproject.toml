@@ -40,6 +40,7 @@ dependencies = [
     "requests",
     'gdown',
     "rich",
+    "h5py",
     "typing_extensions",
 ]
 
@@ -63,7 +64,9 @@ imaging = [
     "scanimage-tiff-reader",
     "sbxreader",
     "ruamel.yaml",
-    "numba"  # oasis dcnv batch processing
+    "numba", # oasis dcnv batch processing
+    "bokeh", # fft view
+    "napari"  # align
 ]
 
 segmentation = [

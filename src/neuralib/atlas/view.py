@@ -8,11 +8,12 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage
 from matplotlib.transforms import CompositeGenericTransform
+from typing_extensions import Self
+
 from neuralib.atlas.data import DATA_SOURCE_TYPE, load_ccf_annotation, load_ccf_template, load_allensdk_annotation
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
 from neuralib.typing import PathLike
-from typing_extensions import Self
 
 __all__ = [
     'load_slice_view',
@@ -35,17 +36,18 @@ def load_slice_view(source: DATA_SOURCE_TYPE,
     :param allen_annotation_res: Volume resolution in um. default is 10 um
     :return: :class:`AbstractSliceView`
     """
-    if source == 'ccf_annotation':
-        data = load_ccf_annotation(output_dir)
-        res = 10
-    elif source == 'ccf_template':
-        data = load_ccf_template(output_dir)
-        res = 10
-    elif source == 'allensdk_annotation':
-        data = load_allensdk_annotation(resolution=allen_annotation_res, output_dir=output_dir)
-        res = allen_annotation_res
-    else:
-        raise ValueError('')
+    match source:
+        case 'ccf_annotation':
+            data = load_ccf_annotation(output_dir)
+            res = 10
+        case 'ccf_template':
+            data = load_ccf_template(output_dir)
+            res = 10
+        case 'allensdk_annotation':
+            data = load_allensdk_annotation(resolution=allen_annotation_res, output_dir=output_dir)
+            res = allen_annotation_res
+        case _:
+            raise ValueError(f'Unknown source: {source}')
 
     return AbstractSliceView(source, plane_type, res, data)
 

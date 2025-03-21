@@ -1,22 +1,19 @@
 from typing import Literal
 
-from typing_extensions import TypeAlias
-
 __all__ = ['Area', 'Source', 'Channel', 'MergeLevel',
            'HEMISPHERE_TYPE']
 
-Area: TypeAlias = str
+Area = str
 """Brain area"""
 
-Source: TypeAlias = str
+Source = str
 """Name of the injection alias"""
 
-Channel: TypeAlias = str
+Channel = str
 """Fluorescence channel"""
 
-MergeLevel: TypeAlias = int
+MergeLevel = int
 """Hierarchical tree merge level"""
 
-#
 HEMISPHERE_TYPE = Literal['ipsi', 'contra', 'both']
 """brain hemisphere"""

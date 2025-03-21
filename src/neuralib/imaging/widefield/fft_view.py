@@ -147,7 +147,7 @@ class WideFieldFFTView(View):
 class WideFieldFFTViewOption(AbstractParser):
     DESCRIPTION = 'View the HSV colormap representation of the Fourier transform results'
 
-    file: str = argument('-F', '--file', metavar='FILE', required=True, help='Image sequence file')
+    file: str = argument(metavar='FILE', help='file path for the video sequence')
 
     def run(self):
         server = BokehServer(theme='caliber')

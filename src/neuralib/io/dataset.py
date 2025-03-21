@@ -8,6 +8,7 @@ import gdown
 import numpy as np
 import polars as pl
 from PIL import Image
+
 from neuralib.imaging.scanbox import SBXInfo
 from neuralib.imaging.suite2p import Suite2PResult
 from neuralib.io import NEUROLIB_CACHE_DIRECTORY
@@ -18,16 +19,16 @@ __all__ = [
     'google_drive_file',
     'google_drive_folder',
     #
-    'load_example_scanbox',
-    'load_example_suite2p',
-    #
     'load_example_rois',
     'load_example_rois_image',
+    'load_example_dorsal_cortex',
     #
     'load_ephys_meta',
     'load_ephys_data',
     'load_npx2_reconstruction',
     #
+    'load_example_scanbox',
+    'load_example_suite2p',
     'load_example_rastermap_2p',
     'load_example_rastermap_wfield',
     #
@@ -117,30 +118,8 @@ def google_drive_folder(folder_id: str,
             shutil.rmtree(output_dir, ignore_errors=True)
 
 
-# ======================= #
-# 2P Calcium Imaging data #
-# ======================= #
-
-def load_example_scanbox(**kwargs) -> SBXInfo:
-    """
-    :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
-    :return: An instance of ``SBXInfo`` loaded from the specified Google Drive file.
-    """
-    with google_drive_file('1Gcz_xRVWQJ9QMxq3vzZS8VruSbNiuh_s', **kwargs) as file:
-        return SBXInfo.load(file)
-
-
-def load_example_suite2p(**kwargs) -> Suite2PResult:
-    """
-    :param kwargs: Additional keyword arguments pass to ``google_drive_folder`` to customize the loading behavior.
-    :return: An instance of ``Suite2PResult`` loaded with data from the specified Google Drive folder.
-    """
-    with google_drive_folder('1iVImr_rIywWhCiBDYhcphcSODaWJrhy7', **kwargs) as suite2p_dir:
-        return Suite2PResult.load(suite2p_dir)
-
-
 # ========== #
-# ROIs Atlas #
+# Atlas Data #
 # ========== #
 
 def load_example_rois(**kwargs) -> pl.DataFrame:
@@ -161,8 +140,27 @@ def load_example_rois_image(**kwargs) -> np.ndarray:
         return np.array(Image.open(file))
 
 
+def load_example_dorsal_cortex(color: bool = False, **kwargs) -> np.ndarray:
+    """png file from the source svg
+
+    .. seealso::
+
+        :meth:`~neuralib.atlas.data.get_dorsal_cortex`
+
+    :param color:
+
+    """
+    if color:
+        file_id = '1Cujx3GGFZxEq0-isRlA_Ac-Puy6ml8IA'
+    else:
+        file_id = '1OEPpIIl8SszDJXO_1ADka-5pB556WNxc'
+
+    with google_drive_file(file_id, **kwargs) as file:
+        return np.array(Image.open(file))
+
+
 # ========== #
-# Ephys data #
+# Ephys Data #
 # ========== #
 
 def load_ephys_meta(**kwargs):
@@ -186,9 +184,27 @@ def load_npx2_reconstruction(**kwargs) -> pl.DataFrame:
         return pl.read_csv(file)
 
 
-# ========== #
-# Cache data #
-# ========== #
+# ============ #
+# Imaging Data #
+# ============ #
+
+def load_example_scanbox(**kwargs) -> SBXInfo:
+    """
+    :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
+    :return: An instance of ``SBXInfo`` loaded from the specified Google Drive file.
+    """
+    with google_drive_file('1Gcz_xRVWQJ9QMxq3vzZS8VruSbNiuh_s', **kwargs) as file:
+        return SBXInfo.load(file)
+
+
+def load_example_suite2p(**kwargs) -> Suite2PResult:
+    """
+    :param kwargs: Additional keyword arguments pass to ``google_drive_folder`` to customize the loading behavior.
+    :return: An instance of ``Suite2PResult`` loaded with data from the specified Google Drive folder.
+    """
+    with google_drive_folder('1iVImr_rIywWhCiBDYhcphcSODaWJrhy7', **kwargs) as suite2p_dir:
+        return Suite2PResult.load(suite2p_dir)
+
 
 def load_example_rastermap_2p(**kwargs) -> dict[str, Any]:
     """
