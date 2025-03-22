@@ -10,6 +10,7 @@ neuralib.argp
     
     neuralib.argp.core
     neuralib.argp.dispatch
+    neuralib.argp.validator
 
 
 .. toctree::

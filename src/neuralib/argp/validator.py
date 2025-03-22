@@ -1,8 +1,320 @@
+"""
+Validator Usage Guide
+=====================
+
+Overview
+--------
+This guide demonstrates how to use the validator builders provided by our library. Each section
+provides short examples followed by a reference table of the builder’s methods.
+
+.. contents::
+   :local:
+   :depth: 2
+
+String Validation
+=================
+
+Examples
+--------
+**Minimum String Length**::
+
+    from neuralib.argp import validator
+
+    class Opt:
+        # Must be at least 2 characters long
+        a: str = argument('-a', validator.str.length_in_range(2, None))
+
+    opt = Opt()
+    opt.a = 'Hi'    # OK
+    opt.a = ''      # Raises ValueError
+
+**Regex Matching**::
+
+    class Opt:
+        # Must match a letter followed by a digit, e.g. 'a1', 'b9'
+        a: str = argument('-a', validator.str.match(r'[a-z][0-9]'))
+
+    opt = Opt()
+    opt.a = 'a1'    # OK
+    opt.a = 'A1'    # Raises ValueError
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method**
+     - **Description**
+   * - ``length_in_range(a, b)``
+     - Enforces a string length in [a, b]. Either bound may be ``None``.
+   * - ``match(pattern)``
+     - Checks if the string matches a given regex pattern.
+   * - ``starts_with(prefix)``
+     - Checks if the string starts with ``prefix``.
+   * - ``ends_with(suffix)``
+     - Checks if the string ends with ``suffix``.
+   * - ``contains(substring)``
+     - Checks if the string contains the given substring.
+   * - ``is_in(options)``
+     - Checks if the string is in the provided collection of allowed options.
+
+Integer Validation
+==================
+
+Examples
+--------
+**Integer Range**::
+
+    class Opt:
+        # Must be >= 2
+        a: int = argument('-a', validator.int.in_range(2, None))
+
+    opt = Opt()
+    opt.a = 5   # OK
+    opt.a = 0   # Raises ValueError
+
+**Positivity**::
+
+    class Opt:
+        # Must be strictly positive
+        a: int = argument('-a', validator.int.positive(include_zero=False))
+
+    opt = Opt()
+    opt.a = 10  # OK
+    opt.a = 0   # Raises ValueError
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method**
+     - **Description**
+   * - ``in_range(a, b)``
+     - Checks if integer is in [a, b]. Either bound may be ``None``.
+   * - ``positive(include_zero=True)``
+     - Checks if integer is >= 0 (if ``include_zero=True``) or > 0 otherwise.
+   * - ``negative(include_zero=True)``
+     - Checks if integer is <= 0 (if ``include_zero=True``) or < 0 otherwise.
+
+Float Validation
+================
+
+Examples
+--------
+**Range + NaN Handling**::
+
+    class Opt:
+        # Must be < 100, NaN not allowed
+        a: float = argument('-a',
+            validator.float.in_range(None, 100).allow_nan(False)
+        )
+
+    opt = Opt()
+    opt.a = 3.14        # OK
+    opt.a = 123.45      # Raises ValueError (out of range)
+    opt.a = float('nan')# Raises ValueError (NaN not allowed)
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method**
+     - **Description**
+   * - ``in_range(a, b)``
+     - Checks if float is in the open interval (a, b).
+   * - ``in_range_closed(a, b)``
+     - Checks if float is in the closed interval [a, b].
+   * - ``allow_nan(allow=True)``
+     - Allows or disallows NaN values.
+   * - ``positive(include_zero=True)``
+     - Checks if float is >= 0 (if ``include_zero=True``) or > 0 otherwise.
+   * - ``negative(include_zero=True)``
+     - Checks if float is <= 0 (if ``include_zero=True``) or < 0 otherwise.
+
+List Validation
+===============
+
+Examples
+--------
+**List of Integers**::
+
+    class Opt:
+        # Must be a list of integers
+        a: list[int] = argument('-a', validator.list(int))
+
+    opt = Opt()
+    opt.a = [1, 2, 3]    # OK
+    opt.a = ['a', 2]     # Raises ValueError
+
+**Item Validation**::
+
+    class Opt:
+        # Each item must be non-negative
+        a: list[int] = argument('-a',
+            validator.list(int).on_item(validator.int.positive(True))
+        )
+
+    opt = Opt()
+    opt.a = [0, 2, 5]    # OK
+    opt.a = [1, -1]      # Raises ValueError
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method**
+     - **Description**
+   * - ``length_in_range(a, b)``
+     - Enforces list length in [a, b].
+   * - ``allow_empty(allow=True)``
+     - Allows or disallows an empty list.
+   * - ``on_item(validator)``
+     - Applies a validator to each list item.
+
+Tuple Validation
+================
+
+Examples
+--------
+**Fixed-Length Tuple**::
+
+    class Opt:
+        # Must be (str, int, float)
+        a: tuple[str, int, float] = argument(
+            '-a', validator.tuple(str, int, float)
+        )
+
+    opt = Opt()
+    opt.a = ('abc', 42, 3.14)   # OK
+    opt.a = ('abc', 42)        # Raises ValueError (too few elements)
+
+**Variable-Length**::
+
+    class Opt:
+        # Must be (str, int, ...) i.e. at least 'str + int', optionally more ints
+        a: tuple[str, int, ...] = argument(
+            '-a', validator.tuple(str, int, ...)
+        )
+
+    opt = Opt()
+    opt.a = ('x', 10)            # OK
+    opt.a = ('x', 10, 20, 30)    # OK
+    opt.a = ('x',)               # Raises ValueError (missing int)
+
+**Item-Validation**::
+
+    class Opt:
+        # Must be (str, int, float).
+        # The string must have a length <= 5,
+        # and the int must be >= 0 and <= 100.
+        a: tuple[str, int, float] = argument(
+            '-a',
+            validator.tuple(str, int, float)
+                .on_item(0, validator.str.length_in_range(None, 5))
+                .on_item(1, validator.int.in_range(0, 100))
+        )
+
+    opt = Opt()
+
+    # Passes all checks: str length=3, int in range [0..100], float is fine
+    opt.a = ('hey', 42, 3.14)
+
+    # Fails because the string is too long:
+    opt.a = ('excessive', 42, 1.2)
+    # Raises ValueError: str length over 5: "excessive"
+
+    # Fails because integer is out of range:
+    opt.a = ('hi', 999, 2.5)
+    # Raises ValueError: value out of range [0, 100]: 999
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method**
+     - **Description**
+   * - ``on_item(indexes, validator)``
+     - Apply a validator to specific tuple positions, or ``None`` for all.
+   * - *(constructor)*
+     - Pass one int (e.g. 3) to enforce a fixed-length tuple with no type checks, or a tuple of types
+       like ``(str, int, float)``. The last type can be ``...`` for variable length.
+
+Logical Combinators
+===================
+
+Examples
+--------
+**OR Combination**::
+
+    class Opt:
+        # Must be int in [0,10] OR str length in [0,10]
+        a: int | str = argument(
+            '-a',
+            validator.any(
+                validator.int.in_range(0, 10),
+                validator.str.length_in_range(0, 10)
+            )
+        )
+
+    opt = Opt()
+    opt.a = 5            # OK (int in [0..10])
+    opt.a = 'abc'        # OK (length=3)
+    opt.a = 50           # Raises ValueError
+
+**AND Combination**::
+
+    class Opt:
+        # Must be non-negative AND non-positive => zero
+        a: int = argument('-a', validator.all(
+            validator.int.positive(include_zero=True),
+            validator.int.negative(include_zero=True)
+        ))
+
+    opt = Opt()
+    opt.a = 0   # OK
+    opt.a = 1   # Raises ValueError
+    opt.a = -1  # Raises ValueError
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method/Class**
+     - **Description**
+   * - ``validator.any(...)`` or ``|``
+     - Combine validators with logical OR; passing at least one is enough.
+   * - ``validator.all(...)`` or ``&``
+     - Combine validators with logical AND; must pass them all.
+   * - ``OrValidatorBuilder``
+     - The class implementing OR logic.
+   * - ``AndValidatorBuilder``
+     - The class implementing AND logic.
+
+
+Error Handling
+--------------
+If any validation fails:
+- A :class:`ValidatorFailError` (or subclass) is raised, often rethrown as ``ValueError``
+  in higher-level frameworks.
+- **Type mismatches** specifically raise :class:`ValidatorFailOnTypeError`.
+
+"""
 from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from typing import Any, TypeVar, Generic, final, overload
+from typing import Any, TypeVar, Generic, final, overload, Collection
 
 from typing_extensions import Self
 
@@ -164,6 +476,7 @@ class StrValidatorBuilder(AbstractTypeValidatorBuilder[str]):
         super().__init__(str)
 
     def length_in_range(self, a: int | None, b: int | None, /) -> StrValidatorBuilder:
+        """Enforce a string length range"""
         match (a, b):
             case (int(a), None):
                 self._add(lambda it: a <= len(it), f'str length less than {a}: "%s"')
@@ -176,9 +489,30 @@ class StrValidatorBuilder(AbstractTypeValidatorBuilder[str]):
         return self
 
     def match(self, r: str | re.Pattern) -> StrValidatorBuilder:
+        """Check if string matches a regular expression"""
         if isinstance(r, str):
             r = re.compile(r)
         self._add(lambda it: r.match(it) is not None, f'str does not match to {r.pattern} : "%s"')
+        return self
+
+    def starts_with(self, prefix: str) -> StrValidatorBuilder:
+        """Check if string values start with a substring"""
+        self._add(lambda it: it.startswith(prefix), f'str does not start with {prefix}: "%s"')
+        return self
+
+    def ends_with(self, suffix: str) -> StrValidatorBuilder:
+        """Check if string values end with a substring"""
+        self._add(lambda it: it.endswith(suffix), f'str does not end with {suffix}: "%s"')
+        return self
+
+    def contains(self, text: str) -> StrValidatorBuilder:
+        """Check if string values contain a substring"""
+        self._add(lambda it: text in it, f'str does not contain {text}: "%s"')
+        return self
+
+    def is_in(self, options: Collection[str]) -> StrValidatorBuilder:
+        """Check if string is one of the allow options"""
+        self._add(lambda it: it in options, f'str not in allowed set {options}: "%s"')
         return self
 
 
@@ -187,6 +521,7 @@ class IntValidatorBuilder(AbstractTypeValidatorBuilder[int]):
         super().__init__(int)
 
     def in_range(self, a: int | None, b: int | None, /) -> IntValidatorBuilder:
+        """Enforce a numeric range for int values"""
         match (a, b):
             case (int(a), None):
                 self._add(lambda it: a <= it, f'value less than {a}: %d')
@@ -200,6 +535,7 @@ class IntValidatorBuilder(AbstractTypeValidatorBuilder[int]):
         return self
 
     def positive(self, include_zero=True):
+        """Check if an int value is positive or non-negative"""
         if include_zero:
             self._add(lambda it: it >= 0, 'not a non-negative value : %d')
         else:
@@ -207,6 +543,7 @@ class IntValidatorBuilder(AbstractTypeValidatorBuilder[int]):
         return self
 
     def negative(self, include_zero=True):
+        """Check if an int value is negative or non-positive."""
         if include_zero:
             self._add(lambda it: it <= 0, 'not a non-positive value : %d')
         else:
@@ -220,6 +557,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
         self.__allow_nan = False
 
     def in_range(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
+        """Enforce an open-interval numeric range (a < value < b)"""
         match (a, b):
             case (int(a), None):
                 self._add(lambda it: a < it, f'value less than {a}: %f')
@@ -233,6 +571,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
         return self
 
     def in_range_closed(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
+        """ Enforce a closed-interval numeric range (a <= value <= b)"""
         match (a, b):
             case (int(a), None):
                 self._add(lambda it: a <= it, f'value less than {a}: %f')
@@ -245,17 +584,20 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
         return self
 
     def allow_nan(self, allow: bool = True) -> FloatValidatorBuilder:
+        """Allow or disallow NaN (not a number) as a valid float"""
         self.__allow_nan = allow
         return self
 
-    def positive(self, include_zero=True):
+    def positive(self, include_zero=True) -> FloatValidatorBuilder:
+        """Check if a float value is positive or non-negative"""
         if include_zero:
             self._add(lambda it: it >= 0, 'not a non-negative value : %f')
         else:
             self._add(lambda it: it > 0, 'not a positive value: %f')
         return self
 
-    def negative(self, include_zero=True):
+    def negative(self, include_zero=True) -> FloatValidatorBuilder:
+        """Check if a float value is negative or non-positive"""
         if include_zero:
             self._add(lambda it: it <= 0, 'not a non-positive value : %f')
         else:
@@ -279,6 +621,7 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
         self.__allow_empty = True
 
     def length_in_range(self, a: int | None, b: int | None, /) -> ListValidatorBuilder:
+        """Enforce a length range for lists"""
         match (a, b):
             case (int(a), None):
                 self._add(lambda it: a <= len(it),
@@ -295,9 +638,14 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
         return self
 
     def allow_empty(self, allow: bool = True):
+        """Allow or disallow empty lists"""
         self.__allow_empty = allow
 
     def on_item(self, validator: Callable[[Any], bool]) -> ListValidatorBuilder:
+        """Apply an additional validator to each item in the list
+
+        :param validator: A callable that validates each item
+        """
         self._add(ListItemValidatorBuilder(validator))
         return self
 
@@ -327,6 +675,11 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
         self.__element_type = element_type
 
     def on_item(self, item: int | list[int] | None, validator: Callable[[Any], bool]) -> TupleValidatorBuilder:
+        """Apply a validator to specific tuple positions
+
+        :param item: A single index, a list of indices, or None for all indices
+        :param validator: The validation callable to apply
+        """
         if item is None:
             pass
         elif isinstance(item, int):

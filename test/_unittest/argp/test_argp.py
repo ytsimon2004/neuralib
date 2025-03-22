@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional, Literal
 
 from neuralib.argp import *
+from neuralib.argp.validator import ValidatorFailOnTypeError
 
 
 class TypeAnnotationTest(unittest.TestCase):
@@ -233,6 +234,15 @@ class TestValidator(unittest.TestCase):
 
 
 class TestValidateBuilder(unittest.TestCase):
+
+    def test_type_error(self):
+        class Opt:
+            a: str = argument('-a', validator.str)
+
+        opt = Opt()
+        with self.assertRaises(ValidatorFailOnTypeError):
+            opt.a = 1
+
     def test_str_in_range(self):
         class Opt:
             a: str = argument('-a', validator.str.length_in_range(2, None))
@@ -252,6 +262,36 @@ class TestValidateBuilder(unittest.TestCase):
             opt.c = ''
         with self.assertRaises(ValueError):
             opt.c = '12345678'
+
+    def test_str_match(self):
+        class Opt:
+            a: str = argument('-a', validator.str.match(r'[a-z][0-9]'))
+
+        opt = Opt()
+        opt.a = 'a1'
+
+        with self.assertRaises(ValueError):
+            opt.a = 'A1'
+
+    def test_str_starts_ends(self):
+        class Opt:
+            a: str = argument('-a', validator.str.starts_with('X').ends_with('Y'))
+
+        opt = Opt()
+        opt.a = 'XasdY'
+
+        with self.assertRaises(ValueError):
+            opt.a = 'Y!@#X'
+
+    def test_str_is_in(self):
+        class Opt:
+            a: str = argument('-a', validator.str.is_in(['opt1', 'opt2']))
+
+        opt = Opt()
+        opt.a = 'opt1'
+
+        with self.assertRaises(ValueError):
+            opt.a = 'opt3'
 
     def test_int_in_range(self):
         class Opt:
@@ -390,9 +430,9 @@ class TestValidateBuilder(unittest.TestCase):
         class Opt:
             a: tuple[str, int, float] = argument(
                 '-a',
-                validator.tuple(str, int, float) \
-                    .on_item(0, validator.str.length_in_range(None, 2)) \
-                    .on_item(1, validator.int.in_range(0, 10))
+                validator.tuple(str, int, float)
+                .on_item(0, validator.str.length_in_range(None, 2))
+                .on_item(1, validator.int.in_range(0, 10))
             )
 
         opt = Opt()
@@ -558,10 +598,10 @@ class TestValidateBuilder(unittest.TestCase):
         class Opt:
             a: tuple[int, float, int, float] = argument(
                 '-a',
-                validator.tuple() \
-                    .on_item([0, 2], validator.int.positive()) \
-                    .on_item(1, v := validator.float.positive()) \
-                    .on_item(3, v)
+                validator.tuple()
+                .on_item([0, 2], validator.int.positive())
+                .on_item(1, v := validator.float.positive())
+                .on_item(3, v)
             )
 
         opt = Opt()

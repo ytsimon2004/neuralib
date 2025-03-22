@@ -131,6 +131,16 @@ In bash::
 
     python -m module.path ep --ANIMAL name --EXP_DATE date output
 
+
+Validator usage
+-----------------------
+The validator system provides a fluent, chainable API for building type-specific validation rules.
+It works by defining specialized “builder” classes (e.g., for strings, integers, floats, lists, and tuples)
+that let you specify constraints like numeric ranges, string length ranges, regex checks, or container length/item rules
+
+**See detailed in :class:`~neuralib.argp.validator`**
+
+
 """
 from ._type import *
 from ._validator import *
