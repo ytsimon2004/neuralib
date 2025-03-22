@@ -218,6 +218,8 @@ Modules
 
     - :mod:`neuralib.imaging.spikes`: dF/F to spike activity (OASIS/Cascade)
 
+    - :mod:`neuralib.imaging.widefield`: Wide-field image sequence processing
+
 
 :mod:`neuralib.segmentation`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
