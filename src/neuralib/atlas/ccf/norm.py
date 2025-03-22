@@ -1,9 +1,6 @@
-from __future__ import annotations
-
 from typing import Literal, get_args, Iterable
 
 import polars as pl
-
 from neuralib.util.verbose import fprint
 
 __all__ = [

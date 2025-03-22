@@ -59,14 +59,14 @@ from typing import Callable, ClassVar, cast, Union, Optional
 from bokeh.application import Application
 from bokeh.document import Document
 from bokeh.models import Model, GlyphRenderer
-from bokeh.plotting import figure as _fig
+from bokeh.plotting import figure
 from bokeh.server.server import Server
 
 __all__ = ['Figure', 'View', 'ViewComponent', 'BokehServer']
 
 
 def Figure(**kwargs):
-    return _fig(**kwargs, output_backend='svg')
+    return figure(**kwargs, output_backend='svg')
 
 
 class View(metaclass=abc.ABCMeta):
@@ -201,10 +201,10 @@ class ViewComponent(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def plot(self, figure: Figure, **kwargs):
+    def plot(self, fig: Figure, **kwargs):
         """plot data in *figure*.
 
-        :param figure: Figure.
+        :param fig: Figure.
         :param kwargs: plotting parameters.
         """
         pass

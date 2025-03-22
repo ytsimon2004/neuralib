@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Literal, ClassVar
 
 import matplotlib.colorbar
@@ -8,7 +6,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
-
 from neuralib.plot import plot_figure, ax_merge
 from neuralib.typing import ArrayLike
 from neuralib.typing import PathLike

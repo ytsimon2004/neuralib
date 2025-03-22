@@ -1,13 +1,10 @@
-from __future__ import annotations
-
 from typing import final, Literal
 
 import attrs
 import cv2
 import numpy as np
-from typing_extensions import Self
-
 from neuralib.typing import PathLike
+from typing_extensions import Self
 
 __all__ = [
     'ImageProcFactory',

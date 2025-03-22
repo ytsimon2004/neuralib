@@ -16,7 +16,7 @@
 
 # Installation
 
-- MODULE_OPTION: `atlas`, `scanner`, `imaging`, `segmentation`, `model`, `track`, `gpu`, `profile`, `imagelib`, `tools`,
+- MODULE_OPTION: `atlas`, `scanner`, `imaging`, `segmentation`, `model`, `gpu`, `profile`, `imagelib`, `tools`,
   `all`
 
 ## conda environment

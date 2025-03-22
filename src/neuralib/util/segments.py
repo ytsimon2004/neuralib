@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 from collections.abc import Callable
 from typing import Literal, Union, Iterable
 
 import numpy as np
-
 from neuralib.typing import ArrayLike
 
 __all__ = [
@@ -654,7 +651,7 @@ def segment_group_map(f: Callable[[np.ndarray], float],
     return np.array(ret)
 
 
-def segment_sample(segs: SegmentLike) -> _SegmentSampleHelper:
+def segment_sample(segs: SegmentLike) -> '_SegmentSampleHelper':
     return _SegmentSampleHelper(segment_flatten(segs))
 
 

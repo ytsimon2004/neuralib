@@ -1,12 +1,9 @@
-from __future__ import annotations
-
 import dataclasses
 from pathlib import Path
 from typing import Any, final
 
 import numpy as np
 import tifffile
-
 from neuralib.plot import plot_figure
 from neuralib.plot.colormap import insert_colorbar
 from neuralib.scanner import (

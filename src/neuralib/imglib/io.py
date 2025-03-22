@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 
 import cv2
@@ -19,8 +17,7 @@ __all__ = [
 ]
 
 
-def read_sequences(avi_file: PathLike,
-                   grey_scale: bool = True) -> np.ndarray:
+def read_sequences(avi_file: PathLike, grey_scale: bool = True) -> np.ndarray:
     """Read an sequences file (i.e., AVI/MP4) into an array, converting to grayscale if specified.
 
     :param avi_file: Path to the AVI file.

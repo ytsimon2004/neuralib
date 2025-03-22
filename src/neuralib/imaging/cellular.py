@@ -1,13 +1,10 @@
-from __future__ import annotations
-
 import typing
 from typing import Literal
 
 import attrs
 import numpy as np
-from typing_extensions import Self
-
 from neuralib.imaging import ObjectiveFov
+from typing_extensions import Self
 
 __all__ = ['CellularCoordinates']
 

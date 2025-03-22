@@ -1,10 +1,8 @@
-from __future__ import annotations
 
 import colorsys
 from typing import TypedDict
 
 import numpy as np
-
 from neuralib.plot import plot_figure
 from neuralib.typing import PathLike
 

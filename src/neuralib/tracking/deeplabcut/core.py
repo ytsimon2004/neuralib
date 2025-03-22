@@ -7,9 +7,8 @@ from typing import TypedDict, NamedTuple
 import h5py
 import numpy as np
 import polars as pl
-from typing_extensions import Self
-
 from neuralib.typing import PathLike
+from typing_extensions import Self
 
 __all__ = [
     'Joint',

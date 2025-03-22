@@ -1,11 +1,9 @@
-from __future__ import annotations
-
 import functools
 import inspect
 
+from neuralib.util.func import create_fn
 from typing_extensions import LiteralString
 
-from neuralib.util.func import create_fn
 from . import expr
 
 __all__ = ['as_func_expr']

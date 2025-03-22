@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numpy as np
 
 from .norm import get_percentile_value

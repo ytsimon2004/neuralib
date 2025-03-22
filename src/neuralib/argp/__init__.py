@@ -23,7 +23,7 @@ In ``ExampleOptions``, ``ANIMAL`` is an attribute with type annotation ``str``. 
 a class variable :class:`~neuralib.argp.core.Argument` (:func:`~neuralib.argp.core.argument()` return) which contains the
 arguments of ``ArgumentParser.add_argument``. For now, we have an optional
 argument ``--ANIMAL`` which accept one argument. ``EXP_DATE`` as is another optional argument.
-And ``OUTPUT_DIR`` are a potional argument because it doesn't have dashed options.
+And ``OUTPUT_DIR`` are a positonal argument because it doesn't have dashed options.
 
 >>> opt = parse_args(ExampleOptions())
 ... print(opt.ANIMAL)

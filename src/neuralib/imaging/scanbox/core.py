@@ -8,10 +8,9 @@ from pprint import pprint
 from typing import TypeVar, TypedDict
 
 import numpy as np
-from scipy.io import loadmat
-
 from neuralib.io import JsonEncodeHandler
 from neuralib.typing import PathLike
+from scipy.io import loadmat
 
 __all__ = [
     'SBXInfo',

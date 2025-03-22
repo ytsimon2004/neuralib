@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -7,7 +5,6 @@ import numpy as np
 from iblatlas.atlas import AllenAtlas
 from iblatlas.regions import BrainRegions
 from matplotlib.axes import Axes
-
 from neuralib.io.core import IBL_CACHE_DIRECTORY
 from neuralib.typing import ArrayLike, PathLike, ArrayLikeStr
 

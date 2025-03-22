@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 from pathlib import Path
 from typing import Literal, TypedDict, final
@@ -7,9 +5,11 @@ from typing import Literal, TypedDict, final
 import attrs
 import numpy as np
 import polars as pl
+from typing_extensions import Self
 
 from neuralib.imaging.cellular import CellularCoordinates
 from neuralib.typing import PathLike
+from neuralib.util.deprecation import deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = [
@@ -249,6 +249,7 @@ class Suite2PResult:
             raise RuntimeError('fs and n_plane are not set properly in suite2p')
 
     @classmethod
+    @deprecated_func(removal_version='0.5.0', remarks='lightening dependency: suite2p, use an separated env')
     def launch_gui(cls, directory: PathLike) -> None:
         """
         launch the suite2p GUI
@@ -263,14 +264,11 @@ class Suite2PResult:
         gui2p.run(str(directory / 'stat.npy'))
 
     @classmethod
-    def load(
-            cls,
-            directory: PathLike,
-            cell_prob_thres: float | None = 0.5,
-            red_cell_threshold: float = 0.65,
-            channel: int = 0,
-            runconfig_frate: float | None = 30.0,
-    ) -> Suite2PResult:
+    def load(cls, directory: PathLike,
+             cell_prob_thres: float | None = 0.5,
+             red_cell_threshold: float = 0.65,
+             channel: int = 0,
+             runconfig_frate: float | None = 30.0) -> Self:
         """
         Load suite2p result from directory
 

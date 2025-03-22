@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 from pathlib import Path
 from typing import Literal
@@ -10,10 +8,11 @@ import pandas as pd
 import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
 
-from neuralib.io.core import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY
+from neuralib.io.core import CCF_CACHE_DIRECTORY, ALLEN_SDK_DIRECTORY, ATLAS_CACHE_DIRECTORY
 from neuralib.typing import PathLike
+from neuralib.util.deprecation import deprecated_func
 from neuralib.util.tqdm import download_with_tqdm
-from neuralib.util.verbose import fprint
+from neuralib.util.verbose import fprint, print_save
 
 __all__ = [
     'DATA_SOURCE_TYPE',
@@ -35,7 +34,7 @@ DATA_SOURCE_TYPE = Literal['ccf_annotation', 'ccf_template', 'allensdk_annotatio
 # AllenCCF Data Source #
 # ===================== #
 
-def _cache_nparray(url: str, file: PathLike) -> None:
+def _cache_ndarray(url: str, file: PathLike) -> None:
     fprint(f'DOWNLOADING... {file.name} from {url}', vtype='io')
 
     with warnings.catch_warnings():
@@ -65,7 +64,7 @@ def load_ccf_annotation(output_dir: PathLike | None = None) -> np.ndarray:
 
     if not file.exists():
         url = 'https://figshare.com/ndownloader/files/44925493'
-        _cache_nparray(url, file)
+        _cache_ndarray(url, file)
 
     return np.load(file, allow_pickle=True)
 
@@ -90,7 +89,7 @@ def load_ccf_template(output_dir: PathLike | None = None) -> np.ndarray:
 
     if not file.exists():
         url = 'https://figshare.com/ndownloader/files/44925496'
-        _cache_nparray(url, file)
+        _cache_ndarray(url, file)
 
     return np.load(file, allow_pickle=True)
 
@@ -134,21 +133,21 @@ def load_structure_tree(version: Literal['2017', 'old'] = '2017',
         raise ValueError('')
 
     #
-    file = output_dir / filename
-    if not file.exists():
+    output = output_dir / filename
+    if not output.exists():
         url = f'https://raw.githubusercontent.com/cortex-lab/allenCCF/master/{filename}'
         content = download_with_tqdm(url)
         df = pd.read_csv(content)
-        df.to_csv(file)
-        fprint(f'DOWNLOAD! {filename} in {output_dir}', vtype='io')
+        df.to_csv(output)
+        print_save(output, verb='DOWNLOAD')
 
-    ret = (pl.read_csv(file)
+    ret = (pl.read_csv(output)
            .with_columns(pl.col('parent_structure_id').fill_null(-1))
            .with_columns(pl.col('structure_id_path')
                          .map_elements(lambda it: tuple(map(int, it[1:-1].split('/'))),
                                        return_dtype=pl.List(pl.Int64))))
     #
-    if '2017' in Path(file).name:
+    if '2017' in Path(output).name:
         ret = ret.with_columns(pl.col('atlas_id').fill_null(-2))
     else:
         ret = ret.with_columns(pl.col('name').alias('safe_name'))
@@ -156,10 +155,40 @@ def load_structure_tree(version: Literal['2017', 'old'] = '2017',
     return ret
 
 
+def get_dorsal_cortex(output_dir: Path | None = None) -> Path:
+    """
+    Get example dorsal projection annotation svg file
+
+    .. seealso::
+
+        https://community.brain-map.org/t/aligning-dorsal-projection-of-mouse-common-coordinate-framework-with-wide-field-images-of-mouse-brain/140/2
+
+    :param output_dir: Output directory for caching
+    :return: Output file path
+    """
+
+    if output_dir is None:
+        output_dir = ATLAS_CACHE_DIRECTORY
+
+    filename = 'cortical_map_top_down.svg'
+    output = output_dir / filename
+
+    if not output.exists():
+        url = 'http://connectivity.brain-map.org/assets/cortical_map_top_down.svg'
+        content = download_with_tqdm(url)
+
+        with open(output, 'wb') as f:
+            f.write(content.getvalue())
+            print_save(output, verb='DOWNLOAD')
+
+    return output
+
+
 # ===================== #
 # Allen SDK Data Source #
 # ===================== #
 
+@deprecated_func(removal_version='0.5.0', remarks='switch brainglobe api instead, and probably deprecate allensdk dependency')
 def load_allensdk_annotation(resolution: int = 10, output_dir: PathLike | None = None) -> np.ndarray:
     """
     Data Source directly from Allen Institute
@@ -183,10 +212,7 @@ def load_allensdk_annotation(resolution: int = 10, output_dir: PathLike | None =
         try:
             from allensdk.api.queries.mouse_connectivity_api import MouseConnectivityApi
         except ImportError as e:
-            fprint(
-                'Build error from project.toml. Please manually install using "pip install allensdk --no-deps"',
-                vtype='error'
-            )
+            fprint('Build error from project.toml. Please manually install using "pip install allensdk --no-deps"', vtype='error')
             raise e
 
         mcapi = MouseConnectivityApi()

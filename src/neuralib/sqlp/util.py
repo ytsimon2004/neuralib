@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TypeVar, Iterable, overload, TYPE_CHECKING, Any, cast
 
 from neuralib.util.table import rich_table
+
 from .expr import SqlExpr, SqlField
 
 if TYPE_CHECKING:

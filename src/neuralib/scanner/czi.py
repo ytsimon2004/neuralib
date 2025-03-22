@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import dataclasses
 from functools import cached_property
 from pathlib import Path
@@ -12,12 +10,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xmltodict
 from matplotlib.axes import Axes
-
 from neuralib.scanner import AbstractConfocalScanner, SceneIdx, DimCode, ZEISS_CZI_CHANNELS_ORDER, ZPROJ_TYPE
 from neuralib.typing import PathLike
 from neuralib.util.utils import joinn
 
 __all__ = ['CziConfocalScanner']
+
+from typing_extensions import Self
 
 
 class ImageFileInfo(NamedTuple):
@@ -72,7 +71,7 @@ class CziConfocalScanner(AbstractConfocalScanner):
             self.consistent_scan_configs = False
 
     @classmethod
-    def load(cls, file: PathLike) -> CziConfocalScanner:
+    def load(cls, file: PathLike) -> Self:
         czi_file = aicspylibczi.CziFile(file)
         xml = tostring(czi_file.meta, encoding='utf-8').decode('utf-8')
         return CziConfocalScanner(

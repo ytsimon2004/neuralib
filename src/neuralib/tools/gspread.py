@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Union, Any, get_args, Final, Literal
 
@@ -7,10 +5,9 @@ import gspread
 import numpy as np
 import pandas as pd
 import polars as pl
-from typing_extensions import TypeAlias, Self
-
 from neuralib.typing import PathLike, DataFrame
 from neuralib.util.verbose import fprint
+from typing_extensions import TypeAlias, Self
 
 __all__ = [
     'SpreadSheetName',

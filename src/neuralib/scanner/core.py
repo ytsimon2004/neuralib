@@ -1,15 +1,12 @@
-from __future__ import annotations
-
 import abc
 from pathlib import Path
 from typing import Any, NewType, Literal
 
 import numpy as np
-from tifffile import tifffile
-from typing_extensions import TypeAlias
-
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
+from tifffile import tifffile
+from typing_extensions import TypeAlias
 
 __all__ = [
     #

@@ -13,10 +13,17 @@ def main():
         parsers=parsers,
         description='brainrender view',
         usage="""
-        Example: 
-        >> brender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
-        >> brender roi -F <FILE>
-        >> brender probe -F <FILE> --depth <DEPTH in um>
+        Usage Examples:
+    
+        Render a brain region:
+        $ neuralib_brainrender area -R <REGION, ...>
+        $ neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor
+    
+        Render a region of interest (ROI) from a file:
+        $ neuralib_brainrender roi -F <FILE>
+    
+        Render a probe placement from a file with depth specification:
+        $ neuralib_brainrender probe -F <FILE> --depth <DEPTH>
         """
     )
 

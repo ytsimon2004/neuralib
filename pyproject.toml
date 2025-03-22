@@ -11,8 +11,8 @@ license = { file = "LICENSE" }
 readme = "README.md"
 keywords = ["Neuroscience", "visual neuroscience", "cellular imaging", "brain mapping", "spatial navigation"]
 classifiers = [
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
@@ -26,6 +26,7 @@ dependencies = [
     "colorama",
     "colorlog",
     "matplotlib",
+    "matplotlib_venn",
     "seaborn",
     "numpy",
     "scipy",
@@ -39,6 +40,7 @@ dependencies = [
     "requests",
     'gdown',
     "rich",
+    "h5py",
     "typing_extensions",
 ]
 
@@ -60,10 +62,11 @@ scanner = [
 
 imaging = [
     "scanimage-tiff-reader",
-    "suite2p",
     "sbxreader",
     "ruamel.yaml",
-    "numba"  # oasis dcnv batch processing
+    "numba", # oasis dcnv batch processing
+    "bokeh", # fft view
+    "napari"  # align
 ]
 
 segmentation = [
@@ -81,14 +84,6 @@ model = [
     "rastermap"
 ]
 
-plot = [
-    "matplotlib_venn"
-]
-
-track = [
-    "facemap",
-    "numpy<2.0; extra == 'track'"
-]
 
 gpu = [
     "torch",
@@ -102,6 +97,7 @@ imagelib = [
 ]
 
 tools = [
+    "python-dotenv",
     "slackclient",
     "gspread"
 ]
@@ -112,9 +108,7 @@ all = [
     "neura-library[atlas]",
     "neura-library[scanner]",
     "neura-library[imaging]",
-    "neura-library[plot]",
     "neura-library[model]",
-    "neura-library[profile]",
     "neura-library[imagelib]",
     "neura-library[tools]",
 ]
@@ -124,7 +118,6 @@ dev = [
     'pre-commit',
     'ruff',
     "neura-library[segmentation]",
-    "neura-library[track]",
     "neura-library[gpu]",
     "neura-library[all]"
 ]
@@ -137,7 +130,6 @@ doc = [
     "sphinx-toolbox",
     "sphinx-rtd-theme",
     "neura-library[segmentation]",
-    "neura-library[track]",
     "neura-library[gpu]",
     "neura-library[all]",
 ]
@@ -155,3 +147,4 @@ requires = ["setuptools>=61.0"]
 
 [project.scripts]
 neuralib_brainrender = "neuralib.atlas.brainrender.main_app:main"
+neuralib_widefield = "neuralib.imaging.widefield.main_app:main"

@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 from typing import Optional, NamedTuple, ClassVar
 
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-
 from neuralib.typing import PathLike
 
 __all__ = ['VennHandler',

@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Optional, Literal, TYPE_CHECKING
 
 import polars as pl
-
 from neuralib.argp import AbstractParser, argument
 
 if TYPE_CHECKING:

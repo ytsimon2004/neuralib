@@ -51,7 +51,7 @@ Installation
 
         If you wish to install the **minimal required dependencies** according to usage purpose:
 
-        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``track``, ``gpu``, ``imagelib``, ``tools``
+        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``gpu``, ``imagelib``, ``tools``
 
         - Example of using ``atlas`` module:
 
@@ -101,7 +101,7 @@ Installation
 
         If you wish to install the **minimal required dependencies** according to usage purpose:
 
-        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``track``, ``gpu``, ``imagelib``, ``tools``
+        - Choices: ``atlas``, ``scanner``, ``imaging``, ``segmentation``, ``model``, ``gpu``, ``imagelib``, ``tools``
 
         - Example of using ``atlas`` module:
 
@@ -126,7 +126,7 @@ Installation
     - ``pip install torch``: Used in **cellpose cellular segmentation**, **facemap keypoint extraction**
 
 .. warning::
-    The command ``pip install neura-library[all]`` **does NOT include** ``segmentation``, ``track``, or ``gpu`` dependencies.
+    The command ``pip install neura-library[all]`` **does NOT include** ``segmentation``, or ``gpu`` dependencies.
     These modules are mainly used for wrapper and contain:
 
     1. **Old package dependencies** (e.g., ``numpy < 2.0``)
@@ -146,12 +146,25 @@ Installation
 CLI project.scripts
 ---------------------------
 
+neuralib_brainrender
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
+
 .. code-block:: console
 
     neuralib_brainrender -h
 
 
-- See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
+neuralib_widefield
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- See example in  `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.imaging.widefield.html>`_
+
+.. code-block:: console
+
+    neuralib_widefield -h
+
 
 
 
@@ -204,6 +217,8 @@ Modules
     - :mod:`neuralib.imaging.suite2p`: Result parser for `suite2p <https://github.com/MouseLand/suite2p>`_
 
     - :mod:`neuralib.imaging.spikes`: dF/F to spike activity (OASIS/Cascade)
+
+    - :mod:`neuralib.imaging.widefield`: Wide-field image sequence processing
 
 
 :mod:`neuralib.segmentation`

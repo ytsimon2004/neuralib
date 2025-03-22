@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abc
 import math
 from typing import Final, ClassVar
@@ -28,7 +26,7 @@ def load_slice_view(source: DATA_SOURCE_TYPE,
                     plane_type: PLANE_TYPE,
                     *,
                     output_dir: PathLike | None = None,
-                    allen_annotation_res: int = 10) -> AbstractSliceView:
+                    allen_annotation_res: int = 10) -> 'AbstractSliceView':
     """
     Load the mouse brain slice view
 
@@ -38,17 +36,18 @@ def load_slice_view(source: DATA_SOURCE_TYPE,
     :param allen_annotation_res: Volume resolution in um. default is 10 um
     :return: :class:`AbstractSliceView`
     """
-    if source == 'ccf_annotation':
-        data = load_ccf_annotation(output_dir)
-        res = 10
-    elif source == 'ccf_template':
-        data = load_ccf_template(output_dir)
-        res = 10
-    elif source == 'allensdk_annotation':
-        data = load_allensdk_annotation(resolution=allen_annotation_res, output_dir=output_dir)
-        res = allen_annotation_res
-    else:
-        raise ValueError('')
+    match source:
+        case 'ccf_annotation':
+            data = load_ccf_annotation(output_dir)
+            res = 10
+        case 'ccf_template':
+            data = load_ccf_template(output_dir)
+            res = 10
+        case 'allensdk_annotation':
+            data = load_allensdk_annotation(resolution=allen_annotation_res, output_dir=output_dir)
+            res = allen_annotation_res
+        case _:
+            raise ValueError(f'Unknown source: {source}')
 
     return AbstractSliceView(source, plane_type, res, data)
 
@@ -193,7 +192,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         """
         pass
 
-    def plane_at(self, slice_index: int) -> SlicePlane:
+    def plane_at(self, slice_index: int) -> 'SlicePlane':
         return SlicePlane(slice_index, int(self.width // 2), int(self.height // 2), 0, 0, self)
 
     def offset(self, h: int, v: int) -> np.ndarray:
@@ -487,7 +486,7 @@ class SlicePlane:
     def plot_annotation(self,
                         ax: Axes,
                         *,
-                        aff_trans: Axes.transData | None = None,
+                        aff_trans=None,
                         to_um: bool = True,
                         cmap: str = 'binary',
                         alpha: float = 0.3,

@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 from pathlib import Path
-
-from plotly import express as px
 
 from neuralib.atlas.data import load_bg_structure_tree
 from neuralib.typing import PathLike
+from plotly import express as px
 
 __all__ = ['plot_sunburst_acronym',
            'plot_structure_tree']

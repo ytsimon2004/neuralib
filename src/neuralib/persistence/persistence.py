@@ -128,7 +128,6 @@ you need to define a classmethod `from_dict` for creating that persistance class
 
 
 """
-from __future__ import annotations
 
 import abc
 import inspect
@@ -137,7 +136,6 @@ from pathlib import Path
 from typing import Type, TypeVar, Union, Callable, Generic, Any, Iterator, get_type_hints
 
 import numpy as np
-
 from neuralib.util.func import create_fn
 
 __all__ = [

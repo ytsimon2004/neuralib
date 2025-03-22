@@ -34,8 +34,6 @@ This script adapted from ``suite2p.suite2p.extraction.dcnv``
 
 
 """
-from __future__ import annotations
-
 import numpy as np
 from numba import njit, prange
 

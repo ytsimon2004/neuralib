@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from pprint import pprint
 from typing import Literal, NamedTuple, Iterable
@@ -7,7 +5,6 @@ from typing import Literal, NamedTuple, Iterable
 import numpy as np
 import pandas as pd
 import polars as pl
-
 from neuralib.atlas.data import load_structure_tree
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.typing import Source, HEMISPHERE_TYPE
