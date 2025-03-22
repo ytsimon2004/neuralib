@@ -14,6 +14,18 @@ class NapariAlignmentOptions(AbstractParser):
         help='file path for the video sequence'
     )
 
+    reference_path: str | None = argument(
+        '-R', '--reference',
+        default=None,
+        help='reference image (e.g., bright-field)'
+    )
+
+    dorsal_map_path: str | None = argument(
+        '-M', '--map',
+        default=None,
+        help='dorsal map file, If None then use default'
+    )
+
     color: bool = argument(
         '--color',
         help='alignment map with color',
@@ -21,10 +33,19 @@ class NapariAlignmentOptions(AbstractParser):
 
     def run(self):
         viewer = napari.Viewer()
-        cortical_map = load_example_dorsal_cortex(color=self.color, cached=True)
-
         viewer.open(self.sequence_path)
-        viewer.add_image(cortical_map)
+
+        #
+        if self.dorsal_map_path is not None:
+            viewer.open(self.dorsal_map_path)
+        else:
+            cortical_map = load_example_dorsal_cortex(color=self.color, cached=True)
+            viewer.add_image(cortical_map)
+
+        #
+        if self.reference_path is not None:
+            viewer.open(self.reference_path)
+
         napari.run()
 
 
