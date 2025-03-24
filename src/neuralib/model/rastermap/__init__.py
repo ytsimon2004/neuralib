@@ -11,4 +11,3 @@ Rastermap is a discovery algorithm for neural data. The algorithm was written by
 """
 
 from .core import *
-from .wfield import *

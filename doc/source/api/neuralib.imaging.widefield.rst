@@ -13,4 +13,5 @@ neuralib.imaging.widefield
     neuralib.imaging.widefield.fft_view
     neuralib.imaging.widefield.main_app
     neuralib.imaging.widefield.plot
+    neuralib.imaging.widefield.svd
 

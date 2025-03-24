@@ -9,7 +9,6 @@ neuralib.model.rastermap
     :caption: Modules:
     
     neuralib.model.rastermap.core
-    neuralib.model.rastermap.wfield
 
 
 .. toctree::
