@@ -19,11 +19,3 @@ neuralib.atlas
     neuralib.atlas.util
     neuralib.atlas.view
 
-
-
-.. toctree::
-    :maxdepth: 1
-    :caption: examples
-
-    ../notebooks/example_slice_view
-    ../notebooks/example_ibl_plot

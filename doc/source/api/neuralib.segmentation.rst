@@ -11,10 +11,3 @@ neuralib.segmentation
     neuralib.segmentation.base
     neuralib.segmentation.cellpose
     neuralib.segmentation.stardist
-
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Notebook Demo
-
-    ../notebooks/example_segmentation

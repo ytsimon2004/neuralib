@@ -9,11 +9,3 @@ neuralib.model.rastermap
     :caption: Modules:
     
     neuralib.model.rastermap.core
-
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Notebook Demo
-
-    ../notebooks/example_rastermap_2p
-    ../notebooks/example_rastermap_wfield

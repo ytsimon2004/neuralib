@@ -10,10 +10,3 @@ neuralib.tracking
     
     neuralib.tracking.deeplabcut
     neuralib.tracking.facemap
-
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Notebook Demo
-
-    ../notebooks/example_facemap

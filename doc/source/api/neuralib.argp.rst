@@ -13,9 +13,3 @@ neuralib.argp
     neuralib.argp.validator
 
 
-.. toctree::
-    :maxdepth: 1
-    :caption: Notebook Demo
-
-    ../notebooks/example_argp
-
