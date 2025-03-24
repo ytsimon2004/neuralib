@@ -11,6 +11,7 @@ provides short examples followed by a reference table of the builder’s methods
    :local:
    :depth: 2
 
+
 String Validation
 =================
 
@@ -46,18 +47,19 @@ Method Reference
 
    * - **Method**
      - **Description**
-   * - ``length_in_range(a, b)``
+   * - :meth:`length_in_range(a, b) <StrValidatorBuilder.length_in_range>`
      - Enforces a string length in [a, b]. Either bound may be ``None``.
-   * - ``match(pattern)``
+   * - :meth:`match(pattern) <StrValidatorBuilder.match>`
      - Checks if the string matches a given regex pattern.
-   * - ``starts_with(prefix)``
+   * - :meth:`starts_with(prefix) <StrValidatorBuilder.starts_with>`
      - Checks if the string starts with ``prefix``.
-   * - ``ends_with(suffix)``
+   * - :meth:`ends_with(suffix) <StrValidatorBuilder.ends_with>`
      - Checks if the string ends with ``suffix``.
-   * - ``contains(substring)``
+   * - :meth:`contains(substring) <StrValidatorBuilder.contains>`
      - Checks if the string contains the given substring.
-   * - ``is_in(options)``
+   * - :meth:`is_in(options) <StrValidatorBuilder.is_in>`
      - Checks if the string is in the provided collection of allowed options.
+
 
 Integer Validation
 ==================
@@ -92,12 +94,13 @@ Method Reference
 
    * - **Method**
      - **Description**
-   * - ``in_range(a, b)``
+   * - :meth:`in_range(a, b) <IntValidatorBuilder.in_range>`
      - Checks if integer is in [a, b]. Either bound may be ``None``.
-   * - ``positive(include_zero=True)``
+   * - :meth:`positive(include_zero=True) <IntValidatorBuilder.positive>`
      - Checks if integer is >= 0 (if ``include_zero=True``) or > 0 otherwise.
-   * - ``negative(include_zero=True)``
+   * - :meth:`negative(include_zero=True) <IntValidatorBuilder.negative>`
      - Checks if integer is <= 0 (if ``include_zero=True``) or < 0 otherwise.
+
 
 Float Validation
 ================
@@ -125,16 +128,17 @@ Method Reference
 
    * - **Method**
      - **Description**
-   * - ``in_range(a, b)``
-     - Checks if float is in the open interval (a, b).
-   * - ``in_range_closed(a, b)``
-     - Checks if float is in the closed interval [a, b].
-   * - ``allow_nan(allow=True)``
+   * - :meth:`in_range(a, b) <FloatValidatorBuilder.in_range>`
+     - Checks if float is in the open interval ``(a, b)``.
+   * - :meth:`in_range_closed(a, b) <FloatValidatorBuilder.in_range_closed>`
+     - Checks if float is in the closed interval ``[a, b]``.
+   * - :meth:`allow_nan(allow=True) <FloatValidatorBuilder.allow_nan>`
      - Allows or disallows NaN values.
-   * - ``positive(include_zero=True)``
+   * - :meth:`positive(include_zero=True) <FloatValidatorBuilder.positive>`
      - Checks if float is >= 0 (if ``include_zero=True``) or > 0 otherwise.
-   * - ``negative(include_zero=True)``
+   * - :meth:`negative(include_zero=True) <FloatValidatorBuilder.negative>`
      - Checks if float is <= 0 (if ``include_zero=True``) or < 0 otherwise.
+
 
 List Validation
 ===============
@@ -171,12 +175,13 @@ Method Reference
 
    * - **Method**
      - **Description**
-   * - ``length_in_range(a, b)``
+   * - :meth:`length_in_range(a, b) <ListValidatorBuilder.length_in_range>`
      - Enforces list length in [a, b].
-   * - ``allow_empty(allow=True)``
+   * - :meth:`allow_empty(allow=True) <ListValidatorBuilder.allow_empty>`
      - Allows or disallows an empty list.
-   * - ``on_item(validator)``
+   * - :meth:`on_item(validator) <ListValidatorBuilder.on_item>`
      - Applies a validator to each list item.
+
 
 Tuple Validation
 ================
@@ -242,11 +247,12 @@ Method Reference
 
    * - **Method**
      - **Description**
-   * - ``on_item(indexes, validator)``
+   * - :meth:`on_item(indexes, validator) <TupleValidatorBuilder.on_item>`
      - Apply a validator to specific tuple positions, or ``None`` for all.
    * - *(constructor)*
      - Pass one int (e.g. 3) to enforce a fixed-length tuple with no type checks, or a tuple of types
        like ``(str, int, float)``. The last type can be ``...`` for variable length.
+
 
 Logical Combinators
 ===================
@@ -292,9 +298,9 @@ Method Reference
 
    * - **Method/Class**
      - **Description**
-   * - ``validator.any(...)`` or ``|``
+   * - :meth:`validator.any(...) <ValidatorBuilder.any>` or ``|``
      - Combine validators with logical OR; passing at least one is enough.
-   * - ``validator.all(...)`` or ``&``
+   * - :meth:`validator.all(...) <ValidatorBuilder.all>` or ``&``
      - Combine validators with logical AND; must pass them all.
    * - ``OrValidatorBuilder``
      - The class implementing OR logic.
@@ -308,6 +314,7 @@ If any validation fails:
 - A :class:`ValidatorFailError` (or subclass) is raised, often rethrown as ``ValueError``
   in higher-level frameworks.
 - **Type mismatches** specifically raise :class:`ValidatorFailOnTypeError`.
+
 
 """
 from __future__ import annotations
