@@ -5,14 +5,16 @@ BrainRender Wrapper
 :author:
     Yu-Ting Wei
 
-This module provide a CLI-based brainrender wrapper
-See detail in the https://brainglobe.info/documentation/brainrender/index.html.
-The wrapper provide three main usage cases, and can be run as command line once the package installed
+This module provide a CLI-based `brainrender <https://brainglobe.info/documentation/brainrender/index.html.>`_ wrapper
+Can be run as command line once the package installed
 
-Region reconstruction (area mode)
+See the available options use ``-h`` option ::
+
+    neuralib_brainrender <area | roi | probe> -h
+
+
+Region reconstruction
 ---------------------------------------
-
-Plot brain regions
 
 Example of reconstruct the Visual Cortex ::
 
@@ -22,59 +24,88 @@ Example of reconstruct the Visual Cortex ::
 |brender area|
 
 
-See the available options use `-h` option ::
 
-    neuralib_brainrender area -h
-
-
-
-ROI reconstruction (roi mode)
+ROI reconstruction
 ---------------------------------------
 
-Plot brain regions with ROIs label
+By default use CCF coordinates space, specify use [--coord-space] option {ccf,brainrender}
 
-Example of reconstruct ROIs in the Somatosensory Cortex for ipsilateral hemisphere(assume right hemisphere)::
 
-    neuralib_brainrender roi -F <CSV_FILE>
+numpy file
+^^^^^^^^^^^^^
+
+Example of numpy file (``Array[float, [N, 3]]`` with AP, DV, ML coordinates) ::
+
+    [[-3.03  4.34 -4.5 ]
+     [-3.03  4.42 -4.37]
+     [-3.03  4.55 -4.37]
+     ...
+     [-2.91  4.31  4.75]
+     [-2.91  4.36  4.77]
+     [-2.91  4.12  4.85]]
+
+
+.. code-block:: console
+
+    neuralib_brainrender roi --file <NUMPY_FILE>
+
+csv file
+^^^^^^^^^^^^^
+
+Example of csv file (with ``AP_location``, ``DV_location``, ``ML_location`` headers) ::
+
+    ┌─────────────┬─────────────┬─────────────┐
+    │ AP_location ┆ DV_location ┆ ML_location │
+    │ ---         ┆ ---         ┆ ---         │
+    │ f64         ┆ f64         ┆ f64         │
+    ╞═════════════╪═════════════╪═════════════╡
+    │ -3.03       ┆ 4.34        ┆ -4.5        │
+    │ -3.03       ┆ 4.92        ┆ -4.31       │
+    │ …           ┆ …           ┆ …           │
+    │ -2.91       ┆ 4.06        ┆ 4.71        │
+    │ -2.91       ┆ 4.12        ┆ 4.85        │
+    └─────────────┴─────────────┴─────────────┘
+
+
+.. code-block:: console
+
+    neuralib_brainrender roi --file <CSV_FILE>
+
+
+
+
+processed csv file (flexible reconstruction)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO
+
+Example of using parsed allenccf csv output ::
+
+    ┌───────────────────────────────────┬─────────┬─────────────┬─────────────┬─────────────┬─────────┬─────────┬────────┬────────────┐
+    │ name                              ┆ acronym ┆ AP_location ┆ DV_location ┆ ML_location ┆ avIndex ┆ channel ┆ source ┆  ...       │
+    │ ---                               ┆ ---     ┆ ---         ┆ ---         ┆ ---         ┆ ---     ┆ ---     ┆ ---    ┆  ---       │
+    │ str                               ┆ str     ┆ f64         ┆ f64         ┆ f64         ┆ i64     ┆ str     ┆ str    ┆  ...       │
+    ╞═══════════════════════════════════╪═════════╪═════════════╪═════════════╪═════════════╪═════════╪═════════╪════════╪════════════╡
+    │ Ectorhinal area/Layer 5           ┆ ECT5    ┆ -3.03       ┆ 4.34        ┆ -4.5        ┆ 377     ┆ gfp     ┆ aRSC   ┆  ...       │
+    │ Perirhinal area layer 6a          ┆ PERI6a  ┆ -3.03       ┆ 4.42        ┆ -4.37       ┆ 372     ┆ gfp     ┆ aRSC   ┆  ...       │
+    │ …                                 ┆ …       ┆ …           ┆ …           ┆ …           ┆ …       ┆ …       ┆ …      ┆  …         │
+    │ Ventral auditory area layer 6a    ┆ AUDv6a  ┆ -2.91       ┆ 3.52        ┆ 4.46        ┆ 156     ┆ rfp     ┆ pRSC   ┆  ...       │
+    │ Ectorhinal area/Layer 6a          ┆ ECT6a   ┆ -2.91       ┆ 4.14        ┆ 4.47        ┆ 378     ┆ rfp     ┆ pRSC   ┆  ...       │
+    │ Temporal association areas layer… ┆ TEa5    ┆ -2.91       ┆ 4.02        ┆ 4.55        ┆ 365     ┆ rfp     ┆ pRSC   ┆  ...       │
+    └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┴─────────┴────────┴────────────┘
+
+
+.. code-block:: console
+
+    neuralib_brainrender roi --classifier-file <CSV_FILE>
 
 
 |brender roi|
 
 
 
-CSV FILE example (auto transformed coordinates space from allen to brainrender)::
-
-    ┌───────────────────────────────────┬─────────┬─────────────┬─────────────┬─────────────┬─────────┬─────────┬────────┬───────────────────────────┬──────────────┬────────┬────────────┬────────────┬────────────┬────────────┬────────────┬───────────┐
-    │ name                              ┆ acronym ┆ AP_location ┆ DV_location ┆ ML_location ┆ avIndex ┆ channel ┆ source ┆ abbr                      ┆ acronym_abbr ┆ hemi.  ┆ merge_ac_0 ┆ merge_ac_1 ┆ merge_ac_2 ┆ merge_ac_3 ┆ merge_ac_4 ┆ family    │
-    │ ---                               ┆ ---     ┆ ---         ┆ ---         ┆ ---         ┆ ---     ┆ ---     ┆ ---    ┆ ---                       ┆ ---          ┆ ---    ┆ ---        ┆ ---        ┆ ---        ┆ ---        ┆ ---        ┆ ---       │
-    │ str                               ┆ str     ┆ f64         ┆ f64         ┆ f64         ┆ i64     ┆ str     ┆ str    ┆ str                       ┆ str          ┆ str    ┆ str        ┆ str        ┆ str        ┆ str        ┆ str        ┆ str       │
-    ╞═══════════════════════════════════╪═════════╪═════════════╪═════════════╪═════════════╪═════════╪═════════╪════════╪═══════════════════════════╪══════════════╪════════╪════════════╪════════════╪════════════╪════════════╪════════════╪═══════════╡
-    │ Ectorhinal area/Layer 5           ┆ ECT5    ┆ -3.03       ┆ 4.34        ┆ -4.5        ┆ 377     ┆ gfp     ┆ aRSC   ┆ Ectorhinal area           ┆ ECT          ┆ contra ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ISOCORTEX │
-    │ Perirhinal area layer 6a          ┆ PERI6a  ┆ -3.03       ┆ 4.42        ┆ -4.37       ┆ 372     ┆ gfp     ┆ aRSC   ┆ Perirhinal area           ┆ PERI         ┆ contra ┆ PERI       ┆ PERI       ┆ PERI       ┆ PERI       ┆ PERI       ┆ ISOCORTEX │
-    │ …                                 ┆ …       ┆ …           ┆ …           ┆ …           ┆ …       ┆ …       ┆ …      ┆ …                         ┆ …            ┆ …      ┆ …          ┆ …          ┆ …          ┆ …          ┆ …          ┆ …         │
-    │ Ventral auditory area layer 6a    ┆ AUDv6a  ┆ -2.91       ┆ 3.52        ┆ 4.46        ┆ 156     ┆ rfp     ┆ pRSC   ┆ Ventral auditory area     ┆ AUDv         ┆ ipsi   ┆ AUD        ┆ AUD        ┆ AUD        ┆ AUD        ┆ AUDv       ┆ ISOCORTEX │
-    │ Ectorhinal area/Layer 6a          ┆ ECT6a   ┆ -2.91       ┆ 4.14        ┆ 4.47        ┆ 378     ┆ rfp     ┆ pRSC   ┆ Ectorhinal area           ┆ ECT          ┆ ipsi   ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ECT        ┆ ISOCORTEX │
-    │ Temporal association areas layer… ┆ TEa5    ┆ -2.91       ┆ 4.02        ┆ 4.55        ┆ 365     ┆ rfp     ┆ pRSC   ┆ Temporal association area ┆ TEa          ┆ ipsi   ┆ TEa        ┆ TEa        ┆ TEa        ┆ TEa        ┆ TEa        ┆ ISOCORTEX │
-    └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┴─────────┴────────┴───────────────────────────┴──────────────┴────────┴────────────┴────────────┴────────────┴────────────┴────────────┴───────────┘
-
-See how to create the csv after ccf pipeline
-
-.. code-block:: python
-
-    from neuralib.atlas.ccf.classifier import RoiClassifier
-    from neuralib.atlas.ccf.core import AbstractCCFDir
-    root = ...
-    ccf_dir = AbstractCCFDir(root, with_overlap_sources=False)
-    classifier = RoiClassifier(ccf_dir, plane='coronal')
-    df = classifier.parsed_df
-
-Example ccf data folder structure in (:class:`~neuralib.atlas.ccf.core.AbstractCCFDir()`)
 
 
-
-See the available options use ``-h`` option ::
-
-    neuralib_brainrender roi -h
 
 
 
@@ -110,7 +141,7 @@ Prepare CSV file from ccf pipeline::
 
 Example of Above csv file for targeting the left Entorhinal cortex (ENT) using 4 shanks NeuroPixel probe::
 
-    neuralib_brainrender probe -F <CSV_FILE> -D 3000 -P sagittal -R ENT -H left
+    neuralib_brainrender probe -F <CSV_FILE> --depth 3000 -P sagittal -R ENT -H left
 
 
 
@@ -133,7 +164,3 @@ See the available options use ``-h`` option ::
 
 
 """
-
-from .core import *
-from .probe_rst import *
-from .roi_rst import *

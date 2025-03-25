@@ -10,7 +10,7 @@ neuralib.atlas.brainrender
     
     neuralib.atlas.brainrender.core
     neuralib.atlas.brainrender.main_app
-    neuralib.atlas.brainrender.probe_rst
-    neuralib.atlas.brainrender.roi_rst
+    neuralib.atlas.brainrender.probe
+    neuralib.atlas.brainrender.roi
     neuralib.atlas.brainrender.util
 

@@ -9,7 +9,7 @@ from neuralib.atlas.data import load_structure_tree
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.typing import Source, HEMISPHERE_TYPE
 from neuralib.typing import DataFrame
-from neuralib.util.verbose import fprint
+from neuralib.util.deprecation import deprecated_func
 
 __all__ = [
     'ALLEN_CCF_10um_BREGMA',
@@ -18,12 +18,15 @@ __all__ = [
     'SourceCoordinates',
     'iter_source_coordinates',
     'get_margin_merge_level',
+    'allen_to_brainrender_coord',
+    'as_coords_array',
+    # to be deprecated
     'roi_points_converter',
     'create_allen_structure_dict'
 ]
 
-# allen CCF 10um volume coordinates, refer to allenCCF/Browsing Functions/allenCCFbregma.m
 ALLEN_CCF_10um_BREGMA = np.array([540, 0, 570])  # AP, DV, LR
+"""allen CCF 10um volume coordinates, refer to allenCCF/Browsing Functions/allenCCFbregma.m"""
 
 PLANE_TYPE = Literal['coronal', 'sagittal', 'transverse']
 
@@ -31,9 +34,7 @@ PLANE_TYPE = Literal['coronal', 'sagittal', 'transverse']
 class SourceCoordinates(NamedTuple):
     source: Source
     coordinates: np.ndarray
-    """(N, 3) with ap, dv, ml"""
-
-    axes_repr: tuple[str, str, str] = ('ap', 'dv', 'ml')
+    """AP, DV, ML coordinates. `Array[float, [N, 3]]`"""
 
     @property
     def ap(self) -> np.ndarray:
@@ -55,8 +56,7 @@ def iter_source_coordinates(
         region_col: str | None = None,
         hemisphere: HEMISPHERE_TYPE = 'both',
         to_brainrender: bool = True,
-        to_um: bool = True,
-        ret_order: tuple[Source, ...] | None = ('pRSC', 'aRSC', 'overlap')
+        source_order: tuple[Source, ...] | None = None,
 ) -> Iterable[SourceCoordinates]:
     """Load allen ccf roi output (merged different color channels).
 
@@ -65,8 +65,7 @@ def iter_source_coordinates(
     :param region_col: if None, auto infer, and check the lowest merge level contain all the regions specified
     :param hemisphere: which brain hemisphere
     :param to_brainrender: convert the coordinates to brain render
-    :param to_um: unit to um
-    :param ret_order: whether specify the source generator order
+    :param source_order: whether specify the source generator order
     :return: Iterable of :class:`SourceCoordinates`
     """
     df = pl.read_csv(file)
@@ -79,7 +78,6 @@ def iter_source_coordinates(
             region_col = get_margin_merge_level(df, only_areas, 'lowest')
 
         df = df.filter(pl.col(region_col).is_in(only_areas))
-        fprint(f'using {region_col} for {only_areas}')
 
         if df.is_empty():
             raise RuntimeError('check lowest merge level')
@@ -88,14 +86,16 @@ def iter_source_coordinates(
         df = df.filter(pl.col('hemi.') == hemisphere)
 
     #
-    points = roi_points_converter(df, to_brainrender=to_brainrender, to_um=to_um)
+    coords = as_coords_array(df)
+    if to_brainrender:
+        coords = allen_to_brainrender_coord(coords)
 
-    if ret_order is None:
-        ret_order = df['source'].unique()
+    if source_order is None:
+        source_order = df['source'].unique()
 
-    for src in ret_order:
-        mask = df.select(pl.col('source') == src).to_numpy()[:, 0]
-        yield SourceCoordinates(src, points[mask])
+    for src in source_order:
+        mx = df.select(pl.col('source') == src).to_numpy()[:, 0]
+        yield SourceCoordinates(src, coords[mx])
 
 
 def get_margin_merge_level(df: pl.DataFrame,
@@ -128,47 +128,68 @@ def get_margin_merge_level(df: pl.DataFrame,
     raise ValueError(f'{areas} not found')
 
 
+def allen_to_brainrender_coord(data: DataFrame | np.ndarray) -> np.ndarray:
+    """Convert coordinates space of ``AllenCCF`` to ``Brainrender`` coordinates
+
+    :param data: Dataframe with 'AP_location', 'DV_location', 'ML_location' headers.
+            Or numpy array with `Array[float, [N, 3]]` or `Array[float, 3]`
+    :return: brainrender coordinates. `Array[float, [N, 3]]` with AP, DV, ML coordinates
+    """
+    coords = as_coords_array(data)
+
+    coords *= 1000
+    coords[:, 0] /= -1  # increment toward posterior
+    coords[:, 2] /= -1  # increment toward left hemisphere
+    bregma = ALLEN_CCF_10um_BREGMA * 10  # pixel to um
+    coords += bregma  # roi relative to bregma
+
+    return coords
+
+
+def as_coords_array(data: DataFrame | np.ndarray) -> np.ndarray:
+    """
+    Convert dataframe/1D numpy array to coordinates numpy array
+
+    :param data: Dataframe with 'AP_location', 'DV_location', 'ML_location' headers.
+        Or numpy array with `Array[float, [N, 3]]` or `Array[float, 3]`
+    :return: `Array[float, [N, 3]]` with AP, DV, ML coordinates
+    """
+    match data:
+        case pd.DataFrame():
+            coords = pl.from_pandas(data).select('AP_location', 'DV_location', 'ML_location').to_numpy()
+        case pl.DataFrame():
+            coords = data.select('AP_location', 'DV_location', 'ML_location').to_numpy()
+        case np.ndarray():
+            if data.ndim == 1:
+                data = np.expand_dims(data, axis=0)
+            if data.ndim != 2 or data.shape[1] != 3:
+                raise ValueError(f'{data.ndim=}, {data.shape=}')
+            coords = data
+        case _:
+            raise TypeError('')
+
+    return coords
+
+
+@deprecated_func(new='allen_to_brainrender_coord', removal_version='0.5.0')
 def roi_points_converter(dat: DataFrame | np.ndarray,
-                         to_brainrender: bool = True,
-                         to_um: bool = True) -> np.ndarray:
+                         to_brainrender: bool = True) -> np.ndarray:
     """
     convert coordinates of `allenccf` roi points from parsed dataframe
 
     :param dat: Dataframe with 'AP_location', 'DV_location', 'ML_location' headers.
             Or numpy array with `Array[float, [N, 3]]` or `Array[float, 3]`
     :param to_brainrender: coordinates to `brainrender`
-    :param to_um: unit to um
     :return: `Array[float, [N, 3]]`, N: number of roi; 3: AP, DV, ML
     """
-    if isinstance(dat, pd.DataFrame):
-        dat = pl.from_pandas(dat)
-        points = dat.select('AP_location', 'DV_location', 'ML_location').to_numpy()
-    elif isinstance(dat, pl.DataFrame):
-        points = dat.select('AP_location', 'DV_location', 'ML_location').to_numpy()
-    elif isinstance(dat, np.ndarray):
-        if dat.ndim == 1:
-            dat = np.expand_dims(dat, axis=0)
-
-        if dat.ndim == 2 and dat.shape[1] != 3:
-            raise ValueError('')
-
-        points = dat
-    else:
-        raise TypeError('')
-
-    #
-    if to_um:
-        points *= 1000  # um
-
+    coords = as_coords_array(dat)
     if to_brainrender:
-        points[:, 0] /= -1  # increment toward posterior
-        points[:, 2] /= -1  # increment toward left hemisphere
-        bregma = ALLEN_CCF_10um_BREGMA * 10  # pixel to um
-        points += bregma  # roi relative to bregma
+        coords = allen_to_brainrender_coord(coords)
 
-    return points
+    return coords
 
 
+@deprecated_func(remarks='use bg-based structure file', removal_version='0.5.0')
 def create_allen_structure_dict(verbose=False) -> dict[str, str]:
     """
     Get the acronym/name pairing from structure_tree.csv

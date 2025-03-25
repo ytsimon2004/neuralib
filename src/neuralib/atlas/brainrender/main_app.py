@@ -1,12 +1,15 @@
 from neuralib.argp import parse_command_args
-from neuralib.atlas.brainrender import BrainReconstructor, RoisReconstructor, ProbeReconstructor
+
+from .core import BrainRenderCLI
+from .probe import ProbeRenderCLI
+from .roi import RoiRenderCLI
 
 
 def main():
     parsers = dict(
-        area=BrainReconstructor,
-        roi=RoisReconstructor,
-        probe=ProbeReconstructor
+        area=BrainRenderCLI,
+        roi=RoiRenderCLI,
+        probe=ProbeRenderCLI
     )
 
     parse_command_args(

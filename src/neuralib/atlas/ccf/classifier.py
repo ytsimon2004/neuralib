@@ -16,7 +16,7 @@ from neuralib.atlas.ccf.norm import MouseBrainRoiNormHandler, ROIS_NORM_TYPE
 from neuralib.atlas.map import merge_until_level, NUM_MERGE_LAYER, DEFAULT_FAMILY_DICT
 from neuralib.atlas.typing import Area, HEMISPHERE_TYPE, Source, Channel
 from neuralib.atlas.util import PLANE_TYPE
-from neuralib.util.color_logging import setup_clogger, LOGGING_IO_LEVEL
+from neuralib.util.logging import setup_clogger, LOGGING_IO_LEVEL
 from neuralib.util.utils import uglob
 from typing_extensions import Self, TypeAlias
 
