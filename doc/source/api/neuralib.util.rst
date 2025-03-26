@@ -21,4 +21,5 @@ neuralib.util
     neuralib.util.segments
     neuralib.util.unstable
     neuralib.util.interp
+    neuralib.util.logging
 
