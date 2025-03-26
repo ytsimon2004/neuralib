@@ -308,14 +308,6 @@ Method Reference
      - The class implementing AND logic.
 
 
-Error Handling
---------------
-If any validation fails:
-- A :class:`ValidatorFailError` (or subclass) is raised, often rethrown as ``ValueError``
-  in higher-level frameworks.
-- **Type mismatches** specifically raise :class:`ValidatorFailOnTypeError`.
-
-
 """
 from __future__ import annotations
 
@@ -324,6 +316,10 @@ from collections.abc import Callable
 from typing import Any, TypeVar, Generic, final, overload, Collection
 
 from typing_extensions import Self
+
+from neuralib.util.deprecation import deprecated_func
+
+__all__ = ['ValidatorBuilder']
 
 T = TypeVar('T')
 
@@ -342,12 +338,32 @@ class ValidatorFailOnTypeError(ValidatorFailError):
 
 class Validator:
     def __call__(self, value: Any) -> bool:
+        """
+
+        :param value: type-casted value.
+        :return: True if *value* pass the validation.
+        :raise ValueError: when *value* does not pass the validation.
+        """
         return True
+
+    def freeze(self) -> Self:
+        raise NotImplementedError()
 
 
 class LambdaValidator(Validator, Generic[T]):
+    """
+    A simple validator that carries a failure message.
+    """
+
     def __init__(self, validator: Callable[[T], bool],
                  message: str | Callable[[T], str] = None):
+        """
+
+        :param validator: callable
+        :param message: failure message.
+            It could be a str message that contains one %-formating expression (for example: '%s'),
+            or a callable ``(T)->str``.
+        """
         if isinstance(message, str):
             message = message.__mod__
 
@@ -384,14 +400,17 @@ class LambdaValidator(Validator, Generic[T]):
 class ValidatorBuilder:
     @property
     def str(self) -> StrValidatorBuilder:
+        """a str validator"""
         return StrValidatorBuilder()
 
     @property
     def int(self) -> IntValidatorBuilder:
+        """a int validator"""
         return IntValidatorBuilder()
 
     @property
     def float(self) -> FloatValidatorBuilder:
+        """a float validator"""
         return FloatValidatorBuilder()
 
     @overload
@@ -404,30 +423,67 @@ class ValidatorBuilder:
 
     # noinspection PyMethodMayBeStatic
     def tuple(self, *element_type) -> TupleValidatorBuilder:
+        """a tuple validator
+
+        overloading element_type example:
+
+        * ``2``: 2-length tuple
+        * ``type1, type2``: 2-length tuple with type1 at pos 0 and type2 at pos 1.
+        * ``type1, None``: 2-length tuple with type1 at pos 0 and any type at pos 1.
+        * ``type1, ...``: at-least-1-length tuple with type1 from pos 0 to remaining pos.
+
+        """
         return TupleValidatorBuilder(element_type)
 
     # noinspection PyMethodMayBeStatic
     def list(self, element_type: type[T] = None) -> ListValidatorBuilder:
+        """
+        a list validator
+
+        :param element_type: element type.
+        :return:
+        """
         return ListValidatorBuilder(element_type)
 
     @classmethod
     def all(cls, *validator: Callable[[T], bool]) -> AndValidatorBuilder:
+        """
+        return a validator that ensure all combined *validator* are satisfied.
+        return an always-true validator if *validator* is empty.
+        """
         return AndValidatorBuilder(*validator)
 
     @classmethod
     def any(cls, *validator: Callable[[T], bool]) -> OrValidatorBuilder:
+        """
+        return a validator that ensure at least one combined validator is satisfied.
+        return an always-true validator if *validator* is empty.
+        """
         return OrValidatorBuilder(*validator)
 
     @classmethod
     def optional(cls) -> Validator:
+        """
+        return a validator that pass the validation when the value is ``None``.
+        """
         return LambdaValidator(lambda it: it is None)
 
     @classmethod
+    @deprecated_func(remarks='value is non-None by default')
     def non_none(cls) -> Validator:
         return LambdaValidator(lambda it: it is not None)
 
     def __call__(self, validator: Callable[[Any], bool],
                  message: str | Callable[[Any], str] = None) -> LambdaValidator:
+        """
+        Create a validator with a failure message.
+
+        :param validator: callable
+        :param message: failure message.
+            It could be a str message that contains one %-formating expression (for example: '%s'),
+            or a callable ``(T)->str``.
+        :return: a validator
+        """
         return LambdaValidator(validator, message)
 
 
@@ -566,12 +622,12 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
     def in_range(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
         """Enforce an open-interval numeric range (a < value < b)"""
         match (a, b):
-            case (int(a), None):
-                self._add(lambda it: a < it, f'value less than {a}: %f')
-            case (None, int(b)):
-                self._add(lambda it: it < b, f'value over {b}: %f')
-            case (int(a), int(b)):
-                self._add(lambda it: a < it < b, f'value out of range ({a}, {b}): %f')
+            case (a, None):
+                self._add(lambda it: float(a) < it, f'value less than {a}: %f')
+            case (None, b):
+                self._add(lambda it: it < float(b), f'value over {b}: %f')
+            case (a, b):
+                self._add(lambda it: float(a) < it < float(b), f'value out of range ({a}, {b}): %f')
             case _:
                 raise TypeError()
 
@@ -580,12 +636,12 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
     def in_range_closed(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
         """ Enforce a closed-interval numeric range (a <= value <= b)"""
         match (a, b):
-            case (int(a), None):
-                self._add(lambda it: a <= it, f'value less than {a}: %f')
-            case (None, int(b)):
-                self._add(lambda it: it <= b, f'value over {b}: %f')
-            case (int(a), int(b)):
-                self._add(lambda it: a <= it <= b, f'value out of range [{a}, {b}]: %f')
+            case (a, None):
+                self._add(lambda it: float(a) <= it, f'value less than {a}: %f')
+            case (None, b):
+                self._add(lambda it: it <= float(b), f'value over {b}: %f')
+            case (a, b):
+                self._add(lambda it: float(a) <= it <= float(b), f'value out of range [{a}, {b}]: %f')
             case _:
                 raise TypeError()
         return self
@@ -612,7 +668,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
         return self
 
     def __call__(self, value: Any) -> bool:
-        if value != value:
+        if value != value:  # is NaN
             if self.__allow_nan:
                 return True
             else:

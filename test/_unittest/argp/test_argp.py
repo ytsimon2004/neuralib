@@ -235,6 +235,10 @@ class TestValidator(unittest.TestCase):
 
 class TestValidateBuilder(unittest.TestCase):
 
+    def test_duplicate_validator(self):
+        with self.assertRaises(RuntimeError):
+            argument('-a', validator.str, validator=validator.str)
+
     def test_type_error(self):
         class Opt:
             a: str = argument('-a', validator.str)
