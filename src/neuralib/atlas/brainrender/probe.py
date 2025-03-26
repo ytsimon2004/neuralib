@@ -5,51 +5,48 @@ from typing import Optional
 
 import numpy as np
 import polars as pl
-from scipy.interpolate import interp1d
-from typing_extensions import Self
-
-from neuralib.argp import as_argument, argument
-from neuralib.atlas.brainrender.core import BrainReconstructor
+from brainrender.actors import Points
+from neuralib.argp import argument
+from neuralib.atlas.brainrender.core import BrainRenderCLI
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.util import roi_points_converter
 from neuralib.util.segments import grouped_iter
+from scipy.interpolate import interp1d
+from typing_extensions import Self
 
-__all__ = ['ProbeReconstructor']
+__all__ = ['ProbeRenderCLI']
 
 
-class ProbeReconstructor(BrainReconstructor):
-    DESCRIPTION = 'For probe(s) track reconstruction'
+class ProbeRenderCLI(BrainRenderCLI):
+    DESCRIPTION = 'Probe track reconstruction'
 
-    implant_depth: int = argument('-D', '--depth', required=True, help='implant depth in um')
+    GROUP_PROBE = 'Probe Option'
 
-    dye_label_only: bool = argument('--dye', help='only show the histology dye parts')
-
-    csv_file: Path = as_argument(BrainReconstructor.csv_file).with_options(
+    implant_depth: int = argument(
+        '--depth',
         required=True,
-        help='csv file after registration using 2dccf pipeline, point numbers equal to probe(s) * 2'
+        group=GROUP_PROBE,
+        help='implant depth in um'
     )
-    """
-    Example::
-    
-        ┌───────────────────────────────────┬─────────┬─────────────┬─────────────┬─────────────┬─────────┐
-        │ name                              ┆ acronym ┆ AP_location ┆ DV_location ┆ ML_location ┆ avIndex │
-        │ ---                               ┆ ---     ┆ ---         ┆ ---         ┆ ---         ┆ ---     │
-        │ str                               ┆ str     ┆ f64         ┆ f64         ┆ f64         ┆ i64     │
-        ╞═══════════════════════════════════╪═════════╪═════════════╪═════════════╪═════════════╪═════════╡
-        │ Primary visual area layer 6a      ┆ VISp6a  ┆ -3.81       ┆ 1.92        ┆ -3.12       ┆ 191     │
-        │ optic radiation                   ┆ or      ┆ -4.08       ┆ 2.33        ┆ -3.12       ┆ 1217    │
-        │ Posterolateral visual area layer… ┆ VISpl6a ┆ -4.28       ┆ 2.29        ┆ -3.12       ┆ 198     │
-        │ Posterolateral visual area layer… ┆ VISpl5  ┆ -4.52       ┆ 2.17        ┆ -3.12       ┆ 197     │
-        │ Subiculum                         ┆ SUB     ┆ -3.93       ┆ 4.36        ┆ -3.3        ┆ 536     │
-        │ Entorhinal area medial part dors… ┆ ENTm5   ┆ -4.19       ┆ 4.39        ┆ -3.3        ┆ 515     │
-        │ Entorhinal area medial part dors… ┆ ENTm2   ┆ -4.44       ┆ 4.39        ┆ -3.3        ┆ 510     │
-        │ Entorhinal area medial part dors… ┆ ENTm1   ┆ -4.66       ┆ 4.29        ┆ -3.3        ┆ 509     │
-        └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┘
-    """
+
+    dye_label_only: bool = argument(
+        '--dye',
+        group=GROUP_PROBE,
+        help='only show the histology dye parts'
+    )
+
+    csv_file: Path = argument(
+        '-F', '--file',
+        metavar='FILE',
+        type=Path,
+        group=GROUP_PROBE,
+        help='csv file for probe reconstruction'
+    )
 
     plane_type: PLANE_TYPE = argument(
         '--plane-type', '-P',
         default='coronal',
+        group=GROUP_PROBE,
         help='cutting orientation. Assume if multiple shanks were inserted along the AP axis, then do the sagittal'
              'slicing, if inserted along the ML axis, then do the coronal slicing '
     )
@@ -59,7 +56,15 @@ class ProbeReconstructor(BrainReconstructor):
     data: pl.DataFrame
     """sorted data based on plane_type"""
 
-    def load(self):
+    def run(self):
+        self.render()
+        self.render_output()
+
+    def render(self):
+        super().render()
+        self._add_probe()
+
+    def _add_probe(self):
         self.raw = pl.read_csv(self.csv_file)
         self.data = self.infer_probe_index(self.raw)
         self.dye_label_only = True
@@ -70,7 +75,9 @@ class ProbeReconstructor(BrainReconstructor):
         probe_theo = self.get_probe_object().with_theoretical().shanks
         probe_theo = np.vstack(probe_theo)
 
-        self.add_points([probe_dye, probe_theo])
+        # self.add_points([probe_dye, probe_theo])
+        self.scene.add(Points(probe_dye, colors='r', name='roi', alpha=0.9))
+        self.scene.add(Points(probe_theo, colors='k', name='roi', alpha=0.9))
 
     @cached_property
     def number_shanks(self) -> int:
@@ -88,7 +95,7 @@ class ProbeReconstructor(BrainReconstructor):
 
         """
 
-        rst: 'ProbeReconstructor'
+        rst: 'ProbeRenderCLI'
         """`ProbeReconstructor`"""
         shanks: list[np.ndarray]
         """length S of Array[float, [P, 3]], with ap, dv, ml"""
@@ -277,4 +284,4 @@ def _calc_shank_length_diff(shank: np.ndarray,
 
 
 if __name__ == '__main__':
-    ProbeReconstructor().main()
+    ProbeRenderCLI().main()

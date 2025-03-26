@@ -89,7 +89,7 @@ class RoiRenderCLI(BrainRenderCLI):
         default=[],
         action='append',
         group=GROUP_ROIS_LOAD,
-        help="points file as 'npy', 'npz' or 'csv'"
+        help="points file as 'npy' or 'csv'"
     )
 
     _need_close_file: list[NamedTemporaryFile] = []
