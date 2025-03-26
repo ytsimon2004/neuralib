@@ -647,6 +647,14 @@ class TestValidateBuilder(unittest.TestCase):
         with self.assertRaises(ValueError) as capture:
             opt.a = ('0', '1')
 
+    def test_reuse_validator(self):
+        class Opt:
+            a: int = argument('-a', (v := validator.int))
+            b: int = argument('-b', v.positive())
+
+        opt = Opt()
+        opt.a = -1
+
 
 class WithDefaultTest(unittest.TestCase):
     def test_bool(self):

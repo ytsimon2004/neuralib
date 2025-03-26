@@ -175,6 +175,9 @@ class Argument(object):
         if not all([it.startswith('-') for it in options]):
             raise RuntimeError(f'options should startswith "-". {options}')
 
+        if isinstance(validator, Validator):
+            validator = validator.freeze()
+
         self.attr = None
         self.attr_type = Any
         self.group = group

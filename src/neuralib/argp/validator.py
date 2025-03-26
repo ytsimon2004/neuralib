@@ -312,8 +312,8 @@ Method Reference
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from typing import Any, TypeVar, Generic, final, overload, Collection
+from collections.abc import Callable, Collection
+from typing import Any, TypeVar, Generic, final, overload
 
 from typing_extensions import Self
 
@@ -347,7 +347,7 @@ class Validator:
         return True
 
     def freeze(self) -> Self:
-        raise NotImplementedError()
+        return self
 
 
 class LambdaValidator(Validator, Generic[T]):
@@ -367,13 +367,13 @@ class LambdaValidator(Validator, Generic[T]):
         if isinstance(message, str):
             message = message.__mod__
 
-        self.__validator = validator
-        self.__message = message
+        self._validator = validator
+        self._message = message
 
     def __call__(self, value: T) -> bool:
-        message = self.__message
+        message = self._message
         try:
-            success = self.__validator(value)
+            success = self._validator(value)
         except ValidatorFailError:
             raise
         except BaseException as e:
@@ -394,6 +394,12 @@ class LambdaValidator(Validator, Generic[T]):
 
     def __or__(self, validator: Callable[[Any], bool]) -> OrValidatorBuilder:
         return OrValidatorBuilder(self, validator)
+
+    def freeze(self) -> Self:
+        if isinstance(validator := self._validator, Validator):
+            validator = validator.freeze()
+
+        return LambdaValidator(validator, self._message)
 
 
 @final
@@ -510,6 +516,12 @@ class AbstractTypeValidatorBuilder(Validator, Generic[T]):
 
         return True
 
+    def freeze(self, *args, **kwargs) -> Self:
+        ret = type(self)(*args, **kwargs)
+        ret.__validators = [it.freeze() for it in self.__validators]
+        ret.__allow_none = self.__allow_none
+        return ret
+
     @overload
     def _add(self, validator: LambdaValidator[T]):
         pass
@@ -619,6 +631,11 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
         super().__init__((int, float))
         self.__allow_nan = False
 
+    def freeze(self) -> Self:
+        ret = super().freeze()
+        ret.__allow_nan = self.__allow_nan
+        return ret
+
     def in_range(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
         """Enforce an open-interval numeric range (a < value < b)"""
         match (a, b):
@@ -683,6 +700,12 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
         self.__element_type = element_type
         self.__allow_empty = True
 
+    def freeze(self) -> Self:
+        ret = super().freeze()
+        ret.__element_type = self.__element_type
+        ret.__allow_empty = self.__allow_empty
+        return ret
+
     def length_in_range(self, a: int | None, b: int | None, /) -> ListValidatorBuilder:
         """Enforce a length range for lists"""
         match (a, b):
@@ -736,6 +759,9 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
                 element_type = (None,) * length
 
         self.__element_type = element_type
+
+    def freeze(self) -> Self:
+        return super().freeze(self.__element_type)
 
     def on_item(self, item: int | list[int] | None, validator: Callable[[Any], bool]) -> TupleValidatorBuilder:
         """Apply a validator to specific tuple positions
@@ -812,6 +838,12 @@ class ListItemValidatorBuilder(LambdaValidator):
                     raise ValidatorFailError(f'at index {i}, validate fail : {value}')
         return True
 
+    def freeze(self) -> Self:
+        if isinstance(validator := self._validator, Validator):
+            validator = validator.freeze()
+
+        return ListItemValidatorBuilder(validator, self._message)
+
 
 class TupleItemValidatorBuilder(LambdaValidator):
     def __init__(self, item: int | list[int] | None, validator: Callable[[Any], bool]):
@@ -843,10 +875,16 @@ class TupleItemValidatorBuilder(LambdaValidator):
         except BaseException as e:
             raise ValidatorFailError(f'at index {index}, ' + e.args[0]) from e
 
+    def freeze(self) -> Self:
+        if isinstance(validator := self._validator, Validator):
+            validator = validator.freeze()
+
+        return TupleItemValidatorBuilder(self.__item, validator)
+
 
 class OrValidatorBuilder(Validator):
     def __init__(self, *validator: Callable[[Any], bool]):
-        self.__validators = list(validator)
+        self.__validators = [it.freeze() if isinstance(it, Validator) else it for it in validator]
 
     def __call__(self, value: Any) -> bool:
         if len(self.__validators) == 0:
@@ -865,6 +903,9 @@ class OrValidatorBuilder(Validator):
 
         raise ValidatorFailError('; '.join(coll))
 
+    def freeze(self) -> Self:
+        return OrValidatorBuilder(*self.__validators)
+
     def __and__(self, validator: Callable[[Any], bool]) -> AndValidatorBuilder:
         return AndValidatorBuilder(self, validator)
 
@@ -878,7 +919,7 @@ class OrValidatorBuilder(Validator):
 
 class AndValidatorBuilder(Validator):
     def __init__(self, *validator: Callable[[Any], bool]):
-        self.__validators = list(validator)
+        self.__validators = [it.freeze() if isinstance(it, Validator) else it for it in validator]
 
     def __call__(self, value: Any) -> bool:
         if len(self.__validators) == 0:
@@ -889,6 +930,9 @@ class AndValidatorBuilder(Validator):
                 raise ValidatorFailError()
 
         return True
+
+    def freeze(self) -> Self:
+        return AndValidatorBuilder(*self.__validators)
 
     def __and__(self, validator: Callable[[Any], bool]) -> AndValidatorBuilder:
         if isinstance(validator, AndValidatorBuilder):
