@@ -321,6 +321,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, TypeVar, Generic, final, overload, Collection
 
 from typing_extensions import Self
@@ -409,6 +410,10 @@ class ValidatorBuilder:
     # noinspection PyMethodMayBeStatic
     def list(self, element_type: type[T] = None) -> ListValidatorBuilder:
         return ListValidatorBuilder(element_type)
+
+    @property
+    def path(self):
+        return PathValidatorBuilder()
 
     @classmethod
     def all(cls, *validator: Callable[[T], bool]) -> AndValidatorBuilder:
@@ -598,7 +603,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
     def positive(self, include_zero=True) -> FloatValidatorBuilder:
         """Check if a float value is positive or non-negative"""
         if include_zero:
-            self._add(lambda it: it >= 0, 'not a non-negative value : %f')
+            self._add(lambda it: it >= 0, 'not a non-negative value: %f')
         else:
             self._add(lambda it: it > 0, 'not a positive value: %f')
         return self
@@ -742,6 +747,38 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
                         raise ValidatorFailError(f'wrong element type at {i} : {e}')
 
         return super().__call__(value)
+
+
+class PathValidatorBuilder(AbstractTypeValidatorBuilder[Path]):
+
+    def __init__(self):
+        super().__init__(Path)
+
+    def is_suffix(self, suffix: str | list[str] | tuple[str, ...]) -> PathValidatorBuilder:
+        """Check path suffix or in a list of suffixes"""
+        if isinstance(suffix, str):
+            self._add(lambda it: it.suffix == suffix, f'suffix != {suffix}: %s')
+        elif isinstance(suffix, list | tuple):
+            self._add(lambda it: it.suffix in suffix, f'suffix not in {suffix}: %s')
+        else:
+            raise TypeError('')
+
+        return self
+
+    def is_exists(self) -> PathValidatorBuilder:
+        """Check if path exists"""
+        self._add(lambda it: it.exists(), f'path does not exist: %s')
+        return self
+
+    def is_file(self) -> PathValidatorBuilder:
+        """Check if path is a file"""
+        self._add(lambda it: it.is_file(), f'path is not a file: %s')
+        return self
+
+    def is_dir(self) -> PathValidatorBuilder:
+        """Check if path is a directory"""
+        self._add(lambda it: it.is_dir(), f'path is not a directory: %s')
+        return self
 
 
 class ListItemValidatorBuilder(LambdaValidator):
