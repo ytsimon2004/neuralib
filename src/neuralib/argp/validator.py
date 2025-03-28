@@ -254,6 +254,41 @@ Method Reference
        like ``(str, int, float)``. The last type can be ``...`` for variable length.
 
 
+Path Validation
+=================
+
+Examples
+--------
+**Path suffix**::
+
+    class Opt:
+        a: Path = argument('-a', validator.path.is_suffix(['.csv', '.npy']))
+
+    opt = Opt()
+    opt.a = Path('.../*.csv')    # OK
+    opt.a = Path('.../*.txt')    # Raises ValueError
+
+
+Method Reference
+----------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - **Method**
+     - **Description**
+   * - :meth:`is_suffix(suffix) <PathValidatorBuilder.is_suffix>`
+     - Check path suffix or in a list of suffixes
+   * - :meth:`is_exists() <PathValidatorBuilder.is_exists>`
+     - Check if path exists
+   * - :meth:`is_file() <PathValidatorBuilder.is_file>`
+     - Check if path is a file
+   * - :meth:`is_dir() <PathValidatorBuilder.is_dir>`
+     - Check if path is a directory
+
+
+
+
 Logical Combinators
 ===================
 
@@ -568,7 +603,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
         super().__init__((int, float))
         self.__allow_nan = False
 
-    def in_range(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
+    def in_range(self, a: float | None, b: float | None, /) -> Self:
         """Enforce an open-interval numeric range (a < value < b)"""
         match (a, b):
             case (int(a), None):
@@ -582,7 +617,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
 
         return self
 
-    def in_range_closed(self, a: float | None, b: float | None, /) -> FloatValidatorBuilder:
+    def in_range_closed(self, a: float | None, b: float | None, /) -> Self:
         """ Enforce a closed-interval numeric range (a <= value <= b)"""
         match (a, b):
             case (int(a), None):
@@ -595,12 +630,12 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
                 raise TypeError()
         return self
 
-    def allow_nan(self, allow: bool = True) -> FloatValidatorBuilder:
+    def allow_nan(self, allow: bool = True) -> Self:
         """Allow or disallow NaN (not a number) as a valid float"""
         self.__allow_nan = allow
         return self
 
-    def positive(self, include_zero=True) -> FloatValidatorBuilder:
+    def positive(self, include_zero=True) -> Self:
         """Check if a float value is positive or non-negative"""
         if include_zero:
             self._add(lambda it: it >= 0, 'not a non-negative value: %f')
@@ -608,7 +643,7 @@ class FloatValidatorBuilder(AbstractTypeValidatorBuilder[float]):
             self._add(lambda it: it > 0, 'not a positive value: %f')
         return self
 
-    def negative(self, include_zero=True) -> FloatValidatorBuilder:
+    def negative(self, include_zero=True) -> Self:
         """Check if a float value is negative or non-positive"""
         if include_zero:
             self._add(lambda it: it <= 0, 'not a non-positive value : %f')
@@ -632,7 +667,7 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
         self.__element_type = element_type
         self.__allow_empty = True
 
-    def length_in_range(self, a: int | None, b: int | None, /) -> ListValidatorBuilder:
+    def length_in_range(self, a: int | None, b: int | None, /) -> Self:
         """Enforce a length range for lists"""
         match (a, b):
             case (int(a), None):
@@ -653,7 +688,7 @@ class ListValidatorBuilder(AbstractTypeValidatorBuilder[list[T]]):
         """Allow or disallow empty lists"""
         self.__allow_empty = allow
 
-    def on_item(self, validator: Callable[[Any], bool]) -> ListValidatorBuilder:
+    def on_item(self, validator: Callable[[Any], bool]) -> Self:
         """Apply an additional validator to each item in the list
 
         :param validator: A callable that validates each item
@@ -686,7 +721,7 @@ class TupleValidatorBuilder(AbstractTypeValidatorBuilder[tuple]):
 
         self.__element_type = element_type
 
-    def on_item(self, item: int | list[int] | None, validator: Callable[[Any], bool]) -> TupleValidatorBuilder:
+    def on_item(self, item: int | list[int] | None, validator: Callable[[Any], bool]) -> Self:
         """Apply a validator to specific tuple positions
 
         :param item: A single index, a list of indices, or None for all indices
@@ -754,7 +789,7 @@ class PathValidatorBuilder(AbstractTypeValidatorBuilder[Path]):
     def __init__(self):
         super().__init__(Path)
 
-    def is_suffix(self, suffix: str | list[str] | tuple[str, ...]) -> PathValidatorBuilder:
+    def is_suffix(self, suffix: str | list[str] | tuple[str, ...]) -> Self:
         """Check path suffix or in a list of suffixes"""
         if isinstance(suffix, str):
             self._add(lambda it: it.suffix == suffix, f'suffix != {suffix}: %s')
@@ -765,17 +800,17 @@ class PathValidatorBuilder(AbstractTypeValidatorBuilder[Path]):
 
         return self
 
-    def is_exists(self) -> PathValidatorBuilder:
+    def is_exists(self) -> Self:
         """Check if path exists"""
         self._add(lambda it: it.exists(), f'path does not exist: %s')
         return self
 
-    def is_file(self) -> PathValidatorBuilder:
+    def is_file(self) -> Self:
         """Check if path is a file"""
         self._add(lambda it: it.is_file(), f'path is not a file: %s')
         return self
 
-    def is_dir(self) -> PathValidatorBuilder:
+    def is_dir(self) -> Self:
         """Check if path is a directory"""
         self._add(lambda it: it.is_dir(), f'path is not a directory: %s')
         return self
