@@ -49,7 +49,6 @@ dependencies = [
 
 [project.optional-dependencies]
 atlas = [
-    #    "allensdk"  # unexpected build error, thus use pip install allensdk if needed
     "brainrender",
     "iblatlas",
     "anytree",

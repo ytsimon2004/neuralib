@@ -5,14 +5,15 @@ from typing import NamedTuple, Final, Any, Literal, get_args, Iterable
 import attrs
 import numpy as np
 import polars as pl
+from scipy.io import loadmat
+from scipy.io.matlab import MatlabOpaque
+
 from neuralib.atlas.typing import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, load_slice_view
 from neuralib.typing import PathLike
 from neuralib.util.utils import uglob, joinn
 from neuralib.util.verbose import fprint
-from scipy.io import loadmat
-from scipy.io.matlab import MatlabOpaque
 
 __all__ = [
     #
@@ -594,7 +595,7 @@ class CCFTransMatrix:
 
     def get_slice_plane(self) -> SlicePlane:
         ret = (
-            load_slice_view('ccf_template', self.plane_type, allen_annotation_res=self.resolution)
+            load_slice_view('reference', self.plane_type, resolution=self.resolution)
             .plane_at(self.slice_index)
         )
 

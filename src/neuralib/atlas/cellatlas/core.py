@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pandas as pd
 import polars as pl
-from neuralib.atlas.data import load_structure_tree
+from typing_extensions import Self
+
+from neuralib.atlas.data import load_bg_structure_tree
 from neuralib.io.core import ATLAS_CACHE_DIRECTORY
 from neuralib.util.verbose import fprint
 
 __all__ = ['CellAtlas']
-
-from typing_extensions import Self
 
 
 @dataclasses.dataclass
@@ -132,7 +132,7 @@ class CellAtlas:
         if not out.exists() or force_save:
             ctlas = cls.load_from_csv()
 
-            allen = load_structure_tree().select('name', 'acronym').sort('name')
+            allen = load_bg_structure_tree().select('name', 'acronym').sort('name')
 
             df = (
                 ctlas.dataframe

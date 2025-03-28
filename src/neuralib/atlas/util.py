@@ -1,11 +1,10 @@
 from pathlib import Path
-from pprint import pprint
 from typing import Literal, NamedTuple, Iterable
 
 import numpy as np
 import pandas as pd
 import polars as pl
-from neuralib.atlas.data import load_structure_tree
+
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.typing import Source, HEMISPHERE_TYPE
 from neuralib.typing import DataFrame
@@ -20,9 +19,7 @@ __all__ = [
     'get_margin_merge_level',
     'allen_to_brainrender_coord',
     'as_coords_array',
-    # to be deprecated
     'roi_points_converter',
-    'create_allen_structure_dict'
 ]
 
 ALLEN_CCF_10um_BREGMA = np.array([540, 0, 570])  # AP, DV, LR
@@ -187,23 +184,3 @@ def roi_points_converter(dat: DataFrame | np.ndarray,
         coords = allen_to_brainrender_coord(coords)
 
     return coords
-
-
-@deprecated_func(remarks='use bg-based structure file', removal_version='0.5.0')
-def create_allen_structure_dict(verbose=False) -> dict[str, str]:
-    """
-    Get the acronym/name pairing from structure_tree.csv
-
-    :return: key: acronym; value: full name
-    """
-    tree = load_structure_tree()
-    tree = tree.select('name', 'acronym').sort('name')
-
-    ret = {
-        acry: name
-        for name, acry in tree.iter_rows()
-    }
-    if verbose:
-        pprint(ret)
-
-    return ret

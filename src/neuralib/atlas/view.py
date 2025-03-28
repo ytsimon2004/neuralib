@@ -1,55 +1,51 @@
 import abc
 import math
-from typing import Final, ClassVar
+from typing import Final, ClassVar, Literal
 
 import attrs
 import matplotlib.pyplot as plt
 import numpy as np
+from brainglobe_atlasapi import BrainGlobeAtlas
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage
 from matplotlib.transforms import CompositeGenericTransform
 from typing_extensions import Self
 
-from neuralib.atlas.data import DATA_SOURCE_TYPE, load_ccf_annotation, load_ccf_template, load_allensdk_annotation
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
-from neuralib.typing import PathLike
 
 __all__ = [
+    'VIEW_TYPE',
     'load_slice_view',
     'AbstractSliceView',
     'SlicePlane'
 ]
 
+VIEW_TYPE = Literal['annotation', 'reference']
 
-def load_slice_view(source: DATA_SOURCE_TYPE,
+
+def load_slice_view(view: VIEW_TYPE,
                     plane_type: PLANE_TYPE,
                     *,
-                    output_dir: PathLike | None = None,
-                    allen_annotation_res: int = 10) -> 'AbstractSliceView':
+                    resolution: int = 10,
+                    check_latest: bool = True) -> 'AbstractSliceView':
     """
     Load the mouse brain slice view
 
-    :param source: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
+    :param view: ``VIEW_TYPE``.
     :param plane_type: ``PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
-    :param output_dir: Output directory for caching
-    :param allen_annotation_res: Volume resolution in um. default is 10 um
+    :param resolution: Volume resolution in um. default is 10 um
+    :param check_latest: If True, check the latest version of brain
     :return: :class:`AbstractSliceView`
     """
-    match source:
-        case 'ccf_annotation':
-            data = load_ccf_annotation(output_dir)
-            res = 10
-        case 'ccf_template':
-            data = load_ccf_template(output_dir)
-            res = 10
-        case 'allensdk_annotation':
-            data = load_allensdk_annotation(resolution=allen_annotation_res, output_dir=output_dir)
-            res = allen_annotation_res
+    match view:
+        case 'annotation' | 'reference':
+            atlas_name = f'allen_mouse_{resolution}um'
+            data = getattr(BrainGlobeAtlas(atlas_name, check_latest=check_latest), view)
         case _:
-            raise ValueError(f'Unknown source: {source}')
+            raise ValueError(f'Unknown view: {view}')
 
-    return AbstractSliceView(source, plane_type, res, data)
+    return AbstractSliceView(view, plane_type, resolution, data)
 
 
 class AbstractSliceView(metaclass=abc.ABCMeta):
@@ -71,8 +67,8 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
     REFERENCE_FROM: ClassVar[str] = ''
     """reference from which axis"""
 
-    source_type: Final[DATA_SOURCE_TYPE]
-    """``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}"""
+    source_type: Final[VIEW_TYPE]
+    """``VIEW_TYPE``. {'annotation', 'reference'}"""
 
     plane_type: Final[PLANE_TYPE]
     """`PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}"""
@@ -89,7 +85,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
     grid_y: Final[np.ndarray]
     """Array[int, [W, H]]"""
 
-    def __new__(cls, source_type: DATA_SOURCE_TYPE,
+    def __new__(cls, source_type: VIEW_TYPE,
                 plane: PLANE_TYPE,
                 resolution: int,
                 reference: np.ndarray):
@@ -102,7 +98,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         else:
             raise ValueError(f'invalid plane: {plane}')
 
-    def __init__(self, source_type: DATA_SOURCE_TYPE,
+    def __init__(self, source_type: VIEW_TYPE,
                  plane: PLANE_TYPE,
                  resolution: int,
                  reference: np.ndarray):
@@ -393,6 +389,8 @@ class SlicePlane:
              affine_transform: bool = False,
              customized_trans: bool = False,
              extent: tuple[float, float, float, float] | None = None,
+             cmap: str = 'Greys',
+             remove_outliers: bool = True,
              **kwargs) -> tuple[AxesImage, AxesImage | None, CompositeGenericTransform]:
         """
         :param ax: The Axes object on which to plot. If None, a new figure and axes are created.
@@ -404,6 +402,8 @@ class SlicePlane:
         :param affine_transform: A boolean indicating whether to apply an affine transformation to the plot.
         :param customized_trans: A boolean indicating whether to use a customized affine transformation.
         :param extent: A tuple defining the image boundaries (left, right, bottom, top). If None, boundaries are computed internally.
+        :param cmap: cmap for the ``imshow()``
+        :param remove_outliers: remove extreme values outliers
         :param kwargs: Additional keyword arguments passed to ``ax.imshow``.
         :return: A tuple containing the main AxesImage, the annotation AxesImage if any, and the Affine2D transformation.
         """
@@ -429,8 +429,10 @@ class SlicePlane:
 
         #
         image = self.image.astype(float)
-        image[image <= 10] = np.nan
-        im_view = ax.imshow(image, cmap='Greys', extent=extent, clip_on=False, transform=aff_trans, **kwargs)
+        if remove_outliers:
+            image[image <= 10] = np.nan
+            image[image >= 10000] = np.nan
+        im_view = ax.imshow(image, cmap=cmap, extent=extent, clip_on=False, transform=aff_trans, **kwargs)
 
         # annotation
         if with_annotation:
@@ -508,7 +510,7 @@ class SlicePlane:
             extent = self._get_xy_range(to_um)
 
         ann_img = (
-            load_slice_view('ccf_annotation', self.view.plane_type, allen_annotation_res=self.view.resolution)
+            load_slice_view('annotation', self.view.plane_type, resolution=self.view.resolution)
             .plane(self.plane_offset)
         )
 
