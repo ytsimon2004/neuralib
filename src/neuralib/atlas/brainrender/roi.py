@@ -5,7 +5,8 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 import polars as pl
 from brainrender.actors import Points
-from neuralib.argp import argument, str_tuple_type, validator
+
+from neuralib.argp import argument, str_tuple_type, validator, list_type
 from neuralib.atlas.brainrender.core import BrainRenderCLI
 from neuralib.atlas.brainrender.util import get_color
 from neuralib.atlas.util import iter_source_coordinates, allen_to_brainrender_coord, as_coords_array
@@ -102,9 +103,10 @@ class RoiRenderCLI(BrainRenderCLI):
 
     file: list[Path] = argument(
         '--file',
+        validator.list().on_item(validator.path.is_suffix(['.csv', '.npy'])),
         metavar='FILE',
-        default=[],
-        action='append',
+        type=list_type(Path),
+        action='extend',
         group=GROUP_ROIS_LOAD,
         help="points file as 'npy' or 'csv'"
     )
