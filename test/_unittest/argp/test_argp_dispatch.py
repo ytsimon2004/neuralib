@@ -31,4 +31,4 @@ Command (--run)
 
 
 if __name__ == '__main__':
-    Test().main()
+    Test().main(['--run', 'A'])

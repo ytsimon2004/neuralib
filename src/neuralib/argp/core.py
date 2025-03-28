@@ -14,7 +14,8 @@ __all__ = [
     'parse_args',
     'parse_command_args',
     'set_options',
-    'argument', 'as_argument',
+    'argument',
+    'as_argument',
     'with_defaults',
     'print_help',
     'as_dict',
@@ -665,12 +666,14 @@ def with_defaults(instance: T) -> T:
             value = ck['default']
         except KeyError:
             if 'action' in ck:
-                if ck['action'] == 'store_true':
-                    arg.__set__(instance, False)
-                else:
-                    arg.__set__(instance, True)
-            else:
-                arg.__set__(instance, None)
+                match ck['action']:
+                    case 'store_true':
+                        arg.__set__(instance, False)
+                    case 'store_false':
+                        arg.__set__(instance, True)
+                    case 'append' | 'extend' | 'append_const':
+                        arg.__set__(instance, [])
+
         else:
             arg.__set__(instance, value)
     return instance

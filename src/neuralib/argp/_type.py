@@ -7,6 +7,7 @@ __all__ = [
     'str_tuple_type',
     'float_tuple_type',
     'tuple_type',
+    'list_type',
     'union_type',
     'dict_type',
     'slice_type'
@@ -20,6 +21,26 @@ def tuple_type(value_type: Callable[[str], T]):
         return tuple(map(value_type, arg.split(',')))
 
     return _type
+
+
+def list_type(value_type: Callable[[str], T] = str, *, split=',', prepend: list[T] = None):
+    """:attr:`arg.type` caster which convert comma ',' spread string into list.
+
+    :param split: split character
+    :param value_type: value type converter
+    :param prepend: prepend list
+    :return: type caster.
+    """
+
+    def _cast(arg: str) -> list[T]:
+        value = list(map(value_type, arg.split(split)))
+
+        if arg.startswith('+') and prepend is not None:
+            return [*prepend, *value]
+        else:
+            return list(value)
+
+    return _cast
 
 
 str_tuple_type = tuple_type(str)

@@ -664,7 +664,8 @@ class WithDefaultTest(unittest.TestCase):
             a: str = argument('-a')
 
         opt = with_defaults(Opt())
-        self.assertIsNone(opt.a)
+        with self.assertRaises(AttributeError):
+            a = opt.a
 
     def test_default_str(self):
         class Opt:
@@ -678,7 +679,8 @@ class WithDefaultTest(unittest.TestCase):
             a: int = argument('-a')
 
         opt = with_defaults(Opt())
-        self.assertIsNone(opt.a)
+        with self.assertRaises(AttributeError):
+            a = opt.a
 
     def test_default_int(self):
         class Opt:
@@ -692,7 +694,8 @@ class WithDefaultTest(unittest.TestCase):
             a: float = argument('-a')
 
         opt = with_defaults(Opt())
-        self.assertIsNone(opt.a)
+        with self.assertRaises(AttributeError):
+            a = opt.a
 
     def test_default_float(self):
         class Opt:
@@ -706,7 +709,8 @@ class WithDefaultTest(unittest.TestCase):
             a: Literal['A', 'B'] = argument('-a')
 
         opt = with_defaults(Opt())
-        self.assertIsNone(opt.a)
+        with self.assertRaises(AttributeError):
+            a = opt.a
 
     def test_default_literal(self):
         class Opt:
