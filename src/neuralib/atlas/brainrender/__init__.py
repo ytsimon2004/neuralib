@@ -2,80 +2,82 @@
 BrainRender Wrapper
 ===================
 
-:author:
-    Yu-Ting Wei
+:author: Yu-Ting Wei
 
-This module provide a CLI-based `brainrender <https://brainglobe.info/documentation/brainrender/index.html.>`_ wrapper
-Can be run as command line once the package installed
+This module provides a CLI-based wrapper for `brainrender <https://brainglobe.info/documentation/brainrender/index.html>`_.
+Once installed, the CLI can be invoked directly from the command line.
 
-See the available options use ``-h`` option ::
+To see available options, use the ``-h`` flag:
 
-    neuralib_brainrender <area | roi | probe> -h
+.. code-block:: console
 
+    neuralib_brainrender {area, roi, probe} -h
 
-Region reconstruction
----------------------------------------
+----
 
-Example of reconstruct the Visual Cortex ::
+Region Reconstruction
+---------------------
+
+Example: Reconstructing the Visual Cortex from specified brain regions:
+
+.. code-block:: console
 
     neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
 
-
 |brender area|
 
+----
 
+ROI Reconstruction
+------------------
 
-ROI reconstruction
----------------------------------------
+By default, coordinates are interpreted in the CCF coordinate space.
+You can specify the coordinate space using the ``--coord-space`` option: ``{ccf, brainrender}``.
 
-By default use CCF coordinates space, specify use [--coord-space] option {ccf,brainrender}
+**NumPy File Input**
+^^^^^^^^^^^^^^^^^^^^
 
+Input shape: ``Array[float, (N, 3)]``, with AP, DV, and ML coordinates.
 
-numpy file
-^^^^^^^^^^^^^
+Example:
 
-Example of numpy file (``Array[float, [N, 3]]`` with AP, DV, ML coordinates) ::
+.. code-block:: python
 
-    [[-3.03  4.34 -4.5 ]
-     [-3.03  4.42 -4.37]
-     [-3.03  4.55 -4.37]
+    [[-3.03,  4.34, -4.50],
+     [-3.03,  4.42, -4.37],
      ...
-     [-2.91  4.31  4.75]
-     [-2.91  4.36  4.77]
-     [-2.91  4.12  4.85]]
+     [-2.91,  4.12,  4.85]]
 
+Run:
 
 .. code-block:: console
 
     neuralib_brainrender roi --file <NUMPY_FILE>
 
-csv file
-^^^^^^^^^^^^^
+**CSV File Input**
+^^^^^^^^^^^^^^^^^^
 
-Example of csv file (with ``AP_location``, ``DV_location``, ``ML_location`` headers) ::
+Required columns: ``AP_location``, ``DV_location``, ``ML_location``
 
-    ┌─────────────┬─────────────┬─────────────┐
-    │ AP_location ┆ DV_location ┆ ML_location │
-    │ ---         ┆ ---         ┆ ---         │
-    │ f64         ┆ f64         ┆ f64         │
-    ╞═════════════╪═════════════╪═════════════╡
-    │ -3.03       ┆ 4.34        ┆ -4.5        │
-    │ -3.03       ┆ 4.92        ┆ -4.31       │
-    │ …           ┆ …           ┆ …           │
-    │ -2.91       ┆ 4.06        ┆ 4.71        │
-    │ -2.91       ┆ 4.12        ┆ 4.85        │
-    └─────────────┴─────────────┴─────────────┘
-
+Example:
 
 .. code-block:: console
 
     neuralib_brainrender roi --file <CSV_FILE>
 
+.. code-block:: text
 
+    ┌─────────────┬─────────────┬─────────────┐
+    │ AP_location │ DV_location │ ML_location │
+    │------------ │-------------│-------------│
+    │ -3.03       │ 4.34        │ -4.50       │
+    │ -3.03       │ 4.92        │ -4.31       │
+    │ ...         │ ...         │ ...         │
+    │ -2.91       │ 4.12        │ 4.85        │
+    └─────────────┴─────────────┴─────────────┘
 
-
-processed csv file (flexible reconstruction)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Flexible Reconstruction (Processed CSV)**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TODO
 
@@ -105,56 +107,80 @@ Example of using parsed allenccf csv output ::
 
 
 
+----
 
+Probe Reconstruction
+--------------------
 
+Reconstruct probes (or shanks) based on trajectory labeling (e.g., DiI, DiO, or lesion tracks).
 
+- Default coordinate space: CCF
+- Set coordinate space using: ``--coord-space {ccf, brainrender}``
+- Each shank must have 2 points: dorsal and ventral
 
-Probe reconstruction (probe mode)
----------------------------------------
+**NumPy File Input**
+^^^^^^^^^^^^^^^^^^^^
 
-Reconstruct the probe (or shanks) in accordance with trajectory labeling (e.g., DiI, DiO or lesion track...)
+Single shank: ``Array[float, (2, 3)]`` (dorsal and ventral 3D AP/ML/DV coordinates)
 
-Prepare CSV file from ccf pipeline::
+.. code-block:: python
 
-    ┌───────────────────────────────────┬─────────┬─────────────┬─────────────┬─────────────┬─────────┐
-    │ name                              ┆ acronym ┆ AP_location ┆ DV_location ┆ ML_location ┆ avIndex │
-    │ ---                               ┆ ---     ┆ ---         ┆ ---         ┆ ---         ┆ ---     │
-    │ str                               ┆ str     ┆ f64         ┆ f64         ┆ f64         ┆ i64     │
-    ╞═══════════════════════════════════╪═════════╪═════════════╪═════════════╪═════════════╪═════════╡
-    │ Primary visual area layer 6a      ┆ VISp6a  ┆ -3.81       ┆ 1.92        ┆ -3.12       ┆ 191     │
-    │ optic radiation                   ┆ or      ┆ -4.08       ┆ 2.33        ┆ -3.12       ┆ 1217    │
-    │ Posterolateral visual area layer… ┆ VISpl6a ┆ -4.28       ┆ 2.29        ┆ -3.12       ┆ 198     │
-    │ Posterolateral visual area layer… ┆ VISpl5  ┆ -4.52       ┆ 2.17        ┆ -3.12       ┆ 197     │
-    │ Subiculum                         ┆ SUB     ┆ -3.93       ┆ 4.36        ┆ -3.3        ┆ 536     │
-    │ Entorhinal area medial part dors… ┆ ENTm5   ┆ -4.19       ┆ 4.39        ┆ -3.3        ┆ 515     │
-    │ Entorhinal area medial part dors… ┆ ENTm2   ┆ -4.44       ┆ 4.39        ┆ -3.3        ┆ 510     │
-    │ Entorhinal area medial part dors… ┆ ENTm1   ┆ -4.66       ┆ 4.29        ┆ -3.3        ┆ 509     │
-    └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┘
+    [[-3.82, 1.92, -3.12],
+     [-3.93, 4.36, -3.30]]
 
-- Row number equal to shank numbers * 2 (in the example, use the 4 shanks NeuroPixel probe), 2 points indicate the most dorsal & ventral detected signals on the serial brain slices
+Multi-shank: ``Array[float, (S, 2, 3)]``
 
-- Use ``-P`` to specify the slice cutting orientation {coronal,sagittal,transverse}. If multiple shanks were inserted along the AP axis, assume do the sagittal plane, if inserted along the ML axis, then assume the coronal plane
+.. code-block:: python
 
-- Assume shanks are not bended to perform interpolation based on the insert depth ``-D``
+    [[[...], [...]],
+     [[...], [...]],
+     ...]
 
+**CSV File Input**
+^^^^^^^^^^^^^^^^^^
 
+Required fields: ``AP_location``, ``DV_location``, ``ML_location``, ``point``, ``probe_idx``
 
-Example of Above csv file for targeting the left Entorhinal cortex (ENT) using 4 shanks NeuroPixel probe::
+If loss either ``point``, ``probe_idx`` field, then auto infer based on the given insertion ``--plane``
 
-    neuralib_brainrender probe -F <CSV_FILE> --depth 3000 -P sagittal -R ENT -H left
+.. code-block:: text
 
+    ┌─────────────┬─────────────┬─────────────┬─────────┬───────────┐
+    │ AP_location │ DV_location │ ML_location │ point   │ probe_idx │
+    ├─────────────┼─────────────┼─────────────┼─────────┼───────────┤
+    │ -3.81       │ 1.92        │ -3.12       │ dorsal  │ 1         │
+    │ -3.93       │ 4.36        │ -3.30       │ ventral │ 1         │
+    │ ...         │ ...         │ ...         │ ...     │ ...       │
+    └─────────────┴─────────────┴─────────────┴─────────┴───────────┘
 
+**Additional Options**
+^^^^^^^^^^^^^^^^^^^^^^
 
+- ``--depth DEPTH``: Depth (in µm) of the implantation from the brain surface
+- ``--dye``: Only reconstruct dye-labeled tracks (default includes both dye and theoretical)
+- ``--remove-outside-brain``: Exclude any segments outside the brain
+
+Example: Reconstructing a 4-shank NeuroPixel probe targeting the left entorhinal cortex
+
+.. code-block:: console
+
+    neuralib_brainrender probe -F <FILE> --depth 3000 -P sagittal -R ENT -H left
+
+- Red = dye-labeled track
+- Black = theoretical track
 
 |brender probe|
 
+----
 
+Help
+----
 
+To explore available options for each subcommand, use the ``-h`` flag:
 
-See the available options use ``-h`` option ::
+.. code-block:: console
 
     neuralib_brainrender probe -h
-
 
 
 

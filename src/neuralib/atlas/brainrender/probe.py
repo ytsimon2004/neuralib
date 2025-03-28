@@ -1,20 +1,18 @@
-import dataclasses
-from functools import cached_property
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import polars as pl
+from brainglobe_atlasapi import BrainGlobeAtlas
 from brainrender.actors import Points
 from neuralib.argp import argument
 from neuralib.atlas.brainrender.core import BrainRenderCLI
-from neuralib.atlas.util import PLANE_TYPE
-from neuralib.atlas.util import roi_points_converter
-from neuralib.util.segments import grouped_iter
+from neuralib.atlas.util import PLANE_TYPE, allen_to_brainrender_coord
+from neuralib.typing import PathLike
 from scipy.interpolate import interp1d
 from typing_extensions import Self
 
-__all__ = ['ProbeRenderCLI']
+__all__ = ['ProbeRenderCLI',
+           'ProbeShank']
 
 
 class ProbeRenderCLI(BrainRenderCLI):
@@ -24,9 +22,15 @@ class ProbeRenderCLI(BrainRenderCLI):
 
     implant_depth: int = argument(
         '--depth',
-        required=True,
         group=GROUP_PROBE,
         help='implant depth in um'
+    )
+
+    shank_interval: int | None = argument(
+        '--interval',
+        default=None,
+        group=GROUP_PROBE,
+        help='shank interval in um if multi-shank'
     )
 
     dye_label_only: bool = argument(
@@ -35,252 +39,252 @@ class ProbeRenderCLI(BrainRenderCLI):
         help='only show the histology dye parts'
     )
 
-    csv_file: Path = argument(
-        '-F', '--file',
+    remove_outside_brain: bool = argument(
+        '--remove-outside-brain',
+        group=GROUP_PROBE,
+        help='remove reconstruction outside the brain'
+    )
+
+    file: Path = argument(
+        '--file',
         metavar='FILE',
         type=Path,
+        required=True,
         group=GROUP_PROBE,
-        help='csv file for probe reconstruction'
+        help='multi-shank npy or csv file to be inferred'
     )
 
     plane_type: PLANE_TYPE = argument(
         '--plane-type', '-P',
         default='coronal',
         group=GROUP_PROBE,
-        help='cutting orientation. Assume if multiple shanks were inserted along the AP axis, then do the sagittal'
-             'slicing, if inserted along the ML axis, then do the coronal slicing '
+        help='cutting orientation to infer the multi-shank label point/probe_idx'
     )
 
-    raw: pl.DataFrame
-    """raw csv file"""
-    data: pl.DataFrame
-    """sorted data based on plane_type"""
+    def post_parsing(self):
+        super().post_parsing()
+        if not self.dye_label_only and self.implant_depth is None:
+            raise ValueError('')
 
     def run(self):
-        self.render()
-        self.render_output()
+        if not self._stop_render:
+            self.render()
+            self.render_output()
 
     def render(self):
         super().render()
         self._add_probe()
 
     def _add_probe(self):
-        self.raw = pl.read_csv(self.csv_file)
-        self.data = self.infer_probe_index(self.raw)
-        self.dye_label_only = True
-        probe_dye = self.get_probe_object().shanks
-        probe_dye = np.vstack(probe_dye)
+        bg = self.get_atlas_brain_globe()
 
-        self.dye_label_only = False
-        probe_theo = self.get_probe_object().with_theoretical().shanks
-        probe_theo = np.vstack(probe_theo)
-
-        # self.add_points([probe_dye, probe_theo])
-        self.scene.add(Points(probe_dye, colors='r', name='roi', alpha=0.9))
-        self.scene.add(Points(probe_theo, colors='k', name='roi', alpha=0.9))
-
-    @cached_property
-    def number_shanks(self) -> int:
-        return int(self.raw.shape[0] / 2)
-
-    @dataclasses.dataclass
-    class ShanksTrack:
-        """shank object
-
-        `Dimension parameters`:
-
-            S = number of shanks
-
-            P = number of sample points after interpolated reconstruction
-
-        """
-
-        rst: 'ProbeRenderCLI'
-        """`ProbeReconstructor`"""
-        shanks: list[np.ndarray]
-        """length S of Array[float, [P, 3]], with ap, dv, ml"""
-
-        def __post_init__(self):
-            assert len(self.shanks) == self.rst.number_shanks
-
-        def __len__(self) -> int:
-            """S"""
-            return len(self.shanks)
-
-        def __getitem__(self, idx: int) -> np.ndarray:
-            """get a shank array. `Array[float, [P, 3]]`"""
-            return self.shanks[idx]
-
-        def with_theoretical(self, interval: int = 250) -> Self:
-            """
-            theoretical track based on implantation depth / angle
-
-            :param interval: istance (um) relative to the specific shank. e.g., NeuroPixel 2.0 = 250 * x
-            :return: :class:`ShanksTrack`
-            """
-            if not self.rst.dye_label_only:
-                crop = self.rst.crop_outside_brain
-                depth = self.rst.implant_depth
-                ret = []
-                s1 = self[0]
-
-                for i in range(len(self)):
-                    s_cur = self[i]
-                    p = crop(s_cur, depth, dv_value=int(s1[0, 1]))
-
-                    ret.append(p)
-                    depth += _calc_shank_length_diff(s1, interval)
-                    interval += interval
-
-                return dataclasses.replace(self, shanks=ret)
-
-            raise RuntimeError('')
-
-    def get_probe_object(self) -> ShanksTrack:
-        p = roi_points_converter(self.data)
-        n_label_points = p.shape[0]
-
-        ext_depth = None if self.dye_label_only else (0, 5000)
-
-        def _extend(p1, p2):
-            return self._shank_extend(np.array([p1, p2]), ext_depth=ext_depth)
-
-        ret = []
-        for (surface_idx, tip_idx) in grouped_iter(np.arange(n_label_points), 2):
-            ret.append(_extend(p[surface_idx], p[tip_idx]))
-
-        return self.ShanksTrack(self, ret)
-
-    def infer_probe_index(self, df: pl.DataFrame) -> pl.DataFrame:
-        """
-        probe in correct order index
-
-        :param df: raw csv file
-        :return: dataframe with `probe` and `probe_idx` fields.
-
-        Example::
-
-            ┌───────────────────────────────────┬─────────┬─────────────┬─────────────┬─────────────┬─────────┬───────────────┬───────────┐
-            │ name                              ┆ acronym ┆ AP_location ┆ DV_location ┆ ML_location ┆ avIndex ┆ probe         ┆ probe_idx │
-            │ ---                               ┆ ---     ┆ ---         ┆ ---         ┆ ---         ┆ ---     ┆ ---           ┆ ---       │
-            │ str                               ┆ str     ┆ f64         ┆ f64         ┆ f64         ┆ i64     ┆ str           ┆ i64       │
-            ╞═══════════════════════════════════╪═════════╪═════════════╪═════════════╪═════════════╪═════════╪═══════════════╪═══════════╡
-            │ Primary visual area layer 6a      ┆ VISp6a  ┆ -3.81       ┆ 1.92        ┆ -3.12       ┆ 191     ┆ dorsal_label  ┆ 1         │
-            │ Subiculum                         ┆ SUB     ┆ -3.93       ┆ 4.36        ┆ -3.3        ┆ 536     ┆ ventral_label ┆ 1         │
-            │ optic radiation                   ┆ or      ┆ -4.08       ┆ 2.33        ┆ -3.12       ┆ 1217    ┆ dorsal_label  ┆ 2         │
-            │ Entorhinal area medial part dors… ┆ ENTm5   ┆ -4.19       ┆ 4.39        ┆ -3.3        ┆ 515     ┆ ventral_label ┆ 2         │
-            │ Posterolateral visual area layer… ┆ VISpl6a ┆ -4.28       ┆ 2.29        ┆ -3.12       ┆ 198     ┆ dorsal_label  ┆ 3         │
-            │ Entorhinal area medial part dors… ┆ ENTm2   ┆ -4.44       ┆ 4.39        ┆ -3.3        ┆ 510     ┆ ventral_label ┆ 3         │
-            │ Posterolateral visual area layer… ┆ VISpl5  ┆ -4.52       ┆ 2.17        ┆ -3.12       ┆ 197     ┆ dorsal_label  ┆ 4         │
-            │ Entorhinal area medial part dors… ┆ ENTm1   ┆ -4.66       ┆ 4.29        ┆ -3.3        ┆ 509     ┆ ventral_label ┆ 4         │
-            └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┴───────────────┴───────────┘
-
-        """
-        n_shanks = self.number_shanks
-
-        df = (df.sort('DV_location')
-              .with_columns(pl.Series(['dorsal_label'] * n_shanks + ['ventral_label'] * n_shanks).alias('probe')))
-
-        if self.plane_type == 'sagittal':
-            probe_order = 'AP_location'
-        elif self.plane_type == 'coronal':
-            probe_order = 'ML_location'
+        if self.file.suffix == '.csv':
+            probe = ProbeShank.load_csv(self.file, self.plane_type, bg)
+        elif self.file.suffix == '.npy':
+            probe = ProbeShank.load_numpy(self.file, bg)
         else:
-            raise RuntimeError('')
+            raise TypeError(f"Unsupported file type: {self.file.suffix}")
 
-        df = (df.sort(by=['probe', probe_order], descending=[False, True])
-              .with_columns(pl.Series(list(range(1, 1 + n_shanks)) * 2).alias('probe_idx'))
+        #
+        if self.coordinate_space == 'ccf':
+            probe = probe.map_brainrender()
+
+        #
+        if not self.dye_label_only:
+            probe_theo = probe.as_theoretical(self.implant_depth, self.shank_interval, self.remove_outside_brain)
+            self.scene.add(Points(probe_theo, colors='k', name='theo', alpha=0.9))
+
+        probe_dye = probe.interp(ret_type=np.ndarray)
+        self.scene.add(Points(probe_dye, colors='r', name='dye', alpha=0.9))
+
+
+class ProbeShank:
+
+    def __init__(self, dorsal: np.ndarray,
+                 ventral: np.ndarray,
+                 bg: BrainGlobeAtlas):
+        """
+
+        :param dorsal: `Array[float, 3 | [S, 3]]`
+        :param ventral: `Array[float, 3 | [S, 3]]`
+        :param bg: ```BrainGlobeAtlas`
+        """
+        self._dorsal = dorsal
+        self._ventral = ventral
+        self._validate()
+
+        self._bg = bg
+
+    def _validate(self):
+        assert self._dorsal.shape == self._ventral.shape
+
+    def __iter__(self):
+        """foreach shank DV"""
+        for i in range(self.n_shanks):
+            yield self._dorsal[i], self._ventral[i]
+
+    @classmethod
+    def load_numpy(cls, file: PathLike, bg: BrainGlobeAtlas) -> Self:
+        """Load numpy array. `Array[float, [2, 3] | [S, 2, 3]]`
+
+        ``S`` = Number of shanks. If 2D then single shank
+        ``2`` = Dorsal and ventral
+        ``3`` = AP, DV, ML coordinates
+        """
+        data = np.load(file)
+        if data.ndim == 2:
+            return cls(data[0], data[1], bg)
+        elif data.ndim == 3:
+            return cls(data[:, 0, :], data[:, 1, :], bg)
+        else:
+            raise ValueError(f'not support {data.shape=}')
+
+    @classmethod
+    def load_csv(cls, file: PathLike,
+                 plane_type: PLANE_TYPE,
+                 bg: BrainGlobeAtlas,
+                 verbose: bool = True) -> Self:
+        """infer"""
+        df = pl.read_csv(file)
+        cols = ['AP_location', 'DV_location', 'ML_location']
+        if 'probe_idx' not in df.columns or 'point' not in df.columns:
+            df = df.select(cols)
+            df = cls._sort_rows(df, plane_type)
+
+        if verbose:
+            from neuralib.util.verbose import printdf
+            printdf(df)
+
+        data = df.select(cols).to_numpy().reshape(-1, 2, 3)
+        return cls(data[:, 0, :], data[:, 1, :], bg)
+
+    @classmethod
+    def _sort_rows(cls, df: pl.DataFrame, plane_type: PLANE_TYPE) -> pl.DataFrame:
+        n = int(df.shape[0] / 2)
+        expr = pl.Series(['dorsal'] * n + ['ventral'] * n)
+        df = df.sort('DV_location').with_columns(expr.alias('point'))
+
+        if plane_type == 'sagittal':
+            shank_order = 'AP_location'
+        elif plane_type == 'coronal':
+            shank_order = 'ML_location'
+        else:
+            raise ValueError('')
+
+        df = (df.sort(by=['point', shank_order], descending=[False, True])
+              .with_columns(pl.Series(list(range(1, 1 + n)) * 2).alias('probe_idx'))
               .sort('probe_idx'))
-
-        print(df)
 
         return df
 
-    def isin_brain(self, shank: np.ndarray) -> np.ndarray:
-        """
-        determine if the probe points are in the brain
+    @property
+    def n_shanks(self) -> int:
+        return self._dorsal.shape[0]
 
-        :param shank: `Array[float, [P, 3]]`
-        :return:
+    def map_brainrender(self) -> Self:
+        self._dorsal = allen_to_brainrender_coord(self._dorsal)
+        self._ventral = allen_to_brainrender_coord(self._ventral)
+        return self
+
+    def interp(self, interp_range: tuple[float, float] | None = None,
+               ret_type: type = np.ndarray) -> list[np.ndarray] | np.ndarray:
+        """extend_depth foreach shank
+
+        :param interp_range:
+        :param ret_type: if as list, then list[Array[float, [P, 3]]]. if numpy array `Array[float, [P * S, 3]]`
+        :return: list[Array[float, [P, 3]]] | `Array[float, [P * S, 3]]`
         """
-        brain = self.get_atlas_brain_globe()
+        ret = [self._interp(d, v, interp_range) for d, v in self]
+
+        if ret_type is list:
+            return ret
+        elif ret_type is np.ndarray:
+            return np.vstack(ret)
+        else:
+            raise ValueError('')
+
+    def as_theoretical(self, depth: int, interval: int | None = None, remove_outside_brain: bool = True) -> np.ndarray:
+        shanks = self.interp(interp_range=(0, 5000), ret_type=list)
 
         ret = []
-        for sh in shank:
+        for shank in shanks:
+            p = self._within_depth_range(shank, depth, remove_outside_brain)
+            ret.append(p)
+
+            if interval is not None:
+                depth += self._calc_shank_length_diff(shanks[0], interval)
+                interval += interval
+
+        return np.vstack(ret)
+
+    def _interp(self, d, v, interp_range: tuple[float, float] | None):
+        """
+
+        :param d: `Array[float, 3]`
+        :param v: `Array[float, 3]`
+        :param interp_range: interpolation DV in um. usually a large value, then cut afterward
+        :return: `Array[float, [P, 3]]`
+        """
+        if interp_range is not None:
+            nn = np.arange(*interp_range, 10)
+        else:
+            nn = np.arange(d[1], v[1], 10)
+
+        s = np.vstack([d, v])
+
+        return interp1d(s[:, 1], s, axis=0, bounds_error=False, fill_value='extrapolate')(nn)
+
+    def _within_depth_range(self, shank: np.ndarray,
+                            depth: int,
+                            remove_outside_brain: bool = True):
+        """remove point segments outside the brain, and more than given depth"""
+
+        shank = shank[shank[:, 1] >= 0]
+
+        if remove_outside_brain:
+            mx = self._isin_brain(shank)
+            shank = shank[mx]
+
+        d = np.sqrt(np.sum((shank - shank[0]) ** 2, axis=1))
+
+        return shank[d <= depth]
+
+    def _isin_brain(self, shank: np.ndarray) -> np.ndarray:
+        """
+
+        :param shank: `Array[float, [P, 3]]`
+        :param bg: ``BrainGlobeAtlas``
+        :return: `Array[bool, P]`
+        """
+        bg = self._bg
+
+        ret = []
+        for p in shank:
             try:
-                s = brain.structure_from_coords(sh, microns=True)
+                rid = bg.annotation[bg._idx_from_coords(p, microns=True)]
             except IndexError:
-                s = 0
-            ret.append(s != 0)
+                rid = 0
+            ret.append(rid != 0)
 
         return np.array(ret, dtype=bool)
 
-    def crop_outside_brain(self, shank: np.ndarray,
-                           distance: float,
-                           dv_value: Optional[int] = None) -> np.ndarray:
+    @staticmethod
+    def _calc_shank_length_diff(shank: np.ndarray, shank_interval: float) -> float:
         """
-        crop the probe after doing the extension
+        use the vector of the probe, then calculate the unit vector
 
         :param shank: `Array[float, [P, 3]]`
-        :param distance: depth of insertion (might with an angle, in um). mostly records during the implantation
-                    use the depth value that used while implantation to cutoff the bottom line.
-        :param dv_value: if None, plot the probe if its in the brain
-                if int type, plot the probe if dv larger than this value
-        :return:
+        :param shank_interval: distance (um) relative to the specific shank. e.g., NeuroPixel 2.0 = 250 * x
+        :return: unit vector
         """
-        shank = shank[shank[:, 1] >= 0]
+        v = shank[-1] - shank[0]
+        v = v / np.linalg.norm(v)  # unit vector
 
-        if dv_value is None:
-            m = self.isin_brain(shank)
-        elif isinstance(dv_value, int):
-            m = shank[:, 1] >= dv_value
-        else:
-            raise TypeError('')
+        # vector product: |n x v| = sin_theta |n| |v|
+        # inline n value, got following formula
+        sin_theta = np.linalg.norm(np.array([v[2], 0, -v[0]]))
 
-        shank = shank[m]
-        d = np.sqrt(np.sum((shank - shank[0]) ** 2, axis=1))
-
-        return shank[d <= distance]
-
-    @staticmethod
-    def _shank_extend(shank: np.ndarray,
-                      ext_depth: Optional[tuple[float, float]] = (0, 5000)) -> np.ndarray:
-        """
-        probe extension using extrapolation and interpolation
-
-        :param shank: `Array[float, [2, 3]]`, 2: start and end points; 3: AP,DV,ML
-        :param ext_depth: depth in um, if None, only do the interpolation of the labelled points
-        :return: extended shank
-        """
-
-        if ext_depth is not None:
-            nn = np.arange(*ext_depth, 10)
-        else:
-            nn = np.arange(shank[0, 1], shank[-1, 1], 10)
-
-        return interp1d(shank[:, 1], shank, axis=0, bounds_error=False, fill_value='extrapolate')(nn)
-
-
-# ========= #
-
-
-def _calc_shank_length_diff(shank: np.ndarray,
-                            shank_interval: float) -> float:
-    """
-    use the vector of the probe, then calculate the unit vector
-
-    :param shank: `Array[float, [P, 3]]`
-    :param shank_interval: distance (um) relative to the specific shank. e.g., NeuroPixel 2.0 = 250 * x
-    :return: unit vector
-    """
-    v = shank[-1] - shank[0]
-    v = v / np.linalg.norm(v)  # unit vector
-
-    # vector product: |n x v| = sin_theta |n| |v|
-    # inline n value, got following formula
-    sin_theta = np.linalg.norm(np.array([v[2], 0, -v[0]]))
-
-    return shank_interval * sin_theta
+        return shank_interval * sin_theta
 
 
 if __name__ == '__main__':

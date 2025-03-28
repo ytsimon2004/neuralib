@@ -26,7 +26,7 @@ RoiType = list[list[np.ndarray]] | list[np.ndarray]
 class RoiRenderCLI(BrainRenderCLI):
     DESCRIPTION = 'For labelled rois reconstruction from 2dccf pipeline'
 
-    DEFAULT_ROI_COLORS = ['magenta', 'gold', 'grey']
+    DEFAULT_ROI_COLORS = ['orange', 'magenta', 'dimgray']
 
     # ========== #
     # GROUP_ROIS #
@@ -50,6 +50,14 @@ class RoiRenderCLI(BrainRenderCLI):
         help='each roi radius'
     )
 
+    roi_alpha: float = argument(
+        '--roi-alpha',
+        validator.float.in_range_closed(0, 1),
+        default=1,
+        group=GROUP_ROIS,
+        help='region alpha value'
+    )
+
     roi_colors: str | tuple[str, ...] = argument(
         '--roi-colors',
         metavar='COLOR,...',
@@ -65,6 +73,15 @@ class RoiRenderCLI(BrainRenderCLI):
         default=None,
         group=GROUP_ROIS,
         help='if None, auto infer, and check the lowest merge level contain all the regions specified'
+    )
+
+    source_order: tuple[str, ...] | None = argument(
+        '--source-order',
+        metavar='SOURCE,...',
+        type=str_tuple_type,
+        default=None,
+        group=GROUP_ROIS,
+        help='source order to follow the roi_colors'
     )
 
     # ============== #
@@ -96,13 +113,14 @@ class RoiRenderCLI(BrainRenderCLI):
     _point_file_list: list[str] = []
 
     def run(self):
-        self.render()
-        self.render_output()
+        if not self._stop_render:
+            self.render()
+            self.render_output()
 
-        if len(self._need_close_file) != 0:
-            for f in self._need_close_file:
-                f.close()
-                Path(f.name).unlink(missing_ok=True)  # winOS
+            if len(self._need_close_file) != 0:
+                for f in self._need_close_file:
+                    f.close()
+                    Path(f.name).unlink(missing_ok=True)  # winOS
 
     def render(self):
         super().render()
@@ -121,7 +139,8 @@ class RoiRenderCLI(BrainRenderCLI):
             only_areas=self.roi_region,
             region_col=self.region_col,
             hemisphere=_HEMI_LUT[self.hemisphere],
-            to_brainrender=True if self.coordinate_space == 'ccf' else False
+            to_brainrender=True if self.coordinate_space == 'ccf' else False,
+            source_order=self.source_order
         )
 
         ret = [sc.coordinates for sc in iter_coords]
@@ -144,7 +163,7 @@ class RoiRenderCLI(BrainRenderCLI):
         for it in self.file:
             self._point_file_list.append(str(it))
 
-    def _reconstruct_points_from_file(self):
+    def _reconstruct_points_from_file(self, error_while_empty: bool = False):
         for i, file in enumerate(self._point_file_list):
             # type handle
             if file.endswith('.npy'):
@@ -162,22 +181,28 @@ class RoiRenderCLI(BrainRenderCLI):
                 raise ValueError(f'wrong dimension: {data.shape}')
 
             # add points
-            if data.shape[1] == 3:
-                colors = get_color(i, self.roi_colors)
-                self.logger.info(f'Plot Rois File: {i}, {file}, {colors}')
-                self.scene.add(Points(data, name='roi', colors=colors, alpha=0.9, radius=self.radius))
-            elif data.shape[1] == 4:  # TODO not test yet
-                k = data[:, 3].astype(int)
-                for t in np.unique(k):
-                    self.scene.add(Points(
-                        data[k == t, 0:3],
-                        name='rois',
-                        colors=get_color(t, self.roi_colors),
-                        alpha=0.6,
-                        radius=self.radius
-                    ))
+            if data.size == 0:
+                if error_while_empty:
+                    raise ValueError('no points found')
+                else:
+                    self.logger.warn('no points found')
             else:
-                raise ValueError(f'wrong shape: {data.shape}: {file}')
+                if data.shape[1] == 3:
+                    colors = get_color(i, self.roi_colors)
+                    self.logger.info(f'Plot Rois File: {i}, {file}, {colors}')
+                    self.scene.add(Points(data, name='roi', colors=colors, alpha=self.roi_alpha, radius=self.radius, res=20))
+                elif data.shape[1] == 4:  # TODO not test yet
+                    k = data[:, 3].astype(int)
+                    for t in np.unique(k):
+                        self.scene.add(Points(
+                            data[k == t, 0:3],
+                            name='rois',
+                            colors=get_color(t, self.roi_colors),
+                            alpha=self.roi_alpha,
+                            radius=self.radius
+                        ))
+                else:
+                    raise ValueError(f'wrong shape: {data.shape}: {file}')
 
 
 if __name__ == '__main__':

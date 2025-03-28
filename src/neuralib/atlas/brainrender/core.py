@@ -59,6 +59,19 @@ class BrainRenderCLI(AbstractParser):
         help='atlas source name. allen_human_500um as human'
     )
 
+    root_alpha: float = argument(
+        '--root-alpha',
+        default=0.35,
+        group=GROUP_SETTINGS,
+        help='root alpha'
+    )
+
+    no_root: bool = argument(
+        '--no-root',
+        group=GROUP_SETTINGS,
+        help='render without root(brain) mesh'
+    )
+
     background: Literal['white', 'black'] = argument(
         '--bg',
         default='white',
@@ -77,13 +90,7 @@ class BrainRenderCLI(AbstractParser):
     # OPTIONAL VIEW #
     # ============= #
 
-    GROUP_OPTIONAL = 'View Option'
-
-    no_root: bool = argument(
-        '--no-root',
-        group=GROUP_OPTIONAL,
-        help='render without root(brain) mesh'
-    )
+    GROUP_OPTIONAL = 'Optional Option'
 
     annotation: tuple[str, ...] | None = argument(
         '--annotation',
@@ -121,7 +128,7 @@ class BrainRenderCLI(AbstractParser):
 
     regions_alpha: float = argument(
         '--region-alpha',
-        validator.float.in_range(0, 1),
+        validator.float.in_range_closed(0, 1),
         default=0.35,
         group=GROUP_REGION,
         help='region alpha value'
@@ -138,6 +145,13 @@ class BrainRenderCLI(AbstractParser):
         '--print-tree',
         group=GROUP_REGION,
         help='print tree for the available regions for the given source'
+    )
+
+    tree_init: str | None = argument(
+        '--tree-init',
+        default=None,
+        group=GROUP_REGION,
+        help='init region for the tree print'
     )
 
     print_name: bool = argument(
@@ -171,6 +185,7 @@ class BrainRenderCLI(AbstractParser):
     #
     scene: brainrender.Scene
     logger = setup_clogger()
+    _stop_render: bool = False  # flag for print mode
 
     def post_parsing(self):
         self._render_settings()
@@ -180,7 +195,7 @@ class BrainRenderCLI(AbstractParser):
         from brainrender import settings
         settings.BACKGROUND_COLOR = self.background
         settings.DEFAULT_ATLAS = self.source
-        settings.ROOT_ALPHA = 0.35 if self.background == 'black' else 0.2
+        settings.ROOT_ALPHA = self.root_alpha
         settings.SHOW_AXES = False
         settings.WHOLE_SCREEN = False
         settings.DEFAULT_CAMERA = self.camera_angle
@@ -192,17 +207,20 @@ class BrainRenderCLI(AbstractParser):
     def _verbose(self):
         if self.print_tree:
             from neuralib.atlas.plot import plot_structure_tree
-            plot_structure_tree()
+            plot_structure_tree(self.tree_init)
+            self._stop_render = True
 
         if self.print_name:
             from neuralib.util.table import rich_data_frame_table
             file = self.get_atlas_brain_globe().root_dir / 'structures.csv'
             df = pl.read_csv(file).select('acronym', 'name')
             rich_data_frame_table(df)
+            self._stop_render = True
 
     def run(self):
-        self.render()
-        self.render_output()
+        if not self._stop_render:
+            self.render()
+            self.render_output()
 
     def render(self):
         self.scene = brainrender.Scene(root=not self.no_root, inset=False, title=self.title, screenshots_folder='.')
