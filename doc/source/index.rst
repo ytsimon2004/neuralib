@@ -332,6 +332,19 @@ neuralib_widefield
 
 
 
+Doc for Array type
+-------------------
+
+- ``Array[DType, [*Shape]]``
+- ``DType`` = array datatype. ``Shape`` = array shape. ``|`` = Union
+
+**Example**
+
+- ``int`` or ``bool`` with (N,3) array -> ``Array[int|bool, [N, 3]]``
+- ``float`` array with union shape (N,2) or (N,T,2) -> ``Array[float, [N, 2]|[N, T, 2]]``
+
+
+
 .. toctree::
     :maxdepth: 1
     :caption: Notebook Demo
@@ -348,16 +361,13 @@ neuralib_widefield
     ../notebooks/example_ibl_plot
     ../notebooks/example_neuralib_plot
 
-Doc for Array type
--------------------
 
-- ``Array[DType, [*Shape]]``
-- ``DType`` = array datatype. ``Shape`` = array shape. ``|`` = Union
+.. toctree::
+    :maxdepth: 2
+    :caption: Future plan
 
-**Example**
+    api/future_plan.rst
 
-- ``int`` or ``bool`` with (N,3) array -> ``Array[int|bool, [N, 3]]``
-- ``float`` array with union shape (N,2) or (N,T,2) -> ``Array[float, [N, 2]|[N, T, 2]]``
 
 
 
