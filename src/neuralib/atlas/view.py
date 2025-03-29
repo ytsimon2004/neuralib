@@ -67,7 +67,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
     REFERENCE_FROM: ClassVar[str] = ''
     """reference from which axis"""
 
-    source_type: Final[VIEW_TYPE]
+    view_type: Final[VIEW_TYPE]
     """``VIEW_TYPE``. {'annotation', 'reference'}"""
 
     plane_type: Final[PLANE_TYPE]
@@ -85,7 +85,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
     grid_y: Final[np.ndarray]
     """Array[int, [W, H]]"""
 
-    def __new__(cls, source_type: VIEW_TYPE,
+    def __new__(cls, view_type: VIEW_TYPE,
                 plane: PLANE_TYPE,
                 resolution: int,
                 reference: np.ndarray):
@@ -98,18 +98,18 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         else:
             raise ValueError(f'invalid plane: {plane}')
 
-    def __init__(self, source_type: VIEW_TYPE,
+    def __init__(self, view_type: VIEW_TYPE,
                  plane: PLANE_TYPE,
                  resolution: int,
                  reference: np.ndarray):
         """
 
-        :param source_type: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
+        :param view_type: ``DATA_SOURCE_TYPE``. {'ccf_annotation', 'ccf_template', 'allensdk_annotation'}
         :param plane: `PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
         :param resolution: um/pixel
         :param reference: Array[uint16, [AP, DV, ML]]
         """
-        self.source_type = source_type
+        self.view_type = view_type
         self.plane_type = plane
         self.resolution = resolution
         self.reference = reference
@@ -329,23 +329,23 @@ class SlicePlane:
     dh: int
     """dh in um"""
 
-    view: AbstractSliceView
+    slice_view: AbstractSliceView
     """``AbstractSliceView``"""
 
     @property
     def image(self) -> np.ndarray:
-        return self.view.plane(self.plane_offset)
+        return self.slice_view.plane(self.plane_offset)
 
     @property
     def plane_offset(self) -> np.ndarray:
-        offset = self.view.offset(self.dw, self.dh)
+        offset = self.slice_view.offset(self.dw, self.dh)
         return self.slice_index + offset - offset[self.ay, self.ax]
 
     @property
     def reference_value(self) -> float:
         """relative to reference point"""
-        factor = 1000 / self.view.resolution
-        return round((self.view.reference_point - self.slice_index) / factor, 2)
+        factor = 1000 / self.slice_view.resolution
+        return round((self.slice_view.reference_point - self.slice_index) / factor, 2)
 
     def with_offset(self, dw: int, dh: int, debug: bool = False) -> Self:
         if debug:
@@ -357,8 +357,8 @@ class SlicePlane:
 
     def _value_to_angle(self, dw: int, dh: int) -> tuple[float, float]:
         """delta value to degree"""
-        rx = math.atan(2 * dw / self.view.width)
-        ry = math.atan(2 * dh / self.view.height)
+        rx = math.atan(2 * dw / self.slice_view.width)
+        ry = math.atan(2 * dh / self.slice_view.height)
         deg_x = np.rad2deg(rx)
         deg_y = np.rad2deg(ry)
 
@@ -375,8 +375,8 @@ class SlicePlane:
         rx = np.deg2rad(deg_x)
         ry = np.deg2rad(deg_y)
 
-        dw = int(self.view.width * math.tan(rx) / 2)
-        dh = int(self.view.height * math.tan(ry) / 2)
+        dw = int(self.slice_view.width * math.tan(rx) / 2)
+        dh = int(self.slice_view.height * math.tan(ry) / 2)
 
         return self.with_offset(dw, dh)
 
@@ -445,7 +445,7 @@ class SlicePlane:
             ax.figure.colorbar(im_view)
         #
         if with_title:
-            ax.set_title(f'{self.view.REFERENCE_FROM}: {self.reference_value} mm')
+            ax.set_title(f'{self.slice_view.REFERENCE_FROM}: {self.reference_value} mm')
 
         ax.set(xlabel=self.unit, ylabel=self.unit)
 
@@ -455,15 +455,15 @@ class SlicePlane:
 
     def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
         if to_um:
-            x0 = -self.view.width_mm / 2 * 1000
-            x1 = self.view.width_mm / 2 * 1000
-            y0 = self.view.height_mm * 1000
+            x0 = -self.slice_view.width_mm / 2 * 1000
+            x1 = self.slice_view.width_mm / 2 * 1000
+            y0 = self.slice_view.height_mm * 1000
             y1 = 0
             self.unit = 'um'
         else:
-            x0 = -self.view.width_mm / 2
-            x1 = self.view.width_mm / 2
-            y0 = self.view.height
+            x0 = -self.slice_view.width_mm / 2
+            x1 = self.slice_view.width_mm / 2
+            y0 = self.slice_view.height
             y1 = 0
             self.unit = 'mm'
 
@@ -477,7 +477,7 @@ class SlicePlane:
         tt = np.array([
             [1, 0, 0],
             [0, 1, 0],
-            [-0.03 / self.view.width, 0, 1]
+            [-0.03 / self.slice_view.width, 0, 1]
         ])
 
         # translation
@@ -510,7 +510,7 @@ class SlicePlane:
             extent = self._get_xy_range(to_um)
 
         ann_img = (
-            load_slice_view('annotation', self.view.plane_type, resolution=self.view.resolution)
+            load_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
             .plane(self.plane_offset)
         )
 

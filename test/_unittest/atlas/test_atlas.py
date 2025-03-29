@@ -4,6 +4,7 @@ from unittest.mock import patch
 import numpy as np
 from matplotlib import pyplot as plt
 
+from neuralib.atlas.cellatlas.core import load_cellatlas
 from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
@@ -45,6 +46,7 @@ class TestBrainView(unittest.TestCase):
         plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], with_annotation=True)
         plt.show()
 
+    @patch('matplotlib.pyplot.show')
     def test_slice_view_annotation(self, *arg):
         from neuralib.atlas.view import load_slice_view
 
@@ -72,6 +74,16 @@ class TestStructureTree(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             assert_polars_equal_verbose(x, y)
+
+
+class TestCellAtlas(unittest.TestCase):
+
+    def test_cell_atlas_sync(self):
+        from neuralib.atlas.cellatlas import CellAtlas
+        x = CellAtlas.load_sync_allen_structure_tree()
+        y = load_cellatlas()
+
+        assert_polars_equal_verbose(x, y)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 from typing import Literal, get_args, Iterable
 
 import polars as pl
+
 from neuralib.util.verbose import fprint
 
 __all__ = [
@@ -85,8 +86,8 @@ class MouseBrainRoiNormHandler:
         return ret
 
     def _compute_cellatlas_expand_field(self, df, area_col, expand_cols) -> pl.DataFrame:
-        from neuralib.atlas.cellatlas import CellAtlas
-        ctlas = CellAtlas.load_sync_allen_structure_tree()
+        from neuralib.atlas.cellatlas import load_cellatlas
+        ctlas = load_cellatlas()
 
         if self.norm_type == 'cell':
             calc = ((pl.col(c) / pl.col('n_neurons') * 100).alias(f'cell_norm_{c}') for c in expand_cols)

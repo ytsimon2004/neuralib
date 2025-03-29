@@ -8,7 +8,6 @@ neuralib.util
     :maxdepth: 1
     :caption: Modules:
     
-    neuralib.util.color_logging
     neuralib.util.deprecation
     neuralib.util.func
     neuralib.util.gpu
