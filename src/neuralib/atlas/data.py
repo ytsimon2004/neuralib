@@ -82,25 +82,25 @@ def get_dorsal_cortex(output_dir: Path | None = None) -> Path:
 # TO BE DEPRECATED #
 # ================ #
 
-@deprecated_func(removal_version='0.5.0', remarks='switch brainglobe api instead')
+@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead')
 def load_ccf_annotation(output_dir: PathLike | None = None) -> np.ndarray:
     from ._deprecate import _load_ccf_annotation
     return _load_ccf_annotation(output_dir)
 
 
-@deprecated_func(removal_version='0.5.0', remarks='switch brainglobe api instead')
+@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead')
 def load_ccf_template(output_dir: PathLike | None = None) -> np.ndarray:
     from ._deprecate import _load_ccf_template
     return _load_ccf_template(output_dir)
 
 
-@deprecated_func(removal_version='0.5.0', remarks='switch brainglobe api instead')
+@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead')
 def load_structure_tree(version: Literal['2017', 'old'] = '2017', output_dir: PathLike | None = None) -> pl.DataFrame:
     from ._deprecate import _load_structure_tree
     return _load_structure_tree(version, output_dir)
 
 
-@deprecated_func(removal_version='0.5.0', remarks='switch brainglobe api instead, and probably deprecate allensdk dependency')
+@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead, and probably deprecate allensdk dependency')
 def load_allensdk_annotation(resolution: int = 10, output_dir: PathLike | None = None) -> np.ndarray:
     """
     Data Source directly from Allen Institute

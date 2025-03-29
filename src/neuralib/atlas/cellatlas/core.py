@@ -78,7 +78,7 @@ def _request(output: Path) -> pl.DataFrame:
     return df
 
 
-@deprecated_class(new='load_cellatlas()', removal_version='v0.5.0')
+@deprecated_class(new='load_cellatlas()', removal_version='0.4.3')
 @dataclasses.dataclass
 class CellAtlas(_CellAtlas):
     ...

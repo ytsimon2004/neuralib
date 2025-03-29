@@ -168,7 +168,7 @@ def as_coords_array(data: DataFrame | np.ndarray) -> np.ndarray:
     return coords
 
 
-@deprecated_func(new='allen_to_brainrender_coord', removal_version='0.5.0')
+@deprecated_func(new='allen_to_brainrender_coord', removal_version='0.4.3')
 def roi_points_converter(dat: DataFrame | np.ndarray,
                          to_brainrender: bool = True) -> np.ndarray:
     """

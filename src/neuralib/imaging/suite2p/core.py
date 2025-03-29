@@ -249,7 +249,7 @@ class Suite2PResult:
             raise RuntimeError('fs and n_plane are not set properly in suite2p')
 
     @classmethod
-    @deprecated_func(removal_version='0.5.0', remarks='lightening dependency: suite2p, use an separated env')
+    @deprecated_func(removal_version='0.4.3', remarks='lightening dependency: suite2p, use an separated env')
     def launch_gui(cls, directory: PathLike) -> None:
         """
         launch the suite2p GUI

@@ -204,7 +204,7 @@ class FaceMapResult:
             raise RuntimeError(f'.npy svd file not found in the {directory}')
 
     @classmethod
-    @deprecated_func(removal_version='0.5.0', remarks='lightening facemap dependency, use a separated env')
+    @deprecated_func(removal_version='0.4.3', remarks='lightening facemap dependency, use a separated env')
     def launch_facemap_gui(cls, directory: PathLike,
                            with_keypoints: bool,
                            *,
