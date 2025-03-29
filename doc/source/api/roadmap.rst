@@ -1,5 +1,8 @@
-Future Plan
+Roadmap
 ===========
+
+.. toctree::
+    :maxdepth: 1
 
 This page outlines the planned features, improvements, and roadmap for the ongoing development of the project.
 
@@ -18,7 +21,7 @@ Mid-Term Goals (3–6 Months)
 ---------------------------
 
 - Migrate to Python ≥ 3.11 to support more recent dependencies and tooling.
-- Expand the ``neuralib.ephys`` module to support in vivo electrophysiology data processing.
+- Initialize the ``neuralib.ephys`` module to mainly support in vivo electrophysiology data processing.
 
 Community Involvement
 ---------------------

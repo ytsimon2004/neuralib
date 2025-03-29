@@ -48,6 +48,8 @@ dependencies = [
 
 
 [project.optional-dependencies]
+
+# as module name
 atlas = [
     "brainrender",
     "iblatlas",
@@ -55,10 +57,7 @@ atlas = [
     "plotly",
 ]
 
-scanner = [
-    "xmltodict",
-    "aicspylibczi"
-]
+scanner = ["xmltodict", "aicspylibczi"]
 
 imaging = [
     "scanimage-tiff-reader",
@@ -69,70 +68,48 @@ imaging = [
     "napari"  # align
 ]
 
-segmentation = [
-    "pyqt6",
-    "pyqtgraph",
-    "cellpose",
-    "stardist",
-    "csbdeep",
-    "roifile",
-    "napari",
-    "numpy<2.0; extra == 'segmentation'"
-]
-
-model = [
-    "rastermap"
-]
+imagelib = ["pdf2image", "imageio"]
 
 
-gpu = [
-    "torch",
-    "tensorflow", # cascade spike prediction
-    "psutil"
-]
+# as functionality (isolated wrapper)
+rastermap = ["rastermap"]
 
-imagelib = [
-    "pdf2image",
-    "imageio"  # gif usage
-]
+cascade = ["tensorflow"]
 
-tools = [
-    "python-dotenv",
-    "slackclient",
-    "gspread"
-]
+segmentation = ["pyqt6", "pyqtgraph", "csbdeep", "roifile", "napari"]
+cellpose = ["torch", "cellpose", "neura-library[segmentation]"]
+stardist = ["stardist", "neura-library[segmentation]", "numpy<2.0; extra == 'stardist'"]
+
+slack = ["dotenv", "slackclient"]
+gspread = ["gspread"]
+
+opt = ["psutil"]
 
 
+
+#
 all = [
-    "bokeh",
+    # module
     "neura-library[atlas]",
     "neura-library[scanner]",
     "neura-library[imaging]",
-    "neura-library[model]",
     "neura-library[imagelib]",
-    "neura-library[tools]",
+    # as functionality
+    "neura-library[rastermap]",
+    "neura-library[cascade]",
+    "neura-library[cellpose]",
+    "neura-library[slack]",
+    "neura-library[gspread]",
+    "neura-library[opt]",
 ]
 
+#
+dev = ['pre-commit', 'ruff', "neura-library[all]"]
 
-dev = [
-    'pre-commit',
-    'ruff',
-    "neura-library[segmentation]",
-    "neura-library[gpu]",
-    "neura-library[all]"
-]
+#
+doc = ["sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "neura-library[all]"]
 
 
-doc = [
-    #    "pandoc",  # use conda install pandoc
-    "sphinx",
-    "nbsphinx",
-    "sphinx-toolbox",
-    "sphinx-rtd-theme",
-    "neura-library[segmentation]",
-    "neura-library[gpu]",
-    "neura-library[all]",
-]
 
 [project.urls]
 Homepage = "https://github.com/ytsimon2004/neuralib"
