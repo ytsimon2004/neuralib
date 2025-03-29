@@ -2,7 +2,6 @@ import dataclasses
 import io
 from pathlib import Path
 
-import pandas as pd
 import polars as pl
 
 from neuralib.atlas._deprecate import _CellAtlas
@@ -70,8 +69,8 @@ def _request(output: Path) -> pl.DataFrame:
     resp = requests.get(url)
 
     if resp.status_code == 200:
-        df = pd.read_excel(io.BytesIO(resp.content), sheet_name='Densities BBCAv1')
-        pl.from_pandas(df).write_csv(output)
+        df = pl.read_excel(io.BytesIO(resp.content), sheet_name='Densities BBCAv1')
+        df.write_csv(output)
         print_save(output, verb='DOWNLOAD')
     else:
         raise RuntimeError('download cellatlas FAIL')

@@ -52,6 +52,7 @@ dependencies = [
 # as module name
 atlas = [
     "brainrender",
+    "openpyxl",
     "iblatlas",
     "anytree",
     "plotly",

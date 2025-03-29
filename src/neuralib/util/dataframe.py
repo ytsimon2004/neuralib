@@ -1,9 +1,9 @@
 import polars as pl
 from polars.testing import assert_frame_equal
 
-__all__ = ['assert_polars_equal_verbose']
-
 from neuralib.util.verbose import printdf
+
+__all__ = ['assert_polars_equal_verbose']
 
 
 def assert_polars_equal_verbose(df1: pl.DataFrame, df2: pl.DataFrame):
