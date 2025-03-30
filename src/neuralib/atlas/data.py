@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal
+from typing import Literal, overload
 
 import nrrd
 import numpy as np
@@ -13,9 +13,13 @@ from neuralib.util.tqdm import download_with_tqdm
 from neuralib.util.verbose import fprint, print_save
 
 __all__ = [
+    'load_bg_structure_tree',
+    'get_children',
+    'get_annotation_ids',
+    'get_leaf_in_annotation',
+    'build_annotation_leaf_map',
     #
     'get_dorsal_cortex',
-    'load_bg_structure_tree',
     #
     'load_allensdk_annotation',
     'load_ccf_annotation',
@@ -27,27 +31,138 @@ __all__ = [
 
 def load_bg_structure_tree(atlas_name: str = 'allen_mouse_10um',
                            check_latest: bool = True,
-                           parse: bool = False) -> pl.DataFrame:
+                           paired: bool = False) -> pl.DataFrame:
     """
     Load structure dataframe or dict from `brainglobe_atlasapi`
 
     :param atlas_name: allen source name
     :param check_latest: if check the brainglobe api latest version
-    :param parse: whether parse the child and parent in the same row
+    :param paired: To only ``acronym`` & ``parent_acronym`` fields
     :return:
     """
     file = BrainGlobeAtlas(atlas_name, check_latest=check_latest).root_dir / 'structures.csv'
-    df = pl.read_csv(file)
+    df = pl.read_csv(file).with_columns(pl.col('parent_structure_id').cast(pl.Int64))
+    df = df.join(
+        df.select([pl.col("id").alias("parent_structure_id"), pl.col("acronym").alias("parent_acronym")]),
+        on="parent_structure_id",
+        how="left"
+    )
 
-    if parse:
-        name = df.select(pl.col('acronym').alias('names'), pl.col('id'), pl.col('parent_structure_id').cast(int))
+    if paired:
+        name = df.select(pl.col('acronym'), pl.col('id'), pl.col('parent_structure_id'))
         join_df = name.join(name, left_on='parent_structure_id', right_on='id')
-        parent_child = join_df.select(pl.col('names'), pl.col('names_right').alias('parents'))
+        parent_child = join_df.select(pl.col('acronym'), pl.col('names_right').alias('parent_acronym'))
 
         return parent_child
     else:
         return df
 
+
+@overload
+def get_children(parent: int, *, dataframe: bool = True, atlas_name: str = 'allen_mouse_10um') -> list[int] | pl.DataFrame:
+    pass
+
+
+@overload
+def get_children(parent: str, *, dataframe: bool = True, atlas_name: str = 'allen_mouse_10um') -> list[str] | pl.DataFrame:
+    pass
+
+
+def get_children(parent: int | str, dataframe: bool = True, atlas_name: str = 'allen_mouse_10um') -> list[str] | pl.DataFrame:
+    df = load_bg_structure_tree(atlas_name=atlas_name)
+    return _get_children(df, parent, dataframe)
+
+
+def _get_children(df, parent, dataframe):
+    if isinstance(parent, int):
+        ret = df.filter(pl.col('parent_structure_id') == parent)
+        field = 'id'
+    elif isinstance(parent, str):
+        ret = df.filter(pl.col('parent_acronym') == parent)
+        field = 'acronym'
+    else:
+        raise TypeError('')
+
+    if not dataframe:
+        ret = ret[field].to_list()
+
+    return ret
+
+
+# ============= #
+# BG Annotation #
+# ============= #
+
+def get_annotation_ids(atlas_name: str = 'allen_mouse_10um', check_latest: bool = True) -> np.ndarray:
+    annotation = BrainGlobeAtlas(atlas_name, check_latest=check_latest).annotation
+    return np.unique(annotation)
+
+
+def get_leaf_in_annotation(region: int | str, name: bool = False) -> list[int] | list[str]:
+    tree = load_bg_structure_tree()
+    id_to_children = _build_id_to_children_map(tree)
+    annotation_ids = set(get_annotation_ids())  # convert to set for faster
+
+    # convert acronym to id
+    if isinstance(region, str):
+        region_ids = tree.filter(pl.col('acronym') == region)['id'].to_list()
+        if len(region_ids) != 1:
+            raise RuntimeError(f"The region {region} is not a valid acronym")
+        region = region_ids[0]
+
+    # iterative DFS
+    stack = [region]
+    result = []
+
+    while stack:
+        rid = stack.pop()
+        if rid in annotation_ids:
+            result.append(rid)
+        else:
+            children = id_to_children.get(rid, [])
+            stack.extend(children)
+
+    if name:
+        result = tree.filter(pl.col('id').is_in(result))['acronym'].to_list()
+
+    return result
+
+
+def build_annotation_leaf_map() -> dict[int, list[int]]:
+    tree = load_bg_structure_tree()
+    id_to_children = _build_id_to_children_map(tree)
+    annotation_ids = set(get_annotation_ids())
+
+    leaf_map = {}
+
+    def collect(rid):
+        if rid in leaf_map:
+            return leaf_map[rid]
+        if rid in annotation_ids:
+            leaf_map[rid] = [rid]
+        else:
+            result = []
+            for child in id_to_children.get(rid, []):
+                result.extend(collect(child))
+            leaf_map[rid] = result
+        return leaf_map[rid]
+
+    all_ids = tree['id'].to_list()
+    for rid in all_ids:
+        collect(rid)
+
+    return leaf_map
+
+
+def _build_id_to_children_map(tree: pl.DataFrame) -> dict[int, list[int]]:
+    df = tree.select(['id', 'parent_structure_id'])
+    grouped = df.group_by('parent_structure_id', maintain_order=False).agg(pl.col('id'))
+    return {row['parent_structure_id']: row['id'] for row in grouped.iter_rows(named=True)}
+
+
+# =============== #
+# Allen Resources #
+# =============== #
 
 def get_dorsal_cortex(output_dir: Path | None = None) -> Path:
     """

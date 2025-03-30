@@ -881,8 +881,6 @@ Handle the different naming/category with allenccf registration result
 """
 from typing import Literal
 
-from typing_extensions import TypeAlias
-
 from neuralib.typing import Series
 from .typing import Area, MergeLevel
 
@@ -1163,7 +1161,7 @@ MERGE_REGION_LV0 = {
 # ==================================================================================== #
 
 ALLEN_FAMILY_TYPE = Literal['HB', 'HY', 'TH', 'MB', 'CB', 'CTXpl', 'HPF', 'ISOCORTEX', 'OLF', 'CTXsp']
-AllenFamilyType: TypeAlias = tuple[Area, ...]
+AllenFamilyType = tuple[Area, ...]
 
 # VS
 VS_FAMILY: AllenFamilyType = ('VS',)

@@ -16,7 +16,7 @@ def plot_sunburst_acronym(output: PathLike | None = None):
     """
     from plotly import express as px
 
-    data = load_bg_structure_tree(parse=True)
+    data = load_bg_structure_tree(paired=True)
     data = dict(names=data['names'], parents=data['parents'])
 
     #
@@ -40,7 +40,7 @@ def plot_structure_tree(starting_node: str | None = None, output: PathLike | Non
     """
     from anytree import Node, RenderTree
 
-    df = load_bg_structure_tree(parse=True)
+    df = load_bg_structure_tree(paired=True)
 
     nodes = {}
     for it in df.iter_rows(named=True):

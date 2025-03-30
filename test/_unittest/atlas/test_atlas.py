@@ -5,12 +5,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from neuralib.atlas.cellatlas.core import load_cellatlas
-from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree
+from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree, get_children, get_leaf_in_annotation
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
 
-class TestBrainView(unittest.TestCase):
-
+class TestLegacyData(unittest.TestCase):
     def test_load_ccf_annotation(self):
         from neuralib.atlas.data import load_ccf_annotation
         arr = load_ccf_annotation()
@@ -32,6 +31,9 @@ class TestBrainView(unittest.TestCase):
 
         self.assertEquals(arr.dtype, np.uint32)
         self.assertTupleEqual(arr.shape, (1320, 800, 1140))
+
+
+class TestBrainGlobe(unittest.TestCase):
 
     @patch('matplotlib.pyplot.show')
     def test_slice_view_reference(self, *arg):
@@ -59,21 +61,30 @@ class TestBrainView(unittest.TestCase):
         plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], with_annotation=True)
         plt.show()
 
-
-class TestStructureTree(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.legacy_df = load_structure_tree()
-        cls.bg_df = load_bg_structure_tree()
-
-    def test_basic_field(self):
+    def test_structure_tree_with_ccf(self):
         cols = ['acronym', 'id']
-        x = self.legacy_df.select(cols)
-        y = self.bg_df.select(cols)
+        x = load_structure_tree().select(cols)
+        y = load_bg_structure_tree().select(cols)
 
         with self.assertRaises(AssertionError):
             assert_polars_equal_verbose(x, y)
+
+    def test_get_child_id(self):
+        ret = get_children(385, dataframe=False)  # VISp
+        exp = [593, 821, 721, 778, 33, 305]
+        self.assertListEqual(ret, exp)
+
+    def test_get_child_acronym(self):
+        ret = get_children('VISp', dataframe=False)
+        exp = ['VISp1', 'VISp2/3', 'VISp4', 'VISp5', 'VISp6a', 'VISp6b']
+        self.assertListEqual(ret, exp)
+
+    def test_get_leaf_in_annotation(self):
+        x = get_leaf_in_annotation('VIS', name=True)
+        print(x)
+
+    def test_volume_dataframe(self):
+        ...
 
 
 class TestCellAtlas(unittest.TestCase):
