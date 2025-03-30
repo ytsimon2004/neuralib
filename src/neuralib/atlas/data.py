@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
 
+from neuralib.io import save_json, load_json
 from neuralib.io.core import ALLEN_SDK_DIRECTORY, ATLAS_CACHE_DIRECTORY
 from neuralib.typing import PathLike
 from neuralib.util.deprecation import deprecated_func
@@ -59,16 +60,16 @@ def load_bg_structure_tree(atlas_name: str = 'allen_mouse_10um',
 
 
 @overload
-def get_children(parent: int, *, dataframe: bool = True, atlas_name: str = 'allen_mouse_10um') -> list[int] | pl.DataFrame:
+def get_children(parent: int, *, dataframe: bool = False, atlas_name: str = 'allen_mouse_10um') -> list[int] | pl.DataFrame:
     pass
 
 
 @overload
-def get_children(parent: str, *, dataframe: bool = True, atlas_name: str = 'allen_mouse_10um') -> list[str] | pl.DataFrame:
+def get_children(parent: str, *, dataframe: bool = False, atlas_name: str = 'allen_mouse_10um') -> list[str] | pl.DataFrame:
     pass
 
 
-def get_children(parent: int | str, dataframe: bool = True, atlas_name: str = 'allen_mouse_10um') -> list[str] | pl.DataFrame:
+def get_children(parent: int | str, dataframe: bool = False, atlas_name: str = 'allen_mouse_10um') -> list[str] | pl.DataFrame:
     df = load_bg_structure_tree(atlas_name=atlas_name)
     return _get_children(df, parent, dataframe)
 
@@ -98,29 +99,32 @@ def get_annotation_ids(atlas_name: str = 'allen_mouse_10um', check_latest: bool 
     return np.unique(annotation)
 
 
-def get_leaf_in_annotation(region: int | str, name: bool = False) -> list[int] | list[str]:
-    tree = load_bg_structure_tree()
-    id_to_children = _build_id_to_children_map(tree)
-    annotation_ids = set(get_annotation_ids())  # convert to set for faster
+def get_leaf_in_annotation(region: int | str, *,
+                           name: bool = False,
+                           cached_file: PathLike | None = None) -> list[int] | list[str]:
+    """
+    Get a list of annotation {id, acronym} with given region {id, acronym}
 
-    # convert acronym to id
+    :param region: region id or region acronym
+    :param name: If True, return acronym, otherwise return id
+    :param cached_file: cached json for the annotation_leaf_map
+    :return: List of annotation {id, acronym}
+    """
+    tree = load_bg_structure_tree()
+
+    # to id
     if isinstance(region, str):
         region_ids = tree.filter(pl.col('acronym') == region)['id'].to_list()
         if len(region_ids) != 1:
             raise RuntimeError(f"The region {region} is not a valid acronym")
         region = region_ids[0]
 
-    # iterative DFS
-    stack = [region]
-    result = []
+    dy = build_annotation_leaf_map(cached_file)
 
-    while stack:
-        rid = stack.pop()
-        if rid in annotation_ids:
-            result.append(rid)
-        else:
-            children = id_to_children.get(rid, [])
-            stack.extend(children)
+    try:
+        result = dy[region]
+    except KeyError:
+        raise ValueError(f'Invalid region: {region}')
 
     if name:
         result = tree.filter(pl.col('id').is_in(result))['acronym'].to_list()
@@ -128,28 +132,47 @@ def get_leaf_in_annotation(region: int | str, name: bool = False) -> list[int] |
     return result
 
 
-def build_annotation_leaf_map() -> dict[int, list[int]]:
-    tree = load_bg_structure_tree()
-    id_to_children = _build_id_to_children_map(tree)
-    annotation_ids = set(get_annotation_ids())
+def build_annotation_leaf_map(cached_file: PathLike | None = None) -> dict[int, list[int]]:
+    """
+    Get all region id (key) and list of annotation id (values)
 
-    leaf_map = {}
+    :param cached_file: cached json file
+    :return:
+    """
+    if cached_file is None:
+        cached_file = ATLAS_CACHE_DIRECTORY / 'annotation_leaf.json'
 
-    def collect(rid):
-        if rid in leaf_map:
+    if Path(cached_file).suffix != '.json':
+        raise ValueError('not a json file')
+
+    #
+    if cached_file.exists():
+        data = load_json(cached_file, verbose=False)
+        leaf_map = {int(k): v for k, v in data.items()}
+    else:
+        tree = load_bg_structure_tree()
+        id_to_children = _build_id_to_children_map(tree)
+        annotation_ids = set(get_annotation_ids())
+
+        leaf_map = {}
+
+        def collect(rid):
+            if rid in leaf_map:
+                return leaf_map[rid]
+            if rid in annotation_ids:
+                leaf_map[rid] = [rid]
+            else:
+                result = []
+                for child in id_to_children.get(rid, []):
+                    result.extend(collect(child))
+                leaf_map[rid] = result
             return leaf_map[rid]
-        if rid in annotation_ids:
-            leaf_map[rid] = [rid]
-        else:
-            result = []
-            for child in id_to_children.get(rid, []):
-                result.extend(collect(child))
-            leaf_map[rid] = result
-        return leaf_map[rid]
 
-    all_ids = tree['id'].to_list()
-    for rid in all_ids:
-        collect(rid)
+        all_ids = tree['id'].to_list()
+        for rid in all_ids:
+            collect(rid)
+
+        save_json(cached_file, leaf_map)
 
     return leaf_map
 

@@ -5,7 +5,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from neuralib.atlas.cellatlas.core import load_cellatlas
-from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree, get_children, get_leaf_in_annotation
+from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree, get_children, get_leaf_in_annotation, \
+    build_annotation_leaf_map
+from neuralib.atlas.view import load_slice_view
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
 
@@ -43,9 +45,9 @@ class TestBrainGlobe(unittest.TestCase):
         plane = load_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
 
         _, ax = plt.subplots(ncols=3, figsize=(20, 10))
-        plane.plot(ax=ax[0], with_annotation=True)
-        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], with_annotation=True)
-        plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], with_annotation=True)
+        plane.plot(ax=ax[0], boundaries=True)
+        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], boundaries=True)
+        plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], boundaries=True)
         plt.show()
 
     @patch('matplotlib.pyplot.show')
@@ -56,9 +58,19 @@ class TestBrainGlobe(unittest.TestCase):
         plane = load_slice_view('annotation', plane_type='sagittal', resolution=10).plane_at(slice_index)
 
         _, ax = plt.subplots(ncols=3, figsize=(20, 10))
-        plane.plot(ax=ax[0], with_annotation=True)
-        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], with_annotation=True)
-        plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], with_annotation=True)
+        plane.plot(ax=ax[0])
+        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1])
+        plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2])
+        plt.show()
+
+    @patch('matplotlib.pyplot.show')
+    def test_annotation_region(self, *arg):
+        slice_index = 800
+        plane = load_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
+
+        _, ax = plt.subplots()
+        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax, annotation_region=['RSP', 'VISp'])
+
         plt.show()
 
     def test_structure_tree_with_ccf(self):
@@ -80,8 +92,13 @@ class TestBrainGlobe(unittest.TestCase):
         self.assertListEqual(ret, exp)
 
     def test_get_leaf_in_annotation(self):
-        x = get_leaf_in_annotation('VIS', name=True)
+        x = get_leaf_in_annotation('VISp', name=True)
         print(x)
+
+    def test_build_all_leaf_map(self):
+        x = set(build_annotation_leaf_map()[385])
+        y = set(get_leaf_in_annotation('VISp'))
+        self.assertSetEqual(x, y)
 
     def test_volume_dataframe(self):
         ...
