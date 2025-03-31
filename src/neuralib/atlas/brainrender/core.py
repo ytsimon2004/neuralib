@@ -6,11 +6,12 @@ import numpy as np
 import polars as pl
 from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
 from brainrender.actors import Points
+from typing_extensions import Self
+
 from neuralib.argp import AbstractParser, argument, str_tuple_type, validator
 from neuralib.atlas.brainrender.util import get_color
 from neuralib.atlas.util import roi_points_converter
 from neuralib.util.logging import setup_clogger
-from typing_extensions import Self
 
 __all__ = ['BrainRenderCLI']
 

@@ -13,16 +13,6 @@ from neuralib.atlas.util import iter_source_coordinates, allen_to_brainrender_co
 
 __all__ = ['RoiRenderCLI']
 
-# user-specific lookup table for map the ipsi/contra hemisphere to brainrender
-_HEMI_LUT = {
-    'right': 'ipsi',
-    'left': 'contra',
-    'both': 'both'
-}
-
-RoiType = list[list[np.ndarray]] | list[np.ndarray]
-"""RoiType for rendering points"""
-
 
 class RoiRenderCLI(BrainRenderCLI):
     DESCRIPTION = 'For labelled rois reconstruction from 2dccf pipeline'
@@ -76,6 +66,12 @@ class RoiRenderCLI(BrainRenderCLI):
         help='if None, auto infer, and check the lowest merge level contain all the regions specified'
     )
 
+    inverse_lut: bool = argument(
+        '--inverse-lut',
+        group=GROUP_ROIS,
+        help='inverse right/left maps to ipsi/contra hemisphere look up table'
+    )
+
     source_order: tuple[str, ...] | None = argument(
         '--source-order',
         metavar='SOURCE,...',
@@ -101,11 +97,12 @@ class RoiRenderCLI(BrainRenderCLI):
         help='csv output file from allenccf'
     )
 
-    file: list[Path] = argument(
+    file: list[Path] | None = argument(
         '--file',
-        validator.list().on_item(validator.path.is_suffix(['.csv', '.npy'])),
+        validator.list().on_item(validator.path.is_suffix(['.csv', '.npy'])) | validator.optional(),
         metavar='FILE',
         type=list_type(Path),
+        default=None,
         action='extend',
         group=GROUP_ROIS_LOAD,
         help="points file as 'npy' or 'csv'"
@@ -130,17 +127,24 @@ class RoiRenderCLI(BrainRenderCLI):
         if self.classifier_file is not None:
             self._add_points_classifier_csv()
 
-        if len(self.file) != 0:
+        if self.file is not None:
             self._add_points_generic_file()
 
         self._reconstruct_points_from_file()
+
+    @property
+    def _get_hemisphere_lut(self):
+        if self.inverse_lut:
+            return {'right': 'contra', 'left': 'ipsi', 'both': 'both'}
+        else:
+            return {'right': 'ipsi', 'left': 'contra', 'both': 'both'}
 
     def _add_points_classifier_csv(self):
         iter_coords = iter_source_coordinates(
             self.classifier_file,
             only_areas=self.roi_region,
             region_col=self.region_col,
-            hemisphere=_HEMI_LUT[self.hemisphere],
+            hemisphere=self._get_hemisphere_lut[self.hemisphere],
             to_brainrender=True if self.coordinate_space == 'ccf' else False,
             source_order=self.source_order
         )
@@ -148,10 +152,9 @@ class RoiRenderCLI(BrainRenderCLI):
         ret = [sc.coordinates for sc in iter_coords]
         self._save_tempfile(ret)
 
-    def _save_tempfile(self, rois_list: RoiType):
+    def _save_tempfile(self, rois_list: list[list[np.ndarray]] | list[np.ndarray]):
         for p in rois_list:
             if isinstance(p, np.ndarray):
-                # create temporal file in memory for p
                 # os handle for NamedTemporaryFile, https://stackoverflow.com/a/23212515
                 delete = False if sys.platform == 'win32' else True
                 f = NamedTemporaryFile(prefix='.temp-run-3d-proj-', suffix='.npy', delete=delete)
