@@ -7,11 +7,11 @@ from matplotlib import pyplot as plt
 from neuralib.atlas.cellatlas.core import load_cellatlas
 from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree, get_children, get_leaf_in_annotation, \
     build_annotation_leaf_map
-from neuralib.atlas.view import load_slice_view
+from neuralib.atlas.view import get_slice_view
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
 
-@unittest.skip('manually ')
+@unittest.skip('manually')
 class TestLegacyData(unittest.TestCase):
     def test_load_ccf_annotation(self):
         from neuralib.atlas.data import load_ccf_annotation
@@ -73,10 +73,10 @@ class TestView(unittest.TestCase):
 
     @patch('matplotlib.pyplot.show')
     def test_slice_view_reference(self, *arg):
-        from neuralib.atlas.view import load_slice_view
+        from neuralib.atlas.view import get_slice_view
 
         slice_index = 700
-        plane = load_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
+        plane = get_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
 
         _, ax = plt.subplots(ncols=3, figsize=(20, 10))
         plane.plot(ax=ax[0], boundaries=True)
@@ -86,10 +86,10 @@ class TestView(unittest.TestCase):
 
     @patch('matplotlib.pyplot.show')
     def test_slice_view_annotation(self, *arg):
-        from neuralib.atlas.view import load_slice_view
+        from neuralib.atlas.view import get_slice_view
 
         slice_index = 500
-        plane = load_slice_view('annotation', plane_type='sagittal', resolution=10).plane_at(slice_index)
+        plane = get_slice_view('annotation', plane_type='sagittal', resolution=10).plane_at(slice_index)
 
         _, ax = plt.subplots(ncols=3, figsize=(20, 10))
         plane.plot(ax=ax[0])
@@ -100,21 +100,32 @@ class TestView(unittest.TestCase):
     @patch('matplotlib.pyplot.show')
     def test_annotation_region(self, *arg):
         slice_index = 800
-        plane = load_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
+        plane = get_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
 
         _, ax = plt.subplots()
         plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax, annotation_region=['RSP', 'VISp'])
 
         plt.show()
 
+    def test_affine_transform(self):
+        pass
+
     @patch('matplotlib.pyplot.show')
     def test_max_projection(self):
-        from neuralib.atlas.view import load_slice_view
-        view = load_slice_view('reference', plane_type='transverse', resolution=10)
+        from neuralib.atlas.view import get_slice_view
+        view = get_slice_view('reference', plane_type='transverse', resolution=10)
 
         _, ax = plt.subplots()
         regions = get_children('VIS')
         view.plot_max_projection(ax, annotation_regions=regions)
+        plt.show()
+
+    def test_other_atlas_maps(self):
+        slice_index = 300
+        plane = get_slice_view('annotation', plane_type='coronal', resolution=20).plane_at(slice_index)
+        _, ax = plt.subplots()
+        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax, annotation_region=['RSP', 'VISp'])
+
         plt.show()
 
 

@@ -10,7 +10,7 @@ from scipy.io.matlab import MatlabOpaque
 
 from neuralib.atlas.typing import HEMISPHERE_TYPE
 from neuralib.atlas.util import PLANE_TYPE
-from neuralib.atlas.view import SlicePlane, load_slice_view
+from neuralib.atlas.view import SlicePlane, get_slice_view
 from neuralib.typing import PathLike
 from neuralib.util.utils import uglob, joinn
 from neuralib.util.verbose import fprint
@@ -595,7 +595,7 @@ class CCFTransMatrix:
 
     def get_slice_plane(self) -> SlicePlane:
         ret = (
-            load_slice_view('reference', self.plane_type, resolution=self.resolution)
+            get_slice_view('reference', self.plane_type, resolution=self.resolution)
             .plane_at(self.slice_index)
         )
 

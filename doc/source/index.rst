@@ -182,19 +182,9 @@ Utilities Modules
 - Real-time Slack notification bot for analysis pipeline
 
 
-:mod:`neuralib.util.color_logging`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Logging with color format
-
-
 :mod:`neuralib.util.gpu`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - OS-dependent GPU info
-
-
-:mod:`neuralib.util.profile`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Simple benchmark profile testing and debugging
 
 
 :mod:`neuralib.util.table`

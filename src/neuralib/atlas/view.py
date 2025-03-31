@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import abc
 import math
 import warnings
-from typing import Final, ClassVar, Literal
+from typing import Final, ClassVar, Literal, get_args
 
 import attrs
 import matplotlib.pyplot as plt
@@ -14,34 +16,61 @@ from typing_extensions import Self
 
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.imglib.factory import ImageProcFactory
+from neuralib.util.deprecation import deprecated_func
 
 __all__ = [
+    'ATLAS_NAME',
     'VIEW_TYPE',
+    'get_slice_view',
     'load_slice_view',
     'AbstractSliceView',
     'SlicePlane'
 ]
 
+ATLAS_NAME = Literal[
+    'allen_mouse_10um',
+    'allen_mouse_25um',
+    'allen_mouse_50um',
+    'allen_mouse_100um',
+    'kim_mouse_10um',
+    'kim_mouse_25um',
+    'kim_mouse_50um',
+    'kim_mouse_100um',
+    'perens_lsfm_mouse_20um',
+    'perens_stereotaxic_mouse_mri_25um',
+    'princeton_mouse_20um',
+]
+"""Atlas Name"""
+
 VIEW_TYPE = Literal['annotation', 'reference']
+"""View type for the slice"""
 
 
-def load_slice_view(view: VIEW_TYPE,
-                    plane_type: PLANE_TYPE,
-                    *,
-                    resolution: int = 10,
-                    check_latest: bool = True) -> 'AbstractSliceView':
+def get_slice_view(view: VIEW_TYPE,
+                   plane_type: PLANE_TYPE,
+                   *,
+                   name: str = 'allen_mouse',
+                   resolution: int = 10,
+                   check_latest: bool = True) -> AbstractSliceView:
     """
     Load the mouse brain slice view
 
+    .. seealso::
+
+        `brainglobe-atlasap doc <https://brainglobe.info/documentation/brainglobe-atlasapi/usage/atlas-details.html>`_
+
     :param view: ``VIEW_TYPE``.
     :param plane_type: ``PLANE_TYPE``. {'coronal', 'sagittal', 'transverse'}
+    :param name: Name of the atlas.
     :param resolution: Volume resolution in um. default is 10 um
     :param check_latest: If True, check the latest version of brain
     :return: :class:`AbstractSliceView`
     """
     match view:
         case 'annotation' | 'reference':
-            atlas_name = f'allen_mouse_{resolution}um'
+            atlas_name = f'{name}_{resolution}um'
+            if atlas_name not in get_args(ATLAS_NAME):
+                raise ValueError(f'{atlas_name} not found or not implemented')
             data = getattr(BrainGlobeAtlas(atlas_name, check_latest=check_latest), view)
         case _:
             raise ValueError(f'Unknown view: {view}')
@@ -214,7 +243,7 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
 
         if annotation_regions is not None:
             from neuralib.atlas.data import get_leaf_in_annotation
-            annotation = load_slice_view('annotation', self.plane_type, resolution=self.resolution).reference
+            annotation = get_slice_view('annotation', self.plane_type, resolution=self.resolution).reference
 
             if isinstance(annotation_regions, str):
                 annotation_regions = [annotation_regions]
@@ -495,7 +524,7 @@ class SlicePlane:
         if affine_transform:
             import matplotlib.transforms as mtransforms
             #
-            if customized_trans:
+            if customized_trans:  # TODO might deprecate TO directly provide ``Affine2D``
                 aff = mtransforms.Affine2D(self._customized_affine_transform())
             else:
                 aff = mtransforms.Affine2D().skew_deg(-20, 0)
@@ -535,7 +564,7 @@ class SlicePlane:
         from neuralib.atlas.data import get_leaf_in_annotation
 
         annotation = (
-            load_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
+            get_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
             .plane(self.plane_offset)
             .astype(float)
         )
@@ -569,7 +598,7 @@ class SlicePlane:
         :param alpha: The imshow alpha, between 0 (transparent) and 1 (opaque). Defaults to 0.3.
         """
         ann_img = (
-            load_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
+            get_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
             .plane(self.plane_offset)
         )
 
@@ -622,3 +651,8 @@ def _get_xy_range(view: AbstractSliceView, to_um: bool = True) -> tuple[float, f
         y1 = 0
 
     return x0, x1, y0, y1
+
+
+@deprecated_func(new='get_slice_view()', removal_version='0.4.5')
+def load_slice_view(*args, **kwargs):
+    return get_slice_view(*args, **kwargs)
