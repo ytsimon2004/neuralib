@@ -243,10 +243,12 @@ Doc for Array type
 - ``float`` array with union shape (N,2) or (N,T,2) -> ``Array[float, [N, 2]|[N, T, 2]]``
 
 
+Notebook Example
+-------------------
 
 .. toctree::
     :maxdepth: 1
-    :caption: Notebook Demo
+    :caption: Notebook
 
     ../notebooks/example_argp
     ../notebooks/example_imaging_2p

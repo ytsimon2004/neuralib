@@ -347,7 +347,8 @@ Error Handling
 --------------
 If any validation fails:
 - A :class:`ValidatorFailError` (or subclass) is raised, often rethrown as ``ValueError``
-  in higher-level frameworks.
+in higher-level frameworks.
+
 - **Type mismatches** specifically raise :class:`ValidatorFailOnTypeError`.
 
 

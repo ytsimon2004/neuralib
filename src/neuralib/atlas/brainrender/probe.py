@@ -4,12 +4,13 @@ import numpy as np
 import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
 from brainrender.actors import Points
+from scipy.interpolate import interp1d
+from typing_extensions import Self
+
 from neuralib.argp import argument
 from neuralib.atlas.brainrender.core import BrainRenderCLI
 from neuralib.atlas.util import PLANE_TYPE, allen_to_brainrender_coord
 from neuralib.typing import PathLike
-from scipy.interpolate import interp1d
-from typing_extensions import Self
 
 __all__ = ['ProbeRenderCLI',
            'ProbeShank']
@@ -107,7 +108,7 @@ class ProbeShank:
 
         :param dorsal: `Array[float, 3 | [S, 3]]`
         :param ventral: `Array[float, 3 | [S, 3]]`
-        :param bg: ```BrainGlobeAtlas`
+        :param bg: ``BrainGlobeAtlas``
         """
         self._dorsal = dorsal
         self._ventral = ventral
