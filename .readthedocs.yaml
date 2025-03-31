@@ -14,8 +14,3 @@ python:
 
 sphinx:
   configuration: doc/source/conf.py
-
-
-versions:
-  - main
-  - "v.*"
