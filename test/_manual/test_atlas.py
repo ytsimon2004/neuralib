@@ -11,6 +11,7 @@ from neuralib.atlas.view import load_slice_view
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
 
+@unittest.skip('manually ')
 class TestLegacyData(unittest.TestCase):
     def test_load_ccf_annotation(self):
         from neuralib.atlas.data import load_ccf_annotation
