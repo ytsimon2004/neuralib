@@ -5,16 +5,12 @@ import numpy as np
 from iblatlas.atlas import AllenAtlas
 from iblatlas.regions import BrainRegions
 from matplotlib.axes import Axes
+
 from neuralib.io.core import IBL_CACHE_DIRECTORY
 from neuralib.typing import ArrayLike, PathLike, ArrayLikeStr
+from neuralib.util.deprecation import deprecated_class
 
 __all__ = [
-    #
-    'IBL_PLANE_TYPE',
-    'IBL_MAPPING_TYPE',
-    'HEMISPHERE_TYPE',
-    'IBL_BG_TYPE',
-    #
     'IBLAtlasPlotWrapper'
 ]
 
@@ -24,6 +20,7 @@ HEMISPHERE_TYPE = Literal['left', 'right', 'both']
 IBL_BG_TYPE = Literal['image', 'boundary']
 
 
+@deprecated_class(new='basic case already covered natively, otherwise, use iblatlas directly', removal_version='0.5.0')
 class IBLAtlasPlotWrapper(AllenAtlas):
     """Wrapper for iblatlas plotting usage
 

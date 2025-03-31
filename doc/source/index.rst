@@ -257,7 +257,6 @@ Doc for Array type
 
     ../notebooks/example_segmentation
     ../notebooks/example_slice_view
-    ../notebooks/example_ibl_plot
     ../notebooks/example_neuralib_plot
 
 

@@ -37,6 +37,39 @@ class TestLegacyData(unittest.TestCase):
 
 class TestBrainGlobe(unittest.TestCase):
 
+    def test_structure_tree_with_ccf(self):
+        cols = ['acronym', 'id']
+        x = load_structure_tree().select(cols)
+        y = load_bg_structure_tree().select(cols)
+
+        with self.assertRaises(AssertionError):
+            assert_polars_equal_verbose(x, y)
+
+    def test_get_child_id(self):
+        ret = get_children(385, dataframe=False)  # VISp
+        exp = [593, 821, 721, 778, 33, 305]
+        self.assertListEqual(ret, exp)
+
+    def test_get_child_acronym(self):
+        ret = get_children('VISp', dataframe=False)
+        exp = ['VISp1', 'VISp2/3', 'VISp4', 'VISp5', 'VISp6a', 'VISp6b']
+        self.assertListEqual(ret, exp)
+
+    def test_get_leaf_in_annotation(self):
+        x = get_leaf_in_annotation('VISp', name=True)
+        print(x)
+
+    def test_build_all_leaf_map(self):
+        x = set(build_annotation_leaf_map()[385])
+        y = set(get_leaf_in_annotation('VISp'))
+        self.assertSetEqual(x, y)
+
+    def test_volume_dataframe(self):
+        ...
+
+
+class TestView(unittest.TestCase):
+
     @patch('matplotlib.pyplot.show')
     def test_slice_view_reference(self, *arg):
         from neuralib.atlas.view import load_slice_view
@@ -73,35 +106,15 @@ class TestBrainGlobe(unittest.TestCase):
 
         plt.show()
 
-    def test_structure_tree_with_ccf(self):
-        cols = ['acronym', 'id']
-        x = load_structure_tree().select(cols)
-        y = load_bg_structure_tree().select(cols)
+    @patch('matplotlib.pyplot.show')
+    def test_max_projection(self):
+        from neuralib.atlas.view import load_slice_view
+        view = load_slice_view('reference', plane_type='transverse', resolution=10)
 
-        with self.assertRaises(AssertionError):
-            assert_polars_equal_verbose(x, y)
-
-    def test_get_child_id(self):
-        ret = get_children(385, dataframe=False)  # VISp
-        exp = [593, 821, 721, 778, 33, 305]
-        self.assertListEqual(ret, exp)
-
-    def test_get_child_acronym(self):
-        ret = get_children('VISp', dataframe=False)
-        exp = ['VISp1', 'VISp2/3', 'VISp4', 'VISp5', 'VISp6a', 'VISp6b']
-        self.assertListEqual(ret, exp)
-
-    def test_get_leaf_in_annotation(self):
-        x = get_leaf_in_annotation('VISp', name=True)
-        print(x)
-
-    def test_build_all_leaf_map(self):
-        x = set(build_annotation_leaf_map()[385])
-        y = set(get_leaf_in_annotation('VISp'))
-        self.assertSetEqual(x, y)
-
-    def test_volume_dataframe(self):
-        ...
+        _, ax = plt.subplots()
+        regions = get_children('VIS')
+        view.plot_max_projection(ax, annotation_regions=regions)
+        plt.show()
 
 
 class TestCellAtlas(unittest.TestCase):

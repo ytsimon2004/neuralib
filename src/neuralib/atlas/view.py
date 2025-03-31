@@ -1,5 +1,6 @@
 import abc
 import math
+import warnings
 from typing import Final, ClassVar, Literal
 
 import attrs
@@ -7,6 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from brainglobe_atlasapi import BrainGlobeAtlas
 from matplotlib.axes import Axes
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
 from typing_extensions import Self
 
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
@@ -186,6 +189,69 @@ class AbstractSliceView(metaclass=abc.ABCMeta):
         """
         pass
 
+    @property
+    @abc.abstractmethod
+    def max_projection_axis(self) -> tuple[int, int, int]:
+        pass
+
+    def plot_max_projection(self, ax: Axes, *,
+                            annotation_regions: str | list[str] | None = None,
+                            annotation_cmap: str = 'hsv'):
+        """
+        Plot max projection for the given ``plane_type``
+
+        :param ax: ``Axes``
+        :param annotation_regions: annotation_regions
+        :param annotation_cmap: camp for the annotation regions, defaults to 'hsv'
+        """
+
+        img = self.reference.max(axis=self.max_projection_axis)
+        if isinstance(self, SagittalSliceView):
+            img = img.T
+
+        ext = _get_xy_range(self, to_um=True)
+        ax.imshow(img, cmap='Greys', extent=ext)
+
+        if annotation_regions is not None:
+            from neuralib.atlas.data import get_leaf_in_annotation
+            annotation = load_slice_view('annotation', self.plane_type, resolution=self.resolution).reference
+
+            if isinstance(annotation_regions, str):
+                annotation_regions = [annotation_regions]
+
+            #
+            region_colors = plt.get_cmap(annotation_cmap, len(annotation_regions))
+            for i, r in enumerate(annotation_regions):
+                ids = get_leaf_in_annotation(r, name=False)
+                mask = np.isin(annotation, ids)
+
+                region_mask = np.full(annotation.shape, np.nan, dtype=np.float64)
+                region_mask[mask] = 1.0
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    proj = np.nanmax(region_mask, axis=self.max_projection_axis)
+
+                if isinstance(self, SagittalSliceView):
+                    proj = proj.T
+
+                masked = np.ma.masked_invalid(proj)
+                ax.imshow(
+                    masked,
+                    cmap=ListedColormap(region_colors(i)),
+                    extent=ext,
+                    alpha=0.7,
+                    zorder=2 + i,
+                )
+
+            #
+            ax.set(xlabel='um', ylabel='um')
+            legend_elements = [
+                Patch(facecolor=region_colors(i), label=region, alpha=0.7)
+                for i, region in enumerate(annotation_regions)
+            ]
+            ax.legend(handles=legend_elements, title="Regions", loc='upper right')
+
     def plane_at(self, slice_index: int) -> 'SlicePlane':
         return SlicePlane(slice_index, int(self.width // 2), int(self.height // 2), 0, 0, self)
 
@@ -259,6 +325,10 @@ class CoronalSliceView(AbstractSliceView):
     def project_index(self) -> tuple[int, int, int]:
         return 0, 2, 1
 
+    @property
+    def max_projection_axis(self) -> int:
+        return 0
+
 
 class SagittalSliceView(AbstractSliceView):
     REFERENCE_FROM: ClassVar[str] = 'ML'
@@ -283,6 +353,10 @@ class SagittalSliceView(AbstractSliceView):
     def project_index(self) -> tuple[int, int, int]:
         return 2, 0, 1  # p=ML, x=AP, y=DV
 
+    @property
+    def max_projection_axis(self) -> int:
+        return 2
+
 
 class TransverseSliceView(AbstractSliceView):
     REFERENCE_FROM: ClassVar[str] = 'DV'
@@ -306,6 +380,10 @@ class TransverseSliceView(AbstractSliceView):
     @property
     def project_index(self) -> tuple[int, int, int]:
         return 1, 2, 0
+
+    @property
+    def max_projection_axis(self):
+        return 1
 
 
 @attrs.define
@@ -452,38 +530,6 @@ class SlicePlane:
 
         ax.set(xlabel=self.unit, ylabel=self.unit)
 
-    def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
-        if to_um:
-            x0 = -self.slice_view.width_mm / 2 * 1000
-            x1 = self.slice_view.width_mm / 2 * 1000
-            y0 = self.slice_view.height_mm * 1000
-            y1 = 0
-            self.unit = 'um'
-        else:
-            x0 = -self.slice_view.width_mm / 2
-            x1 = self.slice_view.width_mm / 2
-            y0 = self.slice_view.height
-            y1 = 0
-            self.unit = 'mm'
-
-        return x0, x1, y0, y1
-
-    def _customized_affine_transform(self) -> np.ndarray:
-        # translation
-        Y = np.array([[1, 0, 0], [0, 1, -4000], [0, 0, 1]])
-
-        # shear
-        tt = np.array([
-            [1, 0, 0],
-            [0, 1, 0],
-            [-0.03 / self.slice_view.width, 0, 1]
-        ])
-
-        # translation
-        _Y = np.array([[1, 0, 0], [0, 1, 3500], [0, 0, 1]])
-
-        return Y @ tt @ _Y
-
     def _plot_annotation_regions(self, ax, regions, extent, aff_trans, cmap='berlin', **kwargs):
         from matplotlib.patches import Patch
         from neuralib.atlas.data import get_leaf_in_annotation
@@ -541,3 +587,38 @@ class SlicePlane:
 
         ax.imshow(ann, cmap=cmap, extent=extent, alpha=alpha, clip_on=False, interpolation='none',
                   vmin=0, vmax=255, transform=aff_trans, **kwargs)
+
+    def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
+        self.unit = 'um' if to_um else 'mm'
+        return _get_xy_range(self.slice_view, to_um=to_um)
+
+    def _customized_affine_transform(self) -> np.ndarray:
+        # translation
+        Y = np.array([[1, 0, 0], [0, 1, -4000], [0, 0, 1]])
+
+        # shear
+        tt = np.array([
+            [1, 0, 0],
+            [0, 1, 0],
+            [-0.03 / self.slice_view.width, 0, 1]
+        ])
+
+        # translation
+        _Y = np.array([[1, 0, 0], [0, 1, 3500], [0, 0, 1]])
+
+        return Y @ tt @ _Y
+
+
+def _get_xy_range(view: AbstractSliceView, to_um: bool = True) -> tuple[float, float, float, float]:
+    if to_um:
+        x0 = -view.width_mm / 2 * 1000
+        x1 = view.width_mm / 2 * 1000
+        y0 = view.height_mm * 1000
+        y1 = 0
+    else:
+        x0 = view.width_mm / 2
+        x1 = view.width_mm / 2
+        y0 = view.height
+        y1 = 0
+
+    return x0, x1, y0, y1
