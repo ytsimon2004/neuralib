@@ -15,7 +15,6 @@ from matplotlib.patches import Patch
 from typing_extensions import Self
 
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
-from neuralib.imglib.factory import ImageProcFactory
 from neuralib.util.deprecation import deprecated_func
 
 __all__ = [
@@ -493,11 +492,10 @@ class SlicePlane:
              annotation_region: str | list[str] | None = None,
              boundaries: bool = False,
              with_title: bool = False,
-             affine_transform: bool = False,
-             customized_trans: bool = False,
              extent: tuple[float, float, float, float] | None = None,
+             reference_bg_value: float | None = None,
              annotation_cmap: str = 'berlin',
-             rescale: bool = True,
+             annotation_rescale: bool = True,
              **kwargs) -> None:
         """
         :param ax: The Axes object on which to plot. If None, a new figure and axes are created.
@@ -506,11 +504,10 @@ class SlicePlane:
         :param annotation_region: The annotation region on which to plot. Defaults to None.
         :param boundaries: A boolean indicating whether to include annotations in the plot.
         :param with_title: A boolean indicating whether to include a title in the plot.
-        :param affine_transform: A boolean indicating whether to apply an affine transformation to the plot.
-        :param customized_trans: A boolean indicating whether to use a customized affine transformation.
         :param extent: A tuple defining the image boundaries (left, right, bottom, top). If None, boundaries are computed internally.
+        :param reference_bg_value: If specified, remove background of its value in when view_type is **reference** (i.e., set as 10).
         :param annotation_cmap: Cmap for the annotation regions if specified
-        :param rescale: Rescale the image when view_type is **annotation**.
+        :param annotation_rescale: Rescale the image when view_type is **annotation**.
         :param kwargs: Additional keyword arguments passed to ``ax.imshow()``.
         """
 
@@ -520,22 +517,12 @@ class SlicePlane:
         if extent is None:
             extent = self._get_xy_range(to_um)
 
-        #
-        if affine_transform:
-            import matplotlib.transforms as mtransforms
-            #
-            if customized_trans:  # TODO might deprecate TO directly provide ``Affine2D``
-                aff = mtransforms.Affine2D(self._customized_affine_transform())
-            else:
-                aff = mtransforms.Affine2D().skew_deg(-20, 0)
-
-            aff_trans = aff + ax.transData
-        else:
-            aff_trans = ax.transData
-
-        #
+        # value modify
         image = self.image.astype(float)
-        if rescale and self.slice_view.view_type == 'annotation':
+        if reference_bg_value is not None and self.slice_view.view_type == 'reference':
+            image[image < reference_bg_value] = np.nan
+
+        if annotation_rescale and self.slice_view.view_type == 'annotation':
             image[image == 0] = np.nan
             valid = ~np.isnan(image)
             unique_vals = np.unique(image[valid])
@@ -543,15 +530,16 @@ class SlicePlane:
             remapped_image[valid] = np.searchsorted(unique_vals, image[valid]) + 1
             image = remapped_image
 
-        ax.imshow(image, cmap='Greys', extent=extent, clip_on=False, transform=aff_trans, **kwargs)
+        # image
+        ax.imshow(image, cmap='Greys', extent=extent, clip_on=False, **kwargs)
 
         # annotation region
         if annotation_region is not None:
-            self._plot_annotation_regions(ax, annotation_region, extent, aff_trans, annotation_cmap, **kwargs)
+            self._plot_annotation_regions(ax, annotation_region, extent, annotation_cmap, **kwargs)
 
         # with boundaries
         if boundaries:
-            self._plot_boundaries(ax, extent, aff_trans, **kwargs)
+            self._plot_boundaries(ax, extent, **kwargs)
 
         #
         if with_title:
@@ -559,7 +547,7 @@ class SlicePlane:
 
         ax.set(xlabel=self.unit, ylabel=self.unit)
 
-    def _plot_annotation_regions(self, ax, regions, extent, aff_trans, cmap='berlin', **kwargs):
+    def _plot_annotation_regions(self, ax, regions, extent, cmap='berlin', **kwargs):
         from matplotlib.patches import Patch
         from neuralib.atlas.data import get_leaf_in_annotation
 
@@ -580,23 +568,24 @@ class SlicePlane:
 
         cmap = plt.get_cmap(cmap, len(regions))
 
-        ax.imshow(area, cmap=cmap, extent=extent, alpha=0.9, clip_on=False, transform=aff_trans, **kwargs)
+        ax.imshow(area, cmap=cmap, extent=extent, alpha=0.9, clip_on=False, **kwargs)
         legend_elements = [
             Patch(facecolor=cmap(i / len(regions)), label=region)
             for i, region in enumerate(regions)
         ]
         ax.legend(handles=legend_elements, title="Regions", loc='upper right')
 
-    def _plot_boundaries(self, ax, extent, aff_trans, cmap='binary', alpha=0.3, **kwargs):
+    def _plot_boundaries(self, ax, extent, cmap='binary', alpha=0.3, **kwargs):
         """
         Plot the annotation boundaries
 
         :param ax: ``Axes``
         :param extent: A tuple defining the image boundaries (left, right, bottom, top). If None, boundaries are computed internally.
-        :param aff_trans: The transformation applied to the annotation image. If None, defaults to the Axes' transformation.
         :param cmap: Colormap to be used for the annotation image. Defaults to 'binary'.
         :param alpha: The imshow alpha, between 0 (transparent) and 1 (opaque). Defaults to 0.3.
         """
+        from neuralib.imglib.factory import ImageProcFactory
+
         ann_img = (
             get_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
             .plane(self.plane_offset)
@@ -610,32 +599,11 @@ class SlicePlane:
 
         ann = ann.astype(float)
         ann[ann <= 10] = np.nan
-
-        if aff_trans is None:
-            aff_trans = ax.transData
-
-        ax.imshow(ann, cmap=cmap, extent=extent, alpha=alpha, clip_on=False, interpolation='none',
-                  vmin=0, vmax=255, transform=aff_trans, **kwargs)
+        ax.imshow(ann, cmap=cmap, extent=extent, alpha=alpha, clip_on=False, interpolation='none', vmin=0, vmax=255, **kwargs)
 
     def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
         self.unit = 'um' if to_um else 'mm'
         return _get_xy_range(self.slice_view, to_um=to_um)
-
-    def _customized_affine_transform(self) -> np.ndarray:
-        # translation
-        Y = np.array([[1, 0, 0], [0, 1, -4000], [0, 0, 1]])
-
-        # shear
-        tt = np.array([
-            [1, 0, 0],
-            [0, 1, 0],
-            [-0.03 / self.slice_view.width, 0, 1]
-        ])
-
-        # translation
-        _Y = np.array([[1, 0, 0], [0, 1, 3500], [0, 0, 1]])
-
-        return Y @ tt @ _Y
 
 
 def _get_xy_range(view: AbstractSliceView, to_um: bool = True) -> tuple[float, float, float, float]:

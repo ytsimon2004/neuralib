@@ -71,17 +71,17 @@ class TestBrainGlobe(unittest.TestCase):
 
 class TestView(unittest.TestCase):
 
-    @patch('matplotlib.pyplot.show')
+    # @patch('matplotlib.pyplot.show')
     def test_slice_view_reference(self, *arg):
         from neuralib.atlas.view import get_slice_view
 
-        slice_index = 700
+        slice_index = 30
         plane = get_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
 
         _, ax = plt.subplots(ncols=3, figsize=(20, 10))
         plane.plot(ax=ax[0], boundaries=True)
-        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], boundaries=True)
-        plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], boundaries=True)
+        # plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], boundaries=True)
+        # plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], boundaries=True)
         plt.show()
 
     @patch('matplotlib.pyplot.show')
@@ -107,25 +107,28 @@ class TestView(unittest.TestCase):
 
         plt.show()
 
-    def test_affine_transform(self):
-        pass
+    @patch('matplotlib.pyplot.show')
+    def test_affine_transform(self, *args):
+        import matplotlib.transforms as mtransforms
+
+        slice_index = 800
+        plane = get_slice_view('reference', plane_type='coronal', resolution=10).plane_at(slice_index)
+
+        _, ax = plt.subplots()
+        aff = mtransforms.Affine2D().skew_deg(-20, 0)
+        t = aff + ax.transData
+
+        plane.with_angle_offset().plot(ax=ax, transform=t)
+        plt.show()
 
     @patch('matplotlib.pyplot.show')
-    def test_max_projection(self):
+    def test_max_projection(self, *args):
         from neuralib.atlas.view import get_slice_view
         view = get_slice_view('reference', plane_type='transverse', resolution=10)
 
         _, ax = plt.subplots()
         regions = get_children('VIS')
         view.plot_max_projection(ax, annotation_regions=regions)
-        plt.show()
-
-    def test_other_atlas_maps(self):
-        slice_index = 300
-        plane = get_slice_view('annotation', plane_type='coronal', resolution=20).plane_at(slice_index)
-        _, ax = plt.subplots()
-        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax, annotation_region=['RSP', 'VISp'])
-
         plt.show()
 
 
