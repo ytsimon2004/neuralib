@@ -5,6 +5,8 @@ from typing import TypedDict, Final, Literal, get_args, Iterable
 import attrs
 import numpy as np
 import polars as pl
+from typing_extensions import Self
+
 from neuralib.atlas.ccf.core import (
     AbstractCCFDir,
     SagittalCCFDir,
@@ -18,7 +20,6 @@ from neuralib.atlas.typing import Area, HEMISPHERE_TYPE, Source, Channel
 from neuralib.atlas.util import PLANE_TYPE
 from neuralib.util.logging import setup_clogger, LOGGING_IO_LEVEL
 from neuralib.util.utils import uglob
-from typing_extensions import Self, TypeAlias
 
 __all__ = [
     'FluorReprType',
@@ -34,9 +35,10 @@ __all__ = [
     'parse_csv'
 ]
 
+# TODO to class level?
 Logger = setup_clogger(caller_name=Path(__file__).name)
 
-FluorReprType: TypeAlias = dict[Channel, Source]
+FluorReprType = dict[Channel, Source]
 
 
 # ======= #
@@ -49,12 +51,12 @@ class UserInjectionConfig(TypedDict):
     hemisphere: HEMISPHERE_TYPE
     """injection hemisphere"""
     ignore: bool
-    """whether local roi counts will be ignored"""
+    """whether local roi counts will be ignored"""  # TODO if needed?
     fluor_repr: FluorReprType
     """fluorescence color and tracing source alias pairs"""
 
 
-# Example (replace to user-specific)
+# Example (replace to user-specific) TODO as doc
 _DEFAULT_RSP_CONFIG = UserInjectionConfig(
     area='RSP',
     hemisphere='ipsi',
@@ -317,6 +319,7 @@ class RoiClassifier:
             cols = ['source', self.classified_column]
 
         df = self.parsed_df
+
         df = (df.select(cols)
               .group_by(cols)
               .agg(pl.col(self.classified_column).count().alias('n_rois'))
@@ -348,9 +351,9 @@ class RoiClassifier:
         :return: :class:`RoiClassifiedNormTable`
         """
         if supply_overlap and source != 'overlap':
-            sup_source = list(self.fluor_repr.values())
-            sup_source.remove('overlap')
-            supply_df = supply_overlap_dataframe(self.parsed_df, supply_channel_name=sup_source)
+            channels = list(self.fluor_repr.keys())
+            channels.remove('overlap')
+            supply_df = supply_overlap_dataframe(self.parsed_df, supply_channel_name=channels, fluor_repr=self.fluor_repr)
             self.parsed_df = supply_df  # trigger setter
         else:
             Logger.warning('Source counts exclude overlap channel!')
@@ -623,7 +626,7 @@ class RoiClassifiedNormTable:
               .pivot(values='n_rois', on='source', index=self.classified_column, aggregate_function='first')
               .fill_nan(0)
               .fill_null(0)
-              .with_columns((pl.col('pRSC') + pl.col('aRSC') + pl.col('overlap')).alias('total')))
+              .with_columns((pl.col('pRSC') + pl.col('aRSC')).alias('total')))
 
         cols = self.source_classifier.sources
         region_counts = df.select(cols).to_numpy()
@@ -825,6 +828,7 @@ def parse_csv(ccf_dir: AbstractCCFDir | None,
     # pick up acronym with capital
     df = df.filter(pl.col('acronym').str.contains(r'[A-Z]+'))
 
+    # TODO if needed
     df = df.with_columns(
         # exclude words after `area` in the name col
         pl.col('name').str.extract(r'(.+area).*').fill_null(pl.col('name')).alias('abbr'),
@@ -848,7 +852,7 @@ def parse_csv(ccf_dir: AbstractCCFDir | None,
     return df
 
 
-def supply_overlap_dataframe(df: pl.DataFrame, supply_channel_name: Iterable[Channel]) -> pl.DataFrame:
+def supply_overlap_dataframe(df: pl.DataFrame, supply_channel_name: Iterable[Channel], fluor_repr) -> pl.DataFrame:
     """Supply overlap counting in the parsed dataframe.
 
     ** Only used if excluding the overlap cell while counting the rfp and gfp channel
@@ -859,8 +863,14 @@ def supply_overlap_dataframe(df: pl.DataFrame, supply_channel_name: Iterable[Cha
     """
 
     ret = [df]
-    for name in supply_channel_name:
-        s = df.filter(pl.col('source') == 'overlap').with_columns(pl.lit(name).alias('source'))
+    for channel in supply_channel_name:
+        s = (
+            df.filter(pl.col('channel') == 'overlap')
+            .with_columns(pl.lit(channel).alias('channel'))
+            .with_columns(pl.lit(fluor_repr[channel]).alias('source'))
+        )
         ret.append(s)
+
+    print(ret)
 
     return pl.concat(ret)

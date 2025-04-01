@@ -14,32 +14,17 @@ from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 from typing_extensions import Self
 
+from neuralib.atlas.data import ATLAS_NAME
 from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
 from neuralib.util.deprecation import deprecated_func
 
 __all__ = [
-    'ATLAS_NAME',
     'VIEW_TYPE',
     'get_slice_view',
     'load_slice_view',
     'AbstractSliceView',
     'SlicePlane'
 ]
-
-ATLAS_NAME = Literal[
-    'allen_mouse_10um',
-    'allen_mouse_25um',
-    'allen_mouse_50um',
-    'allen_mouse_100um',
-    'kim_mouse_10um',
-    'kim_mouse_25um',
-    'kim_mouse_50um',
-    'kim_mouse_100um',
-    'perens_lsfm_mouse_20um',
-    'perens_stereotaxic_mouse_mri_25um',
-    'princeton_mouse_20um',
-]
-"""Atlas Name"""
 
 VIEW_TYPE = Literal['annotation', 'reference']
 """View type for the slice"""
