@@ -11,7 +11,7 @@ __all__ = [
     'foreach_norm_method'
 ]
 
-ROIS_NORM_TYPE = Literal['channel', 'volume', 'cell']
+ROIS_NORM_TYPE = Literal['channel', 'volume', 'cell', 'none']
 
 
 class MouseBrainRoiNormHandler:

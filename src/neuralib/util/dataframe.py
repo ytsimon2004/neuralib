@@ -5,6 +5,7 @@ from typing import Callable, Literal, overload, TypeVar, Generic, Any, TYPE_CHEC
 
 import numpy as np
 import polars as pl
+from polars.dataframe.group_by import GroupBy
 from polars.testing import assert_frame_equal
 
 from neuralib.util.verbose import printdf
@@ -207,7 +208,7 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
 
     def group_by(self, *by: pty.IntoExpr | Iterable[pty.IntoExpr],
                  maintain_order: bool = False,
-                 **named_by: pty.IntoExpr) -> pl.GroupBy:
+                 **named_by: pty.IntoExpr) -> GroupBy:
         return self.dataframe().group_by(*by, maintain_order=maintain_order, **named_by)
 
 

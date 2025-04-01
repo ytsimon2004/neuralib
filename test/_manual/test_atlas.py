@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from neuralib.atlas.cellatlas.core import load_cellatlas
 from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree, get_children, get_leaf_in_annotation, \
-    build_annotation_leaf_map
+    build_annotation_leaf_map, load_bg_volumes
 from neuralib.atlas.view import get_slice_view
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
@@ -65,13 +65,10 @@ class TestBrainGlobe(unittest.TestCase):
         y = set(get_leaf_in_annotation('VISp'))
         self.assertSetEqual(x, y)
 
-    def test_volume_dataframe(self):
-        ...
-
 
 class TestView(unittest.TestCase):
 
-    # @patch('matplotlib.pyplot.show')
+    @patch('matplotlib.pyplot.show')
     def test_slice_view_reference(self, *arg):
         from neuralib.atlas.view import get_slice_view
 
@@ -80,8 +77,8 @@ class TestView(unittest.TestCase):
 
         _, ax = plt.subplots(ncols=3, figsize=(20, 10))
         plane.plot(ax=ax[0], boundaries=True)
-        # plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], boundaries=True)
-        # plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], boundaries=True)
+        plane.with_angle_offset(deg_x=15, deg_y=0).plot(ax=ax[1], boundaries=True)
+        plane.with_angle_offset(deg_x=0, deg_y=20).plot(ax=ax[2], boundaries=True)
         plt.show()
 
     @patch('matplotlib.pyplot.show')
@@ -132,14 +129,23 @@ class TestView(unittest.TestCase):
         plt.show()
 
 
-class TestCellAtlas(unittest.TestCase):
+class TestRegionVolumes(unittest.TestCase):
 
     def test_cell_atlas_sync(self):
         from neuralib.atlas.cellatlas import CellAtlas
         x = CellAtlas.load_sync_allen_structure_tree()
         y = load_cellatlas()
-
         assert_polars_equal_verbose(x, y)
+
+    # @patch('matplotlib.pyplot.show')
+    def test_volume_different_source_data(self, *args):
+        x = load_bg_volumes()
+        y = load_cellatlas().select('acronym', 'Volumes [mm^3]')
+
+        z = x.join(y, on='acronym')
+        cols = z['volume_mm3', 'Volumes [mm^3]'].to_numpy()
+        plt.plot(cols[:, 0], cols[:, 1], 'k.')
+        plt.show()
 
 
 if __name__ == '__main__':
