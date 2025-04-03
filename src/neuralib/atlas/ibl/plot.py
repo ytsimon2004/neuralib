@@ -127,9 +127,20 @@ class IBLAtlasPlotWrapper(AllenAtlas):
 
         # noinspection PyTypeChecker
         return plot_scalar_on_slice(
-            regions, values, coord, plane, mapping,
-            hemisphere, background, cmap, clevels, show_cbar, empty_color,
-            self, ax, vector, slice_files, **kwargs
+            regions, values, coord,
+            slice=plane,
+            mapping=mapping,
+            hemisphere=hemisphere,
+            background=background,
+            cmap=cmap,
+            clevels=clevels,
+            show_cbar=show_cbar,
+            empty_color=empty_color,
+            brain_atlas=self,
+            ax=ax,
+            vector=vector,
+            slice_files=slice_files,
+            **kwargs
         )
 
     def plot_points_on_slice(
