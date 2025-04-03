@@ -1,10 +1,11 @@
 import attrs
 import polars as pl
-from neuralib.atlas.ccf.classifier import supply_overlap_dataframe
+from typing_extensions import Self, Final, final
+
+from neuralib.atlas.ccf._classifier import supply_overlap_dataframe
 from neuralib.atlas.typing import Source, Area
 from neuralib.atlas.util import get_margin_merge_level
 from neuralib.util.verbose import fprint
-from typing_extensions import Self, Final, final
 
 __all__ = ['RoiAreaQuery', 'SubregionResult']
 
