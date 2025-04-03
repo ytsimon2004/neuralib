@@ -29,7 +29,7 @@ Installation
    :maxdepth: 1
    :caption: Installation
 
-   api/installation.rst
+   installation.rst
 
 
 
@@ -256,7 +256,7 @@ Notebook Example
     :maxdepth: 2
     :caption: Roadmap
 
-    api/roadmap.rst
+    roadmap.rst
 
 
 

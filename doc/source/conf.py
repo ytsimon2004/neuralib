@@ -14,6 +14,7 @@ author = 'Yu-Ting Wei'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
               'sphinx.ext.viewcode',
               'sphinx_tabs.tabs',
               'nbsphinx',
@@ -34,6 +35,7 @@ autodoc_class_signature = 'separated'
 autodoc_typehints = 'description'
 autodoc_typehints_format = 'short'
 autodoc_inherit_docstrings = True
+autosummary_generate = True
 
 # -- Options for nbsphinx -------------------------------------
 nbsphinx_execute = 'never'
