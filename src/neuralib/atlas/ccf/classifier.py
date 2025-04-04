@@ -12,6 +12,7 @@ from neuralib.atlas.cellatlas import load_cellatlas
 from neuralib.atlas.data import load_bg_volumes
 from neuralib.atlas.map import merge_until_level, NUM_MERGE_LAYER, DEFAULT_FAMILY_DICT
 from neuralib.atlas.typing import Channel, HEMISPHERE_TYPE
+from neuralib.atlas.util import get_margin_merge_level
 from neuralib.typing import PathLike
 from neuralib.util.dataframe import DataFrameWrapper
 from neuralib.util.verbose import print_save
@@ -19,7 +20,8 @@ from neuralib.util.verbose import print_save
 __all__ = [
     'ROIS_NORM_TYPE',
     'RoiClassifierDataFrame',
-    'RoiNormalizedDataFrame'
+    'RoiNormalizedDataFrame',
+    'RoiSubregionDataFrame',
 ]
 
 ROIS_NORM_TYPE = Literal['channel', 'volume', 'cell', 'none']
@@ -373,6 +375,56 @@ class RoiClassifierDataFrame(DataFrameWrapper):
 
         return df.filter(pl.col(cls_col).is_in(region))
 
+    def to_subregion(self, area: str, *,
+                     unit: Literal['counts', 'fraction'] = 'fraction',
+                     source_order: tuple[str, ...] | None = None,
+                     show_col: str | None = None,
+                     animal: str | None = None) -> RoiSubregionDataFrame:
+
+        _df = self.dataframe()
+        source_order = source_order or tuple(_df['source'].unique().to_list())
+
+        # query based on lowest tree level
+        query_col = get_margin_merge_level(_df, area, 'lowest')
+        result = _df.filter(pl.col(query_col) == area)
+
+        # show based on highest tree level
+        show_col = show_col or get_margin_merge_level(_df, area, 'highest')
+        s, lv = show_col.rsplit('_', 1)
+        show_col = f'{s}_{int(lv) + 1}'
+
+        df = (result.select(['source', show_col])
+              .group_by(['source', show_col])
+              .agg(pl.col(show_col).count().alias('counts'))
+              .with_columns((pl.col('counts') / pl.col('counts').sum().over('source') * 100).alias('fraction'))
+              .sort('fraction', descending=True))
+
+        # sort
+        idx = {val: idx for idx, val in enumerate(source_order)}
+        sort_expr = pl.col('source').replace(idx)
+
+        # profile
+        roi_profile = (
+            df.group_by('source').agg(pl.col('counts').sum().alias('counts'))
+            .join(_df.group_by('source').len(name='total'), on='source')
+            .with_columns((pl.col('counts') / pl.col('total')).alias('total_fraction'))
+            .sort(sort_expr)
+        )
+
+        # main result
+        ret = (
+            df.pivot(show_col, index='source', values=unit, aggregate_function='first')
+            .fill_null(0)
+            .sort(sort_expr)
+        )
+
+        subregion = RoiSubregionDataFrame(df=ret, profile=roi_profile)
+
+        if animal is not None:
+            subregion = subregion.with_animal_column(animal)
+
+        return subregion
+
 
 class RoiNormalizedDataFrame(DataFrameWrapper):
     """
@@ -575,6 +627,48 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
         df = df.with_columns(pl.Series([sources[idx] for idx in winner_idx]).alias('winner'))
 
         return df
+
+
+class RoiSubregionDataFrame(DataFrameWrapper):
+    """
+
+    """
+
+    _required_fields = ('source',)
+    _profile_required_fields = ('source', 'counts', 'total', 'total_fraction')
+
+    def __init__(self, df: pl.DataFrame, profile: pl.DataFrame):
+
+        self._df = df
+        self._profile = profile
+
+        for field in self._required_fields:
+            if field not in df.columns:
+                raise RuntimeError(f'field not found: {field} -> {df.columns}')
+
+        for field in self._profile_required_fields:
+            if field not in profile.columns:
+                raise RuntimeError(f'field not found: {field} -> {df.columns}')
+
+    def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        if dataframe is None:
+            return self._df
+        else:
+            ret = RoiSubregionDataFrame(dataframe, self._profile)
+            return ret
+
+    @property
+    def profile(self) -> pl.DataFrame:
+        return self._profile
+
+    def filter_overlap(self) -> Self:
+        expr = pl.col('source') != 'overlap'
+        self._profile = self._profile.filter(expr)
+        return self.filter(expr)
+
+    def with_animal_column(self, animal) -> Self:
+        """with animal id column"""
+        return self.with_columns(pl.lit(animal).alias('animal'))
 
 
 # DIR move to ?

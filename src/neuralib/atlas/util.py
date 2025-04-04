@@ -108,7 +108,7 @@ def get_margin_merge_level(df: pl.DataFrame,
     if not isinstance(areas, (tuple, list)):
         areas = [areas]
 
-    eval_merge = [f'merge_ac_{i}' for i in range(NUM_MERGE_LAYER)]
+    eval_merge = [f'tree_{i}' for i in range(NUM_MERGE_LAYER)]
 
     if margin == 'lowest':
         level = eval_merge
