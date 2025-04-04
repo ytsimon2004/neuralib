@@ -267,7 +267,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
                       animal: str | None = None,
                       volume_norm_backend: Literal['cellatlas', 'brainglobe'] = 'cellatlas') -> RoiNormalizedDataFrame:
         """
-        Load the normalized dataframe (example as volume normalized) ::
+        To the normalized dataframe (example as volume normalized) ::
 
             ┌─────────┬────────┬────────┬───────────┬────────────┬────────────────┬────────────┐
             │ source  ┆ tree_2 ┆ counts ┆ fraction  ┆ hemisphere ┆ Volumes [mm^3] ┆ normalized │
@@ -375,21 +375,41 @@ class RoiClassifierDataFrame(DataFrameWrapper):
 
         return df.filter(pl.col(cls_col).is_in(region))
 
-    def to_subregion(self, area: str, *,
+    def to_subregion(self, region: str, *,
                      unit: Literal['counts', 'fraction'] = 'fraction',
                      source_order: tuple[str, ...] | None = None,
                      show_col: str | None = None,
                      animal: str | None = None) -> RoiSubregionDataFrame:
+        """
+        To the subregion dataframe (example as Visual region: VIS) ::
+
+            ┌─────────┬───────────┬───────────┬───────────┬───┬──────────┬──────────┬──────────┬──────────┐
+            │ source  ┆ VISam     ┆ VISp      ┆ VISpm     ┆ … ┆ VISal    ┆ VISpor   ┆ VISli    ┆ VISpl    │
+            │ ---     ┆ ---       ┆ ---       ┆ ---       ┆   ┆ ---      ┆ ---      ┆ ---      ┆ ---      │
+            │ str     ┆ f64       ┆ f64       ┆ f64       ┆   ┆ f64      ┆ f64      ┆ f64      ┆ f64      │
+            ╞═════════╪═══════════╪═══════════╪═══════════╪═══╪══════════╪══════════╪══════════╪══════════╡
+            │ overlap ┆ 39.649682 ┆ 15.127389 ┆ 28.025478 ┆ … ┆ 3.025478 ┆ 2.707006 ┆ 1.592357 ┆ 0.159236 │
+            │ aRSC    ┆ 32.160414 ┆ 28.952135 ┆ 23.05304  ┆ … ┆ 6.080207 ┆ 1.293661 ┆ 2.069858 ┆ 0.07762  │
+            │ pRSC    ┆ 25.947955 ┆ 27.95539  ┆ 27.459727 ┆ … ┆ 3.122677 ┆ 2.973978 ┆ 1.982652 ┆ 1.016109 │
+            └─────────┴───────────┴───────────┴───────────┴───┴──────────┴──────────┴──────────┴──────────┘
+
+        :param region: region name
+        :param unit: value unit. {'counts', 'fraction'}. default is 'fraction'
+        :param source_order: source order in dataframe (rows)
+        :param show_col: force set show col to which level. use case: if a low level area name is classified and show in high level (i.e., TH).
+        :param animal: with animal column as subregion dataframe
+        :return:
+        """
 
         _df = self.dataframe()
         source_order = source_order or tuple(_df['source'].unique().to_list())
 
         # query based on lowest tree level
-        query_col = get_margin_merge_level(_df, area, 'lowest')
-        result = _df.filter(pl.col(query_col) == area)
+        query_col = get_margin_merge_level(_df, region, 'lowest')
+        result = _df.filter(pl.col(query_col) == region)
 
         # show based on highest tree level
-        show_col = show_col or get_margin_merge_level(_df, area, 'highest')
+        show_col = show_col or get_margin_merge_level(_df, region, 'highest')
         s, lv = show_col.rsplit('_', 1)
         show_col = f'{s}_{int(lv) + 1}'
 
@@ -418,7 +438,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
             .sort(sort_expr)
         )
 
-        subregion = RoiSubregionDataFrame(df=ret, profile=roi_profile)
+        subregion = RoiSubregionDataFrame(region, ret, roi_profile)
 
         if animal is not None:
             subregion = subregion.with_animal_column(animal)
@@ -471,6 +491,7 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
 
     @property
     def value_column(self) -> str:
+        """value column based on the ``normalized``"""
         match self._normalized:
             case 'volume' | 'cell' | 'channel':
                 return 'normalized'
@@ -481,6 +502,7 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
 
     @property
     def normalized_unit(self) -> str:
+        """unit based on the ``normalized``"""
         match self._normalized:
             case 'volume':
                 return 'density (cells-mm3)'
@@ -494,6 +516,23 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
                 raise ValueError(f'invalid normalized unit: {self._normalized}')
 
     def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        """
+        RoiNormalizedDataFrame (Volume normalized as example) ::
+
+            ┌─────────┬────────┬────────┬───────────┬────────────┬────────────────┬────────────┐
+            │ source  ┆ tree_2 ┆ counts ┆ fraction  ┆ hemisphere ┆ Volumes [mm^3] ┆ normalized │
+            │ ---     ┆ ---    ┆ ---    ┆ ---       ┆ ---        ┆ ---            ┆ ---        │
+            │ str     ┆ str    ┆ u32    ┆ f64       ┆ str        ┆ f64            ┆ f64        │
+            ╞═════════╪════════╪════════╪═══════════╪════════════╪════════════════╪════════════╡
+            │ overlap ┆ ACA    ┆ 1208   ┆ 29.997517 ┆ both       ┆ 5.222484       ┆ 231.307537 │
+            │ pRSC    ┆ ACA    ┆ 3296   ┆ 22.822324 ┆ both       ┆ 5.222484       ┆ 631.117254 │
+            │ …       ┆ …      ┆ …      ┆ …         ┆ …          ┆ …              ┆ …          │
+            │ pRSC    ┆ VIS    ┆ 4035   ┆ 27.939344 ┆ both       ┆ 12.957203      ┆ 311.409797 │
+            │ overlap ┆ VIS    ┆ 628    ┆ 15.594736 ┆ both       ┆ 12.957203      ┆ 48.46725   │
+            │ aRSC    ┆ VIS    ┆ 3865   ┆ 12.627005 ┆ both       ┆ 12.957203      ┆ 298.289682 │
+            └─────────┴────────┴────────┴───────────┴────────────┴────────────────┴────────────┘
+
+        """
         if dataframe is None:
             return self._df
         else:
@@ -631,26 +670,39 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
 
 class RoiSubregionDataFrame(DataFrameWrapper):
     """
+    RoiSubregionDataFrame with each source per row, column shows the subregions
 
     """
-
-    _required_fields = ('source',)
     _profile_required_fields = ('source', 'counts', 'total', 'total_fraction')
 
-    def __init__(self, df: pl.DataFrame, profile: pl.DataFrame):
-
+    def __init__(self, region: str, df: pl.DataFrame, profile: pl.DataFrame):
+        """
+        :param region: region name
+        :param df: subregion dataframe
+        :param profile: profile dataframe
+        """
+        self._region = region
         self._df = df
         self._profile = profile
-
-        for field in self._required_fields:
-            if field not in df.columns:
-                raise RuntimeError(f'field not found: {field} -> {df.columns}')
 
         for field in self._profile_required_fields:
             if field not in profile.columns:
                 raise RuntimeError(f'field not found: {field} -> {df.columns}')
 
     def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        """
+        RoiSubregionDataFrame (VIS as example)::
+
+            ┌─────────┬───────────┬───────────┬───────────┬───┬──────────┬──────────┬──────────┬──────────┐
+            │ source  ┆ VISam     ┆ VISp      ┆ VISpm     ┆ … ┆ VISal    ┆ VISpor   ┆ VISli    ┆ VISpl    │
+            │ ---     ┆ ---       ┆ ---       ┆ ---       ┆   ┆ ---      ┆ ---      ┆ ---      ┆ ---      │
+            │ str     ┆ f64       ┆ f64       ┆ f64       ┆   ┆ f64      ┆ f64      ┆ f64      ┆ f64      │
+            ╞═════════╪═══════════╪═══════════╪═══════════╪═══╪══════════╪══════════╪══════════╪══════════╡
+            │ overlap ┆ 39.649682 ┆ 15.127389 ┆ 28.025478 ┆ … ┆ 3.025478 ┆ 2.707006 ┆ 1.592357 ┆ 0.159236 │
+            │ aRSC    ┆ 32.160414 ┆ 28.952135 ┆ 23.05304  ┆ … ┆ 6.080207 ┆ 1.293661 ┆ 2.069858 ┆ 0.07762  │
+            │ pRSC    ┆ 25.947955 ┆ 27.95539  ┆ 27.459727 ┆ … ┆ 3.122677 ┆ 2.973978 ┆ 1.982652 ┆ 1.016109 │
+            └─────────┴───────────┴───────────┴───────────┴───┴──────────┴──────────┴──────────┴──────────┘
+        """
         if dataframe is None:
             return self._df
         else:
@@ -658,10 +710,40 @@ class RoiSubregionDataFrame(DataFrameWrapper):
             return ret
 
     @property
+    def subregion(self) -> list[str]:
+        """list of subregion names"""
+        return self.drop('source').columns
+
+    @property
+    def n_subregion(self) -> int:
+        """number of subregion"""
+        return len(self.subregion)
+
+    @property
     def profile(self) -> pl.DataFrame:
+        """
+        with channel-wise profile::
+
+            ┌─────────┬────────┬───────┬────────────────┐
+            │ source  ┆ counts ┆ total ┆ total_fraction │
+            │ ---     ┆ ---    ┆ ---   ┆ ---            │
+            │ str     ┆ u32    ┆ u32   ┆ f64            │
+            ╞═════════╪════════╪═══════╪════════════════╡
+            │ overlap ┆ 628    ┆ 4027  ┆ 0.155947       │
+            │ aRSC    ┆ 3865   ┆ 30609 ┆ 0.12627        │
+            │ pRSC    ┆ 4035   ┆ 14442 ┆ 0.279393       │
+            └─────────┴────────┴───────┴────────────────┘
+        :return:
+        """
         return self._profile
 
+    @property
+    def sources(self) -> list[str]:
+        """list of source names"""
+        return self['source'].to_list()
+
     def filter_overlap(self) -> Self:
+        """filter out overlap source"""
         expr = pl.col('source') != 'overlap'
         self._profile = self._profile.filter(expr)
         return self.filter(expr)
@@ -669,6 +751,14 @@ class RoiSubregionDataFrame(DataFrameWrapper):
     def with_animal_column(self, animal) -> Self:
         """with animal id column"""
         return self.with_columns(pl.lit(animal).alias('animal'))
+
+    def to_dict(self, as_series: bool = True) -> dict[str, list[float]]:
+        """to subregion:value dict"""
+        return self.dataframe().select(pl.exclude('source')).to_dict(as_series=as_series)
+
+    def to_numpy(self) -> np.ndarray:
+        """to value array. `Array[float, [n_source, n_subregion]]`"""
+        return self.dataframe().select(pl.exclude('source')).to_numpy()
 
 
 # DIR move to ?

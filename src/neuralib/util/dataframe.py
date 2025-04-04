@@ -23,22 +23,73 @@ __all__ = ['DataFrameWrapper',
 
 class DataFrameWrapper(metaclass=abc.ABCMeta):
     """
-    A polars dataframe wrapper that support common dataframe structure operations.
-    It is used on a custom class that contains a dataframe as its main data, this class
-    support the custom class dataframe operations and return itself.
+    Abstract wrapper class for a `polars.DataFrame`, enabling convenient and composable
+    dataframe operations in a subclassable, object-oriented interface.
 
-    For example, for a custom class::
+    This base class is intended to be inherited by custom data structures whose core data
+    is represented as a `polars.DataFrame`. It provides a suite of standard dataframe
+    operations (e.g., filtering, sorting, renaming, joining) that return the wrapper
+    instance (`Self`), preserving method chaining and encapsulation.
 
-        class A(DataFrameWrapper):
-            data : pl.DataFrame
+    This allows users to write clean, expressive logic using their custom wrapper class
+    while still leveraging the full power of Polars.
 
-            def dataframe(self, ...): ... # implement abc method
+    Subclasses **must** implement the `dataframe` method to get or set the internal
+    `polars.DataFrame`.
 
-    we could do a filtering operation::
+    Examples
+    --------
+    A minimal subclass that wraps a Polars DataFrame:
 
-        a = A(pl.read_csv(...))
-        a = a.filter(pl.col('A') == 'A')
+    >>> class MyTable(DataFrameWrapper):
+    ...     def __init__(self, data: pl.DataFrame):
+    ...         self._data = data
+    ...
+    ...     def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+    ...         if dataframe is None:
+    ...             return self._data
+    ...         if may_inplace:
+    ...             self._data = dataframe
+    ...             return self
+    ...         else:
+    ...             return MyTable(dataframe)
 
+    >>> df = pl.DataFrame({'a': [1, 2, 3], 'b': [10, 20, 30]})
+    >>> t = MyTable(df)
+    >>> t = t.filter(pl.col("a") > 1).rename({"b": "B"})
+    >>> print(t.dataframe())
+    shape: (2, 2)
+    ┌─────┬─────┐
+    │ a   │ B   │
+    ├─────┼─────┤
+    │ 2   │ 20  │
+    │ 3   │ 30  │
+    └─────┴─────┘
+
+    Notes
+    -----
+    - All supported operations delegate to the underlying `polars.DataFrame` and return
+      the modified wrapper instance.
+    - The actual `dataframe` storage and logic is delegated to subclasses via the abstract
+      `dataframe()` getter/setter method.
+    - This class is designed for flexible and extensible use in applications such as
+      data modeling, pipelines, or typed schema handling.
+
+    Supported Operations
+    --------------------
+    - Accessors: `columns`, `schema`, `__len__`, `__array__`, `__dataframe__`
+    - Indexing: `__getitem__`
+    - Structure: `filter`, `drop`, `drop_nulls`, `fill_null`, `fill_nan`, `select`,
+                 `with_columns`, `with_row_index`, `rename`, `slice`, `head`, `tail`, `limit`, `sort`
+    - Aggregation: `group_by`
+    - Partitioning: `partition_by`
+    - Joining: `join`
+    - Transformation: `pipe`, `clone`, `lazy`
+
+    See Also
+    --------
+    polars.DataFrame : The underlying DataFrame API
+    polars.Expr : Expression system used throughout the API
     """
 
     @overload
@@ -51,23 +102,35 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        """
+        Getter/setter for the internal Polars DataFrame.
+
+        :param dataframe: Optional new dataframe to set.
+        :param may_inplace: If True, update current instance. Otherwise, return new instance.
+        :return: The current dataframe or a modified wrapper instance.
+        """
         pass
 
     def __len__(self) -> int:
+        """See `polars.DataFrame.__len__`."""
         return len(self.dataframe())
 
     @property
     def columns(self) -> list[str]:
+        """See `polars.DataFrame.columns`."""
         return self.dataframe().columns
 
     @property
     def schema(self) -> pl.Schema:
+        """See `polars.DataFrame.schema`."""
         return self.dataframe().schema
 
     def __array__(self, *args, **kwargs) -> np.ndarray:
+        """See `polars.DataFrame.__array__`."""
         return self.dataframe().__array__(*args, **kwargs)
 
     def __dataframe__(self, *args, **kwargs):
+        """See `polars.DataFrame.__dataframe__`."""
         return self.dataframe().__dataframe__(*args, **kwargs)
 
     @overload
@@ -75,7 +138,7 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
             str
             | tuple[[pty.MultiIndexSelector, pty.SingleColSelector]]
     )) -> pl.Series:
-        pass
+        ...
 
     @overload
     def __getitem__(self, key: (
@@ -85,31 +148,39 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
             | tuple[pty.SingleIndexSelector, pty.MultiColSelector]
             | tuple[pty.MultiIndexSelector, pty.MultiColSelector]
     )) -> pl.DataFrame:
-        pass
+        ...
 
     def __getitem__(self, item):
+        """See `polars.DataFrame.__getitem__`."""
         return self.dataframe().__getitem__(item)
 
     def lazy(self) -> LazyDataFrameWrapper[Self]:
+        """Wrap dataframe in a lazy wrapper."""
         return LazyDataFrameWrapper(self, self.dataframe().lazy())
 
     def rename(self, mapping: dict[str, str] | Callable[[str], str]) -> Self:
+        """See `polars.DataFrame.rename`."""
         return self.dataframe(self.dataframe().rename(mapping))
 
     def filter(self, *predicates: pty.IntoExprColumn | Iterable[pty.IntoExprColumn] | bool | list[bool] | np.ndarray,
                **constraints: Any) -> Self:
+        """See `polars.DataFrame.filter`."""
         return self.dataframe(self.dataframe().filter(*predicates, **constraints))
 
     def slice(self, offset: int, length: int | None = None) -> Self:
+        """See `polars.DataFrame.slice`."""
         return self.dataframe(self.dataframe().slice(offset, length))
 
     def head(self, n: int = 5) -> Self:
+        """See `polars.DataFrame.head`."""
         return self.dataframe(self.dataframe().head(n))
 
     def tail(self, n: int = 5) -> Self:
+        """See `polars.DataFrame.tail`."""
         return self.dataframe(self.dataframe().tail(n))
 
     def limit(self, n: int = 5) -> Self:
+        """See `polars.DataFrame.limit`."""
         return self.dataframe(self.dataframe().limit(n))
 
     @overload
@@ -120,30 +191,37 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
              nulls_last: bool | Sequence[bool] = False,
              multithreaded: bool = True,
              maintain_order: bool = False) -> Self:
-        pass
+        ...
 
     def sort(self, by, *more_by, **kwargs) -> Self:
+        """See `polars.DataFrame.sort`."""
         return self.dataframe(self.dataframe().sort(by, *more_by, **kwargs))
 
     def drop(self, *columns: pty.ColumnNameOrSelector | Iterable[pty.ColumnNameOrSelector],
              strict: bool = True) -> Self:
+        """See `polars.DataFrame.drop`."""
         return self.dataframe(self.dataframe().drop(*columns, strict=strict))
 
     def drop_nulls(self, subset: pty.ColumnNameOrSelector | Collection[pty.ColumnNameOrSelector]) -> Self:
+        """See `polars.DataFrame.drop_nulls`."""
         return self.dataframe(self.dataframe().drop_nulls(subset))
 
     def fill_null(self, value: Any | pl.Expr | None = None,
                   strategy: pty.FillNullStrategy | None = None,
                   limit: int | None = None, **kwargs) -> Self:
+        """See `polars.DataFrame.fill_null`."""
         return self.dataframe(self.dataframe().fill_null(value, strategy, limit, **kwargs))
 
     def fill_nan(self, value: pl.Expr | int | float | None = None) -> Self:
+        """See `polars.DataFrame.fill_nan`."""
         return self.dataframe(self.dataframe().fill_nan(value))
 
     def clear(self, n: int = 5) -> Self:
+        """See `polars.DataFrame.clear`."""
         return self.dataframe(self.dataframe().clear(n))
 
     def clone(self) -> Self:
+        """Clone the wrapper."""
         return self.dataframe(self.dataframe(), may_inplace=False)
 
     @overload
@@ -152,7 +230,7 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
                      maintain_order: bool = True,
                      include_key: bool = True,
                      as_dict: Literal[False] = ...) -> list[Self]:
-        pass
+        ...
 
     @overload
     def partition_by(self, by: pty.ColumnNameOrSelector | Iterable[pty.ColumnNameOrSelector],
@@ -160,9 +238,10 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
                      maintain_order: bool = ...,
                      include_key: bool = ...,
                      as_dict: Literal[True]) -> dict[tuple[object, ...], Self]:
-        pass
+        ...
 
     def partition_by(self, by, *more_by, as_dict=False, **kwargs):
+        """See `polars.DataFrame.partition_by`."""
         dataframe = self.dataframe().partition_by(by, *more_by, as_dict=as_dict, **kwargs)
         if as_dict:
             return {k: self.dataframe(it, may_inplace=False) for k, it in dataframe.items()}
@@ -171,17 +250,17 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
 
     def select(self, *exprs: pty.IntoExpr | Iterable[pty.IntoExpr],
                **named_exprs: pty.IntoExpr) -> Self:
+        """See `polars.DataFrame.select`."""
         return self.dataframe(self.dataframe().select(*exprs, **named_exprs))
 
     def with_columns(self, *exprs: pty.IntoExpr | Iterable[pty.IntoExpr],
                      **named_exprs: pty.IntoExpr) -> Self:
+        """See `polars.DataFrame.with_columns`."""
         return self.dataframe(self.dataframe().with_columns(*exprs, **named_exprs))
 
     def with_row_index(self, name: str = "index", offset: int = 0) -> Self:
+        """See `polars.DataFrame.with_row_index`."""
         return self.dataframe(self.dataframe().with_row_index(name, offset))
-
-    # def shift(self, n: int = 1, *, fill_value: pty.IntoExpr | None = None) -> Self:
-    #     return self.dataframe(self.dataframe().shift(n, fill_value=fill_value))
 
     @overload
     def join(self, other: pl.DataFrame | DataFrameWrapper,
@@ -193,22 +272,24 @@ class DataFrameWrapper(metaclass=abc.ABCMeta):
              validate: pty.JoinValidation = "m:m",
              join_nulls: bool = False,
              coalesce: bool | None = None) -> Self:
-        pass
+        ...
 
     def join(self, other: pl.DataFrame | DataFrameWrapper, on, *args, **kwargs) -> Self:
+        """See `polars.DataFrame.join`."""
         if isinstance(other, DataFrameWrapper):
             other = other.dataframe()
-
         return self.dataframe(self.dataframe().join(other, on, *args, **kwargs))
 
     def pipe(self, function: Callable[Concatenate[pl.DataFrame, P], pl.DataFrame],
              *args: P.args,
              **kwargs: P.kwargs) -> Self:
+        """See `polars.DataFrame.pipe`."""
         return self.dataframe(self.dataframe().pipe(function, *args, **kwargs))
 
     def group_by(self, *by: pty.IntoExpr | Iterable[pty.IntoExpr],
                  maintain_order: bool = False,
                  **named_by: pty.IntoExpr) -> GroupBy:
+        """See `polars.DataFrame.group_by`."""
         return self.dataframe().group_by(*by, maintain_order=maintain_order, **named_by)
 
 
