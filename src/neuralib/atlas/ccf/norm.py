@@ -11,7 +11,7 @@ __all__ = [
     'foreach_norm_method'
 ]
 
-ROIS_NORM_TYPE = Literal['channel', 'volume', 'cell', 'none']
+ROIS_NORM_TYPE = Literal['channel', 'volume', 'cell']
 
 
 class MouseBrainRoiNormHandler:
@@ -90,7 +90,7 @@ class MouseBrainRoiNormHandler:
         ctlas = load_cellatlas()
 
         if self.norm_type == 'cell':
-            calc = ((pl.col(c) / pl.col('n_neurons') * 100).alias(f'cell_norm_{c}') for c in expand_cols)
+            calc = ((pl.col(c) / pl.col('n_neurons')).alias(f'cell_norm_{c}') for c in expand_cols)
         elif self.norm_type == 'volume':
             calc = ((pl.col(c) / pl.col('Volumes [mm^3]')).alias(f'volume_norm_{c}') for c in expand_cols)
 

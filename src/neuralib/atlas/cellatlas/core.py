@@ -19,7 +19,8 @@ def load_cellatlas(file: PathLike | None = None, *,
                    with_cell_type: bool = False,
                    with_detail: bool = False,
                    with_total_neurons: bool = True,
-                   with_acronym: bool = True) -> pl.DataFrame:
+                   with_acronym: bool = True,
+                   reload: bool = False) -> pl.DataFrame:
     """
     Load the dataframe with cell types and volume information for each brain area
 
@@ -32,13 +33,14 @@ def load_cellatlas(file: PathLike | None = None, *,
     :param with_detail:  With some outlier brain areas, defaults to False
     :param with_total_neurons: With ``n_neurons`` field, defaults to True
     :param with_acronym: With ``acronym`` field sync with structure tree data, defaults to True
+    :param reload : Re-download the csv file
     :return: DataFrame
     """
     if file is None:
         file = ensure_dir(ATLAS_CACHE_DIRECTORY) / 'cellatlas.csv'
 
-    if not Path(file).exists():
-        df = _request(file)
+    if not Path(file).exists() or reload:
+        df = _request(file).rename({'Brain region': 'name'})
     else:
         df = pl.read_csv(file).rename({'Brain region': 'name'})
 

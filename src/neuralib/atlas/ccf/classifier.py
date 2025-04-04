@@ -40,7 +40,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
 
     """
     _required_fields = ('acronym', 'AP_location', 'DV_location', 'ML_location', 'channel', 'source')
-    _valid_classified_column = ('acronym', 'tree_0', 'tree_1', 'tree_2', 'tree_3', 'tree_4')
+    _valid_classified_fields = ('acronym', 'tree_0', 'tree_1', 'tree_2', 'tree_3', 'tree_4', 'family')
 
     def __init__(self, df: pl.DataFrame,
                  cached_dir: PathLike | None = None):
@@ -69,7 +69,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
     @property
     def channels(self) -> list[Channel]:
         """list of channel names"""
-        return self.dataframe()['channels'].unique().to_list()
+        return self.dataframe()['channel'].unique().to_list()
 
     @property
     def n_channels(self) -> int:
@@ -80,6 +80,11 @@ class RoiClassifierDataFrame(DataFrameWrapper):
     def channel_counts(self) -> pl.DataFrame:
         """channel counts dataframe"""
         return self['channel'].value_counts()
+
+    @property
+    def source_counts(self) -> pl.DataFrame:
+        """source counts dataframe"""
+        return self['source'].value_counts()
 
     @property
     def sources(self) -> list[Channel]:
@@ -103,18 +108,26 @@ class RoiClassifierDataFrame(DataFrameWrapper):
             for it in self['channel', 'source'].unique().iter_rows()
         }
 
-    def get_classified_column(self, level: int | None) -> str:
-        """classified column name, with the given int ``tree_[level]``. If None, then used ``acronym``"""
-        match level:
+    def get_classified_column(self, field: int | str | None, strict: bool = True) -> str:
+        """classified column name, with the given
+
+        :param field: int: ``tree_[level]``; str: ``get column``; None: ``acronym``
+        :param strict: strict check for the pre-defined classified column
+        """
+        match field:
+            case int():
+                col = f'tree_{field}'
+            case str():
+                col = field
             case None:
                 col = 'acronym'
-            case int():
-                col = f'tree_{level}'
             case _:
-                raise TypeError('')
+                raise TypeError(f'{type(field)}')
 
-        if col not in self._valid_classified_column:
-            raise ValueError(f'invalid level: {level}')
+        if strict:
+            if col not in self._valid_classified_fields:
+                raise ValueError(f'invalid field: {field}')
+
         if col not in self.dataframe().columns:
             raise ColumnNotFoundError(f'{col} not found: {self.dataframe().columns}')
 
@@ -244,7 +257,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
     # ==================== #
 
     def to_normalized(self, norm: ROIS_NORM_TYPE,
-                      level: int | None, *,
+                      level: int | str | None, *,
                       source: str | None = None,
                       top_area: int | None = None,
                       rest_as_others: bool = False,
@@ -337,7 +350,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
         others = df['fraction'].sum()
         if rest_as_others and (100 - others) > 0:
             other_perc = max(0, 100 - others)
-            total_counts = self.channel_counts.filter(pl.col('source') == source)['count'].item()
+            total_counts = self.source_counts.filter(pl.col('source') == source)['count'].item()
             other_counts = total_counts - df['counts'].sum()
 
             schema = {df.columns[i]: df.dtypes[i] for i in range(df.shape[1])}
@@ -398,6 +411,11 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
     def classified_column(self) -> str:
         """region classified column name"""
         return self._classified_column
+
+    @property
+    def normalized(self) -> ROIS_NORM_TYPE:
+        """normalization type"""
+        return self._normalized
 
     @property
     def value_column(self) -> str:
@@ -468,6 +486,17 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
         ret = self.filter(pl.col(self.classified_column).is_in(areas))
         if ret.dataframe().is_empty():
             raise ValueError(f'{areas} not found')
+
+        return ret
+
+    def filter_sources(self, source: str | list[str]) -> Self:
+        """filter the dataframe with specified sources"""
+        if isinstance(source, str):
+            source = [source]
+
+        ret = self.filter(pl.col('source').is_in(source))
+        if ret.dataframe().is_empty():
+            raise ValueError(f'{source} not found')
 
         return ret
 
