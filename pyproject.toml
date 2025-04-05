@@ -108,7 +108,10 @@ all = [
 dev = ['pre-commit', 'ruff', "neura-library[all]"]
 
 #
-doc = ["sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "neura-library[all]"]
+doc = [
+    "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme",
+    "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]", "iblatlas"
+]
 
 
 

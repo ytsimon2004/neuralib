@@ -3,11 +3,10 @@ neuralib.tools
 
 .. automodule:: neuralib.tools
    :members:
-   
+
 .. toctree::
     :maxdepth: 1
     :caption: Modules:
-    
-    neuralib.tools.slack_bot
-    neuralib.tools.gspread
 
+    neuralib.tools.gspread
+    neuralib.tools.slack_bot

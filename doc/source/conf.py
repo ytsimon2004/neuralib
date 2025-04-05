@@ -17,8 +17,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.viewcode',
               'sphinx_tabs.tabs',
-              'nbsphinx',
-              'sphinx_toolbox.more_autodoc.autotypeddict']
+              'nbsphinx']
 
 templates_path = ['_templates']
 exclude_patterns = []
@@ -36,6 +35,13 @@ autodoc_typehints = 'description'
 autodoc_typehints_format = 'short'
 autodoc_inherit_docstrings = True
 autosummary_generate = True
+
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'inherited-members': True,
+    'show-inheritance': True,
+}
 
 # -- Options for nbsphinx -------------------------------------
 nbsphinx_execute = 'never'
