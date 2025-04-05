@@ -18,7 +18,7 @@ Basic Installation
 
 To install the core functionality of the library:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install neura-library
 
@@ -34,27 +34,27 @@ Module-based
 
 **Atlas Tools**:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[atlas]"
 
 **Scanner Support**:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[scanner]"
 
 
 **Imaging Utilities**:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[imaging]"
 
 
 **Image Processing Libraries**:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[imagelib]"
 
@@ -81,7 +81,7 @@ Functionality-based
 
     For example you need to run **cellpose**:
 
-    .. code-block:: console
+    .. prompt:: bash $
 
         conda create -n neuralib_seg python=3.10
         conda activate neuralib_seg
@@ -93,7 +93,7 @@ All-In-One Installation
 
 To install **everything**, including all optional features:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[all]"
 
@@ -102,7 +102,7 @@ Development Installation
 
 For contributing and development:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[dev]"
 
@@ -113,6 +113,6 @@ Documentation Build
 
 To build the documentation locally:
 
-.. code-block:: bash
+.. prompt:: bash $
 
    pip install "neura-library[doc]"

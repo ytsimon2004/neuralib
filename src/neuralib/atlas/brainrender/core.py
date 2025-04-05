@@ -10,7 +10,7 @@ from typing_extensions import Self
 
 from neuralib.argp import AbstractParser, argument, str_tuple_type, validator
 from neuralib.atlas.brainrender.util import get_color
-from neuralib.atlas.util import roi_points_converter
+from neuralib.atlas.util import allen_to_brainrender_coord
 from neuralib.util.logging import setup_clogger
 
 __all__ = ['BrainRenderCLI']
@@ -20,6 +20,7 @@ SHADER_STYLE_TYPE = Literal['metallic', 'cartoon', 'plastic', 'shiny', 'glossy']
 
 
 class BrainRenderCLI(AbstractParser):
+    """Reconstruct a 3D brain view used brainrender module"""
     DESCRIPTION = 'Reconstruct a 3D brain view used brainrender module'
 
     DEFAULT_REGION_COLORS = ['lightblue', 'pink', 'turquoise']
@@ -224,6 +225,7 @@ class BrainRenderCLI(AbstractParser):
             self.render_output()
 
     def render(self):
+        """brainrender interactive"""
         self.scene = brainrender.Scene(root=not self.no_root, inset=False, title=self.title, screenshots_folder='.')
         if self.annotation is not None:
             self._reconstruct_annotation()
@@ -231,6 +233,7 @@ class BrainRenderCLI(AbstractParser):
         self._reconstruct_region()
 
     def render_output(self):
+        """io handling. i.e., video, html output"""
         if self.video_output is not None:
             self.source = 'allen_mouse_25um'  # force set for whole brain scene
             self.video_maker(self.video_output)
@@ -242,7 +245,7 @@ class BrainRenderCLI(AbstractParser):
     def _reconstruct_annotation(self):
         for ann in self.annotation:
             ap, dv, ml = tuple(map(float, ann.split(':')))
-            dat = roi_points_converter(np.array([ap, dv, ml]))  # (N, 3)
+            dat = allen_to_brainrender_coord(np.array([ap, dv, ml]))  # (N, 3)
             self.scene.add(Points(dat, radius=120))
 
     def _reconstruct_region(self):
@@ -290,6 +293,11 @@ class BrainRenderCLI(AbstractParser):
         scene.export(output)
 
     def video_maker(self, output_file: Path):
+        """
+        generate video
+
+        :param output_file: video output path
+        """
         from brainrender import VideoMaker
         import vedo
 

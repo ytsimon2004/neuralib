@@ -9,7 +9,7 @@ import polars as pl
 from scipy.io import loadmat
 from scipy.io.matlab import MatlabOpaque
 
-from neuralib.atlas.util import PLANE_TYPE
+from neuralib.atlas.typing import PLANE_TYPE
 from neuralib.atlas.view import SlicePlane, get_slice_view
 from neuralib.typing import PathLike
 

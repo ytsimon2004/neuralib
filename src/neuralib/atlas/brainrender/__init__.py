@@ -9,7 +9,7 @@ Once installed, the CLI can be invoked directly from the command line.
 
 To see available options, use the ``-h`` flag:
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_brainrender {area, roi, probe} -h
 
@@ -20,7 +20,7 @@ Region Reconstruction
 
 Example: Reconstructing the Visual Cortex from specified brain regions:
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
 
@@ -50,7 +50,7 @@ Example:
 
 Run:
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_brainrender roi --file <NUMPY_FILE>
 
@@ -58,12 +58,6 @@ Run:
 ^^^^^^^^^^^^^^^^^^
 
 Required columns: ``AP_location``, ``DV_location``, ``ML_location``
-
-Example:
-
-.. code-block:: console
-
-    neuralib_brainrender roi --file <CSV_FILE>
 
 .. code-block:: text
 
@@ -76,10 +70,23 @@ Example:
     │ -2.91       │ 4.12        │ 4.85        │
     └─────────────┴─────────────┴─────────────┘
 
+
+Example:
+
+.. prompt:: bash $
+
+    neuralib_brainrender roi --file <CSV_FILE>
+
+
+|brender roi|
+
+
+
 **Flexible Reconstruction (Processed CSV)**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**DOC TO BE UPDATED**
+Be able to reconstruct rois in a specific regions/subregions
+
 
 Example of using parsed allenccf csv output ::
 
@@ -96,34 +103,37 @@ Example of using parsed allenccf csv output ::
     │ Temporal association areas layer… ┆ TEa5    ┆ -2.91       ┆ 4.02        ┆ 4.55        ┆ 365     ┆ rfp     ┆ CA1    ┆  ...       │
     └───────────────────────────────────┴─────────┴─────────────┴─────────────┴─────────────┴─────────┴─────────┴────────┴────────────┘
 
+.. code-block:: python
 
-Fields ::
+    import polars as pl
+    from neuralib.atlas.ccf.classifier import RoiClassifierDataFrame
 
-    ['name',
-     'acronym',
-     'AP_location',
-     'DV_location',
-     'ML_location',
-     'avIndex',
-     'channel',
-     'source',
-     'abbr',
-     'acronym_abbr',
-     'hemi.',
-     'merge_ac_0',
-     'merge_ac_1',
-     'merge_ac_2',
-     'merge_ac_3',
-     'merge_ac_4',
-     'family']
+    df = pl.DataFrame({
+        "acronym": ["RSPd", "RSPd", "VISp", "VISp"],
+        "AP_location": [1.2, 1.3, -2.4, -2.6],
+        "DV_location": [1.0, 1.1, 2.0, 2.1],
+        "ML_location": [0.4, -0.3, 0.2, -0.2],
+        "channel": ["gfp", "gfp", "rfp", "rfp"],
+        "source": ["CA1", "CA1", "CA3", "CA3"]
+    })
 
-.. code-block:: console
-
-    neuralib_brainrender roi --classifier-file <CSV_FILE>
+    df = RoiClassifierDataFrame(df).post_processing().dataframe()
+    df.write_csv(CSV_FILE)
 
 
-|brender roi|
+.. seealso::
 
+    :class:`~neuralib.atlas.ccf.dataframe.RoiClassifierDataFrame`
+
+
+Example (reconstruct ROI in the parahippocampal areas):
+
+.. prompt:: bash $
+
+    neuralib_brainrender roi --classifier-file <CSV_FILE> --region APr,ENT,HATA,PAR,POST,PRE,ProS,SUB --roi-region RHP --region-alpha 0.2 --roi-radius 20 --no-root -H right
+
+
+|brender roi_region|
 
 
 
@@ -182,7 +192,7 @@ If loss either ``point``, ``probe_idx`` field, then auto infer based on the give
 
 Example: Reconstructing a 4-shank NeuroPixel probe targeting the left entorhinal cortex
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_brainrender probe -F <FILE> --depth 3000 -P sagittal -R ENT -H left
 
@@ -198,7 +208,7 @@ Help
 
 To explore available options for each subcommand, use the ``-h`` flag:
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_brainrender probe -h
 
@@ -206,6 +216,7 @@ To explore available options for each subcommand, use the ``-h`` flag:
 
 .. |brender area| image:: ../_static/brender_area.png
 .. |brender roi| image:: ../_static/brender_roi.png
+.. |brender roi_region| image:: ../_static/brender_roi_regions.png
 .. |brender probe| image:: ../_static/brender_probe.png
 
 

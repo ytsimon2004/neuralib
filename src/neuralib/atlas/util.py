@@ -8,24 +8,19 @@ import polars as pl
 from neuralib.atlas.map import NUM_MERGE_LAYER
 from neuralib.atlas.typing import Source, HEMISPHERE_TYPE
 from neuralib.typing import DataFrame
-from neuralib.util.deprecation import deprecated_func
 
 __all__ = [
     'ALLEN_CCF_10um_BREGMA',
-    'PLANE_TYPE',
     #
     'SourceCoordinates',
     'iter_source_coordinates',
     'get_margin_merge_level',
     'allen_to_brainrender_coord',
     'as_coords_array',
-    'roi_points_converter',
 ]
 
 ALLEN_CCF_10um_BREGMA = np.array([540, 0, 570])  # AP, DV, LR
 """allen CCF 10um volume coordinates, refer to allenCCF/Browsing Functions/allenCCFbregma.m"""
-
-PLANE_TYPE = Literal['coronal', 'sagittal', 'transverse']
 
 
 class SourceCoordinates(NamedTuple):
@@ -164,23 +159,5 @@ def as_coords_array(data: DataFrame | np.ndarray) -> np.ndarray:
             coords = data
         case _:
             raise TypeError('')
-
-    return coords
-
-
-@deprecated_func(new='allen_to_brainrender_coord', removal_version='0.4.3')
-def roi_points_converter(dat: DataFrame | np.ndarray,
-                         to_brainrender: bool = True) -> np.ndarray:
-    """
-    convert coordinates of `allenccf` roi points from parsed dataframe
-
-    :param dat: Dataframe with 'AP_location', 'DV_location', 'ML_location' headers.
-            Or numpy array with `Array[float, [N, 3]]` or `Array[float, 3]`
-    :param to_brainrender: coordinates to `brainrender`
-    :return: `Array[float, [N, 3]]`, N: number of roi; 3: AP, DV, ML
-    """
-    coords = as_coords_array(dat)
-    if to_brainrender:
-        coords = allen_to_brainrender_coord(coords)
 
     return coords

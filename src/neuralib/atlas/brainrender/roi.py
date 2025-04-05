@@ -15,7 +15,8 @@ __all__ = ['RoiRenderCLI']
 
 
 class RoiRenderCLI(BrainRenderCLI):
-    DESCRIPTION = 'For labelled rois reconstruction from 2dccf pipeline'
+    """ROIs reconstruction with brainrender"""
+    DESCRIPTION = 'ROIs reconstruction with brainrender'
 
     DEFAULT_ROI_COLORS = ['orange', 'magenta', 'dimgray']
 
@@ -60,7 +61,7 @@ class RoiRenderCLI(BrainRenderCLI):
 
     region_col: str | None = argument(
         '--region-col',
-        metavar='MERGE_AC..',
+        metavar='TREE..',
         default=None,
         group=GROUP_ROIS,
         help='if None, auto infer, and check the lowest merge level contain all the regions specified'

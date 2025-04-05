@@ -201,5 +201,5 @@ def patch_autosummary_stubs():
 if __name__ == '__main__':
     process_source_tree()
     cleanup_stale_rst()
-    generate_autosummary()
-    patch_autosummary_stubs()
+    # generate_autosummary()
+    # patch_autosummary_stubs()

@@ -39,19 +39,16 @@ Release Notes
 - Checkout `Release notes <https://github.com/ytsimon2004/neuralib/releases>`_
 
 
-
-
-
 Modules
 ----------
 
 
 :mod:`neuralib.atlas`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Module for whole brain, slice view visualization and rois classification
+Module for slice view visualization, rois classification and whole brain reconstruction
 
 - :mod:`neuralib.atlas.ccf`
-    Customized hierarchical classification for the mouse brain atlas
+    Customized dataframe for handling hierarchical classification of brain region/
 
 - :mod:`neuralib.atlas.brainrender`
     CLI-based wrapper for `brainrender <https://github.com/brainglobe/brainrender>`_
@@ -59,8 +56,6 @@ Module for whole brain, slice view visualization and rois classification
 - :mod:`neuralib.atlas.cellatlas`
     Volume and cell types counts for each brain region, refer to `Cell Atlas <https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/>`_
 
-- :mod:`neuralib.atlas.ibl`
-    Slice view plotting wrapper for `ibllib <https://github.com/int-brain-lab/ibllib?tab=readme-ov-file>`_ and `iblatlas <https://int-brain-lab.github.io/iblenv/_autosummary/ibllib.atlas.html>`_
 
 
 :mod:`neuralib.imaging`
@@ -103,7 +98,6 @@ Module for handle animal's locomotion
 
 - :mod:`neuralib.locomotion.position`
     Position in environment, current only support 1D circular (i.e., linear treadmill)
-
 
 
 :mod:`neuralib.model`
@@ -182,11 +176,6 @@ Utilities Modules
 - Real-time Slack notification bot for analysis pipeline
 
 
-:mod:`neuralib.util.gpu`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- OS-dependent GPU info
-
-
 :mod:`neuralib.util.table`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - Rich table visualization
@@ -205,7 +194,7 @@ neuralib_brainrender
 
 - See examples in `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.atlas.brainrender.html>`_
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_brainrender -h
 
@@ -215,7 +204,7 @@ neuralib_widefield
 
 - See example in  `api <https://neuralib.readthedocs.io/en/latest/api/neuralib.imaging.widefield.html>`_
 
-.. code-block:: console
+.. prompt:: bash $
 
     neuralib_widefield -h
 

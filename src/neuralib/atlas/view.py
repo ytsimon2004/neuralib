@@ -15,7 +15,8 @@ from matplotlib.patches import Patch
 from typing_extensions import Self
 
 from neuralib.atlas.data import ATLAS_NAME
-from neuralib.atlas.util import PLANE_TYPE, ALLEN_CCF_10um_BREGMA
+from neuralib.atlas.typing import PLANE_TYPE
+from neuralib.atlas.util import ALLEN_CCF_10um_BREGMA
 from neuralib.util.deprecation import deprecated_func
 
 __all__ = [

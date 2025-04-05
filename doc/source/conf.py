@@ -17,11 +17,11 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.viewcode',
               'sphinx_tabs.tabs',
-              'nbsphinx',
-              'sphinx_toolbox.more_autodoc.autotypeddict']
+              'sphinx_prompt',
+              'nbsphinx']
 
 templates_path = ['_templates']
-exclude_patterns = []
+exclude_patterns = ['**/site-packages/**']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -36,6 +36,15 @@ autodoc_typehints = 'description'
 autodoc_typehints_format = 'short'
 autodoc_inherit_docstrings = True
 autosummary_generate = True
+
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'inherited-members': True,
+    'show-inheritance': True,
+}
+
+suppress_warnings = ["autodoc.duplicate"]
 
 # -- Options for nbsphinx -------------------------------------
 nbsphinx_execute = 'never'

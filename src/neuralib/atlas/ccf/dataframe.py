@@ -758,7 +758,6 @@ class RoiSubregionDataFrame(DataFrameWrapper):
             │ aRSC    ┆ 3865   ┆ 30609 ┆ 0.12627        │
             │ pRSC    ┆ 4035   ┆ 14442 ┆ 0.279393       │
             └─────────┴────────┴───────┴────────────────┘
-        :return:
         """
         return self._profile
 

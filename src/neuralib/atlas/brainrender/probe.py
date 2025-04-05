@@ -9,7 +9,8 @@ from typing_extensions import Self
 
 from neuralib.argp import argument
 from neuralib.atlas.brainrender.core import BrainRenderCLI
-from neuralib.atlas.util import PLANE_TYPE, allen_to_brainrender_coord
+from neuralib.atlas.typing import PLANE_TYPE
+from neuralib.atlas.util import allen_to_brainrender_coord
 from neuralib.typing import PathLike
 
 __all__ = ['ProbeRenderCLI',
@@ -17,7 +18,8 @@ __all__ = ['ProbeRenderCLI',
 
 
 class ProbeRenderCLI(BrainRenderCLI):
-    DESCRIPTION = 'Probe track reconstruction'
+    """Probe track reconstruction with brainrender"""
+    DESCRIPTION = 'Probe track reconstruction with brainrender'
 
     GROUP_PROBE = 'Probe Option'
 
@@ -100,7 +102,7 @@ class ProbeRenderCLI(BrainRenderCLI):
 
 
 class ProbeShank:
-
+    """shank reconstruction class"""
     def __init__(self, dorsal: np.ndarray,
                  ventral: np.ndarray,
                  bg: BrainGlobeAtlas):
@@ -145,7 +147,15 @@ class ProbeShank:
                  plane_type: PLANE_TYPE,
                  bg: BrainGlobeAtlas,
                  verbose: bool = True) -> Self:
-        """infer"""
+        """
+        Load from csv file
+
+        :param file: csv file
+        :param plane_type: {'coronal', 'sagittal', 'transverse'}
+        :param bg: BrainGlobeAtlas
+        :param verbose:
+        :return:
+        """
         df = pl.read_csv(file)
         cols = ['AP_location', 'DV_location', 'ML_location']
         if 'probe_idx' not in df.columns or 'point' not in df.columns:
@@ -180,9 +190,11 @@ class ProbeShank:
 
     @property
     def n_shanks(self) -> int:
+        """number of shanks"""
         return self._dorsal.shape[0]
 
     def map_brainrender(self) -> Self:
+        """map allen ccf brain space to brainrender"""
         self._dorsal = allen_to_brainrender_coord(self._dorsal)
         self._ventral = allen_to_brainrender_coord(self._ventral)
         return self
@@ -205,6 +217,14 @@ class ProbeShank:
             raise ValueError('')
 
     def as_theoretical(self, depth: int, interval: int | None = None, remove_outside_brain: bool = True) -> np.ndarray:
+        """
+        as theoretical array
+
+        :param depth: implanted depth
+        :param interval: interval between shanks
+        :param remove_outside_brain: remove the point outside the brain
+        :return:
+        """
         shanks = self.interp(interp_range=(0, 5000), ret_type=list)
 
         ret = []

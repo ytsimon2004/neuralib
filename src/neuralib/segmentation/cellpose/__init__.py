@@ -8,7 +8,7 @@ API Mode
 
 **Example of run an image segmentation in 2D mode and visualize using napari**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_api -F <IMAGE_FILE> --napari
 
@@ -17,7 +17,7 @@ API Mode
 
 **Example of run an image segmentation in 2D mode and visualize using Cellpose GUI**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_api -F <IMAGE_FILE> --cpose
 
@@ -25,7 +25,7 @@ API Mode
 
 **Example of run batch image segmentation in 2D mode from a directory (.tif files)**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_2d -D <DIRECTORY> --suffix .tif
 
@@ -34,7 +34,7 @@ API Mode
 
 **See help using** ``-h`` **option**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_api -h
 
@@ -47,7 +47,7 @@ Subprocess Mode
 
 **Example of run an image segmentation in subprocess call**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_subproc -F <IMAGE_FILE>
 
@@ -57,7 +57,7 @@ Subprocess Mode
 
 **Example of run batch image segmentation in subprocess call**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_subproc -D <DIRECTORY>
 
@@ -66,7 +66,7 @@ Subprocess Mode
 
 **See help using** ``-h`` **option**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.cellpose.run_subproc -h
 

@@ -882,22 +882,14 @@ Handle the different naming/category with allenccf registration result
 from typing import Literal
 
 from neuralib.typing import Series
-from .typing import Area, MergeLevel
+from .typing import Area, TreeLevel
 
-__all__ = ['NUM_MERGE_LAYER',
-           'MERGE_REGION_LV4',
-           'MERGE_REGION_LV3',
-           'MERGE_REGION_LV2',
-           'MERGE_REGION_LV1',
-           'MERGE_REGION_LV0',
-           #
-           'DEFAULT_FAMILY_DICT',
-           'ALLEN_FAMILY_TYPE',
-           'TH_FAMILY',
-           'ISOCORTEX_FAMILY',
-           'HPF_FAMILY',
-           #
-           'merge_until_level']
+__all__ = [
+    'NUM_MERGE_LAYER',
+    'DEFAULT_FAMILY_DICT',
+    'ALLEN_FAMILY_TYPE',
+    'merge_until_level'
+]
 
 NUM_MERGE_LAYER = 5
 
@@ -905,7 +897,7 @@ NUM_MERGE_LAYER = 5
 # LEVEL 4: Mainly Merge layer #
 # =========================== #
 
-MERGE_LEVEL_LAYER: MergeLevel = 4
+MERGE_LEVEL_LAYER: TreeLevel = 4
 MERGE_REGION_LV4 = {
     # VS
     'VL': ['SEZ', 'chpl'],
@@ -974,7 +966,7 @@ MERGE_REGION_LV4 = {
 # LEVEL 3: Mainly merge DV ML AP #
 # ============================== #
 
-MERGE_LEVEL_DVMLAP: MergeLevel = 3
+MERGE_LEVEL_DVMLAP: TreeLevel = 3
 MERGE_REGION_LV3 = {
     # HB
     'AMB': ['AMB*'],
@@ -1033,7 +1025,7 @@ MERGE_REGION_LV3 = {
 # LEVEL 2: Customized Merge #
 # ========================= #
 
-MERGE_LEVEL_C2: MergeLevel = 2
+MERGE_LEVEL_C2: TreeLevel = 2
 MERGE_REGION_LV2 = {
 
     # HPF
@@ -1089,7 +1081,7 @@ MERGE_REGION_LV2 = {
 # LEVEL 1: Customized Merge #
 # ========================= #
 
-MERGE_LEVEL_C1: MergeLevel = 1
+MERGE_LEVEL_C1: TreeLevel = 1
 MERGE_REGION_LV1 = {
     # VS
     'VS': ['AQ', 'V3', 'V4', 'VL'],
@@ -1123,7 +1115,7 @@ MERGE_REGION_LV1 = {
 # LEVEL 0: Customized Merge #
 # ========================= #
 
-MERGE_LEVEL_C0: MergeLevel = 0
+MERGE_LEVEL_C0: TreeLevel = 0
 MERGE_REGION_LV0 = {
     # HB
     'MY-mot': ['ACVII', 'AMB', 'DMX', 'GRN', 'ICB', 'IO', 'IRN', 'ISN', 'LIN', 'LRN', 'MARN', 'MDRN', 'PARN', 'PAS',
@@ -1248,7 +1240,7 @@ def _merge_area(s: str, region: dict[str, list[Area]]) -> str:
     return s
 
 
-def merge_until_level(ps: Series, level: MergeLevel) -> list[Area]:
+def merge_until_level(ps: Series, level: TreeLevel) -> list[Area]:
     """
     merge the area until which `level`
 

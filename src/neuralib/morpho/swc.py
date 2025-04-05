@@ -5,7 +5,7 @@ Swc morphology plot
 
 **Example for CLI usage**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.morpho.swc -h
 
@@ -14,13 +14,14 @@ Swc morphology plot
 
 - Press ``Shift+s`` for vedo interactive saving
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.morpho.swc <SWC_FILE> --radius
 
 **2D view with radius**
 
-.. code-block:: console
+
+.. prompt:: bash $
 
     python -m neuralib.morpho.swc <SWC_FILE> --radius --2d
 
@@ -35,9 +36,10 @@ import numpy as np
 import vedo
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle
+from typing_extensions import Self, overload
+
 from neuralib.argp import AbstractParser, argument
 from neuralib.typing import PathLike
-from typing_extensions import Self, overload
 
 __all__ = [
     'SwcNode',
@@ -114,6 +116,7 @@ class SwcNode(NamedTuple):
 
 
 class SwcFile:
+    """SWC File"""
     node: list[SwcNode]
 
     def __init__(self, node: list[SwcNode]):

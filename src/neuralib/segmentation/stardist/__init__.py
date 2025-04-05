@@ -5,7 +5,7 @@ StarDist
 
 **Example of run an image segmentation in 2D mode and visualize using napari**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.stardist.run_2d -F <IMAGE_FILE> --napari
 
@@ -15,7 +15,7 @@ StarDist
 
 **Example of run batch image segmentation in 2D mode from a directory (.tif files)**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.stardist.run_2d -D <DIRECTORY> --suffix .tif
 
@@ -24,7 +24,7 @@ StarDist
 
 **See help using** ``-h`` **option**
 
-.. code-block:: console
+.. prompt:: bash $
 
     python -m neuralib.segmentation.stardist.run_2d -h
 

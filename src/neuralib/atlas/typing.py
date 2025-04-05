@@ -1,7 +1,7 @@
 from typing import Literal
 
-__all__ = ['Area', 'Source', 'Channel', 'MergeLevel',
-           'HEMISPHERE_TYPE']
+__all__ = ['Area', 'Source', 'Channel', 'TreeLevel',
+           'HEMISPHERE_TYPE', 'PLANE_TYPE']
 
 Area = str
 """Brain area"""
@@ -12,8 +12,11 @@ Source = str
 Channel = str
 """Fluorescence channel"""
 
-MergeLevel = int
+TreeLevel = int
 """Hierarchical tree merge level"""
 
 HEMISPHERE_TYPE = Literal['ipsi', 'contra', 'both']
 """brain hemisphere"""
+
+PLANE_TYPE = Literal['coronal', 'sagittal', 'transverse']
+"""brain section (plane) type"""

@@ -30,7 +30,7 @@ def load_cellatlas(file: PathLike | None = None, *,
     :param with_detail:  With some outlier brain areas, defaults to False
     :param with_total_neurons: With ``n_neurons`` field, defaults to True
     :param with_acronym: With ``acronym`` field sync with structure tree data, defaults to True
-    :param reload : Re-download the csv file
+    :param reload: Re-download the csv file
     :return: DataFrame
     """
     if file is None:
