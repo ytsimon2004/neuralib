@@ -706,7 +706,7 @@ class RoiSubregionDataFrame(DataFrameWrapper):
         if dataframe is None:
             return self._df
         else:
-            ret = RoiSubregionDataFrame(dataframe, self._profile)
+            ret = RoiSubregionDataFrame(self._region, dataframe, self._profile)
             return ret
 
     @property
