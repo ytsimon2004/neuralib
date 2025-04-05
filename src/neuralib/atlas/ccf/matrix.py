@@ -76,10 +76,16 @@ class MatMatrix(NamedTuple):
 
 @attrs.frozen
 class CCFTransMatrix:
+    """matrix for image transformation"""
+
     slice_id: str
+    """slice name id"""
     matrix: MatMatrix
+    """MatMatrix"""
     plane_type: PLANE_TYPE
+    """PLANE_TYPE"""
     resolution: int = attrs.field(kw_only=True, default=10)
+    """resolution in um"""
 
     @property
     def slice_index(self) -> int:
@@ -92,6 +98,7 @@ class CCFTransMatrix:
         return self.matrix.delta_values[1], self.matrix.delta_values[0]
 
     def get_slice_plane(self) -> SlicePlane:
+        """get slice plane"""
         ret = (
             get_slice_view('reference', self.plane_type, resolution=self.resolution)
             .plane_at(self.slice_index)
