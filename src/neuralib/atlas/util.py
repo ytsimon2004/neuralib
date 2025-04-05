@@ -80,7 +80,7 @@ def iter_source_coordinates(
             raise RuntimeError('check lowest merge level')
     #
     if hemisphere != 'both':
-        df = df.filter(pl.col('hemi.') == hemisphere)
+        df = df.filter(pl.col('hemisphere') == hemisphere)
 
     #
     coords = as_coords_array(df)

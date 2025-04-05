@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Literal, Sequence
 
 import numpy as np
@@ -15,7 +14,8 @@ from neuralib.atlas.typing import Channel, HEMISPHERE_TYPE
 from neuralib.atlas.util import get_margin_merge_level
 from neuralib.typing import PathLike
 from neuralib.util.dataframe import DataFrameWrapper
-from neuralib.util.verbose import print_save
+from neuralib.util.utils import ensure_dir
+from neuralib.util.verbose import print_save, print_load
 
 __all__ = [
     'ROIS_NORM_TYPE',
@@ -44,19 +44,24 @@ class RoiClassifierDataFrame(DataFrameWrapper):
     _required_fields = ('acronym', 'AP_location', 'DV_location', 'ML_location', 'channel', 'source')
     _valid_classified_fields = ('acronym', 'tree_0', 'tree_1', 'tree_2', 'tree_3', 'tree_4', 'family')
 
-    def __init__(self, df: pl.DataFrame,
-                 cached_dir: PathLike | None = None):
+    def __init__(self, df: pl.DataFrame, *,
+                 cached_dir: PathLike | None = None,
+                 invalid_post_processing_cache: bool = False):
         """
 
         :param df: DataFrame with required fields
-        :param cached_dir:
+        :param cached_dir: create cached directory
+        :param invalid_post_processing_cache: invalid post processing cache if cached_dir is not None
         """
         self._df = df
         self._cached_dir = cached_dir
+        self._invalid_post_processing_cache = invalid_post_processing_cache
 
         for field in self._required_fields:
             if field not in df.columns:
                 raise RuntimeError(f'field not found: {field} -> {df.columns}')
+
+        self.__allow_inplace = True
 
     def __repr__(self):
         return repr(self.dataframe())
@@ -65,8 +70,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
         if dataframe is None:
             return self._df
         else:
-            ret = RoiClassifierDataFrame(dataframe)
-            return ret
+            return RoiClassifierDataFrame(dataframe, cached_dir=self._cached_dir)
 
     @property
     def channels(self) -> list[Channel]:
@@ -141,8 +145,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
                         family: bool = True,
                         hemisphere: bool = True,
                         copy_overlap: bool = True,
-                        filter_injection: tuple[str, str] | None = None,
-                        force: bool = False) -> Self:
+                        filter_injection: tuple[str, str] | None = None) -> Self:
         """
         Load the post-processing dataframe
 
@@ -152,22 +155,31 @@ class RoiClassifierDataFrame(DataFrameWrapper):
         :param hemisphere: with column ``hemisphere`` with which hemisphere
         :param copy_overlap: Copy overlap channels counts to individual channels, only set true if overlapped roi is not counted for individual channels
         :param filter_injection:  filter out the injection site labelled
-        :param force: force re-calculation of the file, otherwise used the cached file
         :return:
         """
         if self._cached_dir is not None:
-            file = Path(self._cached_dir) / 'parsed_roi.csv'
+            file = ensure_dir(self._cached_dir) / 'parsed_roi.csv'
 
-            if file.exists() and not force:
-                return RoiClassifierDataFrame(pl.read_csv(file), self._cached_dir)
-            else:
-                ret = self._post_processing(filter_capital, tree, family, hemisphere, copy_overlap, filter_injection)
-                ret.dataframe().write_csv(file)
-                print_save(file)
-        else:
+            if file.exists() and self._invalid_post_processing_cache:
+                file.unlink()
+
+            # load
+            if file.exists():
+                df = pl.read_csv(file)
+                print_load(file)
+                return RoiClassifierDataFrame(
+                    df, cached_dir=self._cached_dir,
+                    invalid_post_processing_cache=self._invalid_post_processing_cache
+                )
+
+            # write
             ret = self._post_processing(filter_capital, tree, family, hemisphere, copy_overlap, filter_injection)
+            ret.dataframe().write_csv(file)
+            print_save(file)
+            return ret
 
-        return ret
+        # return
+        return self._post_processing(filter_capital, tree, family, hemisphere, copy_overlap, filter_injection)
 
     def _post_processing(self, filter_capital, tree, family, hemisphere, copy_overlap, filter_injection) -> Self:
         ret = self
@@ -181,6 +193,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
             ret = ret.with_hemisphere_column()
         if copy_overlap:
             ret = ret.with_overlap_copy()
+            self.__allow_inplace = False
         if filter_injection is not None:
             ret = ret.filter_injection_site(area=filter_injection[0], hemisphere=filter_injection[1])
 
@@ -242,6 +255,9 @@ class RoiClassifierDataFrame(DataFrameWrapper):
 
     def with_overlap_copy(self) -> Self:
         """Copy overlap channels counts to individual channels, only used if overlapped roi is not counted for individual channels"""
+        if not self.__allow_inplace:
+            raise RuntimeError('recurrent copy overlap')
+
         ret = [self.dataframe()]
         for channel, source in self.get_channel_source_dict().items():
             if channel not in 'overlap':
@@ -479,6 +495,9 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
         self._classified_column = classified_column
         self._normalized = normalized
 
+    def __repr__(self):
+        return repr(self.dataframe())
+
     @property
     def classified_column(self) -> str:
         """region classified column name"""
@@ -669,10 +688,8 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
 
 
 class RoiSubregionDataFrame(DataFrameWrapper):
-    """
-    RoiSubregionDataFrame with each source per row, column shows the subregions
+    """RoiSubregionDataFrame with each source per row, column shows the subregions"""
 
-    """
     _profile_required_fields = ('source', 'counts', 'total', 'total_fraction')
 
     def __init__(self, region: str, df: pl.DataFrame, profile: pl.DataFrame):
@@ -688,6 +705,9 @@ class RoiSubregionDataFrame(DataFrameWrapper):
         for field in self._profile_required_fields:
             if field not in profile.columns:
                 raise RuntimeError(f'field not found: {field} -> {df.columns}')
+
+    def __repr__(self):
+        return repr(self.dataframe())
 
     def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
         """
@@ -708,6 +728,11 @@ class RoiSubregionDataFrame(DataFrameWrapper):
         else:
             ret = RoiSubregionDataFrame(self._region, dataframe, self._profile)
             return ret
+
+    @property
+    def region(self) -> str:
+        """region name"""
+        return self._region
 
     @property
     def subregion(self) -> list[str]:
@@ -759,13 +784,3 @@ class RoiSubregionDataFrame(DataFrameWrapper):
     def to_numpy(self) -> np.ndarray:
         """to value array. `Array[float, [n_source, n_subregion]]`"""
         return self.dataframe().select(pl.exclude('source')).to_numpy()
-
-
-# DIR move to ?
-
-def _copy_coronal():
-    pass
-
-
-def _copy_sagittal():
-    pass
