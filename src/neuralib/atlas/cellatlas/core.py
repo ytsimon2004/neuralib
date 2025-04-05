@@ -1,18 +1,15 @@
-import dataclasses
 import io
 from pathlib import Path
 
 import polars as pl
 
-from neuralib.atlas._deprecate import _CellAtlas
 from neuralib.atlas.data import load_bg_structure_tree
 from neuralib.io.core import ATLAS_CACHE_DIRECTORY
 from neuralib.typing import PathLike
-from neuralib.util.deprecation import deprecated_class
 from neuralib.util.utils import ensure_dir
 from neuralib.util.verbose import print_save
 
-__all__ = ['load_cellatlas', 'CellAtlas']
+__all__ = ['load_cellatlas']
 
 
 def load_cellatlas(file: PathLike | None = None, *,
@@ -78,9 +75,3 @@ def _request(output: Path) -> pl.DataFrame:
         raise RuntimeError('download cellatlas FAIL')
 
     return df
-
-
-@deprecated_class(new='load_cellatlas()', removal_version='0.4.3')
-@dataclasses.dataclass
-class CellAtlas(_CellAtlas):
-    ...
