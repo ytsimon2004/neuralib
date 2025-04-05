@@ -1,50 +1,15 @@
 import unittest
 from unittest.mock import patch
 
-import numpy as np
 from matplotlib import pyplot as plt
 
 from neuralib.atlas.cellatlas.core import load_cellatlas
-from neuralib.atlas.data import load_structure_tree, load_bg_structure_tree, get_children, get_leaf_in_annotation, \
-    build_annotation_leaf_map, load_bg_volumes
+from neuralib.atlas.data import get_children, get_leaf_in_annotation, build_annotation_leaf_map, load_bg_volumes
 from neuralib.atlas.view import get_slice_view
 from neuralib.util.dataframe import assert_polars_equal_verbose
 
 
-@unittest.skip('manually')
-class TestLegacyData(unittest.TestCase):
-    def test_load_ccf_annotation(self):
-        from neuralib.atlas.data import load_ccf_annotation
-        arr = load_ccf_annotation()
-
-        self.assertEquals(arr.dtype, np.uint16)
-        self.assertTupleEqual(arr.shape, (1320, 800, 1140))
-
-    def test_load_ccf_template(self):
-        from neuralib.atlas.data import load_ccf_template
-        arr = load_ccf_template()
-
-        self.assertEquals(arr.dtype, np.uint16)
-        self.assertTupleEqual(arr.shape, (1320, 800, 1140))
-
-    @unittest.skip('run manually, since module "allensdk" build error')
-    def test_load_allensdk_annotation(self):
-        from neuralib.atlas.data import load_allensdk_annotation
-        arr = load_allensdk_annotation()
-
-        self.assertEquals(arr.dtype, np.uint32)
-        self.assertTupleEqual(arr.shape, (1320, 800, 1140))
-
-
 class TestBrainGlobe(unittest.TestCase):
-
-    def test_structure_tree_with_ccf(self):
-        cols = ['acronym', 'id']
-        x = load_structure_tree().select(cols)
-        y = load_bg_structure_tree().select(cols)
-
-        with self.assertRaises(AssertionError):
-            assert_polars_equal_verbose(x, y)
 
     def test_get_child_id(self):
         ret = get_children(385, dataframe=False)  # VISp

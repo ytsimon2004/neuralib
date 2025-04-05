@@ -3,18 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, overload
 
-import nrrd
 import numpy as np
 import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
 from tqdm import tqdm
 
 from neuralib.io import save_json, load_json
-from neuralib.io.core import ALLEN_SDK_DIRECTORY, ATLAS_CACHE_DIRECTORY
+from neuralib.io.core import ATLAS_CACHE_DIRECTORY
 from neuralib.typing import PathLike
-from neuralib.util.deprecation import deprecated_func
 from neuralib.util.tqdm import download_with_tqdm
-from neuralib.util.verbose import fprint, print_save, print_load
+from neuralib.util.verbose import print_save, print_load
 
 __all__ = [
     'ATLAS_NAME',
@@ -25,13 +23,7 @@ __all__ = [
     'get_leaf_in_annotation',
     'build_annotation_leaf_map',
     #
-    'get_dorsal_cortex',
-    #
-    'load_allensdk_annotation',
-    'load_ccf_annotation',
-    'load_ccf_template',
-    'load_structure_tree',
-
+    'get_dorsal_cortex'
 ]
 
 ATLAS_NAME = Literal[
@@ -319,60 +311,3 @@ def get_dorsal_cortex(output_dir: Path | None = None) -> Path:
             print_save(output, verb='DOWNLOAD')
 
     return output
-
-
-# ================ #
-# TO BE DEPRECATED #
-# ================ #
-
-@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead')
-def load_ccf_annotation(output_dir: PathLike | None = None) -> np.ndarray:
-    from ._deprecate import _load_ccf_annotation
-    return _load_ccf_annotation(output_dir)
-
-
-@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead')
-def load_ccf_template(output_dir: PathLike | None = None) -> np.ndarray:
-    from ._deprecate import _load_ccf_template
-    return _load_ccf_template(output_dir)
-
-
-@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead')
-def load_structure_tree(version: Literal['2017', 'old'] = '2017', output_dir: PathLike | None = None) -> pl.DataFrame:
-    from ._deprecate import _load_structure_tree
-    return _load_structure_tree(version, output_dir)
-
-
-@deprecated_func(removal_version='0.4.3', remarks='switch brainglobe api instead, and probably deprecate allensdk dependency')
-def load_allensdk_annotation(resolution: int = 10, output_dir: PathLike | None = None) -> np.ndarray:
-    """
-    Data Source directly from Allen Institute
-
-    .. seealso::
-
-        https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/
-
-    :param resolution: volume resolution in um. default is 10 um
-    :param output_dir: output directory for caching
-    :return: Array[uint32, [AP, DV, ML]]
-    """
-    if output_dir is None:
-        output_dir = ALLEN_SDK_DIRECTORY
-        if not ALLEN_SDK_DIRECTORY.exists():
-            ALLEN_SDK_DIRECTORY.mkdir(exist_ok=True, parents=True)
-
-    file = output_dir / f'annotation_{resolution}.nrrd'
-
-    if not file.exists():
-        try:
-            from allensdk.api.queries.mouse_connectivity_api import MouseConnectivityApi
-        except ImportError as e:
-            fprint('Build error from project.toml. Please manually install using "pip install allensdk --no-deps"', vtype='error')
-            raise e
-
-        mcapi = MouseConnectivityApi()
-        version = MouseConnectivityApi.CCF_VERSION_DEFAULT
-
-        mcapi.download_annotation_volume(version, resolution, file)
-
-    return nrrd.read(file)[0]
