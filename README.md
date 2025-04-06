@@ -27,7 +27,7 @@ efficient data handling, analysis, and reproducibility in open-source neuroscien
 ## Documentation
 
 - **[Full Documentation](https://neuralib.readthedocs.io/en/latest/index.html)**
-- **[Installation Guide](https://neuralib.readthedocs.io/en/latest/api/installation.html)**
+- **[Installation Guide](https://neuralib.readthedocs.io/en/latest/installation.html)**
 - **[Example Notebooks](https://neuralib.readthedocs.io/en/latest/index.html#notebook-example)**
 
 ---
