@@ -5,9 +5,10 @@ import gspread
 import numpy as np
 import pandas as pd
 import polars as pl
+from typing_extensions import Self
+
 from neuralib.typing import PathLike, DataFrame
 from neuralib.util.verbose import fprint
-from typing_extensions import TypeAlias, Self
 
 __all__ = [
     'SpreadSheetName',
@@ -20,13 +21,13 @@ __all__ = [
     'upload_dataframe_to_spreadsheet'
 ]
 
-SpreadSheetName: TypeAlias = str
+SpreadSheetName = str
 """spreadsheet name"""
 
-WorkPageName: TypeAlias = str
+WorkPageName = str
 """workpage name of the spreadsheet"""
 
-DataIndex: TypeAlias = Union[None, int, str, slice, list[int], list[str], np.ndarray]
+DataIndex = Union[None, int, str, slice, list[int], list[str], np.ndarray]
 """data index type"""
 
 VALUE_RENDER_OPT = Literal['FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA']

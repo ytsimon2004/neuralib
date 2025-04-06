@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Any, NewType, Literal
 
 import numpy as np
+from tifffile import tifffile
+
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
-from tifffile import tifffile
-from typing_extensions import TypeAlias
 
 __all__ = [
     #
@@ -26,7 +26,7 @@ ZEISS_LSM_CHANNELS_ORDER = ['Blues', 'Reds', 'Greens']
 
 ZPROJ_TYPE = Literal['avg', 'max', 'min', 'std', 'median']
 
-SceneIdx: TypeAlias = int
+SceneIdx = int
 """0-base scan position"""
 
 DimCode = NewType('DIMCODE', str)

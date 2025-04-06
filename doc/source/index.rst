@@ -176,14 +176,9 @@ Utilities Modules
 - Real-time Slack notification bot for analysis pipeline
 
 
-:mod:`neuralib.util.table`
+:mod:`neuralib.util`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Rich table visualization
-
-
-:mod:`neuralib.util.segments`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Epoch or value segments
+- Utility module
 
 
 CLI project.scripts

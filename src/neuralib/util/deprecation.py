@@ -1,3 +1,43 @@
+"""
+Deprecation
+=============================
+
+This module provides decorators for marking classes and functions as deprecated.
+It also offers a decorator to support deprecated argument names in functions by
+automatically mapping them to their new names and issuing a warning.
+
+Functions and Decorators
+------------------------
+
+Class Example:
+
+.. code-block:: python
+
+    @deprecated_class(new="NewClass")
+    class OldClass:
+        pass
+
+Function Example:
+
+.. code-block:: python
+
+    @deprecated_func(new="new_function")
+    def old_function():
+        pass
+
+Aliases Example:
+
+    .. code-block:: python
+
+        @deprecated_aliases(old_arg="new_arg")
+        def some_function(new_arg):
+            pass
+
+        # then you can use old args but deprecate warning
+        some_function(old_arg=...)
+
+
+"""
 import functools
 import inspect
 import warnings
@@ -7,28 +47,7 @@ __all__ = ['deprecated_class',
            'deprecated_aliases']
 
 
-def _build_deprecated_message(target: str,
-                              alternation: str | None = None,
-                              remarks: str | None = None,
-                              removal: str | None = None) -> str:
-    msg = f'{target} is deprecated'
-
-    if removal is not None:
-        msg += f' and will be removed in a future release (after version {removal}).'
-    else:
-        msg += '.'
-
-    if alternation is not None:
-        msg += f' Please use "{alternation}" instead.'
-
-    if remarks is not None:
-        msg += f' NOTE: {remarks}.'
-
-    return msg
-
-
-def deprecated_class(*,
-                     new: str | None = None,
+def deprecated_class(*, new: str | None = None,
                      remarks: str | None = None,
                      removal_version: str | None = None):
     """Mark deprecated class
@@ -66,8 +85,7 @@ def deprecated_class(*,
     return _decorator
 
 
-def deprecated_func(*,
-                    new: str | None = None,
+def deprecated_func(*, new: str | None = None,
                     remarks: str | None = None,
                     removal_version: str = None):
     """Mark deprecated functions.
@@ -99,6 +117,26 @@ def deprecated_func(*,
         return _deprecated_func
 
     return _decorator
+
+
+def _build_deprecated_message(target: str,
+                              alternation: str | None = None,
+                              remarks: str | None = None,
+                              removal: str | None = None) -> str:
+    msg = f'{target} is deprecated'
+
+    if removal is not None:
+        msg += f' and will be removed in a future release (after version {removal}).'
+    else:
+        msg += '.'
+
+    if alternation is not None:
+        msg += f' Please use "{alternation}" instead.'
+
+    if remarks is not None:
+        msg += f' NOTE: {remarks}.'
+
+    return msg
 
 
 def deprecated_aliases(**aliases: str):

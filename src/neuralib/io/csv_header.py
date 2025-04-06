@@ -1,6 +1,6 @@
 from neuralib.typing import PathLike
 
-__all__ = ['CsvContextManager', 'csv_header']
+__all__ = ['csv_header']
 
 
 class CsvContextManager:
