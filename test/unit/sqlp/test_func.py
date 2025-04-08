@@ -1,9 +1,9 @@
 import unittest
 from typing import NamedTuple, Any, Optional
 
-from _unittest.sqlp._test import SqlTestCase
-from _unittest.sqlp._tracks import *
 from neuralib import sqlp
+from ._test import SqlTestCase
+from ._tracks import *
 
 
 @sqlp.named_tuple_table_class
@@ -241,7 +241,6 @@ class FuncCountExampleTest(SqlTestCase):
         ).order_by(
             sqlp.desc(sqlp.count())
         ))
-
 
     def test_count_distinct(self):
         self.assertSqlExeEqual("""\

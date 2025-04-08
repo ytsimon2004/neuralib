@@ -1,6 +1,7 @@
 import os
 import tempfile
 from io import BytesIO
+from unittest.mock import patch
 
 import cv2
 import numpy as np
@@ -61,8 +62,9 @@ class TestImageArrayWrapper:
     def test_view_2d(self, image):
         assert image.view_2d().ndim == 2
 
-    @pytest.mark.skip(reason='manually show')
-    def test_plot_basic(self, image):
+    # @pytest.mark.skip(reason='manually show')
+    @patch("matplotlib.pyplot.show")
+    def test_plot_basic(self, mock, image):
         with plot_figure(None, 3, 3, sharex=True, sharey=True) as ax:
             ax = ax.ravel()
             ax[0].imshow(image)
@@ -72,8 +74,9 @@ class TestImageArrayWrapper:
             ax[4].imshow(image.select_channel('b'), cmap='Blues')
             ax[5].imshow(image.view_2d())
 
-    @pytest.mark.skip(reason='manually show')
-    def test_plot_proc(self, image: ImageArrayWrapper):
+    # @pytest.mark.skip(reason='manually show')
+    @patch("matplotlib.pyplot.show")
+    def test_plot_proc(self, mock, image: ImageArrayWrapper):
         with plot_figure(None, 3, 3, sharex=True, sharey=True) as ax:
             ax = ax.ravel()
             ax[0].imshow(image)

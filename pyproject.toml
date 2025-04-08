@@ -101,7 +101,7 @@ all = [
 ]
 
 #
-dev = ['pre-commit', 'ruff', "neura-library[all]"]
+dev = ['pre-commit', 'ruff', "neura-library[all]", "pytest"]
 
 #
 doc = [

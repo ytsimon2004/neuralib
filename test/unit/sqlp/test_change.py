@@ -3,11 +3,11 @@ import unittest
 from pathlib import Path
 from typing import Annotated, NamedTuple, Optional, Union, TypeVar
 
-from _unittest.sqlp._test import SqlTestCase
-from _unittest.sqlp._tracks import *
 from neuralib import sqlp
 from neuralib.sqlp import Connection
 from neuralib.sqlp.stat import SqlStat, Cursor
+from ._test import SqlTestCase
+from ._tracks import *
 
 T = TypeVar('T')
 
@@ -138,7 +138,8 @@ class UpdateTest(ChangeTest):
             employees
         WHERE
             employeeid = 3;
-        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Title, Employees.Email).where(
+        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Title,
+                              Employees.Email).where(
             Employees.EmployeeId == 3
         ))
 
@@ -168,7 +169,8 @@ class UpdateTest(ChangeTest):
             employees
         WHERE
             employeeid = 4;
-        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Title, Employees.Email).where(
+        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Title,
+                              Employees.Email).where(
             Employees.EmployeeId == 4
         ))
 
@@ -195,7 +197,8 @@ class UpdateTest(ChangeTest):
         ORDER BY
             firstname
         LIMIT 5;
-        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Email).order_by(Employees.FirstName).limit(5))
+        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Email).order_by(
+            Employees.FirstName).limit(5))
 
     def test_update_all(self):
         self.assertSqlExeEqual("""\
@@ -218,7 +221,8 @@ class UpdateTest(ChangeTest):
             employees
         ORDER BY
             firstname
-        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Email).order_by(Employees.FirstName))
+        """, sqlp.select_from(Employees.EmployeeId, Employees.FirstName, Employees.LastName, Employees.Email).order_by(
+            Employees.FirstName))
 
 
 class UpdateFromTest(ChangeTest):

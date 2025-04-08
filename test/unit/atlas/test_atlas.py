@@ -1,14 +1,15 @@
 import unittest
 from unittest.mock import patch
 
+import pytest
 from matplotlib import pyplot as plt
 
 from neuralib.atlas.cellatlas.core import load_cellatlas
 from neuralib.atlas.data import get_children, get_leaf_in_annotation, build_annotation_leaf_map, load_bg_volumes
 from neuralib.atlas.view import get_slice_view
-from neuralib.util.dataframe import assert_polars_equal_verbose
 
 
+@pytest.mark.skip(reason="source data need to be downloaded")
 class TestBrainGlobe(unittest.TestCase):
 
     def test_get_child_id(self):
@@ -31,6 +32,7 @@ class TestBrainGlobe(unittest.TestCase):
         self.assertSetEqual(x, y)
 
 
+@pytest.mark.skip(reason="source data need to be downloaded")
 class TestView(unittest.TestCase):
 
     @patch('matplotlib.pyplot.show')
@@ -94,15 +96,10 @@ class TestView(unittest.TestCase):
         plt.show()
 
 
+@pytest.mark.skip(reason="source data need to be downloaded")
 class TestRegionVolumes(unittest.TestCase):
 
-    def test_cell_atlas_sync(self):
-        from neuralib.atlas.cellatlas import CellAtlas
-        x = CellAtlas.load_sync_allen_structure_tree()
-        y = load_cellatlas()
-        assert_polars_equal_verbose(x, y)
-
-    # @patch('matplotlib.pyplot.show')
+    @patch('matplotlib.pyplot.show')
     def test_volume_different_source_data(self, *args):
         x = load_bg_volumes()
         y = load_cellatlas().select('acronym', 'Volumes [mm^3]')

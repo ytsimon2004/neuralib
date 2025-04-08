@@ -13,7 +13,8 @@ from neuralib.plot.tools import AxesExtendHelper
 # AxesExtendHelper #
 # ================ #
 
-def test_axes_extend_helper_x():
+@patch("matplotlib.pyplot.show")
+def test_axes_extend_helper_x(mock):
     x = np.random.sample(10)
     y = np.random.sample(10)
     with plot_figure(None) as ax:
@@ -23,7 +24,8 @@ def test_axes_extend_helper_x():
         helper.xhist(x, bins=10)
 
 
-def test_axes_extend_helper_y():
+@patch("matplotlib.pyplot.show")
+def test_axes_extend_helper_y(mock):
     x = np.random.sample(10)
     y = np.random.sample(10)
     with plot_figure(None) as ax:
@@ -33,7 +35,8 @@ def test_axes_extend_helper_y():
         helper.yhist(y, bins=10)
 
 
-def test_axes_extend_helper_hist():
+@patch("matplotlib.pyplot.show")
+def test_axes_extend_helper_hist(mock):
     x = np.random.sample(10)
     y = np.random.sample(10)
     with plot_figure(None) as ax:
@@ -44,7 +47,8 @@ def test_axes_extend_helper_hist():
         helper.yhist(y, bins=10)
 
 
-def test_axes_extend_helper_bar():
+@patch("matplotlib.pyplot.show")
+def test_axes_extend_helper_bar(mock):
     img = np.random.sample((10, 10))
     with plot_figure(None) as ax:
         ax.imshow(img)
@@ -58,8 +62,8 @@ def test_axes_extend_helper_bar():
 # ================= #
 # Other Plots Usage #
 # ================= #
-
-def test_dotplot():
+@patch("matplotlib.pyplot.show")
+def test_dotplot(mock):
     xlabel = ['animal_A', 'animal_B', 'animal_C']
     ylabel = ['VISam', 'VISp', 'VISpm', 'VISpor', 'VISl', 'VISal', 'VISli', 'VISpl']
     nx = len(xlabel)
@@ -69,7 +73,8 @@ def test_dotplot():
     dotplot(xlabel, ylabel, values, max_marker_size=700, with_color=True, scale='area', figure_title='example dotplot')
 
 
-def test_dotplot_ax():
+@patch("matplotlib.pyplot.show")
+def test_dotplot_ax(mock):
     xlabel = ['animal_A', 'animal_B', 'animal_C']
     ylabel = ['VISam', 'VISp', 'VISpm', 'VISpor', 'VISl', 'VISal', 'VISli', 'VISpl']
     nx = len(xlabel)
@@ -85,7 +90,8 @@ def test_dotplot_ax():
         ax.plot([1, 2, 3])
 
 
-def test_venn2():
+@patch("matplotlib.pyplot.show")
+def test_venn2(mock):
     subsets = {'setA': 10, 'setB': 20}
     vd = VennDiagram(subsets, colors=('pink', 'palegreen'))
     vd.add_intersection('setA & setB', 5)
@@ -94,7 +100,8 @@ def test_venn2():
     vd.show()
 
 
-def test_venn3():
+@patch("matplotlib.pyplot.show")
+def test_venn3(mock):
     subsets = {'setA': 20, 'setB': 100, 'setC': 50}
     vd = VennDiagram(subsets)
     vd.add_intersection('setA & setB', 10)

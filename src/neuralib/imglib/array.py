@@ -197,7 +197,6 @@ class ImageArrayWrapper(np.ndarray):
         - For a 3-channel image, the result is a grayscale image obtained by applying luminance conversion.
 
         :param flipud: reverse the order of elements along axis 0 (up/down)
-        :return:
         """
         if self.ndim == 2:
             return self
@@ -302,7 +301,6 @@ class ImageArrayWrapper(np.ndarray):
         then the skimage local_maxima function is applied.
         :param channel: one of 'r'/'red', 'g'/'green', or 'b'/'blue'.
         :param kwargs: additional keyword arguments for ``skimage.morphology.local_maxima()``.
-        :return:
         """
         from skimage.morphology import local_maxima
 
