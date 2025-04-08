@@ -1,4 +1,45 @@
+"""
+Profile
+=================
 
+This module provides utilities for profiling and tracing execution of code.
+
+It includes:
+
+- **profile_test**: A context manager for profiling code execution using the
+  built-in `cProfile` module. The profiler can dump the stats in various formats:
+  - `.dat`: Raw profile dump.
+  - `.txt`: Human-readable text output.
+  - `.png`: Graphical representation using `gprof2dot` and Graphviz's `dot` tool.
+
+- **trace_line**: A decorator that launches a background thread to trace and
+  print the current line number being executed at regular intervals. This is
+  especially useful when debugging long-running processes that might be
+  terminated by the operating system without a traceback.
+
+Usage Examples
+--------------
+
+Profiling Example:
+
+.. code-block:: python
+
+    with profile_test(enable=True, output_file='profile.txt'):
+        # Code to profile
+        do_something()
+
+Trace Line Example:
+
+.. code-block:: python
+
+    @trace_line(interval=0.1)
+    def long_running_function():
+        # Some long-running process
+        process_data()
+
+    long_running_function()
+
+"""
 import functools
 import sys
 import threading
@@ -6,10 +47,7 @@ import time
 
 from neuralib.util.verbose import fprint
 
-__all__ = [
-    'profile_test',
-    'trace_line'
-]
+__all__ = ['profile_test', 'trace_line']
 
 
 class profile_test:
@@ -36,7 +74,9 @@ class profile_test:
 
             elif self._output_file.endswith('.txt'):
                 import pstats
+
                 stat = pstats.Stats(self._profile)
+
                 with open(self._output_file, 'w') as f:
                     stat.stream = f
                     stat.print_stats()
@@ -45,9 +85,7 @@ class profile_test:
                 import subprocess
 
                 f1 = self._output_file.replace('.png', '.dat')
-
                 self._profile.dump_stats(f1)
-
                 cmd_line = f'python -m gprof2dot -f pstats {f1} | dot -T png -o {self._output_file}'
 
                 with subprocess.Popen(['bash', '-c', cmd_line]) as proc:
