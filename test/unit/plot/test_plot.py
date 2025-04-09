@@ -1,9 +1,7 @@
 import unittest
-from typing import Callable
 from unittest.mock import patch
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 from neuralib.plot import plot_figure, dotplot, VennDiagram
 from neuralib.plot.tools import AxesExtendHelper
@@ -111,28 +109,6 @@ def test_venn3(mock):
     vd.add_total(200)
     vd.plot()
     vd.show()
-
-
-class TestPlotting(unittest.TestCase):
-
-    @patch('matplotlib.pyplot.show')
-    def plt_close(self, f: Callable, mock_show, *args, **kwargs):
-        try:
-            f(*args, **kwargs)
-            plt.clf()
-            plt.close('all')
-        except Exception as e:
-            self.fail(f'Plotting function raised an exception: {e}')
-
-    def test_plotting_func_runs(self):
-        self.plt_close(test_axes_extend_helper_x)
-        self.plt_close(test_axes_extend_helper_y)
-        self.plt_close(test_axes_extend_helper_hist)
-        self.plt_close(test_axes_extend_helper_bar)
-        self.plt_close(test_dotplot)
-        self.plt_close(test_dotplot_ax)
-        self.plt_close(test_venn2)
-        self.plt_close(test_venn3)
 
 
 if __name__ == '__main__':

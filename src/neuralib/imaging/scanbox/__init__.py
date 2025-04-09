@@ -21,7 +21,7 @@ See all the info
 
     file = ...  # scanbox .mat output file
     sbx = SBXInfo.load(file)
-    sbx.print_asdict()  # print the information as dictionary
+    print(sbx.asdict())  # print the information as dictionary
 
 
 
