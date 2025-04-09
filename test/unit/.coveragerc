@@ -1,0 +1,9 @@
+[run]
+omit =
+    config.py
+    config-3.py
+
+[report]
+omit =
+    */config-3.py
+    */config-3.pyc

@@ -194,16 +194,18 @@ def get_annotation_ids(atlas_name: ATLAS_NAME = 'allen_mouse_10um', check_latest
 
 def get_leaf_in_annotation(region: int | str, *,
                            name: bool = False,
-                           cached_file: PathLike | None = None) -> list[int] | list[str]:
+                           cached_file: PathLike | None = None,
+                           atlas_name: ATLAS_NAME = 'allen_mouse_10um') -> list[int] | list[str]:
     """
     Get a list of annotation {id, acronym} with given region {id, acronym}
 
     :param region: Region id or region acronym
     :param name: If True, return acronym, otherwise return id
     :param cached_file: Cached json for the annotation_leaf_map
+    :param atlas_name: :attr:`~neuralib.atlas.data.ATLAS_NAME`
     :return: List of annotation {id, acronym}
     """
-    tree = load_bg_structure_tree()
+    tree = load_bg_structure_tree(atlas_name=atlas_name)
 
     # to id
     if isinstance(region, str):
