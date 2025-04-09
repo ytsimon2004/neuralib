@@ -1,12 +1,12 @@
 [run]
 source = neuralib
 omit =
-    src/neuralib/dashboard/*
-    src/neuralib/persistence/*
-    src/neuralib/segmentation/*
+    */neuralib/dashboard/*
+    */neuralib/persistence/*
+    */neuralib/segmentation/*
 
 [report]
 omit =
-    src/neuralib/dashboard/*
-    src/neuralib/persistence/*
-    src/neuralib/segmentation/*
+    */neuralib/dashboard/*
+    */neuralib/persistence/*
+    */neuralib/segmentation/*
