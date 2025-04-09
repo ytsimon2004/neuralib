@@ -1,6 +1,3 @@
-"""
-
-"""
 from __future__ import annotations
 
 import abc
@@ -21,6 +18,7 @@ if TYPE_CHECKING:
     P = ParamSpec('P')
 
 __all__ = ['DataFrameWrapper',
+           'helper_with_index_column',
            'assert_polars_equal_verbose']
 
 
