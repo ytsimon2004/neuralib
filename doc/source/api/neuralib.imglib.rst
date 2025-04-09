@@ -8,8 +8,8 @@ neuralib.imglib
     :maxdepth: 1
     :caption: Modules:
 
+    neuralib.imglib.array
     neuralib.imglib.color
-    neuralib.imglib.factory
     neuralib.imglib.io
     neuralib.imglib.labeller
     neuralib.imglib.norm

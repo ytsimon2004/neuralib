@@ -7,13 +7,12 @@ neuralib.io.csv_header
    :toctree: _autosummary
    :nosignatures:
 
-   CsvContextManager
    csv_header
 
 
 .. automodule:: neuralib.io.csv_header
    :members:
-   :exclude-members: CsvContextManager, csv_header
+   :exclude-members: csv_header
    :undoc-members:
    :inherited-members:
    :show-inheritance:
