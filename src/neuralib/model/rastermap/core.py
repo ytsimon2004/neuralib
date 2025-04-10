@@ -3,13 +3,17 @@ from typing import TypedDict
 
 import attrs
 import numpy as np
+from typing_extensions import Self
+
 from neuralib.typing import PathLike
 from neuralib.util.verbose import print_save, print_load
-from typing_extensions import Self
 
 __all__ = ['UserCluster',
            'RasterOptions',
            'RasterMapResult']
+
+
+# TODO read_rastermap()
 
 
 class UserCluster(TypedDict, total=False):

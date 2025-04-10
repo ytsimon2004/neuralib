@@ -132,7 +132,7 @@ def load_example_rois(**kwargs) -> pl.DataFrame:
     :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
     :return: A Polars DataFrame containing the example ROIs data
     """
-    with google_drive_file('1cf2r3kcqjENBQMe8YzBQvol8tZgscN4J', **kwargs) as file:
+    with google_drive_file('1dKpZt6eF4szvl7svWRdBQkOfTVLQi4Xg', **kwargs) as file:
         return pl.read_csv(file)
 
 

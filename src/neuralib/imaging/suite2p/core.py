@@ -27,6 +27,8 @@ SIGNAL_TYPE = Literal['df_f', 'spks']
 CALCIUM_TYPE = Literal['baseline', 'transient']
 
 
+# TODO read suite2p
+
 class Suite2pGUIOptions(TypedDict, total=False):
     """ Suite2p GUI setting.
 

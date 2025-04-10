@@ -268,7 +268,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
                 )
                 ret.append(df)
 
-        return RoiClassifierDataFrame(pl.concat(ret), self._cached_dir)
+        return RoiClassifierDataFrame(pl.concat(ret), cached_dir=self._cached_dir)
 
     # ==================== #
     # Normalized DataFrame #

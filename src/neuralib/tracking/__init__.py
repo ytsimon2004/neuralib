@@ -5,7 +5,27 @@ Tracking
 Example usage of deeplabcut
 ---------------------------
 
-TODO
+.. code-block:: python
+
+    from neuralib.tracking import read_dlc
+
+    # load DeepLabCut output from .h5 OR .csv and its metadata (.pkl)
+    dlc_df = read_dlc("/path/to/output.csv", meta_file="/path/to/meta.pkl")
+
+    # Access dataframe with all joints
+    df = dlc_df.dataframe()
+
+    # list available joints
+    print("Joints:", dlc_df.joints)
+
+    # Access metadata
+    print("Frames per second:", dlc_df.fps)
+    print("Total frames:", dlc_df.nframes)
+
+    # Access a specific joint's data
+    nose_df = dlc_df.get_joint("Nose").dataframe()
+    print(nose_df)
+
 
 Example usage of facemap
 ---------------------------
