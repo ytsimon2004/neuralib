@@ -7,6 +7,8 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Documentation Status](https://readthedocs.org/projects/neuralib/badge/?version=latest)](https://neuralib.readthedocs.io/en/latest/)
+[![codecov](https://codecov.io/gh/ytsimon2004/neuralib/branch/dev/graph/badge.svg)](https://codecov.io/gh/ytsimon2004/neuralib)
+
 
 ---
 

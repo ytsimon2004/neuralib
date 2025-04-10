@@ -56,6 +56,7 @@ atlas = [
     "openpyxl",
     "anytree",
     "plotly",
+    "fastexcel"
 ]
 
 scanner = ["xmltodict", "aicspylibczi"]
@@ -101,7 +102,7 @@ all = [
 ]
 
 #
-dev = ['pre-commit', 'ruff', "neura-library[all]"]
+dev = ['pre-commit', 'ruff', "neura-library[all]", "pytest"]
 
 #
 doc = [

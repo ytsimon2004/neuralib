@@ -8,9 +8,10 @@ from pprint import pprint
 from typing import TypeVar, TypedDict
 
 import numpy as np
+from scipy.io import loadmat
+
 from neuralib.io import JsonEncodeHandler
 from neuralib.typing import PathLike
-from scipy.io import loadmat
 
 __all__ = [
     'SBXInfo',
@@ -67,9 +68,9 @@ class SBXInfo:
         """info.config.magnification, used for `CalibrationInfo` idx"""
         return self.config.magnification - 1
 
-    def print_asdict(self) -> None:
+    def asdict(self):
         from dataclasses import asdict
-        pprint(asdict(self))
+        return asdict(self)
 
     # =============================== #
     # attributes from SBX .mat output #

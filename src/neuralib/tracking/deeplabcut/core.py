@@ -2,26 +2,166 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import TypedDict, NamedTuple
+from typing import TypedDict
 
-import h5py
-import numpy as np
 import polars as pl
+
 from neuralib.typing import PathLike
-from typing_extensions import Self
+from neuralib.util.dataframe import DataFrameWrapper
 
 __all__ = [
     'Joint',
+    'read_dlc',
+    'DeepLabCutDataFrame',
+    'JointDataFrame',
     'DeepLabCutMeta',
-    'DeepLabCutModelConfig',
-    'DeepLabCutResult',
-    'load_dlc_result'
+    'DeepLabCutModelConfig'
 ]
 
 Joint = str
+"""Joint name"""
+
+
+def read_dlc(file: PathLike, meta_file: PathLike | None = None) -> DeepLabCutDataFrame:
+    """
+    load DeepLabCut result from file
+
+    :param file: DeepLabCut result filepath. supports both ``.h5`` and ``.csv``
+    :param meta_file: Optional DeepLabCut meta filepath. should be the ``.pickle``
+    :return:
+    """
+    file = Path(file)
+    meta_file = Path(meta_file)
+    meta = _load_meta(meta_file)
+
+    match file.suffix:
+        case '.h5' | '.hdf5':
+            df = _load_dlc_h5_table(file)
+        case '.csv':
+            df = _load_dlc_csv(file)
+        case _:
+            raise ValueError(f'file: {file} is not supported')
+
+    return DeepLabCutDataFrame(df, meta=meta, filtered=('filtered' in file.name))
+
+
+class DeepLabCutDataFrame(DataFrameWrapper):
+    """
+    DeepLabCut DataFrame ::
+
+        ┌───────────┬───────────┬───────────┬───────────┬───┬───────────┬───────────┬───────────┬──────────┐
+        │ Nose_x    ┆ Nose_y    ┆ Nose_like ┆ EarL_x    ┆ … ┆ TailMid_l ┆ TailEnd_x ┆ TailEnd_y ┆ TailEnd_ │
+        │ ---       ┆ ---       ┆ lihood    ┆ ---       ┆   ┆ ikelihood ┆ ---       ┆ ---       ┆ likeliho │
+        │ f64       ┆ f64       ┆ ---       ┆ f64       ┆   ┆ ---       ┆ f64       ┆ f64       ┆ od       │
+        │           ┆           ┆ f64       ┆           ┆   ┆ f64       ┆           ┆           ┆ ---      │
+        │           ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆ f64      │
+        ╞═══════════╪═══════════╪═══════════╪═══════════╪═══╪═══════════╪═══════════╪═══════════╪══════════╡
+        │ 57.907318 ┆ 512.54742 ┆ 0.999679  ┆ 77.701355 ┆ … ┆ 0.999904  ┆ 257.71426 ┆ 561.89660 ┆ 0.999961 │
+        │           ┆ 4         ┆           ┆           ┆   ┆           ┆ 4         ┆ 6         ┆          │
+        │ 57.907318 ┆ 516.79528 ┆ 0.999688  ┆ 77.701355 ┆ … ┆ 0.999923  ┆ 257.71426 ┆ 562.05725 ┆ 0.999954 │
+        │ …         ┆ …         ┆ …         ┆ …         ┆ … ┆ …         ┆ …         ┆ …         ┆ …        │
+        │ 94.259621 ┆ 43.849434 ┆ 0.973851  ┆ 106.33532 ┆ … ┆ 0.998977  ┆ 87.477776 ┆ 257.11996 ┆ 0.999937 │
+        │ 94.294357 ┆ 44.340511 ┆ 0.965436  ┆ 106.45220 ┆ … ┆ 0.999604  ┆ 87.223534 ┆ 258.46600 ┆ 0.999912 │
+        └───────────┴───────────┴───────────┴───────────┴───┴───────────┴───────────┴───────────┴──────────┘
+
+    """
+
+    def __init__(self, df: pl.DataFrame,
+                 meta: DeepLabCutMeta | None, *,
+                 filtered: bool):
+        """
+        :param df: DeepLabCut result dataframe
+        :param meta: :attr:`~DeepLabCutMeta`
+        :param filtered: whether the results has already been filtered
+        """
+        self._df = df
+        self._meta = meta
+        self._filtered = filtered
+
+    def __repr__(self):
+        raise repr(self.dataframe())
+
+    def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        if dataframe is None:
+            return self._df
+        else:
+            return DeepLabCutDataFrame(dataframe, meta=self._meta, filtered=self._filtered)
+
+    @property
+    def default_filtered(self) -> bool:
+        """whether default filtered when running the deeplabcut"""
+        return self._filtered
+
+    @property
+    def meta(self) -> DeepLabCutMeta:
+        """:attr:`~neuralib.tracking.deeplabcut.DeepLabCutMeta`"""
+        return self._meta
+
+    @property
+    def model_config(self) -> DeepLabCutModelConfig:
+        """:attr:`~neuralib.tracking.deeplabcut.DeepLabCutModelConfig`"""
+        return self.meta['model_config']
+
+    @property
+    def fps(self) -> float:
+        """frame per second, meta data required"""
+        return self.meta['fps']
+
+    @property
+    def nframes(self) -> int:
+        """number of frames"""
+        return self.meta['nframes']
+
+    @property
+    def joints(self) -> list[Joint]:
+        """list of labelled joints"""
+        return self.meta['model_config']['all_joints_names']
+
+    def get_joint(self, joint: Joint) -> JointDataFrame:
+        """get specific joint"""
+        cols = ('x', 'y', 'likelihood')
+        df = self.select([f'{joint}_{col}' for col in cols]).dataframe()
+        return JointDataFrame(df)
+
+
+class JointDataFrame(DataFrameWrapper):
+    """
+    Dataframe from a specific joint ::
+
+        ┌───────────┬────────────┬─────────────────┐
+        │ Nose_x    ┆ Nose_y     ┆ Nose_likelihood │
+        │ ---       ┆ ---        ┆ ---             │
+        │ f64       ┆ f64        ┆ f64             │
+        ╞═══════════╪════════════╪═════════════════╡
+        │ 57.907318 ┆ 512.547424 ┆ 0.999679        │
+        │ 57.907318 ┆ 516.795288 ┆ 0.999688        │
+        │ 57.907318 ┆ 519.56311  ┆ 0.999449        │
+        │ 56.733799 ┆ 522.204224 ┆ 0.999161        │
+        │ 53.546089 ┆ 525.24939  ┆ 0.999518        │
+        │ …         ┆ …          ┆ …               │
+        │ 94.259621 ┆ 43.849434  ┆ 0.973851        │
+        │ 94.294357 ┆ 44.111595  ┆ 0.980125        │
+        │ 94.8013   ┆ 44.340511  ┆ 0.963981        │
+        │ 94.294357 ┆ 44.340511  ┆ 0.947905        │
+        │ 94.294357 ┆ 44.340511  ┆ 0.965436        │
+        └───────────┴────────────┴─────────────────┘
+    """
+
+    def __init__(self, df: pl.DataFrame):
+        self._df = df
+
+    def __repr__(self):
+        return repr(self.dataframe())
+
+    def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        if dataframe is None:
+            return self._df
+        else:
+            return JointDataFrame(dataframe)
 
 
 class DeepLabCutMeta(TypedDict):
+    """DeepLabCut model metadata"""
     start: float
     stop: float
     run_duration: float
@@ -38,6 +178,7 @@ class DeepLabCutMeta(TypedDict):
 
 
 class DeepLabCutModelConfig(TypedDict):
+    """DeepLabCut model configuration"""
     stride: float
     weigh_part_predictions: bool
     weigh_negatives: bool
@@ -75,145 +216,6 @@ class DeepLabCutModelConfig(TypedDict):
     num_outputs: int
 
 
-class DeepLabCutJoint(NamedTuple):
-    source: DeepLabCutResult
-    name: Joint
-    dat: pl.DataFrame
-
-    def with_lh_filter(self, lh: float) -> Self:
-        expr = pl.col('likelihood') >= lh
-        dat = self.dat.with_columns(
-            pl.when(expr).then(pl.col('x')).otherwise(np.nan),
-            pl.when(expr).then(pl.col('y')).otherwise(np.nan)
-        )
-        return self._replace(dat=dat)
-
-    @property
-    def x(self) -> np.ndarray:
-        return self.dat['x'].to_numpy()
-
-    @property
-    def y(self) -> np.ndarray:
-        return self.dat['y'].to_numpy()
-
-    @property
-    def xy(self) -> np.ndarray:
-        return self.dat['x', 'y'].to_numpy()
-
-    @property
-    def t(self) -> np.ndarray:
-        return self.source.time
-
-    @property
-    def lh(self) -> np.ndarray:
-        return self.dat['likelihood'].to_numpy()
-
-
-class DeepLabCutResult:
-
-    def __init__(self,
-                 dat: pl.DataFrame,
-                 meta: DeepLabCutMeta,
-                 filtered: bool,
-                 time: np.ndarray | None = None):
-        """
-
-        :param dat: Deeplabcut results as polars dataframe
-        :param meta: Deeplabcut meta typeddict
-        :param filtered: If the Deeplabcut results is filtered or not
-        :param time: 1D time array for each tracked frames. If None, then assume stable DAQ and calculated from meta.
-        """
-        self.dat = dat
-        self._meta = meta
-        self._filtered = filtered
-
-        self._time = time if time is not None else self._default_time()
-
-    def __getitem__(self, item: Joint) -> DeepLabCutJoint:
-        """Get data from a specific joint"""
-        cols = ('x', 'y', 'likelihood')
-        dat = self.dat[[f'{item}_{col}' for col in cols]]
-        dat.columns = cols
-        return DeepLabCutJoint(self, item, dat)
-
-    @property
-    def is_filtered(self) -> bool:
-        return self._filtered
-
-    @property
-    def meta(self) -> DeepLabCutMeta:
-        return self._meta
-
-    @property
-    def joints(self) -> list[Joint]:
-        """list of labelled joints"""
-        return self.meta['model_config']['all_joints_names']
-
-    @property
-    def fps(self) -> float:
-        return self.meta['fps']
-
-    @property
-    def nframes(self) -> int:
-        return self.meta['nframes']
-
-    @property
-    def time(self) -> np.ndarray:
-        if len(self._time) != self.dat.shape[0]:
-            raise ValueError('time array has wrong shape, mismatch with dat')
-        return self._time
-
-    def _default_time(self):
-        """Based on meta file, assume stable frame acquisition"""
-        return np.linspace(0, self.nframes / self.fps, self.nframes)
-
-    def with_global_lh_filter(self, lh: float) -> Self:
-        """
-        With global likelihood filter
-        :param lh: likelihood threshold
-        :return: ``DeepLabCutResult``
-        """
-        for j in self.joints:
-            self.dat = (
-                self.dat
-                .with_columns((pl.col(f'{j}_likelihood') >= lh).alias('valid'))
-                .with_columns(pl.when(pl.col('valid')).then(pl.col(f'{j}_x')).otherwise(np.nan))
-                .with_columns(pl.when(pl.col('valid')).then(pl.col(f'{j}_y')).otherwise(np.nan))
-            )
-
-        return self
-
-
-def load_dlc_result(file: PathLike,
-                    meta_file: PathLike,
-                    time: np.ndarray | None = None) -> DeepLabCutResult:
-    """
-    Load DeepLabCut result from file
-
-    :param file: DeepLabCut result filepath. supports both `.h5` and `.csv`
-    :param meta_file: DeepLabCut meta filepath. should be the `.pickle`. TODO Cannot it be inferred according to file?
-    :param time: time array for each sample point. If None, then assume stable DAQ for using total frames and fps info in meta
-    :return: ``DeepLabCutResult``
-    """
-    file = Path(file)
-    meta_file = Path(meta_file)
-    meta = _load_meta(meta_file)
-
-    if file.suffix in ('.h5', '.hdf5'):
-        try:
-            import pytables  # noqa: F401
-            import pandas  # noqa: F401
-            df = _load_dlc_h5_table(file)
-        except ImportError:
-            df = _load_dlc_h5(file, meta)
-    elif file.suffix == '.csv':
-        df = _load_dlc_csv(file)
-    else:
-        raise ValueError(f'Unsupported file type: {file.suffix}')
-
-    return DeepLabCutResult(df, meta, filtered=('filtered' in file.name), time=time)
-
-
 def _load_dlc_h5_table(file) -> pl.DataFrame:
     import pandas as pd
 
@@ -235,15 +237,6 @@ def _load_dlc_h5_table(file) -> pl.DataFrame:
     ret = pl.DataFrame(data)
 
     return ret
-
-
-def _load_dlc_h5(file, meta) -> pl.DataFrame:
-    dat = h5py.File(file)['df_with_missing']['table']['values_block_0']
-    return pl.from_numpy(dat, schema=[
-        f'{joint}_{it}'
-        for joint in meta['model_config']['all_joints_names']
-        for it in ('x', 'y', 'likelihood')
-    ])
 
 
 def _load_dlc_csv(file) -> pl.DataFrame:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 from pathlib import Path
 from typing import Literal, TypedDict, final
@@ -9,12 +11,12 @@ from typing_extensions import Self
 
 from neuralib.imaging.cellular import CellularCoordinates
 from neuralib.typing import PathLike
-from neuralib.util.deprecation import deprecated_func
 from neuralib.util.verbose import fprint
 
 __all__ = [
     'SIGNAL_TYPE',
     'CALCIUM_TYPE',
+    'read_suite2p',
     #
     'Suite2pGUIOptions',
     'Suite2pRoiStat',
@@ -24,170 +26,29 @@ __all__ = [
 ]
 
 SIGNAL_TYPE = Literal['df_f', 'spks']
+"""imaging fluorescence signal type"""
+
 CALCIUM_TYPE = Literal['baseline', 'transient']
 
 
-class Suite2pGUIOptions(TypedDict, total=False):
-    """ Suite2p GUI setting.
-
-    .. seealso:: `<https://suite2p.readthedocs.io/en/latest/settings.html>`_"""
-    look_one_level_down: float
-    fast_disk: str
-    delete_bin: bool
-    mesoscan: bool
-    bruker: bool
-    h5py: list
-    h5py_key: str
-    save_path0: str
-    save_folder: str
-    subfolders: list
-    move_bin: bool
-    nplanes: int
-    nchannels: int
-    functional_chan: int
-    tau: float
-    fs: float
-    force_sktiff: bool
-    frames_include: int
-    multiplane_parallel: float
-    preclassify: float
-    save_mat: bool
-    save_NWB: float
-    combined: float
-    aspect: float
-    do_bidiphase: bool
-    bidiphase: float
-    bidi_corrected: bool
-    do_registration: int
-    two_step_registration: float
-    keep_movie_raw: bool
-    nimg_init: int
-    batch_size: int
-    maxregshift: float
-    align_by_chan: int
-    reg_tif: bool
-    reg_tif_chan2: bool
-    subpixel: int
-    smooth_sigma_time: float
-    smooth_sigma: float
-    th_badframes: float
-    norm_frames: bool
-    force_refImg: bool
-    pad_fft: bool
-    nonrigid: bool
-    block_size: tuple[int, int]
-    snr_thresh: float
-    maxregshiftNR: float
-    oneP_reg: bool  # 1Preg
-    spatial_hp: int
-    spatial_hp_reg: float
-    spatial_hp_detect: int
-    pre_smooth: float
-    spatial_taper: float
-    roidetect: bool
-    spikedetect: bool
-    anatomical_only: float
-    sparse_mode: bool
-    diameter: float
-    spatial_scale: float
-    connected: bool
-    nbinned: int
-    max_iterations: int
-    threshold_scaling: float
-    max_overlap: float
-    high_pass: float
-    denoise: bool
-    soma_crop: bool
-    neuropil_extract: bool
-    inner_neuropil_radius: float
-    min_neuropil_pixels: int
-    lam_percentile: float
-    allow_overlap: bool
-    use_builtin_classifier: bool
-    classifier_path: int
-    chan2_thres: float
-    baseline: str
-    win_baseline: float
-    sig_baseline: float
-    prctile_baseline: float
-    neucoeff: int
-    suite2p_version: str
-    data_path: list[str]
-    sbx_ndeadcols: int
-    input_format: str
-    save_path: str
-    ops_path: str
-    reg_file: str
-    filelist: list[str]
-    nframes_per_folder: np.ndarray
-    sbx_ndeadrows: int
-    meanImg: np.ndarray
-    meanImg_chan2: np.ndarray  # if chan_2
-    nframes: int
-    Ly: int
-    Lx: int
-    date_proc: datetime.datetime
-    refImg: np.ndarray
-    rmin: int
-    rmax: int
-    yblock: list[np.ndarray]
-    xblock: list[np.ndarray]
-    nblocks: list[int]
-    NRsm: np.ndarray
-    yoff: np.ndarray
-    xoff: np.ndarray
-    corrXY: np.ndarray
-    yoff1: np.ndarray
-    xoff1: np.ndarray
-    corrXY1: np.ndarray
-    badframes: np.ndarray
-    yrange: list[int]
-    xrange: list[int]
-    tPC: np.ndarray
-    regPC: np.ndarray
-    regDX: np.ndarray
-    Lyc: int
-    Lxc: int
-    max_proj: np.ndarray
-    Vmax: np.ndarray
-    ihop: np.ndarray
-    Vsplit: np.ndarray
-    Vcorr: np.ndarray
-    Vmap: list[np.ndarray]
-    spatscale_pix: np.ndarray
-    meanImgE: np.ndarray
-    timing: dict[str, float]
-
-
-class Suite2pRoiStat(TypedDict, total=False):
-    """Suite2p GUI imaging.
-
-    .. seealso:: `<https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields>`_
+def read_suite2p(directory: PathLike, *,
+                 cell_prob_thres: float | None = 0.5,
+                 red_cell_threshold: float = 0.65,
+                 channel: int = 0,
+                 runtime_check_frame_rate: float | None = 30.0) -> Suite2PResult:
     """
-    ypix: np.ndarray
-    xpix: np.ndarray
-    lam: np.ndarray
-    med: list[int, int]
-    footprint: float
-    mrs: float
-    mrs0: float
-    compact: float
-    solidity: float
-    npix: int
-    npix_soma: int
-    soma_crop: np.ndarray
-    overlap: np.ndarray
-    radius: float
-    aspect_ratio: float
-    npix_norm_no_crop: float
-    npix_norm: float
-    skew: float
-    std: float
+    Load suite2p result from directory
 
+    :param directory: Directory contain all the s2p output files. e.g., \*/suite2p/plane[P]
+    :param cell_prob_thres: Cell probability. If float type, mask for the value in ``iscell[:, 1]``.
+                If None, use the binary criteria in GUI output
+    :param red_cell_threshold: Red cell threshold
+    :param channel: channel (PMT) Number for the functional channel. i.e., 0 if GCaMP, 1 if jRGECO in scanbox setting
+    :param runtime_check_frame_rate: if not None, check frame rate lower-bound to make sure the s2p runconfig
+    :return: :class:`Suite2PResult`
+    """
+    return Suite2PResult.load(directory, cell_prob_thres, red_cell_threshold, channel, runtime_check_frame_rate)
 
-# ============== #
-# Suite2P Result #
-# ============== #
 
 @final
 @attrs.frozen
@@ -249,26 +110,11 @@ class Suite2PResult:
             raise RuntimeError('fs and n_plane are not set properly in suite2p')
 
     @classmethod
-    @deprecated_func(removal_version='0.4.3', remarks='lightening dependency: suite2p, use an separated env')
-    def launch_gui(cls, directory: PathLike) -> None:
-        """
-        launch the suite2p GUI
-
-        :param directory: directory contain all the s2p output files. e.g., <SUITE2P_OUTPUT>/suite2p/plane<P>
-        :return:
-        """
-        from suite2p.gui import gui2p
-
-        if not isinstance(directory, Path):
-            directory = Path(directory)
-        gui2p.run(str(directory / 'stat.npy'))
-
-    @classmethod
     def load(cls, directory: PathLike,
              cell_prob_thres: float | None = 0.5,
              red_cell_threshold: float = 0.65,
              channel: int = 0,
-             runconfig_frate: float | None = 30.0) -> Self:
+             runtime_check_frame_rate: float | None = 30.0) -> Self:
         """
         Load suite2p result from directory
 
@@ -277,7 +123,7 @@ class Suite2PResult:
                     If None, use the binary criteria in GUI output
         :param red_cell_threshold: Red cell threshold
         :param channel: channel (PMT) Number for the functional channel. i.e., 0 if GCaMP, 1 if jRGECO in scanbox setting
-        :param runconfig_frate: if not None, check frame rate lower-bound to make sure the s2p runconfig
+        :param runtime_check_frame_rate: if not None, check frame rate lower-bound to make sure the s2p runconfig
         :return: :class:`Suite2PResult`
         """
         if not isinstance(directory, Path):
@@ -334,7 +180,7 @@ class Suite2PResult:
             cell_prob_thres,
             redcell,
             red_cell_threshold if channel == 1 else None,
-            runconfig_frate
+            runtime_check_frame_rate
         )
 
     @property
@@ -506,6 +352,164 @@ class Suite2PResult:
             iscell = np.load(self.directory / 'iscell.npy', allow_pickle=True)
             mx = np.nonzero(iscell[:, 1] >= self.cell_prob)[0]
             return pl.DataFrame([n, mx], schema=['neuron_id', 'raw_index'], orient='col')
+
+
+class Suite2pGUIOptions(TypedDict, total=False):
+    """ Suite2p GUI setting.
+
+    .. seealso:: `<https://suite2p.readthedocs.io/en/latest/settings.html>`_"""
+    look_one_level_down: float
+    fast_disk: str
+    delete_bin: bool
+    mesoscan: bool
+    bruker: bool
+    h5py: list
+    h5py_key: str
+    save_path0: str
+    save_folder: str
+    subfolders: list
+    move_bin: bool
+    nplanes: int
+    nchannels: int
+    functional_chan: int
+    tau: float
+    fs: float
+    force_sktiff: bool
+    frames_include: int
+    multiplane_parallel: float
+    preclassify: float
+    save_mat: bool
+    save_NWB: float
+    combined: float
+    aspect: float
+    do_bidiphase: bool
+    bidiphase: float
+    bidi_corrected: bool
+    do_registration: int
+    two_step_registration: float
+    keep_movie_raw: bool
+    nimg_init: int
+    batch_size: int
+    maxregshift: float
+    align_by_chan: int
+    reg_tif: bool
+    reg_tif_chan2: bool
+    subpixel: int
+    smooth_sigma_time: float
+    smooth_sigma: float
+    th_badframes: float
+    norm_frames: bool
+    force_refImg: bool
+    pad_fft: bool
+    nonrigid: bool
+    block_size: tuple[int, int]
+    snr_thresh: float
+    maxregshiftNR: float
+    oneP_reg: bool  # 1Preg
+    spatial_hp: int
+    spatial_hp_reg: float
+    spatial_hp_detect: int
+    pre_smooth: float
+    spatial_taper: float
+    roidetect: bool
+    spikedetect: bool
+    anatomical_only: float
+    sparse_mode: bool
+    diameter: float
+    spatial_scale: float
+    connected: bool
+    nbinned: int
+    max_iterations: int
+    threshold_scaling: float
+    max_overlap: float
+    high_pass: float
+    denoise: bool
+    soma_crop: bool
+    neuropil_extract: bool
+    inner_neuropil_radius: float
+    min_neuropil_pixels: int
+    lam_percentile: float
+    allow_overlap: bool
+    use_builtin_classifier: bool
+    classifier_path: int
+    chan2_thres: float
+    baseline: str
+    win_baseline: float
+    sig_baseline: float
+    prctile_baseline: float
+    neucoeff: int
+    suite2p_version: str
+    data_path: list[str]
+    sbx_ndeadcols: int
+    input_format: str
+    save_path: str
+    ops_path: str
+    reg_file: str
+    filelist: list[str]
+    nframes_per_folder: np.ndarray
+    sbx_ndeadrows: int
+    meanImg: np.ndarray
+    meanImg_chan2: np.ndarray  # if chan_2
+    nframes: int
+    Ly: int
+    Lx: int
+    date_proc: datetime.datetime
+    refImg: np.ndarray
+    rmin: int
+    rmax: int
+    yblock: list[np.ndarray]
+    xblock: list[np.ndarray]
+    nblocks: list[int]
+    NRsm: np.ndarray
+    yoff: np.ndarray
+    xoff: np.ndarray
+    corrXY: np.ndarray
+    yoff1: np.ndarray
+    xoff1: np.ndarray
+    corrXY1: np.ndarray
+    badframes: np.ndarray
+    yrange: list[int]
+    xrange: list[int]
+    tPC: np.ndarray
+    regPC: np.ndarray
+    regDX: np.ndarray
+    Lyc: int
+    Lxc: int
+    max_proj: np.ndarray
+    Vmax: np.ndarray
+    ihop: np.ndarray
+    Vsplit: np.ndarray
+    Vcorr: np.ndarray
+    Vmap: list[np.ndarray]
+    spatscale_pix: np.ndarray
+    meanImgE: np.ndarray
+    timing: dict[str, float]
+
+
+class Suite2pRoiStat(TypedDict, total=False):
+    """Suite2p GUI imaging.
+
+    .. seealso:: `<https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields>`_
+    """
+    ypix: np.ndarray
+    xpix: np.ndarray
+    lam: np.ndarray
+    med: list[int, int]
+    footprint: float
+    mrs: float
+    mrs0: float
+    compact: float
+    solidity: float
+    npix: int
+    npix_soma: int
+    soma_crop: np.ndarray
+    overlap: np.ndarray
+    radius: float
+    aspect_ratio: float
+    npix_norm_no_crop: float
+    npix_norm: float
+    skew: float
+    std: float
 
 
 def get_s2p_coords(s2p: Suite2PResult,

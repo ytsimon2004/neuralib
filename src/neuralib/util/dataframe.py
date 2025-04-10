@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     P = ParamSpec('P')
 
 __all__ = ['DataFrameWrapper',
+           'helper_with_index_column',
            'assert_polars_equal_verbose']
 
 
@@ -448,7 +449,15 @@ def helper_with_index_column(df: T,
         return df.filter(pl.col(column).is_in(index))
 
 
-def assert_polars_equal_verbose(df1: pl.DataFrame, df2: pl.DataFrame):
+def assert_polars_equal_verbose(df1: pl.DataFrame, df2: pl.DataFrame, **kwargs):
+    """
+    Assert that two Polars DataFrames are equal and provide detailed diagnostics if they differ
+
+    :param df1: The first Polars DataFrame to compare
+    :param df2: The second Polars DataFrame to compare
+    :param kwargs: keyword arguments passed to :func:`~neuralib.util.verbose.printdf()`
+    :return:
+    """
     try:
         assert_frame_equal(df1, df2)
         print('DataFrames are equal.')
@@ -472,17 +481,17 @@ def assert_polars_equal_verbose(df1: pl.DataFrame, df2: pl.DataFrame):
 
         if df1_extra.height > 0:
             print('\nRows in df1 not in df2:')
-            printdf(df1_extra)
+            printdf(df1_extra, **kwargs)
 
         if df2_extra.height > 0:
             print('\nRows in df2 not in df1:')
-            printdf(df2_extra)
+            printdf(df2_extra, **kwargs)
 
         # If shapes match, show cell-wise diff
         if df1.shape == df2.shape:
             print('\nCell-wise differences (non-equal values):')
             diffs = _highlight_cell_differences(df1, df2)
-            print(diffs)
+            printdf(diffs, **kwargs)
 
         raise e
 

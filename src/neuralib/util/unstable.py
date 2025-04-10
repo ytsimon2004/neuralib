@@ -1,12 +1,7 @@
 import functools
-import sys
 import warnings
+from typing import ParamSpec
 from typing import TypeVar, Callable, Type
-
-if sys.version_info >= (3, 10):
-    from typing import ParamSpec
-else:
-    from typing_extensions import ParamSpec
 
 __all__ = ['unstable']
 

@@ -1,0 +1,16 @@
+[run]
+source = neuralib
+omit =
+    */neuralib/dashboard/*
+    */neuralib/persistence/*
+    */neuralib/segmentation/*
+    */neuralib/atlas/brainrender/*
+    */neuralib/tools/*
+
+[report]
+omit =
+    */neuralib/dashboard/*
+    */neuralib/persistence/*
+    */neuralib/segmentation/*
+    */neuralib/atlas/brainrender/*
+    */neuralib/tools/*

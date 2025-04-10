@@ -134,7 +134,7 @@ def cleanup_stale_rst():
     for f in DST.glob('*.rst'):
         if f.name not in generated_rst_files:
             print(f"[Stale] {f.name}")
-            # f.unlink()  # Uncomment to auto-delete
+            # f.unlink()  # auto-delete
 
 
 def generate_autosummary():
@@ -162,7 +162,6 @@ def generate_autosummary():
     )
     app.setup_extension('sphinx.ext.autosummary')
 
-    # 🔥 This ensures class-level autosummary gets parsed!
     sources = list((DST / '_autosummary').glob('*.rst')) + list(DST.glob('*.rst'))
     sources = [str(f) for f in sources]
 
@@ -182,14 +181,12 @@ def patch_autosummary_stubs():
         inside_autosummary = False
 
         for line in lines:
-            # Detect start of an autosummary block
             if line.strip() == ".. autosummary::":
                 inside_autosummary = True
                 new_lines.append(line)
                 new_lines.append("   :toctree: .")
                 continue
 
-            # If the line is not indented, autosummary block ends
             if inside_autosummary and (not line.startswith(" ") and not line.strip() == ""):
                 inside_autosummary = False
 

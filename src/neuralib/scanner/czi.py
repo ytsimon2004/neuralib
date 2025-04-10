@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xmltodict
 from matplotlib.axes import Axes
+from typing_extensions import Self
+
 from neuralib.scanner import AbstractConfocalScanner, SceneIdx, DimCode, ZEISS_CZI_CHANNELS_ORDER, ZPROJ_TYPE
 from neuralib.typing import PathLike
 from neuralib.util.utils import joinn
 
 __all__ = ['CziConfocalScanner']
-
-from typing_extensions import Self
 
 
 class ImageFileInfo(NamedTuple):

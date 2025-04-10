@@ -1,4 +1,3 @@
-
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
@@ -32,19 +31,18 @@ def plot_facemap_keypoints(fmap: FaceMapResult,
     else:
         kps = list(keypoints)
 
-    x = np.arange(*frame_interval)
+    mx = np.arange(*frame_interval)
     colors = get_customized_cmap('jet', (0, 1), len(kps))
 
     with plot_figure(output) as ax:
-        for i, kp in enumerate(fmap.get(kps)):
+        df = fmap.get(*kps)
+        if outlier_filter:
+            df = df.with_outlier_filter()
 
-            if outlier_filter:
-                _kp = kp.with_outlier_filter()
-            else:
-                _kp = kp
-
-            ax.plot(x, _kp.x[x], '-', color=colors[i], label=f'{_kp.name}_x')
-            ax.plot(x, _kp.y[x], '--', color=colors[i], label=f'{_kp.name}_y')
+        for i, it in enumerate(df.partition_by('keypoint')):
+            name = it['keypoint'].unique().item()
+            ax.plot(mx, it['x'][mx], '-', color=colors[i], label=f'{name}_x')
+            ax.plot(mx, it['y'][mx], '--', color=colors[i], label=f'{name}_y')
 
         ax.set(xlabel='frame', ylabel='keypoint coordinates')
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)

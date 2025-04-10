@@ -1,28 +1,231 @@
 from __future__ import annotations
 
 import pickle
-from typing import TypedDict, Generator, overload, final, Final, Literal
+from typing import TypedDict
 
-import attrs
 import h5py
 import numpy as np
+import polars as pl
 from typing_extensions import Self
 
 from neuralib.typing import PathLike
-from neuralib.util.deprecation import deprecated_func
+from neuralib.util.dataframe import DataFrameWrapper
 from neuralib.util.utils import uglob
-from neuralib.util.verbose import fprint
 
 __all__ = [
-    'FACEMAP_TRACK_TYPE',
-    'SVDVariables',
-    #
+    'read_facemap',
     'KeyPoint',
     'FaceMapResult',
-    'KeyPointTrack',
+    'KeyPointDataFrame',
+    'SVDVariables',
+    'KeyPointsMeta',
+    'PupilDict',
+    'RoiDict'
 ]
 
-FACEMAP_TRACK_TYPE = Literal['keypoints', 'pupil']
+
+def read_facemap(directory: PathLike) -> FaceMapResult:
+    """loading facemap result
+
+    :param directory: facemap output directory
+    """
+    return FaceMapResult.from_directory(directory)
+
+
+KeyPoint = str
+"""keypoint name"""
+
+
+class FaceMapResult:
+    """Facemap result container"""
+
+    def __init__(self, svd: SVDVariables | None,
+                 meta: KeyPointsMeta | None,
+                 data: h5py.Group | None,
+                 with_keypoints: bool):
+        """
+        :param svd: attr:`~neuralib.tracking.facemap.core.SVDVariables`
+        :param meta: attr:`~neuralib.tracking.facemap.core.KeyPointsMeta`
+        :param data: facemap data result
+        :param with_keypoints: whether it has keypoint tracking
+        """
+        self.svd = svd
+        self.meta = meta
+        self.data = data
+
+        self._with_keypoints = with_keypoints
+
+    @classmethod
+    def from_directory(cls, directory: PathLike) -> Self:
+        """
+        init class loading from a directory
+
+        :param directory: Facemap output directory
+        """
+        # svd
+        try:
+            svd_path = uglob(directory, '*.npy')
+        except FileNotFoundError:
+            svd = None
+        else:
+            svd = np.load(svd_path, allow_pickle=True).item()
+
+        # meta
+        try:
+            meta_path = uglob(directory, '*.pkl')
+        except FileNotFoundError:
+            meta = None
+            data = None
+            keypoints = False
+        else:
+            with open(meta_path, 'rb') as f:
+                meta = pickle.load(f)
+
+            data_path = uglob(directory, '*.h5')
+            data = h5py.File(data_path)['Facemap']
+            keypoints = True
+
+        return cls(svd, meta, data, keypoints)
+
+    @property
+    def with_keypoint(self) -> bool:
+        return self._with_keypoints
+
+    # ============== #
+    # Pupil Tracking #
+    # ============== #
+
+    def get_pupil(self) -> PupilDict:
+        """pupil tracking result
+
+        :raises RuntimeError: If no pupil data is available.
+        """
+        try:
+            pupil: list[PupilDict] = self.svd['pupil']
+        except KeyError:
+            raise RuntimeError('no pupil data found')
+        else:
+            return pupil[0]
+
+    def get_pupil_area(self) -> np.ndarray:
+        """pupil area. `Array[float, F]`"""
+        return self.get_pupil()['area_smooth']
+
+    def get_pupil_center_of_mass(self) -> np.ndarray:
+        """center of mass of pupil tracking. `Array[float, [F, 2]]`"""
+        return self.get_pupil()['com_smooth']
+
+    def get_pupil_location_movement(self) -> np.ndarray:
+        """Calculate the Euclidean distance from the origin for each point in a 2D array. `Array[float, F]`"""
+        com = self.get_pupil_center_of_mass()
+        return np.sqrt(np.sum(com ** 2, axis=1))
+
+    def get_blink(self) -> np.ndarray:
+        """eye blinking array. `Array[float, F]`
+
+        :raises RuntimeError: If no blink data is available.
+        """
+        try:
+            ret = self.svd['blink']
+        except KeyError:
+            raise RuntimeError('no blink data found')
+        else:
+            return ret[0]
+
+    # ========= #
+    # Keypoints #
+    # ========= #
+
+    @property
+    def keypoints(self) -> list[KeyPoint]:
+        """list of all keypoint name"""
+        return list(self.data.keys())
+
+    def get(self, *keypoint) -> KeyPointDataFrame:
+        """get keypoint(s) dataframe"""
+        if len(keypoint) == 1:
+            return self._get(keypoint[0])
+        else:
+            ret = [self._get(k).dataframe() for k in keypoint]
+            return KeyPointDataFrame(pl.concat(ret))
+
+    def _get(self, keypoint: KeyPoint) -> KeyPointDataFrame:
+        x = np.array(self.data[keypoint]['x'])
+        y = np.array(self.data[keypoint]['y'])
+        llh = np.array(self.data[keypoint]['likelihood'])
+        df = pl.DataFrame({'x': x, 'y': y, 'likelihood': llh}).with_columns(pl.lit(keypoint).alias('keypoint'))
+        return KeyPointDataFrame(df)
+
+
+class KeyPointDataFrame(DataFrameWrapper):
+    """
+    Dataframe with ``x``, ``y``, ``likelihood`` and ``keypoint`` columns ::
+
+        ┌────────────┬────────────┬────────────┬───────────┐
+        │ x          ┆ y          ┆ likelihood ┆ keypoint  │
+        │ ---        ┆ ---        ┆ ---        ┆ ---       │
+        │ f32        ┆ f32        ┆ f32        ┆ str       │
+        ╞════════════╪════════════╪════════════╪═══════════╡
+        │ 374.102081 ┆ 199.159668 ┆ 0.777443   ┆ eye(back) │
+        │ 373.785919 ┆ 199.425873 ┆ 0.787424   ┆ eye(back) │
+        │ 374.075867 ┆ 199.507111 ┆ 0.779713   ┆ eye(back) │
+        │ 374.028473 ┆ 199.359955 ┆ 0.761724   ┆ eye(back) │
+        │ 374.222382 ┆ 199.777466 ┆ 0.770329   ┆ eye(back) │
+        │ …          ┆ …          ┆ …          ┆ …         │
+        │ 317.318756 ┆ 285.396912 ┆ 0.596486   ┆ mouth     │
+        │ 318.163696 ┆ 285.492676 ┆ 0.589684   ┆ mouth     │
+        │ 317.758606 ┆ 285.560425 ┆ 0.603126   ┆ mouth     │
+        │ 317.453491 ┆ 285.572235 ┆ 0.573179   ┆ mouth     │
+        │ 317.976196 ┆ 285.477051 ┆ 0.58359    ┆ mouth     │
+        └────────────┴────────────┴────────────┴───────────┘
+
+    """
+
+    def __init__(self, df: pl.DataFrame):
+        self._df = df
+
+    def __repr__(self):
+        return repr(self.dataframe())
+
+    def dataframe(self, dataframe: pl.DataFrame = None, may_inplace=True):
+        if dataframe is None:
+            return self._df
+        else:
+            return KeyPointDataFrame(dataframe)
+
+    def to_zscore(self) -> Self:
+        """
+        xy to zscore
+
+        :return:
+        """
+        return self.with_columns([
+            ((pl.col('x') - pl.col('x').mean()) / pl.col('x').std()).alias('x'),
+            ((pl.col('y') - pl.col('y').mean()) / pl.col('y').std()).alias('y'),
+        ])
+
+    def with_outlier_filter(self, filter_window: int = 15,
+                            baseline_window: int = 50,
+                            max_spike: int = 25,
+                            max_diff: int = 25) -> Self:
+        """
+        with outlier filter
+
+        :param filter_window:
+        :param baseline_window:
+        :param max_spike:
+        :param max_diff:
+        :return:
+        """
+        from .util import filter_outliers
+        x, y = filter_outliers(np.array(self['x']), np.array(self['y']), filter_window, baseline_window, max_spike, max_diff)
+
+        return self.dataframe(pl.DataFrame({
+            'x': x,
+            'y': y,
+            'likelihood': self['likelihood'],
+            'keypoint': self['keypoint']
+        }))
 
 
 class PupilDict(TypedDict):
@@ -48,6 +251,7 @@ class PupilDict(TypedDict):
 
 
 class RoiDict(TypedDict, total=False):
+    """Roi Dict"""
     rind: int
     rtype: str
     iROI: int
@@ -64,7 +268,6 @@ class RoiDict(TypedDict, total=False):
 
 class SVDVariables(TypedDict, total=False):
     """SVD output from facemap
-
     .. seealso:: `<http://facemap.readthedocs.io/en/stable/outputs.html#roi-and-svd-processing>`_"""
     filenames: list[str]
     save_path: str
@@ -93,9 +296,9 @@ class SVDVariables(TypedDict, total=False):
     motSVD: list[np.ndarray]
     movSVD: list[np.ndarray]
     pupil: list[PupilDict]
-    running: list[np.ndarray]  # TODO check
+    running: list[np.ndarray]
     blink: list[np.ndarray]
-    rois: list[RoiDict]  # TODO check
+    rois: list[RoiDict]
     sy: np.ndarray
     sx: np.ndarray
 
@@ -109,309 +312,3 @@ class KeyPointsMeta(TypedDict):
     total_frames: int
     bodyparts: list[str]
     inference_speed: float
-
-
-# ============== #
-# FaceMap Result #
-# ============== #
-
-KeyPoint = str
-"""keypoint name"""
-
-
-@final
-class FaceMapResult:
-    """facemap result container
-
-    `Dimension parameters`:
-
-        F = number of video frames
-
-        K = number of keypoints
-
-    """
-    __slots__ = ('svd', 'meta', 'data', 'frame_time',
-                 'track_type', 'with_keypoints')
-
-    def __init__(
-            self,
-            svd: SVDVariables | None,
-            meta: KeyPointsMeta | None,
-            data: h5py.Group | None,
-            track_type: FACEMAP_TRACK_TYPE,
-            with_keypoints: bool,
-    ):
-        """
-        :param svd: SVD processing outputs
-        :param meta: Optional for Keypoints processing (result)
-        :param data: Optional for Keypoints processing (config)
-        :param track_type: {'keypoints', 'pupil'}
-        :param with_keypoints: if has keypoint tracking result
-        """
-        self.svd: Final[SVDVariables | None] = svd
-        self.meta: Final[KeyPointsMeta | None] = meta
-        self.data: Final[h5py.Group | None] = data
-
-        self.track_type: Final[FACEMAP_TRACK_TYPE] = track_type
-        self.with_keypoints: Final[bool] = with_keypoints
-
-    @classmethod
-    def load(cls, directory: PathLike,
-             track_type: FACEMAP_TRACK_TYPE,
-             *,
-             file_pattern: str = '') -> Self:
-        """
-        Load the facecam result from its output directory
-
-        :param directory: directory contains the possible facemap output files (`*.npy`, `*.pkl`, and `*.h5`)
-        :param track_type: {'keypoints', 'pupil'}
-        :param file_pattern: string prefix pattern to glob the facemap output file
-        :return: :class:`FaceMapResult`
-        """
-        #
-        try:
-            svd_path = uglob(directory, f'{file_pattern}*.npy')
-        except FileNotFoundError:
-            svd = None
-        else:
-            svd = np.load(svd_path, allow_pickle=True).item()
-
-        #
-        try:
-            meta_path = uglob(directory, f'{file_pattern}*.pkl')
-        except FileNotFoundError:
-            meta = None
-            data = None
-            with_keypoints = False
-        else:
-            with open(meta_path, 'rb') as f:
-                meta = pickle.load(f)
-
-            data_path = uglob(directory, f'{file_pattern}*.h5')
-            data = h5py.File(data_path)['Facemap']
-
-            with_keypoints = True
-
-        cls._verify_data_content(directory, track_type, svd, data)
-
-        return FaceMapResult(svd, meta, data, track_type, with_keypoints)
-
-    @classmethod
-    def _verify_data_content(cls, directory, track_type, svd, data):
-        if track_type == 'keypoints' and data is None:
-            raise RuntimeError(f'.h5 data file not found in the {directory}')
-        elif track_type == 'pupil' and svd is None:
-            raise RuntimeError(f'.npy svd file not found in the {directory}')
-
-    @classmethod
-    @deprecated_func(removal_version='0.4.3', remarks='lightening facemap dependency, use a separated env')
-    def launch_facemap_gui(cls, directory: PathLike,
-                           with_keypoints: bool,
-                           *,
-                           file_pattern: str = '',
-                           env_name: str = 'neuralib') -> None:
-        """
-        GUI view via cli.
-
-        **Note that calling this method will overwrite `filenames` field in *proc.npy**
-
-        :param directory: directory contains the possible facemap output files (`*.npy`, `*.pkl`, and `*.h5`),
-            and also the raw video file
-        :param with_keypoints: if has keypoint tracking result
-        :param file_pattern: string prefix pattern to glob the facemap output file and raw avi file
-        :param env_name: conda env name that installed the facemap package
-        """
-        import subprocess
-
-        cls._modify_video_filenames_field(directory)
-
-        svd_path = uglob(directory, f'{file_pattern}*.npy')
-
-        cmds = ['conda', 'run', '-n', f'{env_name}', 'python', '-m', 'facemap']
-        cmds.extend(['--proc_npy', str(svd_path)])
-
-        if with_keypoints:
-            data_path = uglob(directory, '*.h5')
-            cmds.extend(['--keypoints', str(data_path)])
-
-        fprint(f'{cmds=}')
-        subprocess.check_call(cmds)
-
-    @classmethod
-    def _modify_video_filenames_field(cls, directory: PathLike, *,
-                                      file_pattern: str = ''):
-        """brute force rewrite ``filenames`` field in raw file"""
-        svd_path = uglob(directory, f'{file_pattern}*.npy')
-        video_path = uglob(directory, f'{file_pattern}*.avi')
-
-        dat = np.load(svd_path, allow_pickle=True).item()
-        dat['filenames'] = [[str(video_path)]]
-        np.save(svd_path, dat, allow_pickle=True)
-        fprint(f'overwrite filenames field to {str(video_path)}', vtype='warning')
-
-    # ============== #
-    # Pupil Tracking #
-    # ============== #
-
-    def get_pupil_tracking(self) -> PupilDict:
-        """pupil tracking result"""
-        ret = self.svd['pupil']
-        if len(ret) == 1:
-            return ret[0]
-        raise NotImplementedError('')
-
-    def get_pupil_area(self) -> np.ndarray:
-        """pupil area. `Array[float, F]`"""
-        return self.get_pupil_tracking()['area_smooth']
-
-    def get_pupil_center_of_mass(self) -> np.ndarray:
-        """center of mass of pupil tracking. `Array[float, [F, 2]]`"""
-        return self.get_pupil_tracking()['com_smooth']
-
-    def get_pupil_location_movement(self) -> np.ndarray:
-        """Calculate the Euclidean distance from the origin for each point in a 2D array. `Array[float, F]`"""
-        com = self.get_pupil_center_of_mass()
-        return np.sqrt(np.sum(com ** 2, axis=1))
-
-    def get_eye_blink(self) -> np.ndarray:
-        """eye blinking array. `Array[float, F]`"""
-        ret = self.svd['blink']
-        if len(ret) == 1:
-            return ret[0]
-        raise NotImplementedError('')
-
-    # ========= #
-    # Keypoints #
-    # ========= #
-
-    @property
-    def keypoints(self) -> list[KeyPoint]:
-        """list of keypoint name"""
-        return list(self.data.keys())
-
-    def __getitem__(self, keypoint: KeyPoint) -> KeyPointTrack:
-        """get a specific keypoint tracking result"""
-        if keypoint not in self.keypoints:
-            raise KeyError(f'{keypoint} invalid, please select from {self.keypoints}')
-
-        x = np.array(self.data[keypoint]['x'])
-        y = np.array(self.data[keypoint]['y'])
-        llh = np.array(self.data[keypoint]['likelihood'])
-
-        return KeyPointTrack(keypoint, x, y, llh)
-
-    def __iter__(self) -> Generator[KeyPointTrack, None, None]:
-        """iterate all keypoints"""
-        for kp in self.keypoints:
-            yield self[kp]
-
-    @overload
-    def get(self, keypoint: KeyPoint) -> KeyPointTrack:
-        """single keypoint"""
-        pass
-
-    @overload
-    def get(self, keypoint: list[KeyPoint]) -> list[KeyPointTrack]:
-        """multiple keypoints"""
-        pass
-
-    def get(self, keypoint):
-        """get a single or multiple keypoint(s)"""
-        if isinstance(keypoint, str):
-            return self[keypoint]
-        elif isinstance(keypoint, list):
-            return [self[kp] for kp in keypoint]
-        else:
-            raise TypeError('')
-
-    def as_array(self,
-                 keypoint: list[KeyPoint] | KeyPoint | None = None,
-                 with_outlier_filter: bool = True,
-                 to_zscore: bool = True,
-                 **kwargs) -> np.ndarray:
-        """
-        get keypoint(s) result as an 2D array with shape (K, F, 2). 3rd dim indicates the xy
-
-        :param keypoint: keypoint
-        :param with_outlier_filter:
-        :param to_zscore:
-        :param kwargs: pass through :meth:`~KeyPointTrack.with_outlier_filter()`
-        :return: keypoint in XY. `Array[float, [K, F, 2]]`
-        """
-        if keypoint is not None:
-            kps = self.get(keypoint)
-        else:
-            kps = [kp for kp in self]  # all
-
-        #
-        if not isinstance(kps, list):
-            kps = [kps]
-
-        ret = []
-        for kp in kps:  # type: KeyPointTrack
-
-            if with_outlier_filter:
-                kp = kp.with_outlier_filter(**kwargs)
-
-            if to_zscore:
-                kp = kp.to_zscore()
-
-            ret.append(np.vstack([kp.x, kp.y]).T)
-
-        return np.array(ret)
-
-
-# ================= #
-# Individual Points #
-# ================= #
-
-@attrs.define
-class KeyPointTrack:
-    """single keypoint tracked result"""
-
-    name: KeyPoint
-    """name of keypoint"""
-    x: np.ndarray
-    """x loc. `Array[float, F]`"""
-    y: np.ndarray
-    """y loc. `Array[float, F]`"""
-    likelihood: np.ndarray
-    """tracking likelihood. `Array[float, F]`"""
-
-    @property
-    def mean_xy(self) -> np.ndarray:
-        """mean x y loc. `Array[float, F]`"""
-        return (self.x + self.y) / 2
-
-    def with_outlier_filter(
-            self,
-            filter_window: int = 15,
-            baseline_window: int = 50,
-            max_spike: int = 25,
-            max_diff: int = 25
-    ) -> Self:
-        """x,y with outlier filter (remove jump and do the interpolation)
-
-        :param filter_window: window size for median filter
-        :param baseline_window: window size for baseline estimation
-        :param max_spike: maximum spike size
-        :param max_diff: maximum difference between baseline and filtered signal
-        :return: :class:`KeyPointTrack`
-
-        """
-        from facemap.utils import filter_outliers
-        _x, _y = filter_outliers(self.x,
-                                 self.y,
-                                 filter_window,
-                                 baseline_window,
-                                 max_spike,
-                                 max_diff)
-
-        return attrs.evolve(self, x=_x, y=_y)
-
-    def to_zscore(self) -> Self:
-        """x, y z-scoring"""
-        from scipy.stats import zscore
-        _x = zscore(self.x)
-        _y = zscore(self.y)
-        return attrs.evolve(self, x=_x, y=_y)

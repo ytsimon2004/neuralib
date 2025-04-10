@@ -1,23 +1,9 @@
-"""
-Get basic GPU info table and verbose
---------------------------------------
-
-- cuda driver (Windows/Linux)
-- metal backend support (MacOS)
-
-.. code-block:: python
-
-    from neuralib.util.gpu import print_gpu_table
-    print_gpu_table()
-
-
-"""
-
 import platform
 import subprocess
 from typing import TypedDict, Literal
 
 import polars as pl
+
 from neuralib.util.table import rich_data_frame_table
 from neuralib.util.verbose import fprint
 

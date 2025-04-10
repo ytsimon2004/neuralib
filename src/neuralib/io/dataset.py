@@ -2,18 +2,21 @@ import pickle
 import shutil
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, ContextManager
+from typing import Any, ContextManager, TYPE_CHECKING
 
 import gdown
 import numpy as np
 import polars as pl
 from PIL import Image
 
-from neuralib.imaging.scanbox import SBXInfo
-from neuralib.imaging.suite2p import Suite2PResult
 from neuralib.io import NEUROLIB_CACHE_DIRECTORY
-from neuralib.tracking.deeplabcut.core import DeepLabCutResult, load_dlc_result
 from neuralib.typing import PathLike
+
+if TYPE_CHECKING:
+    from neuralib.tracking.deeplabcut import DeepLabCutDataFrame
+    from neuralib.imaging.suite2p import Suite2PResult
+    from neuralib.imaging.scanbox import SBXInfo
+    from neuralib.tracking.facemap import FaceMapResult
 
 __all__ = [
     'google_drive_file',
@@ -33,7 +36,9 @@ __all__ = [
     'load_example_rastermap_wfield',
     #
     'load_example_dlc_h5',
-    'load_example_dlc_csv'
+    'load_example_dlc_csv',
+    'load_example_facemap_pupil',
+    'load_example_facemap_keypoints'
 ]
 
 
@@ -127,7 +132,7 @@ def load_example_rois(**kwargs) -> pl.DataFrame:
     :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
     :return: A Polars DataFrame containing the example ROIs data
     """
-    with google_drive_file('1cf2r3kcqjENBQMe8YzBQvol8tZgscN4J', **kwargs) as file:
+    with google_drive_file('1dKpZt6eF4szvl7svWRdBQkOfTVLQi4Xg', **kwargs) as file:
         return pl.read_csv(file)
 
 
@@ -188,22 +193,24 @@ def load_npx2_reconstruction(**kwargs) -> pl.DataFrame:
 # Imaging Data #
 # ============ #
 
-def load_example_scanbox(**kwargs) -> SBXInfo:
+def load_example_scanbox(**kwargs) -> 'SBXInfo':
     """
     :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
     :return: An instance of ``SBXInfo`` loaded from the specified Google Drive file.
     """
+    from neuralib.imaging.scanbox import SBXInfo
     with google_drive_file('1Gcz_xRVWQJ9QMxq3vzZS8VruSbNiuh_s', **kwargs) as file:
         return SBXInfo.load(file)
 
 
-def load_example_suite2p(**kwargs) -> Suite2PResult:
+def load_example_suite2p(**kwargs) -> 'Suite2PResult':
     """
     :param kwargs: Additional keyword arguments pass to ``google_drive_folder`` to customize the loading behavior.
     :return: An instance of ``Suite2PResult`` loaded with data from the specified Google Drive folder.
     """
+    from neuralib.imaging.suite2p import read_suite2p
     with google_drive_folder('1iVImr_rIywWhCiBDYhcphcSODaWJrhy7', **kwargs) as suite2p_dir:
-        return Suite2PResult.load(suite2p_dir)
+        return read_suite2p(suite2p_dir)
 
 
 def load_example_rastermap_2p(**kwargs) -> dict[str, Any]:
@@ -230,13 +237,27 @@ def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
 # Behavioral #
 # ========== #
 
-def load_example_dlc_h5(**kwargs) -> DeepLabCutResult:
+def load_example_dlc_h5(**kwargs) -> 'DeepLabCutDataFrame':
     with google_drive_file('1JNhx6Dpe8beP8vnh0yF3o3vY2DfUM-8A', rename_file='test_dlc.h5', **kwargs) as h5:
+        from neuralib.tracking.deeplabcut.core import read_dlc
         with google_drive_file('1juICYcrXa7Vk-fQSBBSg2QcP9DGyHO2E', rename_file='test_dlc.pickle', **kwargs) as meta:
-            return load_dlc_result(h5, meta)
+            return read_dlc(h5, meta)
 
 
-def load_example_dlc_csv(**kwargs) -> DeepLabCutResult:
+def load_example_dlc_csv(**kwargs) -> 'DeepLabCutDataFrame':
+    from neuralib.tracking.deeplabcut.core import read_dlc
     with google_drive_file('1R2Ze5xjWlavcKvu45JOH3_QkOD4SSkVN', rename_file='test_dlc.csv', **kwargs) as csv:
         with google_drive_file('1juICYcrXa7Vk-fQSBBSg2QcP9DGyHO2E', rename_file='test_dlc.pickle', **kwargs) as meta:
-            return load_dlc_result(csv, meta)
+            return read_dlc(csv, meta)
+
+
+def load_example_facemap_pupil(**kwargs) -> 'FaceMapResult':
+    from neuralib.tracking.facemap import read_facemap
+    with google_drive_folder('1cacH5DWLmYqh_7PLwqEasmER_TfKgZ1b', **kwargs) as pupil_dir:
+        return read_facemap(pupil_dir)
+
+
+def load_example_facemap_keypoints(**kwargs) -> 'FaceMapResult':
+    from neuralib.tracking.facemap import read_facemap
+    with google_drive_folder('1FWz70HE_hQuhE6K9hoO_y1OgeG11NsGM', **kwargs) as pupil_dir:
+        return read_facemap(pupil_dir)

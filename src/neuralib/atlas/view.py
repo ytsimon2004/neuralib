@@ -570,7 +570,7 @@ class SlicePlane:
         :param cmap: Colormap to be used for the annotation image. Defaults to 'binary'.
         :param alpha: The imshow alpha, between 0 (transparent) and 1 (opaque). Defaults to 0.3.
         """
-        from neuralib.imglib.factory import ImageProcFactory
+        from neuralib.imglib.array import image_array
 
         ann_img = (
             get_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
@@ -578,9 +578,9 @@ class SlicePlane:
         )
 
         ann = (
-            ImageProcFactory(ann_img, 'RGB')
-            .cvt_gray()
-            .edge_detection(10, 0).image
+            image_array(ann_img)
+            .to_gray()
+            .canny_filter(10, 0)
         )
 
         ann = ann.astype(float)

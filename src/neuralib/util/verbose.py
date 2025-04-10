@@ -6,6 +6,7 @@ import h5py
 import pandas as pd
 import polars as pl
 from colorama import Fore, Style
+
 from neuralib.typing import DataFrame, PathLike
 
 __all__ = ['fprint',
@@ -32,18 +33,19 @@ def fprint(*msgs,
     """
     prefix = f'[{vtype.upper()}]'
 
-    if vtype == 'error':
-        color = 'RED'
-    elif vtype == 'warning':
-        color = 'YELLOW'
-    elif vtype == 'io':
-        color = 'MAGENTA'
-    elif vtype == 'info':
-        color = 'CYAN'
-    elif vtype == 'pass':
-        color = 'GREEN'
-    else:
-        color = 'WHITE'
+    match vtype:
+        case 'error':
+            color = 'RED'
+        case 'warning':
+            color = 'YELLOW'
+        case 'io':
+            color = 'MAGENTA'
+        case 'info':
+            color = 'CYAN'
+        case 'pass':
+            color = 'GREEN'
+        case _:
+            color = 'WHITE'
 
     try:
         fg_color = getattr(Fore, color)
@@ -103,6 +105,7 @@ def printdf(df: DataFrame,
 
 
 def print_h5py(group: h5py.Group | PathLike, indent: int = 0) -> None:
+    """print .h5 file"""
     if isinstance(group, PathLike):
         group = h5py.File(group)
 

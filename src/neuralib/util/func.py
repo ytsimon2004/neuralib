@@ -2,8 +2,6 @@
 Dynamic function generator
 ==========================
 
-:author:
-    Ta-Shun Su
 
 """
 
