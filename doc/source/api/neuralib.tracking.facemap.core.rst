@@ -7,16 +7,19 @@ neuralib.tracking.facemap.core
    :toctree: _autosummary
    :nosignatures:
 
-   FACEMAP_TRACK_TYPE
-   SVDVariables
+   read_facemap
    KeyPoint
    FaceMapResult
-   KeyPointTrack
+   KeyPointDataFrame
+   SVDVariables
+   KeyPointsMeta
+   PupilDict
+   RoiDict
 
 
 .. automodule:: neuralib.tracking.facemap.core
    :members:
-   :exclude-members: FACEMAP_TRACK_TYPE, SVDVariables, KeyPoint, FaceMapResult, KeyPointTrack
+   :exclude-members: read_facemap, KeyPoint, FaceMapResult, KeyPointDataFrame, SVDVariables, KeyPointsMeta, PupilDict, RoiDict
    :undoc-members:
    :inherited-members:
    :show-inheritance:

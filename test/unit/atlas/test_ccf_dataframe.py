@@ -1,8 +1,12 @@
+from pathlib import Path
+
 import polars as pl
 import pytest
 
 from neuralib.atlas.ccf import RoiClassifierDataFrame
 from neuralib.io.dataset import load_example_rois
+
+DATA_EXISTS = (Path().home() / '.brainglobe' / 'allen_mouse_10um_v1.2').exists()
 
 
 @pytest.fixture
@@ -19,13 +23,18 @@ def test_post_processing(roi: pl.DataFrame):
 
 def test_to_normalized(roi: pl.DataFrame):
     post = RoiClassifierDataFrame(roi).post_processing()
-    post.to_normalized(norm='volume', level=1)
-    post.to_normalized(norm='cell', level=2)
     post.to_normalized(norm='channel', level=3)
 
 
+@pytest.mark.skipif(not DATA_EXISTS, reason='not existed cache')
+def test_to_normalized_bg(roi: pl.DataFrame):
+    post = RoiClassifierDataFrame(roi).post_processing()
+    post.to_normalized(norm='volume', level=1)
+    post.to_normalized(norm='cell', level=2)
+
+
 def test_normalized_transform(roi: pl.DataFrame):
-    norm = RoiClassifierDataFrame(roi).post_processing().to_normalized(norm='volume', level=2)
+    norm = RoiClassifierDataFrame(roi).post_processing().to_normalized(norm='channel', level=2)
     norm.to_winner(['aRSC', 'pRSC'])
     norm.to_bias_index('aRSC', 'pRSC')
 

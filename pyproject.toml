@@ -56,6 +56,7 @@ atlas = [
     "openpyxl",
     "anytree",
     "plotly",
+    "fastexcel"
 ]
 
 scanner = ["xmltodict", "aicspylibczi"]
