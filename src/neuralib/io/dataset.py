@@ -208,9 +208,9 @@ def load_example_suite2p(**kwargs) -> 'Suite2PResult':
     :param kwargs: Additional keyword arguments pass to ``google_drive_folder`` to customize the loading behavior.
     :return: An instance of ``Suite2PResult`` loaded with data from the specified Google Drive folder.
     """
-    from neuralib.imaging.suite2p import Suite2PResult
+    from neuralib.imaging.suite2p import read_suite2p
     with google_drive_folder('1iVImr_rIywWhCiBDYhcphcSODaWJrhy7', **kwargs) as suite2p_dir:
-        return Suite2PResult.load(suite2p_dir)
+        return read_suite2p(suite2p_dir)
 
 
 def load_example_rastermap_2p(**kwargs) -> dict[str, Any]:
