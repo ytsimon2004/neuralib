@@ -8,15 +8,16 @@ neuralib.tracking.deeplabcut.core
    :nosignatures:
 
    Joint
+   read_dlc
+   DeepLabCutDataFrame
+   JointDataFrame
    DeepLabCutMeta
    DeepLabCutModelConfig
-   DeepLabCutResult
-   load_dlc_result
 
 
 .. automodule:: neuralib.tracking.deeplabcut.core
    :members:
-   :exclude-members: Joint, DeepLabCutMeta, DeepLabCutModelConfig, DeepLabCutResult, load_dlc_result
+   :exclude-members: Joint, read_dlc, DeepLabCutDataFrame, JointDataFrame, DeepLabCutMeta, DeepLabCutModelConfig
    :undoc-members:
    :inherited-members:
    :show-inheritance:

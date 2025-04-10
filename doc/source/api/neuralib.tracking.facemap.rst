@@ -10,3 +10,4 @@ neuralib.tracking.facemap
 
     neuralib.tracking.facemap.core
     neuralib.tracking.facemap.plot
+    neuralib.tracking.facemap.util
