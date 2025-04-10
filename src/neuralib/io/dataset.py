@@ -13,7 +13,7 @@ from neuralib.io import NEUROLIB_CACHE_DIRECTORY
 from neuralib.typing import PathLike
 
 if TYPE_CHECKING:
-    from neuralib.tracking.deeplabcut import DeepLabCutResult
+    from neuralib.tracking.deeplabcut import DeepLabCutDataFrame
     from neuralib.imaging.suite2p import Suite2PResult
     from neuralib.imaging.scanbox import SBXInfo
     from neuralib.tracking.facemap import FaceMapResult
@@ -237,18 +237,18 @@ def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
 # Behavioral #
 # ========== #
 
-def load_example_dlc_h5(**kwargs) -> 'DeepLabCutResult':
+def load_example_dlc_h5(**kwargs) -> 'DeepLabCutDataFrame':
     with google_drive_file('1JNhx6Dpe8beP8vnh0yF3o3vY2DfUM-8A', rename_file='test_dlc.h5', **kwargs) as h5:
-        from neuralib.tracking.deeplabcut import load_dlc_result
+        from neuralib.tracking.deeplabcut.core import read_dlc
         with google_drive_file('1juICYcrXa7Vk-fQSBBSg2QcP9DGyHO2E', rename_file='test_dlc.pickle', **kwargs) as meta:
-            return load_dlc_result(h5, meta)
+            return read_dlc(h5, meta)
 
 
-def load_example_dlc_csv(**kwargs) -> 'DeepLabCutResult':
-    from neuralib.tracking.deeplabcut import load_dlc_result
+def load_example_dlc_csv(**kwargs) -> 'DeepLabCutDataFrame':
+    from neuralib.tracking.deeplabcut.core import read_dlc
     with google_drive_file('1R2Ze5xjWlavcKvu45JOH3_QkOD4SSkVN', rename_file='test_dlc.csv', **kwargs) as csv:
         with google_drive_file('1juICYcrXa7Vk-fQSBBSg2QcP9DGyHO2E', rename_file='test_dlc.pickle', **kwargs) as meta:
-            return load_dlc_result(csv, meta)
+            return read_dlc(csv, meta)
 
 
 def load_example_facemap_pupil(**kwargs) -> 'FaceMapResult':
