@@ -1,6 +1,6 @@
 [project]
 name = "neura-library"
-version = "0.4.3"
+version = "0.4.4"
 requires-python = ">=3.10"
 description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
 authors = [
@@ -102,12 +102,13 @@ all = [
 ]
 
 #
-dev = ['pre-commit', 'ruff', "neura-library[all]", "pytest"]
+dev = ["neura-library[all]", "pre-commit", "ruff", "pytest"]
 
 #
 doc = [
     "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt",
-    "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]", "iblatlas"
+    "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]",
+    "iblatlas"
 ]
 
 

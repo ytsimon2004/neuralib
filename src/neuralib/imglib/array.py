@@ -7,7 +7,7 @@ and provides chainable image processing methods. It allows you to process images
 using a series of method calls, and then display or further analyze the results as a standard
 NumPy array.
 
-Usage Example:
+Example
 --------------
 
 .. code-block:: python
