@@ -9,7 +9,7 @@ __all__ = ['plot_retinotopic_maps']
 
 
 def plot_retinotopic_maps(sequence: np.ndarray, *,
-                          output: PathLike | None,
+                          output: PathLike | None = None,
                           interp: str = 'none',
                           intensity_cmap='binary',
                           phase_cmap='hsv',

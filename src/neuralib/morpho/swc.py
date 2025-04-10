@@ -1,5 +1,5 @@
 """
-Swc morphology plot
+SWC morphology plot
 ====================
 
 

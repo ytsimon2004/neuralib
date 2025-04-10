@@ -34,6 +34,7 @@ __all__ = [
     'load_example_suite2p',
     'load_example_rastermap_2p',
     'load_example_rastermap_wfield',
+    'load_retinotopic_data',
     #
     'load_example_dlc_h5',
     'load_example_dlc_csv',
@@ -231,6 +232,14 @@ def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
     with google_drive_file('1zdZ3ihNPObyA1zVY7knJwVDH8MLXXuYB', **kwargs) as file:
         with file.open('rb') as f:
             return pickle.load(f)
+
+
+def load_retinotopic_data(**kwargs) -> Path:
+    with google_drive_file('1J8iqP_EBaknNJehRUw3nwp7lEw2_UFXz',
+                           quiet=True,
+                           cached=True,
+                           rename_file='retinotopic.tiff', **kwargs) as file:
+        return Path(file)
 
 
 # ========== #

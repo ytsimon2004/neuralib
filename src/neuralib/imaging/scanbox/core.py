@@ -14,11 +14,23 @@ from neuralib.io import JsonEncodeHandler
 from neuralib.typing import PathLike
 
 __all__ = [
+    'read_scanbox',
     'SBXInfo',
     'sbx_to_json',
     #
     'screenshot_to_tiff'
 ]
+
+
+def read_scanbox(file: PathLike) -> SBXInfo:
+    """
+    load scanbox file
+
+    :param file: scanbox .mat file
+    :return: SBXInfo
+    """
+    return SBXInfo.load(file)
+
 
 T = TypeVar('T')  # dataclass
 

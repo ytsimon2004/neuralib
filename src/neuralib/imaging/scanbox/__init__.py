@@ -17,10 +17,10 @@ See all the info
 
 .. code-block:: python
 
-    from neuralib.imaging.scanbox import SBXInfo
+    from neuralib.imaging.scanbox import read_scanbox
 
     file = ...  # scanbox .mat output file
-    sbx = SBXInfo.load(file)
+    sbx = read_scanbox(file)
     print(sbx.asdict())  # print the information as dictionary
 
 
@@ -61,17 +61,21 @@ directly view the image sequence as mmap
 Use CLI
 ------------
 
-See help::
+.. prompt:: bash $
 
     python -m neuralib.imaging.scanbox.viewer -h
 
 
-Example playing the 100-200 frames::
+Example playing the 100-200 frames
+
+.. prompt:: bash $
 
     python -m neuralib.imaging.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
 
 
-Example save 100-200 Frames as tiff::
+Example save 100-200 Frames as tiff
+
+.. prompt:: bash $
 
     python -m neuralib.imaging.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
 
