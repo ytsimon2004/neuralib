@@ -250,6 +250,27 @@ DEFAULT_COLOR: dict[IdentifierName, str] = {
 }
 
 
+def plot_swc(swc: SwcFile,
+             radius: bool = True,
+             color: dict[str, str] | None = None,
+             as_2d: bool = False):
+    """
+    Plot swc file as 2d
+
+    :param swc: ``SwcFile``
+    :param radius: Plot with radius.
+    :param color: Color dict. With {identifier name: color coded}
+    :param as_2d:
+    """
+    if color is None:
+        color = DEFAULT_COLOR
+
+    if as_2d:
+        _plot_swc_2d(swc, radius, color)
+    else:
+        _plot_swc_3d(swc, radius, color)
+
+
 def projection_2d(p: Point3D) -> Point2D:
     """Default projection function, remove z value.
 
@@ -284,27 +305,6 @@ def smooth_line_radius(ax: Axes,
         ax.plot(px[i:i + 2], py[i:i + 2], lw=lw[i], **kwargs)
 
 
-def plot_swc(swc: SwcFile,
-             radius: bool = True,
-             color: dict[str, str] | None = None,
-             as_2d: bool = False):
-    """
-    Plot swc file as 2d
-
-    :param swc: ``SwcFile``
-    :param radius: Plot with radius.
-    :param color: Color dict. With {identifier name: color coded}
-    :param as_2d:
-    """
-    if color is None:
-        color = DEFAULT_COLOR
-
-    if as_2d:
-        _plot_swc_2d(swc, radius, color)
-    else:
-        _plot_swc_3d(swc, radius, color)
-
-
 def _plot_swc_2d(swc, radius, color):
     fig, ax = plt.subplots()
     for n1, n2 in swc.foreach_line():
@@ -328,6 +328,7 @@ def _plot_swc_2d(swc, radius, color):
     ax.axis('off')
     ax.set_xticklabels([])
     ax.set_yticklabels([])
+    plt.show()
 
 
 def _plot_swc_3d(swc: SwcFile,
@@ -355,6 +356,9 @@ def _plot_swc_3d(swc: SwcFile,
 
     for i, n in enumerate(swc.foreach_node()):
         if n.parent == -1:
+            if n.is_soma:
+                somata.append([n.x, n.y, n.z])
+                somata_radii.append(10)
             continue
 
         r = n.r * spheres_size if radius else 5
@@ -371,7 +375,6 @@ def _plot_swc_3d(swc: SwcFile,
             somata.append([n.x, n.y, n.z])
             somata_line.append([n.parent - 1, i])
             somata_radii.append(10)  # fix value
-
         elif n.is_undefined or n.is_custom:
             other.append([n.x, n.y, n.z])
             other_line.append([n.parent - 1, i])
@@ -396,10 +399,11 @@ def _plot_swc_3d(swc: SwcFile,
         plotter += axon_spheres
         plotter += axon_lines
 
-    other_spheres = vedo.Spheres(other, r=other_radii, c=color.get('custom', 'k'))
-    other_lines = vedo.Lines(swc.points[other_line], c=color.get('custom', 'k'), lw=lw)
-    plotter += other_spheres
-    plotter += other_lines
+    if len(other) > 0:
+        other_spheres = vedo.Spheres(other, r=other_radii, c=color.get('custom', 'k'))
+        other_lines = vedo.Lines(swc.points[other_line], c=color.get('custom', 'k'), lw=lw)
+        plotter += other_spheres
+        plotter += other_lines
 
     plotter.show()
 
