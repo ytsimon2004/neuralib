@@ -48,7 +48,7 @@ __all__ = [
 @contextmanager
 def google_drive_file(file_id: str,
                       *,
-                      quiet: bool = True,
+                      quiet: bool = False,
                       output_dir: PathLike | None = None,
                       rename_file: str | None = None,
                       cached: bool = False,
@@ -90,7 +90,7 @@ def google_drive_file(file_id: str,
 @contextmanager
 def google_drive_folder(folder_id: str,
                         *,
-                        quiet: bool = True,
+                        quiet: bool = False,
                         output_dir: PathLike | None = None,
                         rename_folder: str | None = None,
                         cached: bool = False,
