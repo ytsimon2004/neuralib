@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from neuralib.imaging.suite2p import Suite2PResult
     from neuralib.imaging.scanbox import SBXInfo
     from neuralib.tracking.facemap import FaceMapResult
+    from neuralib.model.rastermap import RasterMapResult
 
 __all__ = [
     'google_drive_file',
@@ -31,10 +32,11 @@ __all__ = [
     'load_npx2_reconstruction',
     #
     'load_example_scanbox',
-    'load_example_suite2p',
-    'load_example_rastermap_2p',
-    'load_example_rastermap_wfield',
-    'load_retinotopic_data',
+    'load_example_suite2p_result',
+    'load_example_rastermap_2p_result',
+    'load_example_rastermap_2p_cache',
+    'load_example_rastermap_wfield_cache',
+    'load_example_retinotopic_data',
     #
     'load_example_dlc_h5',
     'load_example_dlc_csv',
@@ -204,7 +206,7 @@ def load_example_scanbox(**kwargs) -> 'SBXInfo':
         return SBXInfo.load(file)
 
 
-def load_example_suite2p(**kwargs) -> 'Suite2PResult':
+def load_example_suite2p_result(**kwargs) -> 'Suite2PResult':
     """
     :param kwargs: Additional keyword arguments pass to ``google_drive_folder`` to customize the loading behavior.
     :return: An instance of ``Suite2PResult`` loaded with data from the specified Google Drive folder.
@@ -214,7 +216,14 @@ def load_example_suite2p(**kwargs) -> 'Suite2PResult':
         return read_suite2p(suite2p_dir)
 
 
-def load_example_rastermap_2p(**kwargs) -> dict[str, Any]:
+def load_example_rastermap_2p_result(**kwargs) -> 'RasterMapResult':
+    'https://drive.google.com/file/d/1KSic4sXyF3hTgQbGijMpa3D3TGJUU097/view?usp=drive_link'
+    from neuralib.model.rastermap import read_rastermap
+    with google_drive_file('1KSic4sXyF3hTgQbGijMpa3D3TGJUU097', **kwargs) as file:
+        return read_rastermap(file)
+
+
+def load_example_rastermap_2p_cache(**kwargs) -> dict[str, Any]:
     """
     :param kwargs: Additional arguments to be passed to the `google_drive_file` context manager.
     :return: A dictionary containing the 2-photon rastermap data cache
@@ -224,7 +233,7 @@ def load_example_rastermap_2p(**kwargs) -> dict[str, Any]:
             return pickle.load(f)
 
 
-def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
+def load_example_rastermap_wfield_cache(**kwargs) -> dict[str, Any]:
     """
     :param kwargs: Additional arguments to be passed to the `google_drive_file` context manager.
     :return: A dictionary containing the wide-field rastermap data cache
@@ -234,7 +243,7 @@ def load_example_rastermap_wfield(**kwargs) -> dict[str, Any]:
             return pickle.load(f)
 
 
-def load_retinotopic_data(**kwargs) -> Path:
+def load_example_retinotopic_data(**kwargs) -> Path:
     with google_drive_file('1J8iqP_EBaknNJehRUw3nwp7lEw2_UFXz',
                            quiet=True,
                            cached=True,

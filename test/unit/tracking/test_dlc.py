@@ -6,12 +6,12 @@ from neuralib.io.dataset import load_example_dlc_h5, load_example_dlc_csv
 from neuralib.tracking import DeepLabCutDataFrame
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def h5_data():
     return load_example_dlc_h5(cached=True)
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def csv_data():
     return load_example_dlc_csv(cached=True)
 

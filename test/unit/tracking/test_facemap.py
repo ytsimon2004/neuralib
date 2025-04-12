@@ -10,7 +10,7 @@ from neuralib.tracking.facemap.plot import plot_cmap_time_series
 
 # ---- Pupil ---- #
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def pupil() -> FaceMapResult:
     return load_example_facemap_pupil()
 
@@ -29,7 +29,7 @@ def test_get_blink(pupil: FaceMapResult):
 
 # ---- KeyPoint ---- #
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def keypoint() -> FaceMapResult:
     return load_example_facemap_keypoints(cached=True, rename_folder='facemap_kp')
 

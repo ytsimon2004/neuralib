@@ -4,15 +4,15 @@ from unittest.mock import patch
 import pytest
 
 from neuralib.imaging.suite2p import Suite2PResult
-from neuralib.io.dataset import load_example_suite2p
+from neuralib.io.dataset import load_example_suite2p_result
 from neuralib.plot import plot_figure
 
 DATA_EXISTS = (Path().home() / '.cache' / 'neuralib' / 'tmp' / 's2p').exists()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module', autouse=True)
 def s2p() -> Suite2PResult:
-    return load_example_suite2p(quiet=False, cached=True, rename_folder='s2p')
+    return load_example_suite2p_result(quiet=False, cached=True, rename_folder='s2p')
 
 
 @pytest.mark.skipif(not DATA_EXISTS, reason='no cached data')

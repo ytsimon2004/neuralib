@@ -5,12 +5,12 @@ import pytest
 from tifffile import tifffile
 
 from neuralib.imaging.widefield import plot_retinotopic_maps, compute_singular_vector
-from neuralib.io.dataset import load_retinotopic_data
+from neuralib.io.dataset import load_example_retinotopic_data
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def sequence() -> np.ndarray:
-    seq_path = load_retinotopic_data()
+    seq_path = load_example_retinotopic_data()
     return tifffile.imread(seq_path)
 
 

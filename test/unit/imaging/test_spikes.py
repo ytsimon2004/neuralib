@@ -4,14 +4,14 @@ import numpy as np
 import pytest
 
 from neuralib.imaging.suite2p import get_neuron_signal
-from neuralib.io.dataset import load_example_suite2p
+from neuralib.io.dataset import load_example_suite2p_result
 
 DATA_EXISTS = (Path().home() / '.cache' / 'neuralib' / 'tmp' / 's2p').exists()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def df_f() -> np.ndarray:
-    s2p = load_example_suite2p(quiet=False, cached=True, rename_folder='s2p')
+    s2p = load_example_suite2p_result(quiet=False, cached=True, rename_folder='s2p')
     return get_neuron_signal(s2p, n=0)[0][: 10000]
 
 
