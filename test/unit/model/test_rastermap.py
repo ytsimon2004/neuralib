@@ -1,15 +1,19 @@
 from tempfile import NamedTemporaryFile
+from unittest.mock import patch
 
 import attrs
+import pytest
 
-from neuralib.io.dataset import load_example_rastermap_2p_result, load_example_suite2p_result
+from neuralib.imglib.io import load_sequence
+from neuralib.io.dataset import load_example_rastermap_2p_result, load_example_rastermap_2p_cache
 from neuralib.model.rastermap import RasterMapResult, save_rastermap, read_rastermap
+from neuralib.model.rastermap.plot import BehavioralVT, plot_rastermap, plot_cellular_spatial, plot_wfield_spatial
 from neuralib.model.rastermap.run import run_rastermap
 
 
 def test_io():
     # load
-    ret = load_example_rastermap_2p_result(cached=True, rename_folder='s2p')
+    ret = load_example_rastermap_2p_result(cached=True, rename_file='rastermap.npy')
     keys = [field.name for field in attrs.fields(RasterMapResult) if field.init]
     for k in ret.asdict():
         assert k in keys
@@ -22,7 +26,27 @@ def test_io():
             assert k in keys
 
 
-def test_run():
-    s2p = load_example_suite2p_result(cached=True, rename_folder='s2p')
-    x = run_rastermap(s2p.spks, bin_size=20)
-    print(x.asdict())
+@pytest.mark.skip(reason="test locally")
+@patch('matplotlib.pyplot.show')
+def test_run_plot_2p(mock):
+    cache = load_example_rastermap_2p_cache(cached=True, rename_file='raster_2p')
+    t = cache['image_time']
+    xy = cache['xy_pos']
+
+    ret = run_rastermap(cache['neural_activity'], bin_size=50)
+    pos = BehavioralVT('position', t, cache['position'])
+    vel = BehavioralVT('velocity', t, cache['velocity'])
+    pupil = BehavioralVT('pupil', t, cache['pupil_area'])
+    #
+    plot_rastermap(ret, t, time_range=(0, 300), behaviors=[pos, vel, pupil])
+    plot_cellular_spatial(ret, xpos=xy[0], ypos=xy[1])
+
+
+@pytest.mark.skip(reason="memory heavy computing")
+def test_run_wfield():
+    d = ...
+    x = load_sequence(d)
+    ret = run_rastermap(x, bin_size=500, dtype='wfield')
+    act = ...
+    plot_rastermap(ret, act)
+    plot_wfield_spatial(ret, x.shape[0], x.shape[1])

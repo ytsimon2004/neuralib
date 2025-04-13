@@ -9,3 +9,5 @@ neuralib.model.rastermap
     :caption: Modules:
 
     neuralib.model.rastermap.core
+    neuralib.model.rastermap.plot
+    neuralib.model.rastermap.run

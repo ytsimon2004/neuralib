@@ -3,13 +3,15 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image
+from tifffile import tifffile
 from tqdm import tqdm
 
 from neuralib.imglib.norm import normalize_sequences
 from neuralib.typing import PathLike
 
 __all__ = [
-    'read_sequences',
+    'load_sequence',
+    'read_avi',
     'read_pdf',
     'write_avi',
     'tif_to_gif',
@@ -17,8 +19,52 @@ __all__ = [
 ]
 
 
-def read_sequences(avi_file: PathLike, grey_scale: bool = True) -> np.ndarray:
-    """Read an sequences file (i.e., AVI/MP4) into an array, converting to grayscale if specified.
+def load_sequence(path: PathLike, suffix: str = '*.tif') -> np.ndarray:
+    """
+    Recursively load a TIFF sequence from a file or directory using memory mapping.
+
+    - If `path` is a TIFF file, returns a memmapped NumPy array.
+    - If `path` is a directory, loads and stacks all valid TIFF files matching `suffix`.
+    - Ignores hidden files (starting with '.') or AppleDouble files (._).
+
+    :param path: Path to a .tif file or a directory of .tif files.
+    :param suffix: Glob pattern for selecting TIFF files (default: '*.tif').
+    :return: Stacked array of TIFF frames. `Array[Any, [H, W]]`
+    :raise RuntimeError: If the path is not found or no valid TIFFs were found.
+    """
+    path = Path(path)
+
+    if path.is_file():
+        return tifffile.memmap(path)
+
+    elif path.is_dir():
+        files = sorted([
+            f
+            for f in path.glob(suffix)
+            if f.is_file() and not f.name.startswith('._') and not f.name.startswith('.')
+        ])
+
+        if not files:
+            raise FileNotFoundError(f'No valid TIFF files found in directory: {path}')
+
+        arrays = []
+        for f in tqdm(files, desc='Loading TIFF sequence', unit='file'):
+            try:
+                arrays.append(tifffile.memmap(f))
+            except Exception as e:
+                print(f'Skipped invalid TIFF file: {f.name} ({e})')
+
+        if not arrays:
+            raise ValueError(f'All files in {path} failed to load as TIFFs.')
+
+        return np.vstack(arrays)
+
+    else:
+        raise FileNotFoundError(f'Path not found: {path}')
+
+
+def read_avi(avi_file: PathLike, grey_scale: bool = True) -> np.ndarray:
+    """Read a sequences file (i.e., AVI/MP4) into an array, converting to grayscale if specified.
 
     :param avi_file: Path to the AVI file.
     :param grey_scale: Whether to convert frames to grayscale.

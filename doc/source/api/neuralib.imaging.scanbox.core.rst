@@ -7,6 +7,7 @@ neuralib.imaging.scanbox.core
    :toctree: _autosummary
    :nosignatures:
 
+   read_scanbox
    SBXInfo
    sbx_to_json
    screenshot_to_tiff
@@ -14,7 +15,7 @@ neuralib.imaging.scanbox.core
 
 .. automodule:: neuralib.imaging.scanbox.core
    :members:
-   :exclude-members: SBXInfo, sbx_to_json, screenshot_to_tiff
+   :exclude-members: read_scanbox, SBXInfo, sbx_to_json, screenshot_to_tiff
    :undoc-members:
    :inherited-members:
    :show-inheritance:

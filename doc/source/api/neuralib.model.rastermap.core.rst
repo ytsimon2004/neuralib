@@ -7,14 +7,16 @@ neuralib.model.rastermap.core
    :toctree: _autosummary
    :nosignatures:
 
+   read_rastermap
+   save_rastermap
+   RasterMapResult
    UserCluster
    RasterOptions
-   RasterMapResult
 
 
 .. automodule:: neuralib.model.rastermap.core
    :members:
-   :exclude-members: UserCluster, RasterOptions, RasterMapResult
+   :exclude-members: read_rastermap, save_rastermap, RasterMapResult, UserCluster, RasterOptions
    :undoc-members:
    :inherited-members:
    :show-inheritance:

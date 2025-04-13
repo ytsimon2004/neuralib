@@ -7,7 +7,8 @@ neuralib.imglib.io
    :toctree: _autosummary
    :nosignatures:
 
-   read_sequences
+   load_sequence
+   read_avi
    read_pdf
    write_avi
    tif_to_gif
@@ -16,7 +17,7 @@ neuralib.imglib.io
 
 .. automodule:: neuralib.imglib.io
    :members:
-   :exclude-members: read_sequences, read_pdf, write_avi, tif_to_gif, gif_show
+   :exclude-members: load_sequence, read_avi, read_pdf, write_avi, tif_to_gif, gif_show
    :undoc-members:
    :inherited-members:
    :show-inheritance:

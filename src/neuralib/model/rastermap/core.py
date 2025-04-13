@@ -17,8 +17,7 @@ __all__ = ['read_rastermap',
 
 
 def read_rastermap(file: PathLike) -> RasterMapResult:
-    """
-    load rastermap result
+    """load rastermap result
     :param file: output from rastermap. *_embedding.npy
     :return:
     """
@@ -43,7 +42,7 @@ class RasterMapResult:
 
         N = Number of neurons/pixel
 
-        T = Number of image pulse
+        T = Number of samples
 
         C = Number of clusters = N / binsize
 
@@ -51,8 +50,7 @@ class RasterMapResult:
 
     filename: str
     """Filename of the neural activity data
-    (i.e., *.tif or *.avi for wfield activity; .npy `Array[float, [N, T]]` file for cellular)
-    """
+    (i.e., *.tif or *.avi for wfield activity; .npy `Array[float, [N, T]]` file for cellular)"""
 
     save_path: str
     """filename for the rastermap result save"""
@@ -118,7 +116,15 @@ class RasterMapResult:
         try:
             return self.super_neurons.shape[0]
         except AttributeError:
-            raise RuntimeError('')
+            raise RuntimeError('data incomplete')
+
+    @property
+    def n_samples(self) -> int:
+        """number of data samples (T)"""
+        try:
+            return self.super_neurons.shape[1]
+        except AttributeError:
+            raise RuntimeError('data incomplete')
 
 
 class UserCluster(TypedDict, total=False):
