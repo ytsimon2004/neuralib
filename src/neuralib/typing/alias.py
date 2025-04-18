@@ -1,6 +1,6 @@
 from io import BufferedIOBase, BufferedReader
 from pathlib import Path
-from typing import TypeVar, Union, BinaryIO
+from typing import TypeVar, Union, BinaryIO, Sequence
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ __all__ = [
 T = TypeVar('T')
 """Numeric"""
 
-ArrayLike = Union[NDArray[T], list[T], tuple[T, ...], pd.Series, pl.Series]
+ArrayLike = Union[NDArray[T], Sequence[T], pd.Series, pl.Series]
 """Alias for array-like objects, including numpy arrays, lists, tuples, and series"""
 
 ArrayLikeStr = Union[NDArray[np.str_], list[str], tuple[str, ...], pd.Series, pl.Series]

@@ -8,8 +8,7 @@ neuralib.imaging
     :maxdepth: 1
     :caption: Modules:
 
-    neuralib.imaging.cellular
-    neuralib.imaging.fov
+    neuralib.imaging.registration
     neuralib.imaging.scan_image
     neuralib.imaging.scanbox
     neuralib.imaging.spikes

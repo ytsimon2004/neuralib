@@ -19,6 +19,7 @@ RUN_BACKEND = Literal['tensorflow', 'torch']
 
 def gpu_available(backend: RUN_BACKEND, *, check_smi: bool = False) -> bool:
     """
+    Check if GPU is available.
 
     :param backend: {'torch', 'tensorflow'}
     :param check_smi: check if ``nvidia-smi`` is runnable
@@ -29,6 +30,8 @@ def gpu_available(backend: RUN_BACKEND, *, check_smi: bool = False) -> bool:
         return check_nvidia_cuda_available(backend=backend, check_smi=check_smi)
     elif system == 'Darwin':
         return check_mps_available(backend=backend)
+    else:
+        raise NotImplementedError(f'Unsupported system {system}')
 
 
 def print_gpu_table(backend: RUN_BACKEND, *, check_smi: bool = False) -> None:

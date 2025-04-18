@@ -19,9 +19,9 @@ efficient data handling, analysis, and reproducibility in open-source neuroscien
 
 ## Features
 
-- Open-source parser and wrapper utilities tailored for rodent neuroscience experiments
+- Utilities tools for rodent neuroscience experiments
+- Open-source parser and wrapper
 - Lightweight and modular design for easy integration
-- Ready-to-use examples and interactive notebooks
 - Clean documentation and API reference
 
 ---

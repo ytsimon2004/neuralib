@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 from typing_extensions import Self
 
-from neuralib.imaging.cellular import CellularCoordinates
+from neuralib.imaging.registration import CellularCoordinates, get_cellular_coordinate
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
 
@@ -512,6 +512,50 @@ class Suite2pRoiStat(TypedDict, total=False):
     std: float
 
 
+# def get_s2p_coords(s2p: Suite2PResult,
+#                    neuron_list: int | list[int] | slice | np.ndarray | None,
+#                    plane_index: int,
+#                    factor: float) -> CellularCoordinates:
+#     """
+#     Get the suite2p coordinates of all cells.
+#
+#     :param s2p: ``Suite2PResult``
+#     :param neuron_list: neuron index or index list/arr. If None, then load all neurons
+#     :param plane_index: optic plane index
+#     :param factor: pixel to um factor
+#     :return: :class:`~neuralib.imaging.cellular_cords.CellularCoordinates`
+#     """
+#     if neuron_list is None:
+#         neuron_list = np.arange(s2p.n_neurons)
+#
+#     n_neurons = len(neuron_list)
+#     xpix = np.zeros(n_neurons)
+#     ypix = np.zeros(n_neurons)
+#
+#     for i, n in enumerate(neuron_list):
+#         xpix[i] = np.mean(s2p.stat[i]['xpix'])
+#         ypix[i] = np.mean(s2p.stat[i]['ypix'])
+#
+#     xcord = xpix * factor / 1000  # ap
+#     ycord = ypix * factor / 1000  # ml
+#
+#     if isinstance(neuron_list, int):
+#         src_plane_index = plane_index
+#     elif isinstance(neuron_list, (list, np.ndarray, slice)):
+#         src_plane_index = np.full_like(neuron_list, plane_index)
+#     else:
+#         raise TypeError('')
+#
+#     return CellularCoordinates(
+#         np.array(neuron_list),
+#         xcord,
+#         ycord,
+#         plane_index=plane_index,
+#         unit='mm',
+#         source_plane_index=src_plane_index
+#     )
+
+
 def get_s2p_coords(s2p: Suite2PResult,
                    neuron_list: int | list[int] | slice | np.ndarray | None,
                    plane_index: int,
@@ -522,7 +566,7 @@ def get_s2p_coords(s2p: Suite2PResult,
     :param s2p: ``Suite2PResult``
     :param neuron_list: neuron index or index list/arr. If None, then load all neurons
     :param plane_index: optic plane index
-    :param factor: pixel to mm factor
+    :param factor: pixel to um factor
     :return: :class:`~neuralib.imaging.cellular_cords.CellularCoordinates`
     """
     if neuron_list is None:
@@ -546,11 +590,10 @@ def get_s2p_coords(s2p: Suite2PResult,
     else:
         raise TypeError('')
 
-    return CellularCoordinates(
+    return get_cellular_coordinate(
         np.array(neuron_list),
         xcord,
         ycord,
-        plane_index=plane_index,
         unit='mm',
-        source_plane_index=src_plane_index
+        plane_index=src_plane_index
     )
