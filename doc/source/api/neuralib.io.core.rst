@@ -9,13 +9,12 @@ neuralib.io.core
 
    NEUROLIB_CACHE_DIRECTORY
    ATLAS_CACHE_DIRECTORY
-   IBL_CACHE_DIRECTORY
    CASCADE_MODEL_CACHE_DIRECTORY
 
 
 .. automodule:: neuralib.io.core
    :members:
-   :exclude-members: NEUROLIB_CACHE_DIRECTORY, ATLAS_CACHE_DIRECTORY, IBL_CACHE_DIRECTORY, CASCADE_MODEL_CACHE_DIRECTORY
+   :exclude-members: NEUROLIB_CACHE_DIRECTORY, ATLAS_CACHE_DIRECTORY, CASCADE_MODEL_CACHE_DIRECTORY
    :undoc-members:
    :inherited-members:
    :show-inheritance:

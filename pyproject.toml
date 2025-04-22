@@ -108,7 +108,6 @@ dev = ["neura-library[all]", "pre-commit", "ruff", "pytest"]
 doc = [
     "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt",
     "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]",
-    "iblatlas"
 ]
 
 

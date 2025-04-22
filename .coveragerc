@@ -6,7 +6,6 @@ omit =
     */neuralib/segmentation/*
     */neuralib/model/*
     */neuralib/atlas/brainrender/*
-    */neuralib/atlas/ibl/*
     */neuralib/tools/*
     */neuralib/util/gpu.py
     */neuralib/util/profile.py
@@ -18,7 +17,6 @@ omit =
     */neuralib/segmentation/*
     */neuralib/model/*
     */neuralib/atlas/brainrender/*
-    */neuralib/atlas/ibl/*
     */neuralib/tools/*
     */neuralib/util/gpu.py
     */neuralib/util/profile.py

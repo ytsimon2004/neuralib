@@ -12,7 +12,6 @@ neuralib.atlas
     neuralib.atlas.ccf
     neuralib.atlas.cellatlas
     neuralib.atlas.data
-    neuralib.atlas.ibl
     neuralib.atlas.map
     neuralib.atlas.plot
     neuralib.atlas.typing
