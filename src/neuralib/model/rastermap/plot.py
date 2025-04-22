@@ -164,7 +164,7 @@ class RasterMapPlot:
                     ax = _ax[i]
                     ax.plot(it.time, it.value, color='k')
                     ax.set_xlim(self.time_range)
-                    ax.axis("off")
+                    ax.axis('off')
                     ax.set_title(it.name)
             else:
                 _ax[0].axis('off')
@@ -172,11 +172,11 @@ class RasterMapPlot:
             ax = _ax[n_behaviors]
             ax.imshow(
                 self.super_neurons,
-                cmap="gray_r",
+                cmap='gray_r',
                 vmin=0,
                 vmax=0.8,
-                aspect="auto",
-                extent=(self.time_range[0], self.time_range[1], self.raster.n_clusters, 0)
+                aspect='auto',
+                extent=(self.time_range[0], self.time_range[1], self.raster.n_clusters, 0),
             )
 
             # colormap

@@ -1,8 +1,12 @@
+import pickle
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
 from scipy.stats import zscore
 
+from neuralib.typing import PathLike
+from neuralib.util.verbose import print_save, print_load
 from .core import RasterOptions, RasterMapResult
 
 __all__ = ['DATA_TYPE', 'run_rastermap']
@@ -14,6 +18,9 @@ def run_rastermap(neural_activity: np.ndarray,
                   bin_size: int,
                   dtype: DATA_TYPE, *,
                   options: RasterOptions | None = None,
+                  svd_components: int = 128,
+                  svd_cache: PathLike | None = None,
+                  invalid_svd_cache: bool = False,
                   filename: str | None = None,
                   save_path: str | None = None,
                   **kwargs) -> RasterMapResult:
@@ -24,16 +31,25 @@ def run_rastermap(neural_activity: np.ndarray,
     :param bin_size: number of neurons to bin over
     :param dtype: :attr:`~neuralib.model.rastermap.run.DATA_TYPE`
     :param options: :class:`~neuralib.model.rastermap.core.RasterOptions`
+    :param svd_components: number of SVD components to use (for widefield dtype)
+    :param svd_cache: path to cache SVD file (for widefield dtype)
+    :param invalid_svd_cache: invalid (recompute) SVD cached file (for widefield dtype)
     :param filename: optional specify if GUI re-launch
     :param save_path: optional specify if GUI re-launch
     """
-    rastermap = RunRastermap(neural_activity, bin_size, dtype, options=options, filename=filename, save_path=save_path)
+    rastermap = RunRastermap(neural_activity, bin_size, dtype,
+                             options=options,
+                             svd_components=svd_components,
+                             svd_cache=svd_cache,
+                             invalid_svd_cache=invalid_svd_cache,
+                             filename=filename,
+                             save_path=save_path)
     return rastermap.run(**kwargs)
 
 
 class RunRastermap:
     DEFAULT_OPTIONS: RasterOptions = {
-        'n_clusters': 100,
+        'n_clusters': 50,
         'n_PCs': 128,
         'locality': 0.75,
         'time_lag_window': 5,
@@ -45,6 +61,8 @@ class RunRastermap:
                  dtype: DATA_TYPE, *,
                  options: RasterOptions | None = None,
                  svd_components: int = 128,
+                 svd_cache: PathLike | None = None,
+                 invalid_svd_cache: bool = False,
                  filename: str | None = None,
                  save_path: str | None = None):
         """
@@ -52,6 +70,9 @@ class RunRastermap:
         :param neural_activity: neural activity. `Array[float, [N, T]]` | `Array[Any, [T, H, W]]`
         :param bin_size: number of neurons to bin over
         :param options: :class:`~neuralib.model.rastermap.core.RasterOptions`
+        :param svd_components: number of SVD components to use (for widefield dtype)
+        :param svd_cache: path to cache SVD file (for widefield dtype)
+        :param invalid_svd_cache: invalid (recompute) SVD cached file (for widefield dtype)
         :param filename: optional specify if GUI re-launch
         :param save_path: optional specify if GUI re-launch
         """
@@ -59,7 +80,10 @@ class RunRastermap:
         self.neural_activity = neural_activity
         self.bin_size = bin_size
         self.dtype = dtype
+
         self.svd_components = svd_components
+        self.svd_cache = svd_cache
+        self.invalid_svd_cache = invalid_svd_cache
 
         self.filename = filename
         self.save_path = save_path
@@ -141,12 +165,26 @@ class RunRastermap:
             **kwargs
         )
 
-        sv = compute_singular_vector(self.neural_activity, self.svd_components)
+        # svd cache
+        if self.svd_cache is not None:
+            file = Path(self.svd_cache)
+            if file.exists() and not self.invalid_svd_cache:
+                with file.open("rb") as f:
+                    sv = pickle.load(f)
+                    print_load(file)
+            else:
+                sv = compute_singular_vector(self.neural_activity, self.svd_components)
+                with file.open('wb') as f:
+                    pickle.dump(sv, f)
+                    print_save(file)
+        else:
+            sv = compute_singular_vector(self.neural_activity, self.svd_components)
+
         usv = sv.singular_value * sv.left_vector
         vsv = sv.right_vector
 
+        # fit
         model.fit(Usv=usv, Vsv=vsv)
-
         embedding = model.embedding
         isort = model.isort
         Vsv_sub = model.Vsv
