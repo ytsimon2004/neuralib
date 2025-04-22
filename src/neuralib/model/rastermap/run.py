@@ -6,7 +6,6 @@ import numpy as np
 from scipy.stats import zscore
 
 from neuralib.typing import PathLike
-from neuralib.util.verbose import print_save, print_load
 from .core import RasterOptions, RasterMapResult
 
 __all__ = ['DATA_TYPE', 'run_rastermap']
@@ -171,12 +170,10 @@ class RunRastermap:
             if file.exists() and not self.invalid_svd_cache:
                 with file.open("rb") as f:
                     sv = pickle.load(f)
-                    print_load(file)
             else:
                 sv = compute_singular_vector(self.neural_activity, self.svd_components)
                 with file.open('wb') as f:
                     pickle.dump(sv, f)
-                    print_save(file)
         else:
             sv = compute_singular_vector(self.neural_activity, self.svd_components)
 

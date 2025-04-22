@@ -35,7 +35,6 @@ __all__ = [
     'load_example_suite2p_result',
     'load_example_rastermap_2p_result',
     'load_example_rastermap_2p_cache',
-    'load_example_rastermap_wfield_cache',
     'load_example_retinotopic_data',
     #
     'load_example_dlc_h5',
@@ -232,15 +231,6 @@ def load_example_rastermap_2p_cache(**kwargs) -> dict[str, Any]:
         with file.open('rb') as f:
             return pickle.load(f)
 
-
-def load_example_rastermap_wfield_cache(**kwargs) -> dict[str, Any]:
-    """
-    :param kwargs: Additional arguments to be passed to the `google_drive_file` context manager.
-    :return: A dictionary containing the wide-field rastermap data cache
-    """
-    with google_drive_file('1zdZ3ihNPObyA1zVY7knJwVDH8MLXXuYB', **kwargs) as file:
-        with file.open('rb') as f:
-            return pickle.load(f)
 
 
 def load_example_retinotopic_data(**kwargs) -> Path:

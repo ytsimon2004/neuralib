@@ -178,6 +178,7 @@ class RasterMapPlot:
                 aspect='auto',
                 extent=(self.time_range[0], self.time_range[1], self.raster.n_clusters, 0),
             )
+            ax.set(xlabel='time', ylabel='rastermap clusters')
 
             # colormap
             n_clusters = self.raster.n_clusters

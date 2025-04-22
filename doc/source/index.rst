@@ -227,8 +227,7 @@ Notebook Example
     ../notebooks/example_argp
     ../notebooks/example_imaging_2p
 
-    ../notebooks/example_rastermap_2p
-    ../notebooks/example_rastermap_wfield
+    ../notebooks/example_rastermap
 
     ../notebooks/example_segmentation
     ../notebooks/example_slice_view
