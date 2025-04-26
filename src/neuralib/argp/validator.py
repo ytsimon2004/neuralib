@@ -362,6 +362,8 @@ from typing import Any, TypeVar, Generic, final, overload, Collection
 
 from typing_extensions import Self
 
+from neuralib.util.deprecation import deprecated_class
+
 T = TypeVar('T')
 
 
@@ -418,6 +420,7 @@ class LambdaValidator(Validator, Generic[T]):
 
 
 @final
+@deprecated_class(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 class ValidatorBuilder:
     @property
     def str(self) -> StrValidatorBuilder:

@@ -1,5 +1,7 @@
 from typing import TypeVar, Callable, Union, overload, Literal, get_origin, get_args
 
+from neuralib.util.deprecation import deprecated_func
+
 __all__ = [
     'try_int_type',
     'try_float_type',
@@ -16,6 +18,7 @@ __all__ = [
 T = TypeVar('T')
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def tuple_type(value_type: Callable[[str], T]):
     def _type(arg: str) -> tuple[T, ...]:
         return tuple(map(value_type, arg.split(',')))
@@ -23,6 +26,7 @@ def tuple_type(value_type: Callable[[str], T]):
     return _type
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def list_type(value_type: Callable[[str], T] = str, *, split=',', prepend: list[T] = None):
     """:attr:`arg.type` caster which convert comma ',' spread string into list.
 
@@ -48,6 +52,7 @@ int_tuple_type = tuple_type(int)
 float_tuple_type = tuple_type(float)
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def union_type(*t):
     def _type(arg: str):
         for _t in t:
@@ -60,6 +65,7 @@ def union_type(*t):
     return _type
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def dict_type(default: dict[str, T], value_type: Callable[[str], T] = None):
     """Dict arg value.
 
@@ -92,6 +98,7 @@ def dict_type(default: dict[str, T], value_type: Callable[[str], T] = None):
     return _type
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def slice_type(arg: str) -> slice:
     i = arg.index(':')
     v1 = int(arg[:i])
@@ -99,6 +106,7 @@ def slice_type(arg: str) -> slice:
     return slice(v1, v2)
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def try_int_type(arg: str) -> Union[int, str, None]:
     """for argparse (i.e., plane_index)"""
     if len(arg) == 0:
@@ -109,6 +117,7 @@ def try_int_type(arg: str) -> Union[int, str, None]:
         return arg
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def try_float_type(arg: str) -> Union[float, str, None]:
     if len(arg) == 0:
         return None
@@ -128,6 +137,7 @@ def literal_type(*candidate: str, complete: bool = False):
     pass
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def literal_type(*candidate, complete: bool = False):
     if len(candidate) == 1 and not isinstance(candidate[0], str) and get_origin(candidate[0]) == Literal:
         candidate = get_args(candidate[0])

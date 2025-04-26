@@ -48,6 +48,8 @@ __all__ = [
     'DispatchCommandNotFound'
 ]
 
+from ..util.deprecation import deprecated_class
+
 T = TypeVar('T')
 missing = object()
 
@@ -196,6 +198,7 @@ class DispatchArgument(Argument):
     pass
 
 
+@deprecated_class(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 class DispatchOption:
     argument: Final = DispatchArgument
 

@@ -24,6 +24,8 @@ __all__ = [
     'Argument'
 ]
 
+from neuralib.util.deprecation import deprecated_func, deprecated_class
+
 T = TypeVar('T')
 Nargs = Literal[
     '*', '+', '?', '...'
@@ -44,6 +46,7 @@ Actions = Literal[
 ]
 
 
+@deprecated_class(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 class AbstractParser:
     USAGE: str = None
     """parser usage."""
@@ -441,6 +444,7 @@ def argument(*options: str,
     pass
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def argument(*options: str, **kwargs):
     """create an argument attribute.
 
@@ -466,6 +470,7 @@ def argument(*options: str, **kwargs):
     return Argument(*options, **kwargs)
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def as_argument(a) -> Argument:
     """cast argument attribute as an :class:`~neuralib.argp.core.Argument` for type checking framework/IDE."""
     if isinstance(a, Argument):
@@ -613,6 +618,7 @@ def parse_args(instance: T, args: list[str] = None) -> T:
     return set_options(instance, new_parser(instance, reset=True).parse_args(args))
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def parse_command_args(parsers: dict[str, Union[AbstractParser, type[AbstractParser]]],
                        args: list[str] = None,
                        usage: str = None,
@@ -696,6 +702,7 @@ def as_dict(instance: T) -> dict[str, Any]:
     return ret
 
 
+@deprecated_func(remarks='use the independent package: `pip install argclz`', removal_version='0.5.0')
 def copy_argument(opt: T, ref, **kwargs) -> T:
     """copy argument from ref to opt
 
