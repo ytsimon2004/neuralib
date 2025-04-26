@@ -10,7 +10,7 @@ import abc
 from pathlib import Path
 from typing import Generic, TypeVar, get_origin, get_args
 
-from neuralib.argp import argument, copy_argument
+from argclz import argument, copy_argument
 from neuralib.persistence import (
     persistence,
     PickleHandler,

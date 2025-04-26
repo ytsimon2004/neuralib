@@ -15,8 +15,6 @@ Short-Term Goals (Next 1–3 Months)
   - ``neuralib.persistence``
   - ``neuralib.sqlp``
 
-- Deprecate ``neuralib.atlas.ibl`` (basic case already covered natively, otherwise, use ``iblatlas`` package directly)
-
 
 Mid-Term Goals (3–6 Months)
 ---------------------------

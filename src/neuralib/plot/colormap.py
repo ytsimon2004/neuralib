@@ -82,18 +82,30 @@ def get_customized_cmap(name: str,
     return cmap(np.linspace(*value, numbers, endpoint=endpoint))
 
 
-def insert_colorbar(ax: Axes, im: ScalarMappable, **kwargs) -> ColorbarBase:
+def insert_colorbar(ax: Axes, im: ScalarMappable, inset: bool = False, **kwargs) -> ColorbarBase:
     """
     Insert colormap
 
     :param ax: ``Axes``
     :param im: ``ScalarMappable``
+    :param inset: use ``inset axes``, otherwise append a new axis
     :param kwargs: Additional args pass to ``ax.figure.colorbar``
     :return:
     """
-
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="7%", pad=0.1)
+    if inset:
+        from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+        cax = inset_axes(
+            ax,
+            width="5%",
+            height="25%",
+            loc='upper left',
+            bbox_to_anchor=(1.01, 0., 1, 1),
+            bbox_transform=ax.transAxes,
+            borderpad=0,
+        )
+    else:
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="7%", pad=0.1)
 
     return ax.figure.colorbar(im, cax=cax, **kwargs)
 

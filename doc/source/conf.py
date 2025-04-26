@@ -34,15 +34,16 @@ autodoc_member_order = 'bysource'
 autodoc_class_signature = 'separated'
 autodoc_typehints = 'description'
 autodoc_typehints_format = 'short'
-autodoc_inherit_docstrings = True
-autosummary_generate = True
-
 autodoc_default_options = {
     'members': True,
     'undoc-members': True,
     'inherited-members': True,
     'show-inheritance': True,
 }
+
+# -- Options for autosummary ------------------------------------------------
+autosummary_generate = True
+
 
 suppress_warnings = ["autodoc.duplicate"]
 
