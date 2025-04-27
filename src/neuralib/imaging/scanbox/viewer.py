@@ -3,7 +3,8 @@ from typing import Any
 
 import numpy as np
 import sbxreader
-from neuralib.argp import int_tuple_type
+
+from argclz import int_tuple_type
 from neuralib.imaging.scanbox.core import SBXInfo
 from neuralib.imglib.labeller import SequenceLabeller
 from neuralib.typing import PathLike
@@ -12,6 +13,7 @@ from neuralib.util.utils import uglob
 __all__ = ['SBXViewer']
 
 
+# TODO to argclz
 class SBXViewer:
     """wrapper for sbxreader
 

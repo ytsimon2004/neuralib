@@ -18,6 +18,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx_tabs.tabs',
               'sphinx_prompt',
+              'sphinx_copybutton',
               'nbsphinx']
 
 templates_path = ['_templates']
@@ -28,6 +29,9 @@ exclude_patterns = ['**/site-packages/**']
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_theme_options = {
+
+}
 
 # -- Options for autodoc ------------------------------------------------
 autodoc_member_order = 'bysource'

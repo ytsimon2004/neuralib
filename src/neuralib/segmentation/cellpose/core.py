@@ -9,7 +9,7 @@ import napari
 import numpy as np
 from typing_extensions import Self
 
-from neuralib.argp import argument, as_argument
+from argclz import argument, as_argument
 from neuralib.segmentation.base import AbstractSegmentationOption
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint

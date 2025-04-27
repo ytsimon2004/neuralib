@@ -8,7 +8,7 @@ from bokeh.models import ColumnDataSource, GlyphRenderer, Slider
 from bokeh.plotting import figure
 from tifffile import tifffile
 
-from neuralib.argp import AbstractParser, argument
+from argclz import AbstractParser, argument
 from neuralib.dashboard import ViewComponent, Figure, View, BokehServer
 from neuralib.imaging.widefield import SequenceFFT
 from neuralib.typing import PathLike

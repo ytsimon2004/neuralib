@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from csbdeep.utils import normalize
 
-from neuralib.argp import AbstractParser, argument
+from argclz import AbstractParser, argument
 
 __all__ = ['AbstractSegmentationOption']
 
@@ -61,11 +61,6 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
         '--napari',
         help='view in napari'
     )
-
-    def post_parsing(self):
-        """check args is valid"""
-        if self.directory and self.napari_view:
-            raise ValueError('napari view only used in single file mode')
 
     @property
     def file_mode(self) -> bool:

@@ -1,6 +1,7 @@
 [run]
 source = neuralib
 omit =
+    */neuralib/argp/*
     */neuralib/dashboard/*
     */neuralib/persistence/*
     */neuralib/segmentation/*
@@ -12,6 +13,7 @@ omit =
 
 [report]
 omit =
+    */neuralib/argp/*
     */neuralib/dashboard/*
     */neuralib/persistence/*
     */neuralib/segmentation/*

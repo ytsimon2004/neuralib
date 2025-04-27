@@ -1,4 +1,4 @@
-from neuralib.argp import parse_command_args
+from argclz.commands import parse_command_args
 
 from .core import BrainRenderCLI
 from .probe import ProbeRenderCLI

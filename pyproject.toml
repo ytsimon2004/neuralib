@@ -24,6 +24,7 @@ classifiers = [
 
 dependencies = [
     "attrs",
+    "argclz",
     "colorama",
     "colorlog",
     "matplotlib",
@@ -106,7 +107,7 @@ dev = ["neura-library[all]", "pre-commit", "ruff", "pytest"]
 
 #
 doc = [
-    "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt",
+    "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton",
     "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]",
 ]
 

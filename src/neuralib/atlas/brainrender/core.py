@@ -8,7 +8,7 @@ from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
 from brainrender.actors import Points
 from typing_extensions import Self
 
-from neuralib.argp import AbstractParser, argument, str_tuple_type, validator
+from argclz import AbstractParser, argument, str_tuple_type, validator
 from neuralib.atlas.brainrender.util import get_color
 from neuralib.atlas.util import allen_to_brainrender_coord
 from neuralib.util.logging import setup_clogger
@@ -220,6 +220,8 @@ class BrainRenderCLI(AbstractParser):
             self._stop_render = True
 
     def run(self):
+        self.post_parsing()
+
         if not self._stop_render:
             self.render()
             self.render_output()

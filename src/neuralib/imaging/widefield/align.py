@@ -1,6 +1,6 @@
 import napari
 
-from neuralib.argp import AbstractParser, argument
+from argclz import AbstractParser, argument
 from neuralib.io.dataset import load_example_dorsal_cortex
 
 __all__ = ['NapariAlignmentOptions']

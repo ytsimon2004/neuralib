@@ -38,7 +38,7 @@ from matplotlib.axes import Axes
 from matplotlib.patches import Circle
 from typing_extensions import Self, overload
 
-from neuralib.argp import AbstractParser, argument
+from argclz import AbstractParser, argument
 from neuralib.typing import PathLike
 
 __all__ = [
@@ -46,6 +46,8 @@ __all__ = [
     'SwcFile',
     'plot_swc'
 ]
+
+from argclz import pos_argument
 
 Identifier = int
 IdentifierName = str
@@ -413,8 +415,8 @@ def _plot_swc_3d(swc: SwcFile,
 # ======== #
 
 class SwcPlotOptions(AbstractParser):
-    file: str = argument(
-        metavar='FILE',
+    file: str = pos_argument(
+        'FILE',
         help='filepath of the swc file'
     )
 

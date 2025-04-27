@@ -7,7 +7,7 @@ from brainrender.actors import Points
 from scipy.interpolate import interp1d
 from typing_extensions import Self
 
-from neuralib.argp import argument
+from argclz import argument
 from neuralib.atlas.brainrender.core import BrainRenderCLI
 from neuralib.atlas.typing import PLANE_TYPE
 from neuralib.atlas.util import allen_to_brainrender_coord
@@ -75,6 +75,7 @@ class ProbeRenderCLI(BrainRenderCLI):
             self.render_output()
 
     def render(self):
+        self.post_parsing()
         super().render()
         self._add_probe()
 
@@ -103,6 +104,7 @@ class ProbeRenderCLI(BrainRenderCLI):
 
 class ProbeShank:
     """shank reconstruction class"""
+
     def __init__(self, dorsal: np.ndarray,
                  ventral: np.ndarray,
                  bg: BrainGlobeAtlas):

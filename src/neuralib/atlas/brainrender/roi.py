@@ -6,7 +6,7 @@ import numpy as np
 import polars as pl
 from brainrender.actors import Points
 
-from neuralib.argp import argument, str_tuple_type, validator, list_type
+from argclz import argument, str_tuple_type, validator, list_type
 from neuralib.atlas.brainrender.core import BrainRenderCLI
 from neuralib.atlas.brainrender.util import get_color
 from neuralib.atlas.util import iter_source_coordinates, allen_to_brainrender_coord, as_coords_array
@@ -113,6 +113,8 @@ class RoiRenderCLI(BrainRenderCLI):
     _point_file_list: list[str] = []
 
     def run(self):
+        self.post_parsing()
+
         if not self._stop_render:
             self.render()
             self.render_output()
