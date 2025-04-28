@@ -224,7 +224,6 @@ Notebook Example
     :maxdepth: 1
     :caption: Notebook
 
-    ../notebooks/example_argp
     ../notebooks/example_imaging_2p
 
     ../notebooks/example_rastermap

@@ -76,9 +76,9 @@ def deprecated_class(*, new: str | None = None,
 
         #
         if cls.__doc__ is None:
-            cls.__doc__ = 'DEPRECATED.'
+            cls.__doc__ = f"DEPRECATED ({remarks}). "
         else:
-            cls.__doc__ = 'DEPRECATED.' + cls.__doc__
+            cls.__doc__ = f"DEPRECATED ({remarks}). " + cls.__doc__
 
         return cls
 
@@ -110,9 +110,9 @@ def deprecated_func(*, new: str | None = None,
             return f(*args, **kwargs)
 
         if f.__doc__ is None:
-            _deprecated_func.__doc__ = "DEPRECATED."
+            _deprecated_func.__doc__ = f"DEPRECATED ({remarks}). "
         else:
-            _deprecated_func.__doc__ = "DEPRECATED. " + f.__doc__
+            _deprecated_func.__doc__ = f"DEPRECATED ({remarks}). " + f.__doc__
 
         return _deprecated_func
 
