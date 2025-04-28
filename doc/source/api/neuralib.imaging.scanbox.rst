@@ -9,4 +9,4 @@ neuralib.imaging.scanbox
     :caption: Modules:
 
     neuralib.imaging.scanbox.core
-    neuralib.imaging.scanbox.viewer
+    neuralib.imaging.scanbox.view

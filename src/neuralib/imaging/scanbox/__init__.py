@@ -1,15 +1,12 @@
 """
-ScanBox Data Parser
-====================
-
-:author:
-    Yu-Ting Wei
+ScanBox Data Processing
+========================
 
 This module simply provides
 
 1. result parser for scanbox acquisition system
 
-2. view the sequence output
+2. view the sequence / save as tiff file
 
 
 See all the info
@@ -52,53 +49,69 @@ Screen Shot file to tiff
 
 
 
-SBXViewer
-==================
+ScanBox View
+-------------------------
 
-directly view the image sequence as mmap
+Directly view the image sequence as mmap
 
 
 Use CLI
-------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. prompt:: bash $
 
-    python -m neuralib.imaging.scanbox.viewer -h
+    python -m neuralib.imaging.scanbox.view -h
+
+
+.. code-block:: text
+
+    usage: view.py [-h] [--frames FRAMES] [--plane PLANE] [--channel CHANNEL] [--verbose] [--show] [--tiff TO_TIFF] PATH
+
+    positional arguments:
+      PATH               directory containing .sbx/.mat scanbox output
+
+    options:
+      -h, --help         show this help message and exit
+      --frames FRAMES    indices of image sequences, if None, then all frames
+      --plane PLANE      which optic plane
+      --channel CHANNEL  which pmt channel
+      --verbose          show meta verbose
+      --show             play the selected imaging sequences
+      --tiff TO_TIFF     save sequence as tiff output
 
 
 Example playing the 100-200 frames
 
 .. prompt:: bash $
 
-    python -m neuralib.imaging.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
+    python -m neuralib.imaging.scanbox.view PATH -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
 
 
 Example save 100-200 Frames as tiff
 
 .. prompt:: bash $
 
-    python -m neuralib.imaging.scanbox.viewer -D <DIR> -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
+    python -m neuralib.imaging.scanbox.view PATH -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
 
 
 
 Use API call
---------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
-    from neuralib.imaging.scanbox.viewer import SBXViewer
+    from neuralib.imaging.scanbox.view import ScanBoxView
 
     directory  = ...  # directory contain the .sbx and .mat output from scanbox
-    sbx_viewer = SBXViewer(directory)
+    view = ScanBoxView(directory)
 
     # play
-    sbx_viewer.play(slice(100,200), plane=0, channel=0)
+    view.show(slice(100,200), plane=0, channel=0)
 
     # save as tiff
-    sbx_viewer.to_tiff(slice(100,200), plane=0, channel=0, output='test.tiff')
+    view.to_tiff(slice(100,200), plane=0, channel=0, output='test.tiff')
 
 
 """
 
 from .core import *
-from .viewer import *

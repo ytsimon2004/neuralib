@@ -29,9 +29,7 @@ exclude_patterns = ['**/site-packages/**']
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
-html_theme_options = {
 
-}
 
 # -- Options for autodoc ------------------------------------------------
 autodoc_member_order = 'bysource'
@@ -49,7 +47,9 @@ autodoc_default_options = {
 autosummary_generate = True
 
 
-suppress_warnings = ["autodoc.duplicate"]
-
 # -- Options for nbsphinx -------------------------------------
 nbsphinx_execute = 'never'
+
+# -- Options for Copy-button settings --------------------------
+copybutton_prompt_text = r'^(>>> |\.\.\. |\$ )'
+copybutton_remove_prompts = True
