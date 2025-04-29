@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 from PIL import Image
 
-from neuralib.io import NEUROLIB_CACHE_DIRECTORY
+from neuralib.io import NEUROLIB_DATASET_DIRECTORY
 from neuralib.typing import PathLike
 
 if TYPE_CHECKING:
@@ -18,10 +18,13 @@ if TYPE_CHECKING:
     from neuralib.imaging.scanbox import SBXInfo
     from neuralib.tracking.facemap import FaceMapResult
     from neuralib.model.rastermap import RasterMapResult
+    from neuralib.scan.czi import CziScanner
+    from neuralib.scan.lsm import TiffScanner
 
 __all__ = [
     'google_drive_file',
     'google_drive_folder',
+    'clean_all_cache_dataset',
     #
     'load_example_rois',
     'load_example_rois_image',
@@ -40,7 +43,10 @@ __all__ = [
     'load_example_dlc_h5',
     'load_example_dlc_csv',
     'load_example_facemap_pupil',
-    'load_example_facemap_keypoints'
+    'load_example_facemap_keypoints',
+    #
+    'load_example_lsm',
+    'load_example_czi'
 ]
 
 
@@ -69,7 +75,7 @@ def google_drive_file(file_id: str,
         file = file_id
 
     if output_dir is None:
-        output_dir = NEUROLIB_CACHE_DIRECTORY / 'tmp'
+        output_dir = NEUROLIB_DATASET_DIRECTORY
 
     output_dir.mkdir(exist_ok=True, parents=True)
     output_file = output_dir / file
@@ -111,7 +117,7 @@ def google_drive_folder(folder_id: str,
         folder_name = folder_id
 
     if output_dir is None:
-        output_dir = NEUROLIB_CACHE_DIRECTORY / 'tmp' / folder_name
+        output_dir = NEUROLIB_DATASET_DIRECTORY / folder_name
 
     try:
         if output_dir.exists() and any(output_dir.iterdir()) and not invalid_cache:
@@ -123,6 +129,12 @@ def google_drive_folder(folder_id: str,
     finally:
         if not cached:
             shutil.rmtree(output_dir, ignore_errors=True)
+
+
+def clean_all_cache_dataset():
+    """removes the cache dataset directory"""
+    shutil.rmtree(NEUROLIB_DATASET_DIRECTORY)
+    print(f'[REMOVE]: {NEUROLIB_DATASET_DIRECTORY}')
 
 
 # ========== #
@@ -269,3 +281,23 @@ def load_example_facemap_keypoints(**kwargs) -> 'FaceMapResult':
     from neuralib.tracking.facemap import read_facemap
     with google_drive_folder('1FWz70HE_hQuhE6K9hoO_y1OgeG11NsGM', **kwargs) as pupil_dir:
         return read_facemap(pupil_dir)
+
+
+# ============= #
+# Confocal Scan #
+# ============= #
+
+def load_example_lsm(**kwargs) -> 'TiffScanner':
+    """load example lsm file"""
+    from neuralib.scan.lsm import lsm_file
+    with google_drive_file('1beq6PCY8XmZjyWiOk2-KkcXLrmbLpWmS', rename_file='test.lsm', **kwargs) as file:
+        with lsm_file(file) as lsm:
+            return lsm
+
+
+def load_example_czi(**kwargs) -> 'CziScanner':
+    """load example czi file"""
+    from neuralib.scan.czi import czi_file
+    with google_drive_file('1gSPz_a7kCZ3UQABC-v-_sNnAxhfY_ly0', rename_file='test.czi', **kwargs) as file:
+        with czi_file(file) as czi:
+            return czi

@@ -8,7 +8,7 @@ neuralib package
     neuralib.imaging
     neuralib.model
     neuralib.locomotion
-    neuralib.scanner
+    neuralib.scan
     neuralib.segmentation
     neuralib.morpho
     neuralib.tracking

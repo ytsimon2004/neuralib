@@ -22,6 +22,10 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+# -----------------------------------------------------------------------------
+# Installation
+# -----------------------------------------------------------------------------
+
 dependencies = [
     "attrs",
     "argclz",
@@ -47,7 +51,6 @@ dependencies = [
 ]
 
 
-
 [project.optional-dependencies]
 
 # as module name
@@ -59,9 +62,7 @@ atlas = [
     "plotly",
     "fastexcel"
 ]
-
 scanner = ["xmltodict", "aicspylibczi"]
-
 imaging = [
     "scanimage-tiff-reader",
     "sbxreader",
@@ -70,9 +71,7 @@ imaging = [
     "bokeh", # fft view
     "napari"  # align
 ]
-
 imagelib = ["pdf2image", "imageio"]
-
 
 # as functionality (isolated wrapper)
 rastermap = ["rastermap"]
@@ -83,8 +82,6 @@ stardist = ["stardist", "neura-library[segmentation]", "numpy<2.0; extra == 'sta
 slack = ["dotenv", "slackclient"]
 gspread = ["gspread"]
 opt = ["psutil"]
-
-
 
 #
 all = [
@@ -101,17 +98,50 @@ all = [
     "neura-library[gspread]",
     "neura-library[opt]",
 ]
-
-#
 dev = ["neura-library[all]", "pre-commit", "ruff", "pytest"]
-
-#
 doc = [
     "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton",
     "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]",
 ]
 
+# -----------------------------------------------------------------------------
+# Testing and Coverage Configuration
+# -----------------------------------------------------------------------------
 
+[tool.coverage.run]
+source = ["neuralib"]
+omit = [
+    "*/neuralib/argp/*",
+    "*/neuralib/dashboard/*",
+    "*/neuralib/persistence/*",
+    "*/neuralib/segmentation/*",
+    "*/neuralib/model/*",
+    "*/neuralib/atlas/brainrender/*",
+    "*/neuralib/tools/*",
+    "*/neuralib/util/gpu.py",
+    "*/neuralib/util/profile.py"
+]
+
+[tool.coverage.report]
+omit = [
+    "*/neuralib/argp/*",
+    "*/neuralib/dashboard/*",
+    "*/neuralib/persistence/*",
+    "*/neuralib/segmentation/*",
+    "*/neuralib/model/*",
+    "*/neuralib/atlas/brainrender/*",
+    "*/neuralib/tools/*",
+    "*/neuralib/util/gpu.py",
+    "*/neuralib/util/profile.py"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["test/unit"]
+
+
+# -----------------------------------------------------------------------------
+# Others
+# -----------------------------------------------------------------------------
 
 [project.urls]
 Homepage = "https://github.com/ytsimon2004/neuralib"

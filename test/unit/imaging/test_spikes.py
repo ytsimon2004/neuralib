@@ -1,12 +1,11 @@
-from pathlib import Path
-
 import numpy as np
 import pytest
 
 from neuralib.imaging.suite2p import get_neuron_signal
+from neuralib.io import NEUROLIB_DATASET_DIRECTORY
 from neuralib.io.dataset import load_example_suite2p_result
 
-DATA_EXISTS = (Path().home() / '.cache' / 'neuralib' / 'tmp' / 's2p').exists()
+DATA_EXISTS = (NEUROLIB_DATASET_DIRECTORY / 's2p').exists()
 
 
 @pytest.fixture(scope='module')

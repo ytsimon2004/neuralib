@@ -1,13 +1,13 @@
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from neuralib.imaging.suite2p import Suite2PResult
+from neuralib.io import NEUROLIB_DATASET_DIRECTORY
 from neuralib.io.dataset import load_example_suite2p_result
 from neuralib.plot import plot_figure
 
-DATA_EXISTS = (Path().home() / '.cache' / 'neuralib' / 'tmp' / 's2p').exists()
+DATA_EXISTS = (NEUROLIB_DATASET_DIRECTORY / 's2p').exists()
 
 
 @pytest.fixture(scope='module', autouse=True)

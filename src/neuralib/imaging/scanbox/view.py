@@ -139,6 +139,8 @@ class ScanBoxView:
 
 
 class ScanBoxViewOptions(AbstractParser):
+    DESCRIPTION = 'ScanBox data view & save options'
+
     directory: Path = pos_argument(
         'PATH',
         validator.path.is_dir().is_exists(),

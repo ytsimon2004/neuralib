@@ -12,7 +12,6 @@ Short-Term Goals (Next 1–3 Months)
 - Isolate general-purpose utility modules into an independent PyPI project, making this repository more neuroscience-specific:
 
   - ``neuralib.argp``
-  - ``neuralib.persistence``
   - ``neuralib.sqlp``
 
 
