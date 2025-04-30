@@ -8,11 +8,3 @@ neuralib.dashboard.tool
    :nosignatures:
 
    TimeoutUpdateValue
-
-
-.. automodule:: neuralib.dashboard.tool
-   :members:
-   :exclude-members: TimeoutUpdateValue
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

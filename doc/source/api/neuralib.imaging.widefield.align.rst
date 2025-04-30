@@ -8,11 +8,3 @@ neuralib.imaging.widefield.align
    :nosignatures:
 
    NapariAlignmentOptions
-
-
-.. automodule:: neuralib.imaging.widefield.align
-   :members:
-   :exclude-members: NapariAlignmentOptions
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

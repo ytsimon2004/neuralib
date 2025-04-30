@@ -8,11 +8,3 @@ neuralib.io.csv_header
    :nosignatures:
 
    csv_header
-
-
-.. automodule:: neuralib.io.csv_header
-   :members:
-   :exclude-members: csv_header
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

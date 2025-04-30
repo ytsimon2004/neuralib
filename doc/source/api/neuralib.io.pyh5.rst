@@ -12,11 +12,3 @@ neuralib.io.pyh5
    group
    array
    table
-
-
-.. automodule:: neuralib.io.pyh5
-   :members:
-   :exclude-members: H5pyData, attr, group, array, table
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

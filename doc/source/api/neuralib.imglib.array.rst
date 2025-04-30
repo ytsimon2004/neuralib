@@ -9,11 +9,3 @@ neuralib.imglib.array
 
    image_array
    ImageArrayWrapper
-
-
-.. automodule:: neuralib.imglib.array
-   :members:
-   :exclude-members: image_array, ImageArrayWrapper
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

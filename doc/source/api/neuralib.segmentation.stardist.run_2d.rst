@@ -9,11 +9,3 @@ neuralib.segmentation.stardist.run_2d
 
    StarDistResult
    StarDist2DOptions
-
-
-.. automodule:: neuralib.segmentation.stardist.run_2d
-   :members:
-   :exclude-members: StarDistResult, StarDist2DOptions
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

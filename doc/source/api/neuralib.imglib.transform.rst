@@ -9,11 +9,3 @@ neuralib.imglib.transform
 
    affine_transform
    apply_transformation
-
-
-.. automodule:: neuralib.imglib.transform
-   :members:
-   :exclude-members: affine_transform, apply_transformation
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -10,11 +10,3 @@ neuralib.morpho.swc
    SwcNode
    SwcFile
    plot_swc
-
-
-.. automodule:: neuralib.morpho.swc
-   :members:
-   :exclude-members: SwcNode, SwcFile, plot_swc
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

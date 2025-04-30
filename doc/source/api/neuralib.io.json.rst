@@ -10,11 +10,3 @@ neuralib.io.json
    JsonEncodeHandler
    load_json
    save_json
-
-
-.. automodule:: neuralib.io.json
-   :members:
-   :exclude-members: JsonEncodeHandler, load_json, save_json
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

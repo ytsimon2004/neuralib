@@ -11,11 +11,3 @@ neuralib.segmentation.cellpose.core
    AbstractSegmentationOption
    AbstractCellPoseOption
    CellPoseEvalResult
-
-
-.. automodule:: neuralib.segmentation.cellpose.core
-   :members:
-   :exclude-members: CPOSE_MODEL, AbstractSegmentationOption, AbstractCellPoseOption, CellPoseEvalResult
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

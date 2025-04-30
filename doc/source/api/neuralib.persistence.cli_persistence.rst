@@ -9,11 +9,3 @@ neuralib.persistence.cli_persistence
 
    PersistenceOptions
    get_options_and_cache
-
-
-.. automodule:: neuralib.persistence.cli_persistence
-   :members:
-   :exclude-members: PersistenceOptions, get_options_and_cache
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

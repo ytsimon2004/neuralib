@@ -1,5 +1,5 @@
-neuralib package
-==================
+neuralib core module
+========================
 
 .. toctree::
     :maxdepth: 1
@@ -14,7 +14,7 @@ neuralib package
     neuralib.tracking
 
 
-neuralib utility package
+neuralib utility module
 =========================
 
 .. toctree::

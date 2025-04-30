@@ -9,11 +9,3 @@ neuralib.tracking.facemap.plot
 
    plot_facemap_keypoints
    plot_cmap_time_series
-
-
-.. automodule:: neuralib.tracking.facemap.plot
-   :members:
-   :exclude-members: plot_facemap_keypoints, plot_cmap_time_series
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

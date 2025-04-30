@@ -8,11 +8,3 @@ neuralib.imaging.scan_image.wrapper
    :nosignatures:
 
    ScanImageWrapper
-
-
-.. automodule:: neuralib.imaging.scan_image.wrapper
-   :members:
-   :exclude-members: ScanImageWrapper
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

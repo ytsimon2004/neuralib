@@ -8,11 +8,3 @@ neuralib.atlas.brainrender.roi
    :nosignatures:
 
    RoiRenderCLI
-
-
-.. automodule:: neuralib.atlas.brainrender.roi
-   :members:
-   :exclude-members: RoiRenderCLI
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -8,11 +8,3 @@ neuralib.atlas.brainrender.util
    :nosignatures:
 
    get_color
-
-
-.. automodule:: neuralib.atlas.brainrender.util
-   :members:
-   :exclude-members: get_color
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

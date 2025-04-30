@@ -1,39 +1,3 @@
-"""
-OASIS
-========
-
-**Fast online deconvolution of calcium imaging dat**
-
-
-Method source
---------------
-
-- `<https://github.com/j-friedrich/OASIS>`_
-
-- `<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005423>`_
-
-
-This script adapted from ``suite2p.suite2p.extraction.dcnv``
-(Copyright © 2023 Howard Hughes Medical Institute, Authored by Carsen Stringer and Marius Pachitariu)
-
-.. seealso:: `<https://github.com/MouseLand/suite2p/blob/main/suite2p/extraction/dcnv.py>`_
-
-
-**Example of usage**
-
-.. code-block:: python
-
-    from neuralib.imaging.spikes.oasis import oasis_dcnv
-
-    # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
-    dff = ...
-
-    tau = 1.5  # time constant of the calcium indicator (ms)
-    fs = 30  # sampling frequency of the calcium imaging data (hz)
-    spks = oasis_dcnv(dff, tau, fs)
-
-
-"""
 import numpy as np
 from numba import njit, prange
 

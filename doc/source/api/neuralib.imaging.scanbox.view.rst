@@ -9,11 +9,3 @@ neuralib.imaging.scanbox.view
 
    ScanBoxView
    ScanBoxViewOptions
-
-
-.. automodule:: neuralib.imaging.scanbox.view
-   :members:
-   :exclude-members: ScanBoxView, ScanBoxViewOptions
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

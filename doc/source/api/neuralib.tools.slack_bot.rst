@@ -8,11 +8,3 @@ neuralib.tools.slack_bot
    :nosignatures:
 
    send_slack_message
-
-
-.. automodule:: neuralib.tools.slack_bot
-   :members:
-   :exclude-members: send_slack_message
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

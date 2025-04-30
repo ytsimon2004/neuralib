@@ -8,11 +8,3 @@ neuralib.plot.animation
    :nosignatures:
 
    plot_scatter_animation
-
-
-.. automodule:: neuralib.plot.animation
-   :members:
-   :exclude-members: plot_scatter_animation
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

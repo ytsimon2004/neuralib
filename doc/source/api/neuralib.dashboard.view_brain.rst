@@ -11,11 +11,3 @@ neuralib.dashboard.view_brain
    BrainView
    TiffBrainView
    AtlasBrainView
-
-
-.. automodule:: neuralib.dashboard.view_brain
-   :members:
-   :exclude-members: AbstractBrainView, BrainView, TiffBrainView, AtlasBrainView
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

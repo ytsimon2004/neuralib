@@ -9,11 +9,3 @@ neuralib.atlas.ccf.matrix
 
    CCFTransMatrix
    load_transform_matrix
-
-
-.. automodule:: neuralib.atlas.ccf.matrix
-   :members:
-   :exclude-members: CCFTransMatrix, load_transform_matrix
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

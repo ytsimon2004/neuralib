@@ -11,11 +11,3 @@ neuralib.persistence.validator
    attributes_validate
    ETLConcatable
    validate_concat_etl_persistence
-
-
-.. automodule:: neuralib.persistence.validator
-   :members:
-   :exclude-members: create_date_validate, attributes_validate, ETLConcatable, validate_concat_etl_persistence
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

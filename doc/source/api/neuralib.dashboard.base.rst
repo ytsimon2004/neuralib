@@ -11,11 +11,3 @@ neuralib.dashboard.base
    View
    ViewComponent
    BokehServer
-
-
-.. automodule:: neuralib.dashboard.base
-   :members:
-   :exclude-members: Figure, View, ViewComponent, BokehServer
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

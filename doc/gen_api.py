@@ -11,8 +11,10 @@ DST.mkdir(parents=True, exist_ok=True)
 AUTOSUMMARY_DIR = DST / '_autosummary'
 AUTOSUMMARY_DIR.mkdir(exist_ok=True)
 
-# Templates
-AUTOSUMMARY_TEMPLATE = """\
+CONTENT_FILE = """\
+{module}
+{underline}
+
 .. currentmodule:: {module}
 
 .. autosummary::
@@ -20,19 +22,6 @@ AUTOSUMMARY_TEMPLATE = """\
    :nosignatures:
 
 {autosummary_list}
-"""
-
-CONTENT_FILE = """\
-{module}
-{underline}
-
-{autosummary}
-
-.. automodule:: {module}
-   :members:{exclude_members}
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:
 """
 
 CONTENT_DIR = """\
@@ -70,22 +59,18 @@ def get_module_all(module_path: Path) -> list:
 
 
 def write_module_file(module: str, output_path: Path, all_list: list):
-    """Write an .rst file for a module."""
-    autosummary = ''
-    exclude_members = ''
+    """Write an .rst file for a module using only autosummary."""
+    if not all_list:
+        print(f"[Skipped] {module} has no __all__")
+        return
 
-    if all_list:
-        autosummary_list = textwrap.indent('\n'.join(all_list), '   ')
-        autosummary = AUTOSUMMARY_TEMPLATE.format(module=module, autosummary_list=autosummary_list)
-        exclude_members = '\n   :exclude-members: ' + ', '.join(all_list)
-        autosummary_targets.extend([f"{module}.{name}" for name in all_list])
-
+    autosummary_list = textwrap.indent('\n'.join(all_list), '   ')
     content = CONTENT_FILE.format(
         module=module,
         underline='=' * len(module),
-        autosummary=autosummary,
-        exclude_members=exclude_members
+        autosummary_list=autosummary_list
     )
+    autosummary_targets.extend([f"{module}.{name}" for name in all_list])
     output_path.write_text(content)
     print(f"[Created] {output_path}")
 
@@ -137,66 +122,6 @@ def cleanup_stale_rst():
             # f.unlink()  # auto-delete
 
 
-def generate_autosummary():
-    """Generate stub .rst files for documented symbols."""
-    from sphinx.application import Sphinx
-    from sphinx.ext.autosummary.generate import generate_autosummary_docs
-
-    print(f"[Generating autosummary stubs] {len(autosummary_targets)} targets")
-
-    srcdir = Path('source').resolve()
-    confdir = srcdir
-    outdir = DST / '_build'
-    doctreedir = outdir / '.doctrees'
-    buildername = 'html'
-
-    app = Sphinx(
-        srcdir=str(srcdir),
-        confdir=str(confdir),
-        outdir=str(outdir),
-        doctreedir=str(doctreedir),
-        buildername=buildername,
-        warningiserror=False,
-        freshenv=True,
-        verbosity=0,
-    )
-    app.setup_extension('sphinx.ext.autosummary')
-
-    sources = list((DST / '_autosummary').glob('*.rst')) + list(DST.glob('*.rst'))
-    sources = [str(f) for f in sources]
-
-    generate_autosummary_docs(
-        sources=sources,
-        output_dir=str(AUTOSUMMARY_DIR),
-        suffix='.rst',
-        app=app,
-    )
-
-
-def patch_autosummary_stubs():
-    """Ensure ':toctree:' is added to autosummary blocks in class .rst stubs."""
-    for f in (AUTOSUMMARY_DIR).glob('*.rst'):
-        lines = f.read_text().splitlines()
-        new_lines = []
-        inside_autosummary = False
-
-        for line in lines:
-            if line.strip() == ".. autosummary::":
-                inside_autosummary = True
-                new_lines.append(line)
-                new_lines.append("   :toctree: .")
-                continue
-
-            if inside_autosummary and (not line.startswith(" ") and not line.strip() == ""):
-                inside_autosummary = False
-
-            new_lines.append(line)
-
-        f.write_text('\n'.join(new_lines))
-
-
 if __name__ == '__main__':
     process_source_tree()
     cleanup_stale_rst()
-    # generate_autosummary()
-    # patch_autosummary_stubs()

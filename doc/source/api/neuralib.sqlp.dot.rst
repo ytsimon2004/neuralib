@@ -8,11 +8,3 @@ neuralib.sqlp.dot
    :nosignatures:
 
    generate_dot
-
-
-.. automodule:: neuralib.sqlp.dot
-   :members:
-   :exclude-members: generate_dot
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

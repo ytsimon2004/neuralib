@@ -9,11 +9,3 @@ neuralib.util.interp
 
    interp_timestamp
    interp1d_nan
-
-
-.. automodule:: neuralib.util.interp
-   :members:
-   :exclude-members: interp_timestamp, interp1d_nan
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

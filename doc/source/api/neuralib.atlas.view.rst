@@ -12,11 +12,3 @@ neuralib.atlas.view
    load_slice_view
    AbstractSliceView
    SlicePlane
-
-
-.. automodule:: neuralib.atlas.view
-   :members:
-   :exclude-members: VIEW_TYPE, get_slice_view, load_slice_view, AbstractSliceView, SlicePlane
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

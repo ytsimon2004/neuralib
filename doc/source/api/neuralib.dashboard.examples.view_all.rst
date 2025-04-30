@@ -8,11 +8,3 @@ neuralib.dashboard.examples.view_all
    :nosignatures:
 
    AllView
-
-
-.. automodule:: neuralib.dashboard.examples.view_all
-   :members:
-   :exclude-members: AllView
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

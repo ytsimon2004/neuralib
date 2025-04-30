@@ -8,11 +8,3 @@ neuralib.imglib.labeller
    :nosignatures:
 
    SequenceLabeller
-
-
-.. automodule:: neuralib.imglib.labeller
-   :members:
-   :exclude-members: SequenceLabeller
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

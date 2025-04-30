@@ -8,11 +8,3 @@ neuralib.segmentation.base
    :nosignatures:
 
    AbstractSegmentationOption
-
-
-.. automodule:: neuralib.segmentation.base
-   :members:
-   :exclude-members: AbstractSegmentationOption
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -8,11 +8,3 @@ neuralib.imaging.widefield.fft_view
    :nosignatures:
 
    WideFieldFFTViewOption
-
-
-.. automodule:: neuralib.imaging.widefield.fft_view
-   :members:
-   :exclude-members: WideFieldFFTViewOption
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

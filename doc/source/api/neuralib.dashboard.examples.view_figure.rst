@@ -8,11 +8,3 @@ neuralib.dashboard.examples.view_figure
    :nosignatures:
 
    AnimalFigureView
-
-
-.. automodule:: neuralib.dashboard.examples.view_figure
-   :members:
-   :exclude-members: AnimalFigureView
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

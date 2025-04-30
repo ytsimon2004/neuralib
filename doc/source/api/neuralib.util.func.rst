@@ -9,11 +9,3 @@ neuralib.util.func
 
    create_fn
    get_func_default
-
-
-.. automodule:: neuralib.util.func
-   :members:
-   :exclude-members: create_fn, get_func_default
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

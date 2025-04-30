@@ -9,11 +9,3 @@ neuralib.model.rastermap.run
 
    DATA_TYPE
    run_rastermap
-
-
-.. automodule:: neuralib.model.rastermap.run
-   :members:
-   :exclude-members: DATA_TYPE, run_rastermap
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

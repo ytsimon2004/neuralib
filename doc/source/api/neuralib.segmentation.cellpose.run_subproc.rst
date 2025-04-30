@@ -8,11 +8,3 @@ neuralib.segmentation.cellpose.run_subproc
    :nosignatures:
 
    CellPoseSubprocOption
-
-
-.. automodule:: neuralib.segmentation.cellpose.run_subproc
-   :members:
-   :exclude-members: CellPoseSubprocOption
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

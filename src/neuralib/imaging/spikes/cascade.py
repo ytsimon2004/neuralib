@@ -1,35 +1,3 @@
-"""
-Cascade
-=========
-
-**Cascade translates calcium imaging ΔF/F traces into spiking probabilities or discrete spikes**
-
-
-See also the source example from the authors
-----------------------------------------------
-
-- `Github page <https://github.com/HelmchenLabSoftware/Cascade>`_
-
-- `Calibrated spike inference with Cascade.ipynb <https://colab.research.google.com/github/HelmchenLabSoftware/Cascade/blob/master/Demo%20scripts/Calibrated_spike_inference_with_Cascade.ipynb#scrollTo=cObwxWaB8i3f>`_
-
-- Since the source Cascade project not yet published in pypi, neuralib provide **wrapper usage** for Cascade(v1.0)
-
-
-**Example of usage**
-
-- See available model in :meth:`~neuralib.imaging.spikes.cascade.CascadeSpikePrediction.get_available_models()`
-
-.. code-block:: python
-
-    from neuralib.imaging.spikes.cascade import cascade_predict
-
-    # 2D dF/F array. Array[float, [nNeurons, nFrames]] or Array[float, nFrames]
-    dff = ...
-
-    # select your model, predict the spike probability from the dF/F (same shape)
-    spks = cascade_predict(dff, model_type='Global_EXC_30Hz_smoothing100ms')
-
-"""
 import re
 import zipfile
 from pathlib import Path
@@ -40,12 +8,13 @@ import numpy as np
 import requests
 import tensorflow as tf
 import tensorflow.keras
+from ruamel.yaml import YAML
+from scipy.ndimage import binary_dilation, gaussian_filter
+
 from neuralib.io import CASCADE_MODEL_CACHE_DIRECTORY
 from neuralib.typing import PathLike
 from neuralib.util.utils import ensure_dir
 from neuralib.util.verbose import fprint
-from ruamel.yaml import YAML
-from scipy.ndimage import binary_dilation, gaussian_filter
 
 __all__ = [
     'CASCADE_MODEL_TYPE',

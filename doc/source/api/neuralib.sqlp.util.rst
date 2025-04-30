@@ -20,11 +20,3 @@ neuralib.sqlp.util
    map_foreign
    pull_foreign
    rich_sql_table
-
-
-.. automodule:: neuralib.sqlp.util
-   :members:
-   :exclude-members: str_to_datetime, datetime_to_str, take, infer_eq, infer_cmp, infer_in, resolve_field_type, cast_to_sql, cast_from_sql, get_fields_from_schema, map_foreign, pull_foreign, rich_sql_table
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

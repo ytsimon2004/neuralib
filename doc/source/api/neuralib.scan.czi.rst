@@ -1,10 +1,11 @@
 neuralib.scan.czi
 =================
 
+.. currentmodule:: neuralib.scan.czi
 
+.. autosummary::
+   :toctree: _autosummary
+   :nosignatures:
 
-.. automodule:: neuralib.scan.czi
-   :members:
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:
+   czi_file
+   CziScanner

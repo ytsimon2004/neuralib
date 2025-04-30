@@ -14,11 +14,3 @@ neuralib.sqlp.func_date
    unixepoch
    strftime
    timediff
-
-
-.. automodule:: neuralib.sqlp.func_date
-   :members:
-   :exclude-members: date, time, datetime, julianday, unixepoch, strftime, timediff
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -14,7 +14,7 @@ def main():
 
     parse_command_args(
         parsers=parsers,
-        description='brainrender view',
+        description='BrainRender CLI Options',
         usage="""
         Usage Examples:
     

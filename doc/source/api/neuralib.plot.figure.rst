@@ -10,11 +10,3 @@ neuralib.plot.figure
    plot_figure
    ax_set_default_style
    ax_merge
-
-
-.. automodule:: neuralib.plot.figure
-   :members:
-   :exclude-members: plot_figure, ax_set_default_style, ax_merge
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

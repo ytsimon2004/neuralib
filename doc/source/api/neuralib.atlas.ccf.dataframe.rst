@@ -11,11 +11,3 @@ neuralib.atlas.ccf.dataframe
    RoiClassifierDataFrame
    RoiNormalizedDataFrame
    RoiSubregionDataFrame
-
-
-.. automodule:: neuralib.atlas.ccf.dataframe
-   :members:
-   :exclude-members: ROIS_NORM_TYPE, RoiClassifierDataFrame, RoiNormalizedDataFrame, RoiSubregionDataFrame
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

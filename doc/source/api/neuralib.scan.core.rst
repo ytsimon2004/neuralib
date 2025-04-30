@@ -10,11 +10,3 @@ neuralib.scan.core
    SceneIdx
    DimCode
    AbstractScanner
-
-
-.. automodule:: neuralib.scan.core
-   :members:
-   :exclude-members: SceneIdx, DimCode, AbstractScanner
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

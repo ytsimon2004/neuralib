@@ -9,11 +9,3 @@ neuralib.locomotion.epoch
 
    running_mask1d
    jump_mask2d
-
-
-.. automodule:: neuralib.locomotion.epoch
-   :members:
-   :exclude-members: running_mask1d, jump_mask2d
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

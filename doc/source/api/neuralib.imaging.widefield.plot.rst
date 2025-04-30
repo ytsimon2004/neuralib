@@ -8,11 +8,3 @@ neuralib.imaging.widefield.plot
    :nosignatures:
 
    plot_retinotopic_maps
-
-
-.. automodule:: neuralib.imaging.widefield.plot
-   :members:
-   :exclude-members: plot_retinotopic_maps
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

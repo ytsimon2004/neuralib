@@ -15,11 +15,3 @@ neuralib.sqlp.annotation
    unique
    foreign
    check
-
-
-.. automodule:: neuralib.sqlp.annotation
-   :members:
-   :exclude-members: CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP, PRIMARY, UNIQUE, unique, foreign, check
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

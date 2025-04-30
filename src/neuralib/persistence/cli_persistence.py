@@ -1,11 +1,3 @@
-"""
-Persistence Class for argp supporting
-=====================================
-
-:author:
-    Ta-Shun Su
-
-"""
 import abc
 from pathlib import Path
 from typing import Generic, TypeVar, get_origin, get_args

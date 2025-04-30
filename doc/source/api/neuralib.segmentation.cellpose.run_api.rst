@@ -9,11 +9,3 @@ neuralib.segmentation.cellpose.run_api
 
    CellPoseAPIOption
    CellPoseEvalResult
-
-
-.. automodule:: neuralib.segmentation.cellpose.run_api
-   :members:
-   :exclude-members: CellPoseAPIOption, CellPoseEvalResult
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

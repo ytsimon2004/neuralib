@@ -12,11 +12,3 @@ neuralib.model.rastermap.plot
    plot_wfield_spatial
    RasterMapPlot
    BehavioralVT
-
-
-.. automodule:: neuralib.model.rastermap.plot
-   :members:
-   :exclude-members: plot_rastermap, plot_cellular_spatial, plot_wfield_spatial, RasterMapPlot, BehavioralVT
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -8,11 +8,3 @@ neuralib.imaging.widefield.fft
    :nosignatures:
 
    SequenceFFT
-
-
-.. automodule:: neuralib.imaging.widefield.fft
-   :members:
-   :exclude-members: SequenceFFT
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -9,11 +9,3 @@ neuralib.sqlp.connection
 
    Connection
    get_connection_context
-
-
-.. automodule:: neuralib.sqlp.connection
-   :members:
-   :exclude-members: Connection, get_connection_context
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

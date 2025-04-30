@@ -9,11 +9,3 @@ neuralib.imaging.spikes.oasis
 
    oasis_dcnv
    oasis_matrix
-
-
-.. automodule:: neuralib.imaging.spikes.oasis
-   :members:
-   :exclude-members: oasis_dcnv, oasis_matrix
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

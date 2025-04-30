@@ -8,11 +8,3 @@ neuralib.atlas.brainrender.core
    :nosignatures:
 
    BrainRenderCLI
-
-
-.. automodule:: neuralib.atlas.brainrender.core
-   :members:
-   :exclude-members: BrainRenderCLI
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

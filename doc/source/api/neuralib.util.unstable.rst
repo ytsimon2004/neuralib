@@ -8,11 +8,3 @@ neuralib.util.unstable
    :nosignatures:
 
    unstable
-
-
-.. automodule:: neuralib.util.unstable
-   :members:
-   :exclude-members: unstable
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

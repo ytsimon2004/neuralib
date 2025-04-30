@@ -14,11 +14,3 @@ neuralib.argp.dispatch
    invoke_group_command
    DispatchOption
    DispatchCommandNotFound
-
-
-.. automodule:: neuralib.argp.dispatch
-   :members:
-   :exclude-members: dispatch, list_commands, find_command, invoke_command, invoke_group_command, DispatchOption, DispatchCommandNotFound
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

@@ -1,53 +1,3 @@
-"""
-SequenceLabeller
-===================
-
-Simple CV2-based viewer/labeller GUI for image sequences
-
-Use Cases:
-
-- viewing the image sequences
-
-- label each image and save as csv dataframe (human-eval for population neurons activity profile)
-
-
-Load sequences from a directory
------------------------------------
-
-- Use CLI mode
-
-See help::
-
-    python -m neuralib.imglib.labeller -h
-
-Example::
-
-    python neuralib.imglib.labeller -D <DIR>
-
-
-- Use API call
-
-.. code-block:: python
-
-    from neuralib.imglib.labeller import SequenceLabeller
-
-    directory = ...
-    labeller = SequenceLabeller.load_from_dir(directory)
-    labeller.main()
-
-
-Load sequences from sequences array
--------------------------------------
-
-.. code-block:: python
-
-    from neuralib.imglib.labeller import SequenceLabeller
-
-    arr = ...   # numpy array with (F, H, W, <3>)
-    labeller = SequenceLabeller.load_sequences(arr)
-    labeller.main()
-
-"""
 import logging
 import re
 import sys
@@ -58,14 +8,15 @@ import attrs
 import cv2
 import numpy as np
 import polars as pl
-from neuralib.io import csv_header
-from neuralib.typing import PathLike
-from neuralib.util.utils import keys_with_value
-from neuralib.util.verbose import fprint
 from polars.testing import assert_frame_equal
 from tifffile import tifffile
 from tqdm import tqdm
 from typing_extensions import Self
+
+from neuralib.io import csv_header
+from neuralib.typing import PathLike
+from neuralib.util.utils import keys_with_value
+from neuralib.util.verbose import fprint
 
 __all__ = ['SequenceLabeller']
 

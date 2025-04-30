@@ -13,11 +13,3 @@ neuralib.sqlp.stat
    SqlUpdateStat
    SqlDeleteStat
    Cursor
-
-
-.. automodule:: neuralib.sqlp.stat
-   :members:
-   :exclude-members: SqlStat, SqlSelectStat, SqlInsertStat, SqlUpdateStat, SqlDeleteStat, Cursor
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

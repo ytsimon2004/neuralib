@@ -11,11 +11,3 @@ neuralib.imaging.spikes.cascade
    CascadeModelConfig
    cascade_predict
    CascadeSpikePrediction
-
-
-.. automodule:: neuralib.imaging.spikes.cascade
-   :members:
-   :exclude-members: CASCADE_MODEL_TYPE, CascadeModelConfig, cascade_predict, CascadeSpikePrediction
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

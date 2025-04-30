@@ -30,6 +30,13 @@ exclude_patterns = ['**/site-packages/**']
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
+html_context = {
+    "display_github": True,
+    "github_user": "ytsimon2004",
+    "github_repo": "neuralib",
+    "github_version": "main",
+    "conf_py_path": "/doc/source/",  # Path in the checkout to the docs root
+}
 
 # -- Options for autodoc ------------------------------------------------
 autodoc_member_order = 'bysource'
@@ -39,13 +46,12 @@ autodoc_typehints_format = 'short'
 autodoc_default_options = {
     'members': True,
     'undoc-members': True,
-    'inherited-members': True,
+    'inherited-members': False,
     'show-inheritance': True,
 }
 
 # -- Options for autosummary ------------------------------------------------
 autosummary_generate = True
-
 
 # -- Options for nbsphinx -------------------------------------
 nbsphinx_execute = 'never'

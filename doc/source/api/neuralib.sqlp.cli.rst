@@ -9,11 +9,3 @@ neuralib.sqlp.cli
 
    Database
    transaction
-
-
-.. automodule:: neuralib.sqlp.cli
-   :members:
-   :exclude-members: Database, transaction
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

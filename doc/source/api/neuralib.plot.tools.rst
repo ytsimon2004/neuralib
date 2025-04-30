@@ -10,11 +10,3 @@ neuralib.plot.tools
    AnchoredScaleBar
    AxesExtendHelper
    insert_latex_equation
-
-
-.. automodule:: neuralib.plot.tools
-   :members:
-   :exclude-members: AnchoredScaleBar, AxesExtendHelper, insert_latex_equation
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:

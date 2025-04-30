@@ -13,11 +13,3 @@ neuralib.tracking.deeplabcut.core
    JointDataFrame
    DeepLabCutMeta
    DeepLabCutModelConfig
-
-
-.. automodule:: neuralib.tracking.deeplabcut.core
-   :members:
-   :exclude-members: Joint, read_dlc, DeepLabCutDataFrame, JointDataFrame, DeepLabCutMeta, DeepLabCutModelConfig
-   :undoc-members:
-   :inherited-members:
-   :show-inheritance:
