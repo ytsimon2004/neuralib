@@ -1,6 +1,6 @@
 [project]
 name = "neura-library"
-version = "0.4.5"
+version = "0.4.6"
 requires-python = ">=3.10"
 description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
 authors = [
@@ -62,7 +62,7 @@ atlas = [
     "plotly",
     "fastexcel"
 ]
-scanner = ["xmltodict", "aicspylibczi"]
+scan = ["xmltodict", "aicspylibczi"]
 imaging = [
     "scanimage-tiff-reader",
     "sbxreader",
@@ -71,7 +71,7 @@ imaging = [
     "bokeh", # fft view
     "napari"  # align
 ]
-imagelib = ["pdf2image", "imageio"]
+imglib = ["pdf2image", "imageio"]
 
 # as functionality (isolated wrapper)
 rastermap = ["rastermap"]
@@ -87,9 +87,9 @@ opt = ["psutil"]
 all = [
     # module
     "neura-library[atlas]",
-    "neura-library[scanner]",
+    "neura-library[scan]",
     "neura-library[imaging]",
-    "neura-library[imagelib]",
+    "neura-library[imglib]",
     # as functionality
     "neura-library[rastermap]",
     "neura-library[cascade]",

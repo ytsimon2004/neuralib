@@ -30,11 +30,3 @@ efficient data handling, analysis, and reproducibility in open-source neuroscien
 
 - **[Full Documentation](https://neuralib.readthedocs.io/en/latest/index.html)**
 - **[Installation Guide](https://neuralib.readthedocs.io/en/latest/installation.html)**
-- **[Example Notebooks](https://neuralib.readthedocs.io/en/latest/index.html#notebook-example)**
-
----
-
-## Installation
-
-```bash
-pip install neura-library
