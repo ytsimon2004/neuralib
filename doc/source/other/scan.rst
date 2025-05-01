@@ -40,7 +40,7 @@ Confocal Scan
 LSM Data
 ------------
 
-- **Refer to API**: :mod:`neuralib.scan.lsm`
+- **Refer to API**: :doc:`../api/neuralib.scan.lsm`
 
 .. code-block:: python
 
@@ -64,7 +64,7 @@ LSM Data
 CZI Data
 ------------
 
-- **Refer to API**: :mod:`neuralib.scan.czi`
+- **Refer to API**: :doc:`../api/neuralib.scan.czi`
 
 .. code-block:: python
 

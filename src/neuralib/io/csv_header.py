@@ -112,6 +112,7 @@ def csv_header(output: PathLike,
                continuous_mode: str | None = None,
                quotes_header: list[str] | str | None = None) -> CsvContextManager:
     """
+    context manager for writing csv with given headers.
 
     **Example**
 

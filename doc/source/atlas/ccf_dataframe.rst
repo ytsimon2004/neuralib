@@ -4,7 +4,7 @@ ROI DataFrame
 This module provides tools to structure, normalize, and analyze region-of-interest (ROI) data in brain atlases.
 It supports classification based on Allen Brain hierarchy, hemisphere computation, normalization (volume, cell count, or channel fraction), and subregion breakdown.
 
-**Refer to API**: :mod:`neuralib.atlas.ccf.dataframe`
+**Refer to API**: :doc:`../api/neuralib.atlas.ccf.dataframe`
 
 RoiClassifierDataFrame
 ----------------------

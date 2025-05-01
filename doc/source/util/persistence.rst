@@ -4,6 +4,8 @@ Persistence Class
 This module defines the `persistence_class` decorator for managing structured persistence
 of data classes, along with optional integration with caching and command-line persistence tools.
 
+- **Refer to API:** :mod:`neuralib.persistence`
+
 Define a Persistence Class
 --------------------------
 

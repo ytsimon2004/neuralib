@@ -8,11 +8,11 @@ Epoch
 -------------
 Selection of specific epoch (i.e., running, stationary)
 
-- **Refer to API**: :mod:`neuralib.locomotion.epoch`
+- **Refer to API**: :doc:`../api/neuralib.locomotion.epoch`
 
 
 Position
 -------------
 Position / Interpolation / Head Direction ....
 
-- **Refer to API**: :mod:`neuralib.locomotion.position`
+- **Refer to API**: :doc:`../api/neuralib.locomotion.position`

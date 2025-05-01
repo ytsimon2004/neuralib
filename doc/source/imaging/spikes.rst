@@ -6,7 +6,7 @@ OASIS
 
 Fast online deconvolution of calcium imaging dat
 
-- **Refer to API**: :mod:`neuralib.imaging.spikes.oasis`
+- **Refer to API**: :doc:`../api/neuralib.imaging.spikes.oasis`
 
 
 .. seealso::
@@ -35,7 +35,7 @@ Cascade
 
 Wrapper class from Cascade to translate calcium imaging ΔF/F traces into spiking probabilities or discrete spikes
 
-- **Refer to API**: :mod:`neuralib.imaging.spikes.cascade`
+- **Refer to API**: :doc:`../api/neuralib.imaging.spikes.cascade`
 
 - ``tensorflow`` required
 

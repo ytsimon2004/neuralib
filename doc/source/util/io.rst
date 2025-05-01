@@ -10,18 +10,18 @@ Helper Function
    :header-rows: 1
    :widths: 30 70
 
-   * - **module**
+   * - **Module**
      - **Description**
-   * - :mod:`csv helper <neuralib.io.csv_header>`
-     - write csv context manager
-   * - :mod:`json helper <neuralib.io.json>`
-     - handle json with more dtype
-   * - :mod:`h5py <neuralib.io.pyh5>`
-     - h5py helper
-   * - :func:`output <neuralib.io.output>`
-     - save output with version number
+   * - :func:`~neuralib.io.csv_header.csv_header`
+     - CSV context manager for writing with header control
+   * - :class:`~neuralib.io.json.JsonEncodeHandler`
+     - JSON reader/writer supporting extended data types
+   * - :class:`~neuralib.io.pyh5.H5pyData`
+     - HDF5 helper functions using `h5py`
+   * - :func:`~neuralib.io.output.mkdir_version`
+     - Save output files with version tracking
 
 
 Example data
 --------------
-- **Refer to API**: :mod:`neuralib.io.dataset`
+- **Refer to API**: :doc:`../api/neuralib.io.dataset`

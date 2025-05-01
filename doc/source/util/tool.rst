@@ -13,7 +13,7 @@ Wrapper for gspread
     - `Source Doc <https://docs.gspread.org/en/latest/>`_
 
 
-- **Refer to API**: :mod:`neuralib.tool.gspread`
+- **Refer to API**: :doc:`../api/neuralib.tools.gspread`
 
 
 

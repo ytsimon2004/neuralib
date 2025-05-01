@@ -30,7 +30,7 @@ Once installed, the CLI can be invoked directly from the command line.
 Region Reconstruction
 ---------------------------------
 
-- **Refer to API**: :mod:`neuralib.atlas.brainrender.core`
+- **Refer to API**: :doc:`../api/neuralib.atlas.brainrender.core`
 
 - **See Options**
 
@@ -98,7 +98,7 @@ ROI Reconstruction
 
 Reconstruct ROIs together with brain region(s)
 
-- **Refer to API**: :mod:`neuralib.atlas.brainrender.roi`
+- **Refer to API**: :doc:`../api/neuralib.atlas.brainrender.roi`
 
 - **See Options**
 
@@ -243,7 +243,7 @@ Probe Reconstruction
 
 Reconstruct probes (or shanks) based on trajectory labeling (e.g., DiI, DiO, or lesion tracks)
 
-- **Refer to API**: :mod:`neuralib.atlas.brainrender.probe`
+- **Refer to API**: :doc:`../api/neuralib.atlas.brainrender.probe`
 
 
 - **See Options**

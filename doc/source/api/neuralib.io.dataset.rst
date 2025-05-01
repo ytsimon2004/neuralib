@@ -9,6 +9,7 @@ neuralib.io.dataset
 
    google_drive_file
    google_drive_folder
+   clean_all_cache_dataset
    load_example_rois
    load_example_rois_image
    load_example_dorsal_cortex
@@ -24,3 +25,5 @@ neuralib.io.dataset
    load_example_dlc_csv
    load_example_facemap_pupil
    load_example_facemap_keypoints
+   load_example_lsm
+   load_example_czi

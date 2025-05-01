@@ -1,7 +1,7 @@
 ATLAS Tree
 ==============================
 
-- **Refer to API**: :mod:`neuralib.atlas.map`
+- **Refer to API**: :doc:`../api/neuralib.atlas.map`
 
 Customized map based on Wang et al 2020,
 Handle the different naming/category with allenccf registration result

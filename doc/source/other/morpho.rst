@@ -6,7 +6,7 @@ Module for morphological reconstruction
 SWC Data
 ---------------------------
 
-- **Refer to API**: :mod:`neuralib.morpho.swc`
+- **Refer to API**: :doc:`../api/neuralib.morpho.swc`
 
 **Example for CLI usage**
 
