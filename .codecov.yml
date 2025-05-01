@@ -1,0 +1,27 @@
+coverage:
+  precision: 2
+  round: down
+  range: 50..100
+
+  status:
+    # Disable the patch check (coverage for just the diff)
+    patch: false
+
+    # Enable overall project coverage check
+    project:
+      default:
+        target: 50%
+        threshold: 5%       # Allow up to 1% drop without failing
+        informational: false
+
+ignore:
+  - "neuralib/argp/*"
+  - "neuralib/io/dataset/*"
+  - "neuralib/locomotion/*"
+  - "neuralib/segmentation/*"
+  - "neuralib/model/*"
+  - "neuralib/atlas/brainrender/*"
+  - "neuralib/dashboard/*"
+  - "neuralib/persistence/*"
+  - "neuralib/tools/*"
+  - "neuralib/util/*"

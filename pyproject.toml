@@ -105,35 +105,8 @@ doc = [
 ]
 
 # -----------------------------------------------------------------------------
-# Testing and Coverage Configuration
+# Testing Configuration
 # -----------------------------------------------------------------------------
-
-[tool.coverage.run]
-source = ["neuralib"]
-omit = [
-    "*/neuralib/argp/*",
-    "*/neuralib/dashboard/*",
-    "*/neuralib/persistence/*",
-    "*/neuralib/segmentation/*",
-    "*/neuralib/model/*",
-    "*/neuralib/atlas/brainrender/*",
-    "*/neuralib/tools/*",
-    "*/neuralib/util/gpu.py",
-    "*/neuralib/util/profile.py"
-]
-
-[tool.coverage.report]
-omit = [
-    "*/neuralib/argp/*",
-    "*/neuralib/dashboard/*",
-    "*/neuralib/persistence/*",
-    "*/neuralib/segmentation/*",
-    "*/neuralib/model/*",
-    "*/neuralib/atlas/brainrender/*",
-    "*/neuralib/tools/*",
-    "*/neuralib/util/gpu.py",
-    "*/neuralib/util/profile.py"
-]
 
 [tool.pytest.ini_options]
 testpaths = ["test/unit"]
