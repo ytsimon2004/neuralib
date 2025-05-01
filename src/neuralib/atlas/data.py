@@ -64,7 +64,7 @@ def load_bg_structure_tree(atlas_name: ATLAS_NAME = 'allen_mouse_10um', *,
     if paired:
         name = df.select(pl.col('acronym'), pl.col('id'), pl.col('parent_structure_id'))
         join_df = name.join(name, left_on='parent_structure_id', right_on='id')
-        parent_child = join_df.select(pl.col('acronym'), pl.col('names_right').alias('parent_acronym'))
+        parent_child = join_df.select(pl.col('acronym'), pl.col('acronym_right').alias('parent_acronym'))
         return parent_child
     else:
         return df

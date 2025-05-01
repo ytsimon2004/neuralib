@@ -44,8 +44,8 @@ def plot_structure_tree(starting_node: str | None = None, output: PathLike | Non
 
     nodes = {}
     for it in df.iter_rows(named=True):
-        name = it['names']
-        parent = it['parents']
+        name = it['acronym']
+        parent = it['parent_acronym']
 
         if name not in nodes:
             nodes[name] = Node(name)
