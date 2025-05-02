@@ -27,7 +27,7 @@ class CellPoseAPIOption(AbstractCellPoseOption):
 
     def eval(self):
         if self.file_mode:
-            img = self.raw_image() if self.no_normalize else self.normalize_image()
+            img = self.process_image() if self.no_normalize else self.normalize_image()
             self._eval(self.file, img)
 
         elif self.batch_mode:

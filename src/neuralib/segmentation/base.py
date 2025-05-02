@@ -1,122 +1,104 @@
 import abc
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Literal
 
 import cv2
 import numpy as np
-from csbdeep.utils import normalize
 
 from argclz import AbstractParser, argument
 
-__all__ = ['AbstractSegmentationOption']
+__all__ = ['AbstractSegmentationOptions']
 
 
-class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
-    DESCRIPTION = 'ABC for cellular segmentation'
+class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
+    DESCRIPTION = 'Base Cellular Segmentation Option'
 
+    # ---- GROUP_IO -----------------------------
+    GROUP_IO = 'Data I/O Options'
     EX_GROUP_SOURCE = 'EX_GROUP_SOURCE'
 
     file: Path = argument(
         '-F', '--file',
-        required=True,
         ex_group=EX_GROUP_SOURCE,
+        group=GROUP_IO,
         help='image file path'
     )
 
     directory: Path = argument(
         '-D', '--dir',
         ex_group=EX_GROUP_SOURCE,
-        help='images directory for batch processing'
+        group=GROUP_IO,
+        help='directory for batch imaging processing'
     )
 
-    directory_suffix: str = argument(
-        '--suffix',
+    directory_suffix: Literal['.tif', '.tiff', '.png'] = argument(
+        '--dir-suffix',
         default='.tif',
-        choices=['.tif', '.tiff', '.png'],
-        help='suffix in batch mode'
+        group=GROUP_IO,
+        help='suffix in the directory for batch mode'
     )
 
     save_ij_roi: bool = argument(
         '--ij-roi',
-        '--roi',
+        group=GROUP_IO,
         help='if save also the imageJ/Fiji compatible .roi file'
     )
 
-    force_re_eval: bool = argument(
-        '--force-eval', '--re',
-        help='force re-evaluate the result'
+    # ---- OTHERS -----------------------------
+    model: str = argument(
+        '--model',
+        help='which pretrained model for evaluation'
     )
 
-    model: str = argument(
-        '-M', '--model', metavar='MODEL',
-        help='which pretrained model'
+    invalid_existed_result: bool = argument(
+        '--invalid',
+        help='force re-evaluate the result'
     )
 
     no_normalize: bool = argument(
         '--no-norm',
-        help='NOT DO Percentile-based image normalization for eval'
+        help='not do percentile-based image normalization'
     )
 
     napari_view: bool = argument(
         '--napari',
-        help='view in napari'
+        help='view result by napari GUI, only available in single file mode'
     )
 
     @property
     def file_mode(self) -> bool:
-        """Flag file mode"""
+        """flag file mode"""
         return self.file is not None
 
     @property
     def batch_mode(self) -> bool:
-        """Flag batch mode"""
+        """flag batch mode"""
         return self.directory is not None
 
-    @staticmethod
-    def _as_grayscale(file: str) -> np.ndarray:
-        img = cv2.imread(file)
-        if img.ndim == 3:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        return img
+    @property
+    def with_norm(self) -> bool:
+        """flag normalize image"""
+        return not self.no_normalize
 
-    def raw_image(self) -> np.ndarray:
-        """Load image from file and convert to grayscale
+    def process_image(self, to_gray: bool = True) -> np.ndarray:
+        """Process the image for segmentation.
 
-        :return: `Array[float, [H, W]]`
+        :return: `Array[Any, [H, W]]`
         """
-        if not self.file.is_file():
-            raise ValueError('not a file')
+        return process_image(
+            cv2.imread(str(self.file)),
+            to_gray=to_gray,
+            norm=self.with_norm
+        )
 
-        return self._as_grayscale(str(self.file))
-
-    def normalize_image(self) -> np.ndarray:
-        """
-        Normalize the image
-
-        :return: `Array[float, [H, W]]`
-        """
-        img = self.raw_image()
-
-        return normalize(img, clip=True)
-
-    def foreach_raw_image(self) -> Iterable[tuple[Path, np.ndarray]]:
-        """
-        Load image from a directory and convert to grayscale
-
-        :return: Tuple of filepath and image `Array[float, [H, W]]`
-        """
+    def foreach_process_image(self, to_gray: bool = True) -> Iterable[tuple[Path, np.ndarray]]:
         for file in self.directory.glob(f'*{self.directory_suffix}'):
-            img = self._as_grayscale(str(file))
+            img = process_image(
+                cv2.imread(str(file)),
+                to_gray=to_gray,
+                norm=self.with_norm
+            )
             yield file, img
-
-    def foreach_normalize_image(self) -> Iterable[tuple[Path, np.ndarray]]:
-        """
-        Normalize the image in batch mode
-
-        :return: Tuple of filepath and image `Array[float, [H, W]]`
-        """
-        for name, raw in self.foreach_raw_image():
-            yield name, normalize(raw, clip=True)
 
     @abc.abstractmethod
     def seg_output(self, filepath: Path) -> Path:
@@ -135,7 +117,11 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
         :param filepath: filepath for image
         :return: ij roi output save path
         """
-        return filepath.with_suffix('.roi')
+        return (
+            filepath
+            .with_name(filepath.stem + f'_{self.model}')
+            .with_suffix('.roi')
+        )
 
     @abc.abstractmethod
     def eval(self) -> None:
@@ -144,5 +130,27 @@ class AbstractSegmentationOption(AbstractParser, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def launch_napari(self, **kwargs):
-        """napari viewer"""
+        """run napari GUI viewer"""
         pass
+
+
+# TODO see if other normalization
+def process_image(img: np.ndarray,
+                  to_gray: bool = True,
+                  norm: bool = True) -> np.ndarray:
+    """
+    Pre process the image for segmentation.
+
+    :param img: image array, `Array[Any, [H, W]]` or `Array[Any, [H, W, C]]`
+    :param to_gray: to grayscale. default to True
+    :param norm: to min-max normalize, default to True
+    :return: pre-processed image array, `Array[Any, [H, W]]` or `Array[Any, [H, W, C]]`
+    """
+    if to_gray and img.ndim == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    if norm:
+        from csbdeep.utils import normalize
+        img = normalize(img, clip=True, pmin=20)
+
+    return img

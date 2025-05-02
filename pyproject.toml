@@ -137,6 +137,15 @@ omit = [
     "*/neuralib/util/*"
 ]
 
+exclude_also = [
+    '@overload',
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == \"__main__\":",
+    "@abc.abstractmethod"
+]
+
 [tool.pytest.ini_options]
 testpaths = ["test/unit"]
 

@@ -28,6 +28,7 @@ __all__ = [
     #
     'load_example_rois',
     'load_example_rois_image',
+    'load_example_rois_dir',
     'load_example_dorsal_cortex',
     #
     'load_ephys_meta',
@@ -144,6 +145,7 @@ def clean_all_cache_dataset():
 def load_example_rois(**kwargs) -> pl.DataFrame:
     """
     Load example ROIs dataframe
+
     :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
     :return: A Polars DataFrame containing the example ROIs data
     """
@@ -154,11 +156,18 @@ def load_example_rois(**kwargs) -> pl.DataFrame:
 def load_example_rois_image(**kwargs) -> np.ndarray:
     """
     Load example ROIs image array
+
     :param kwargs: Additional arguments to be passed to the `google_drive_file` context manager.
     :return: An example imaging array with labeled ROIs
     """
     with google_drive_file('1-ZFC7Fd6IgwbY6X8oetvpGjZaBBiwg0t', **kwargs) as file:
         return np.array(Image.open(file))
+
+
+def load_example_rois_dir(**kwargs) -> Path:
+    """Load a directory containing multiple example ROIs image array"""
+    with google_drive_folder('1tj36-lzOArjwMsZlhbyy_B19ffl50J98', **kwargs) as d:
+        return d
 
 
 def load_example_dorsal_cortex(color: bool = False, **kwargs) -> np.ndarray:
@@ -212,6 +221,7 @@ def load_npx2_reconstruction(**kwargs) -> pl.DataFrame:
 def load_example_scanbox(**kwargs) -> 'SBXInfo':
     """
     Load example ScanBox data
+
     :param kwargs: Additional keyword arguments pass to ``google_drive_file`` to customize the loading behavior.
     :return: An instance of ``SBXInfo`` loaded from the specified Google Drive file.
     """
@@ -223,6 +233,7 @@ def load_example_scanbox(**kwargs) -> 'SBXInfo':
 def load_example_suite2p_result(**kwargs) -> 'Suite2PResult':
     """
     Load example Suite2P data
+
     :param kwargs: Additional keyword arguments pass to ``google_drive_folder`` to customize the loading behavior.
     :return: An instance of ``Suite2PResult`` loaded with data from the specified Google Drive folder.
     """

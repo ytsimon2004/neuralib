@@ -10,12 +10,12 @@ import numpy as np
 from typing_extensions import Self
 
 from argclz import argument, as_argument
-from neuralib.segmentation.base import AbstractSegmentationOption
+from neuralib.segmentation.base import AbstractSegmentationOptions
 from neuralib.typing import PathLike
 from neuralib.util.verbose import fprint
 
 __all__ = ['CPOSE_MODEL',
-           'AbstractSegmentationOption',
+           'AbstractSegmentationOptions',
            'AbstractCellPoseOption',
            'CellPoseEvalResult']
 
@@ -39,10 +39,10 @@ CELLPOSE_CHANNEL_DICT: ChannelDict = {
 CPOSE_MODEL = Literal['cyto', 'cyto2', 'cyto3']
 
 
-class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
+class AbstractCellPoseOption(AbstractSegmentationOptions, metaclass=abc.ABCMeta):
     DESCRIPTION = 'ABC for GUI Cellpose'
 
-    model: CPOSE_MODEL = as_argument(AbstractSegmentationOption.model).with_options(default='cyto3')
+    model: CPOSE_MODEL = as_argument(AbstractSegmentationOptions.model).with_options(default='cyto3')
 
     chan_seg: int = argument(
         '-C', '--chan',
@@ -68,12 +68,16 @@ class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
     )
 
     def seg_output(self, filepath: Path) -> Path:
-        return filepath.with_name(filepath.stem + '_seg').with_suffix('.npy')
+        return (
+            filepath
+            .with_name(filepath.stem + f'_{self.model}')
+            .with_suffix('.npy')
+        )
 
     # noinspection PyTypeChecker
     def launch_napari(self):
         file = self.seg_output(self.file)
-        if not file.exists() or self.force_re_eval:
+        if not file.exists() or self.invalid_existed_result:
             self.eval()
 
         res = CellPoseEvalResult.load(file)
@@ -92,7 +96,7 @@ class AbstractCellPoseOption(AbstractSegmentationOption, metaclass=abc.ABCMeta):
         """
 
         file = self.seg_output(self.file)
-        if not file.exists() or self.force_re_eval:
+        if not file.exists() or self.invalid_existed_result:
             self.eval()
 
         cellpose.gui.gui.run(image=str(self.file))  # finding seg result in the same dir

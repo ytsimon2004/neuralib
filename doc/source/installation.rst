@@ -56,7 +56,7 @@ Module-based
 
 .. prompt:: bash $
 
-   pip install "neura-library[imagelib]"
+   pip install "neura-library[imglib]"
 
 
 Functionality-based
