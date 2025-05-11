@@ -83,15 +83,15 @@ Load sequences from a directory
 
 - **See Option**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    python -m neuralib.imglib.labeller -h
+    $ python -m neuralib.imglib.labeller -h
 
 - **Example**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    python neuralib.imglib.labeller -D <DIR>
+    $ python neuralib.imglib.labeller -D <DIR>
 
 
 - **API call**

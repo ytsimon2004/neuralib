@@ -22,9 +22,9 @@ Installation
 
 To install NeuraLib via pip:
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    pip install neura-library
+    $ pip install neura-library
 
 For more detailed instructions, see :doc:`installation`.
 
@@ -70,9 +70,9 @@ neuralib_brainrender
 - Visualize brain region data with built-in rendering support
 - See examples in the :doc:`atlas/brainrender`
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender -h
+    $ neuralib_brainrender -h
 
 neuralib_widefield
 ^^^^^^^^^^^^^^^^^^
@@ -80,9 +80,9 @@ neuralib_widefield
 - Widefield imaging CLI analysis
 - See examples in the :doc:`imaging/widefield`
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_widefield -h
+    $ neuralib_widefield -h
 
 Array Annotation Syntax
 -----------------------

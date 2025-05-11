@@ -6,9 +6,9 @@ Once installed, the CLI can be invoked directly from the command line.
 
 - **See Options**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender -h
+    $ neuralib_brainrender -h
 
 - **Output**
 
@@ -34,9 +34,9 @@ Region Reconstruction
 
 - **See Options**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender area -h
+    $ neuralib_brainrender area -h
 
 - **Output**
 
@@ -84,9 +84,9 @@ Region Reconstruction
 
 - **Example of Reconstructing the Visual Cortex subregions**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
+    $ neuralib_brainrender area -R VISal,VISam,VISl,VISli,VISp,VISpl,VISpm,VISpor --camera top
 
 |brender area|
 
@@ -102,9 +102,9 @@ Reconstruct ROIs together with brain region(s)
 
 - **See Options**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender roi -h
+    $ neuralib_brainrender roi -h
 
 - **Output**
 
@@ -146,9 +146,9 @@ Input shape: ``Array[float, (N, 3)]``, with AP, DV, and ML coordinates.
 
 - **Run**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender roi --file <NUMPY_FILE>
+    $ neuralib_brainrender roi --file <NUMPY_FILE>
 
 
 **CSV File Input**
@@ -170,9 +170,9 @@ Input shape: ``Array[float, (N, 3)]``, with AP, DV, and ML coordinates.
 
 - **Example**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender roi --file <CSV_FILE>
+    $ neuralib_brainrender roi --file <CSV_FILE>
 
 
 |brender roi|
@@ -228,9 +228,9 @@ Be able to reconstruct rois in a specific regions/subregions
 
 - **Example (reconstruct ROI in the parahippocampal areas)**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender roi --classifier-file <CSV_FILE> --region APr,ENT,HATA,PAR,POST,PRE,ProS,SUB --roi-region RHP --region-alpha 0.2 --roi-radius 20 --no-root -H right
+    $ neuralib_brainrender roi --classifier-file <CSV_FILE> --region APr,ENT,HATA,PAR,POST,PRE,ProS,SUB --roi-region RHP --region-alpha 0.2 --roi-radius 20 --no-root -H right
 
 
 |brender roi_region|
@@ -248,9 +248,9 @@ Reconstruct probes (or shanks) based on trajectory labeling (e.g., DiI, DiO, or 
 
 - **See Options**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender probe -h
+    $ neuralib_brainrender probe -h
 
 - **Output**
 
@@ -317,9 +317,9 @@ Reconstruct probes (or shanks) based on trajectory labeling (e.g., DiI, DiO, or 
 
 - **Example of Reconstructing a 4-shank NeuroPixel probe targeting the left entorhinal cortex**
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    neuralib_brainrender probe -F <FILE> --depth 3000 -P sagittal -R ENT -H left
+    $ neuralib_brainrender probe -F <FILE> --depth 3000 -P sagittal -R ENT -H left
 
 
 - Red = dye-labeled track

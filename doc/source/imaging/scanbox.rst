@@ -59,9 +59,9 @@ Directly view the image sequence as mmap
 Use CLI
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    python -m neuralib.imaging.scanbox.view -h
+    $ python -m neuralib.imaging.scanbox.view -h
 
 
 .. code-block:: text
@@ -83,16 +83,16 @@ Use CLI
 
 Example playing the 100-200 frames
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    python -m neuralib.imaging.scanbox.view PATH -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
+    $ python -m neuralib.imaging.scanbox.view PATH -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200
 
 
 Example save 100-200 Frames as tiff
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    python -m neuralib.imaging.scanbox.view PATH -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
+    $ python -m neuralib.imaging.scanbox.view PATH -P <OPTIC_PLANE> -C <PMT_CHANNEL> -F 100,200 -O test.tiff
 
 
 

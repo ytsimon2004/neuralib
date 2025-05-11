@@ -17,7 +17,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.viewcode',
               'sphinx_tabs.tabs',
-              'sphinx_prompt',
               'sphinx_copybutton',
               'nbsphinx']
 
@@ -57,5 +56,6 @@ autosummary_generate = True
 nbsphinx_execute = 'never'
 
 # -- Options for Copy-button settings --------------------------
-copybutton_prompt_text = r'^(>>> |\.\.\. |\$ )'
+copybutton_prompt_text = r'^\$ '
+copybutton_prompt_is_regexp = True
 copybutton_remove_prompts = True
