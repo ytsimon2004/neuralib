@@ -97,7 +97,7 @@ def google_drive_file(file_id: str,
 def google_drive_folder(folder_id: str,
                         *,
                         quiet: bool = False,
-                        output_dir: PathLike | None = None,
+                        output_dir: Path | None = None,
                         rename_folder: str | None = None,
                         cached: bool = False,
                         invalid_cache: bool = False) -> ContextManager[Path]:

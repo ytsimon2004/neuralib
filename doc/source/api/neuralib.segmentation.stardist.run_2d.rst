@@ -7,5 +7,5 @@ neuralib.segmentation.stardist.run_2d
    :toctree: _autosummary
    :nosignatures:
 
-   StarDistResult
    StarDist2DOptions
+   StarDistResult

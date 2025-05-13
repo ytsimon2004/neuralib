@@ -7,7 +7,6 @@ neuralib.segmentation.cellpose.core
    :toctree: _autosummary
    :nosignatures:
 
-   CPOSE_MODEL
-   AbstractSegmentationOption
-   AbstractCellPoseOption
-   CellPoseEvalResult
+   read_cellpose_seg
+   segmentation_to_point_helper
+   CellposeSegmentation

@@ -19,7 +19,7 @@ def download_with_tqdm(url: str) -> BytesIO:
     resp = requests.get(url, stream=True)
     resp.raise_for_status()
     file_size = int(resp.headers.get('content-length', 0))
-    progress_bar = tqdm(total=file_size, unit='iB', unit_scale=True)
+    progress_bar = tqdm(total=file_size, unit='iB', unit_scale=True, desc='downloading from url...')
     content_stream = BytesIO()
 
     for data in resp.iter_content(chunk_size=1024):

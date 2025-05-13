@@ -9,5 +9,3 @@ neuralib.segmentation.cellpose
     :caption: Modules:
 
     neuralib.segmentation.cellpose.core
-    neuralib.segmentation.cellpose.run_api
-    neuralib.segmentation.cellpose.run_subproc

@@ -77,7 +77,6 @@ imglib = ["pdf2image", "imageio"]
 rastermap = ["rastermap"]
 cascade = ["tensorflow"]
 segmentation = ["pyqt6", "pyqtgraph", "csbdeep", "roifile", "napari"]
-cellpose = ["torch", "cellpose", "neura-library[segmentation]"]
 stardist = ["stardist", "neura-library[segmentation]", "numpy<2.0; extra == 'stardist'"]
 slack = ["dotenv", "slackclient"]
 gspread = ["gspread"]
@@ -92,8 +91,6 @@ all = [
     "neura-library[imglib]",
     # as functionality
     "neura-library[rastermap]",
-    "neura-library[cascade]",
-    "neura-library[cellpose]",
     "neura-library[slack]",
     "neura-library[gspread]",
     "neura-library[opt]",
@@ -101,7 +98,7 @@ all = [
 dev = ["neura-library[all]", "pre-commit", "ruff", "pytest"]
 doc = [
     "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton",
-    "neura-library[all]", "neura-library[cellpose]", "neura-library[stardist]",
+    "neura-library[all]", "neura-library[stardist]", "neura-library[cascade]",
 ]
 
 # -----------------------------------------------------------------------------

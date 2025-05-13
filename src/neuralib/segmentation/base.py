@@ -83,7 +83,7 @@ class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
     def process_image(self, to_gray: bool = True) -> np.ndarray:
         """Process the image for segmentation.
 
-        :return: `Array[Any, [H, W]]`
+        :return: `Array[Any, [H, W]]` or `Array[Any, [H, W, C]]`
         """
         return process_image(
             cv2.imread(str(self.file)),
@@ -92,6 +92,16 @@ class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
         )
 
     def foreach_process_image(self, to_gray: bool = True) -> Iterable[tuple[Path, np.ndarray]]:
+        """
+        Iterates over image files in the specified directory, processes each image, and yields
+        the file path along with the processed image. The processing can include grayscale
+        conversion and normalization based on the provided parameters.
+
+        :param to_gray: Flag indicating whether the images should be converted to grayscale.
+        :return: An iterable of tuples where each tuple includes the file path as a `Path` object
+            and the processed image as a numpy array.
+        :rtype: Tuple of filepath, image_array (`Array[Any, [H, W]]` or `Array[Any, [H, W, C]]`) generator
+        """
         for file in self.directory.glob(f'*{self.directory_suffix}'):
             img = process_image(
                 cv2.imread(str(file)),
@@ -134,7 +144,6 @@ class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
         pass
 
 
-# TODO see if other normalization
 def process_image(img: np.ndarray,
                   to_gray: bool = True,
                   norm: bool = True) -> np.ndarray:

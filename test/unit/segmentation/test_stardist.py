@@ -16,8 +16,8 @@ class TestStarDist(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        load_example_rois_image(cached=True, rename_file='rois.tif')
-        cls.filepath = NEUROLIB_DATASET_DIRECTORY / 'rois.tif'
+        load_example_rois_image(cached=True, rename_file='rois.png')
+        cls.filepath = NEUROLIB_DATASET_DIRECTORY / 'rois.png'
         cls.dirpath = load_example_rois_dir(cached=True, rename_folder='rois')
 
     def test_empty_option(self):

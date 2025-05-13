@@ -19,4 +19,3 @@ Module for other scientific purpose
     :caption: Notebook
 
     ../notebooks/example_rastermap
-    ../notebooks/example_segmentation

@@ -7,4 +7,4 @@ neuralib.segmentation.base
    :toctree: _autosummary
    :nosignatures:
 
-   AbstractSegmentationOption
+   AbstractSegmentationOptions
