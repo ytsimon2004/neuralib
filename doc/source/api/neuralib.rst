@@ -20,7 +20,6 @@ neuralib utility module
 .. toctree::
     :maxdepth: 1
 
-    neuralib.argp
     neuralib.persistence
     neuralib.sqlp
     neuralib.dashboard
