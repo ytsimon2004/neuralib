@@ -13,7 +13,7 @@ except ImportError:
     cp = None
 
 
-@pytest.mark.skipif(cp is None, "cellpose is not installed")
+@pytest.mark.skipif(cp is None, reason="cellpose is not installed")
 def test_seg_to_roi():
     load_example_rois_image(cached=True, rename_file='rois.png')
     file = NEUROLIB_DATASET_DIRECTORY / 'rois.png'

@@ -53,7 +53,10 @@ dependencies = [
 
 [project.optional-dependencies]
 
-# as module name
+# -----------------------------------------------------------------------------
+# As module name (isolated wrapper)
+# -----------------------------------------------------------------------------
+
 atlas = [
     "brainrender",
     'pynrrd',
@@ -73,11 +76,15 @@ imaging = [
 ]
 imglib = ["pdf2image", "imageio"]
 
-# as functionality (isolated wrapper)
+
+# -----------------------------------------------------------------------------
+# As functionality (isolated wrapper)
+# -----------------------------------------------------------------------------
+
 rastermap = ["rastermap"]
 cascade = ["tensorflow"]
 segmentation = ["pyqt6", "pyqtgraph", "csbdeep", "roifile", "napari"]
-stardist = ["stardist", "neura-library[segmentation]", "numpy<2.0; extra == 'stardist'"]
+stardist = ["neura-library[segmentation]", "stardist", "tensorflow", "numpy<2.0; extra == 'stardist'"]
 slack = ["dotenv", "slackclient"]
 gspread = ["gspread"]
 opt = ["psutil"]
@@ -95,10 +102,17 @@ all = [
     "neura-library[gspread]",
     "neura-library[opt]",
 ]
-dev = ["neura-library[all]", "pre-commit", "ruff", "pytest"]
+
+dev = [
+    "neura-library[all]", "neura-library[stardist]",
+    "pre-commit", "ruff", "pytest", "pytest-cov"
+]
+
 doc = [
-    "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton",
-    "neura-library[all]", "neura-library[stardist]", "neura-library[cascade]",
+    "neura-library[all]",
+    "neura-library[stardist]",
+    "neura-library[cascade]",
+    "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton"
 ]
 
 # -----------------------------------------------------------------------------
@@ -108,7 +122,6 @@ doc = [
 [tool.coverage.run]
 source = ["neuralib"]
 omit = [
-    "*/neuralib/argp/*",
     "*/neuralib/io/dataset/*",
     "*/neuralib/locomotion/*",
     "*/neuralib/segmentation/*",
@@ -122,7 +135,6 @@ omit = [
 
 [tool.coverage.report]
 omit = [
-    "*/neuralib/argp/*",
     "*/neuralib/io/dataset/*",
     "*/neuralib/locomotion/*",
     "*/neuralib/segmentation/*",
