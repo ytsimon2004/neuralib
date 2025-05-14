@@ -39,7 +39,7 @@ def stardist_point_roi_helper(file: PathLike, output: PathLike) -> None:
 
 
 class StarDistSegmentation:
-    """``StarDist`` segmentation results
+    """`StarDist <https://github.com/stardist/stardist>`_ segmentation results
 
     `Dimension parameters`:
 

@@ -68,22 +68,18 @@ Functionality-based
 
 - StarDist: ``pip install "neura-library[stardist]"``
 
-- Slack integration: ``pip install "neura-library[slack]"``
-
-- Google Sheets API: ``pip install "neura-library[gspread]"``
-
 
 .. warning::
-    For those heavy **Functionality-based** wrapper usage (i.e., Rastermap, Cascade, Cellpose, StarDist),
+    For those heavy **Functionality-based** wrapper usage (i.e., Rastermap, Cascade, StarDist),
     Create a separate conda environment for the specific job is recommended (avoid dependencies conflict)
 
-    For example you need to run **cellpose**:
+    For example you need to run **stardit**:
 
     .. code-block:: bash
 
-        conda create -n neuralib_seg python=3.10
-        conda activate neuralib_seg
-        pip install neura-library[cellpose]
+        conda create -n neuralib_stardist python=3.10
+        conda activate neuralib_stardist
+        pip install neura-library[stardist]
 
 
 All-In-One Installation

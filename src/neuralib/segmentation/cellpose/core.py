@@ -35,7 +35,7 @@ def cellpose_point_roi_helper(file: PathLike, output: PathLike) -> None:
 
 
 class CellposeSegmentation:
-    """``Cellpose`` segmentation results
+    """`Cellpose <https://github.com/MouseLand/cellpose>`_ segmentation results
 
     `Dimension parameters`:
 
