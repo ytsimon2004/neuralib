@@ -66,8 +66,6 @@ Functionality-based
 
 - Cascade (TensorFlow): ``pip install "neura-library[cascade]"``
 
-- Cellpose: ``pip install "neura-library[cellpose]"``
-
 - StarDist: ``pip install "neura-library[stardist]"``
 
 - Slack integration: ``pip install "neura-library[slack]"``

@@ -85,21 +85,17 @@ rastermap = ["rastermap"]
 cascade = ["tensorflow"]
 segmentation = ["pyqt6", "pyqtgraph", "csbdeep", "roifile", "napari"]
 stardist = ["neura-library[segmentation]", "stardist", "tensorflow", "numpy<2.0; extra == 'stardist'"]
-slack = ["dotenv", "slackclient"]
-gspread = ["gspread"]
-opt = ["psutil"]
+opt = ["dotenv", "slackclient", "gspread", "psutil"]
 
 #
 all = [
-    # module
+    # as module
     "neura-library[atlas]",
     "neura-library[scan]",
     "neura-library[imaging]",
     "neura-library[imglib]",
     # as functionality
     "neura-library[rastermap]",
-    "neura-library[slack]",
-    "neura-library[gspread]",
     "neura-library[opt]",
 ]
 

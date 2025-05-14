@@ -39,6 +39,34 @@ StarDist
     $ python -m neuralib.segmentation.stardist.run_2d -h
 
 
+**Output**
+
+.. code-block:: text
+
+    usage: run_2d.py [-h] [--model 2D_versatile_fluo|2D_versatile_he|2D_paper_dsb2018|2D_demo] [--invalid] [--no_norm] [--napari]
+                     [--prob PROB_THRESH] [--file FILE | --dir DIRECTORY] [--dir_suffix .tif|.tiff|.png] [--save_roi]
+
+    Run the Stardist model for segmentation
+
+    options:
+      -h, --help            show this help message and exit
+      --model 2D_versatile_fluo|2D_versatile_he|2D_paper_dsb2018|2D_demo
+                            stardist pretrained model
+      --invalid             force re-evaluate the result
+      --no_norm             not do percentile-based image normalization
+      --napari              view result by napari GUI, only available in single file mode
+      --prob PROB_THRESH    Consider only object candidates from pixels with predicted object probability above this threshold. Seealso: stardist.models.base._predict_instances_generator: prob_thresh
+
+    Data I/O Options:
+      --file FILE, --image_path FILE
+                            image file path
+      --dir DIRECTORY       directory for batch imaging processing
+      --dir_suffix .tif|.tiff|.png
+                            suffix in the directory for batch mode
+      --save_rois           if save also the imageJ/Fiji compatible .roi file
+
+
+
 
 Cellpose
 ------------------

@@ -7,6 +7,6 @@ neuralib.segmentation.cellpose.core
    :toctree: _autosummary
    :nosignatures:
 
-   read_cellpose_seg
-   segmentation_to_point_helper
+   read_cellpose
+   cellpose_point_roi_helper
    CellposeSegmentation

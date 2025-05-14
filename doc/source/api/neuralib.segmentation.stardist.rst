@@ -8,4 +8,5 @@ neuralib.segmentation.stardist
     :maxdepth: 1
     :caption: Modules:
 
+    neuralib.segmentation.stardist.core
     neuralib.segmentation.stardist.run_2d

@@ -5,7 +5,7 @@ import pytest
 
 from neuralib.io import NEUROLIB_DATASET_DIRECTORY
 from neuralib.io.dataset import load_example_rois_image
-from neuralib.segmentation.cellpose.core import segmentation_to_point_helper
+from neuralib.segmentation.cellpose.core import cellpose_point_roi_helper
 
 try:
     import cellpose as cp
@@ -26,4 +26,4 @@ def test_seg_to_roi():
     print("stdout:", result.stdout)
     print("stderr:", result.stderr)
 
-    segmentation_to_point_helper(file.with_stem(file.stem + '_seg').with_suffix('.npy'), file.with_suffix('.roi'))
+    cellpose_point_roi_helper(file.with_stem(file.stem + '_seg').with_suffix('.npy'), file.with_suffix('.roi'))

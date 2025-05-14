@@ -36,7 +36,7 @@ class TestStarDist(unittest.TestCase):
         opt.run()
 
     def test_dir_mode(self):
-        opt = parse_args(StarDist2DOptions(), ['--dir', str(self.dirpath), '--invalid', '--ij-roi'])
+        opt = parse_args(StarDist2DOptions(), ['--dir', str(self.dirpath), '--invalid', '--save_roi'])
         self.assertTrue(opt.batch_mode)
         opt.run()
 

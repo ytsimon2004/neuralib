@@ -18,28 +18,28 @@ class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
     EX_GROUP_SOURCE = 'EX_GROUP_SOURCE'
 
     file: Path = argument(
-        '-F', '--file',
+        '--file', '--image_path',
         ex_group=EX_GROUP_SOURCE,
         group=GROUP_IO,
         help='image file path'
     )
 
     directory: Path = argument(
-        '-D', '--dir',
+        '--dir',
         ex_group=EX_GROUP_SOURCE,
         group=GROUP_IO,
         help='directory for batch imaging processing'
     )
 
     directory_suffix: Literal['.tif', '.tiff', '.png'] = argument(
-        '--dir-suffix',
+        '--dir_suffix',
         default='.tif',
         group=GROUP_IO,
         help='suffix in the directory for batch mode'
     )
 
     save_ij_roi: bool = argument(
-        '--ij-roi',
+        '--save_rois',
         group=GROUP_IO,
         help='if save also the imageJ/Fiji compatible .roi file'
     )
@@ -56,7 +56,7 @@ class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
     )
 
     no_normalize: bool = argument(
-        '--no-norm',
+        '--no_norm',
         help='not do percentile-based image normalization'
     )
 
@@ -127,15 +127,11 @@ class AbstractSegmentationOptions(AbstractParser, metaclass=abc.ABCMeta):
         :param filepath: filepath for image
         :return: ij roi output save path
         """
-        return (
-            filepath
-            .with_name(filepath.stem + f'_{self.model}')
-            .with_suffix('.roi')
-        )
+        return filepath.with_suffix('.roi')
 
     @abc.abstractmethod
     def eval(self) -> None:
-        """eval the model in single file or batch files, and save the results"""
+        """eval the model in single file or batch files in directory, and save the results"""
         pass
 
     @abc.abstractmethod

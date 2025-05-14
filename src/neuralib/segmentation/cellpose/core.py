@@ -8,13 +8,13 @@ from typing_extensions import Self
 from neuralib.typing import PathLike
 
 __all__ = [
-    'read_cellpose_seg',
-    'segmentation_to_point_helper',
+    'read_cellpose',
+    'cellpose_point_roi_helper',
     'CellposeSegmentation'
 ]
 
 
-def read_cellpose_seg(file: PathLike) -> CellposeSegmentation:
+def read_cellpose(file: PathLike) -> CellposeSegmentation:
     """
     Read a cellpose segmentation result file
 
@@ -24,7 +24,7 @@ def read_cellpose_seg(file: PathLike) -> CellposeSegmentation:
     return CellposeSegmentation.load(file)
 
 
-def segmentation_to_point_helper(file: PathLike, output: PathLike) -> None:
+def cellpose_point_roi_helper(file: PathLike, output: PathLike) -> None:
     """
     Read a cellpose segmentation result and convert the segmentation result to point coordinates
 
@@ -35,7 +35,7 @@ def segmentation_to_point_helper(file: PathLike, output: PathLike) -> None:
 
 
 class CellposeSegmentation:
-    """Wrapper for Cellpose segmentation results
+    """``Cellpose`` segmentation results
 
     `Dimension parameters`:
 
@@ -62,22 +62,35 @@ class CellposeSegmentation:
         self._filename = filename
 
     @classmethod
-    def load(cls, filepath: PathLike) -> Self:
+    def load(cls, file: PathLike) -> Self:
         """
         Load a cellpose segmentation result
 
-        :param filepath: cellpose segmentation result ``.npy`` file
+        :param file: cellpose segmentation result ``.npy`` file
         :return: :class:`CellposeSegmentation`
         """
-        file = Path(filepath)
         dat = np.load(file, allow_pickle=True).item()
-
         return cls(**dat)
 
     @property
+    def n_segmentation(self) -> int:
+        """number of segmented cells"""
+        return len(self._is_manual)
+
+    @property
+    def width(self):
+        """image width"""
+        return self._outlines.shape[1]
+
+    @property
+    def height(self):
+        """image height"""
+        return self._outlines.shape[0]
+
+    @property
     def filename(self) -> Path:
-        """filename of image"""
-        return Path(self.filename)
+        """filepath of image"""
+        return Path(self._filename)
 
     @property
     def outlines(self) -> np.ndarray:
@@ -119,7 +132,7 @@ class CellposeSegmentation:
 
     @property
     def nan_masks(self) -> np.ndarray:
-        """value 0 in :attr:`masks` to nan"""
+        """value 0 in :attr:`CellposeSegmentation.masks` to nan"""
         masks = self.masks.copy().astype(np.float_)
         masks[masks == 0] = np.nan
 
@@ -127,7 +140,7 @@ class CellposeSegmentation:
 
     @property
     def nan_outlines(self) -> np.ndarray:
-        """value 0 in :attr:`outlines` to nan"""
+        """value 0 in :attr:`CellposeSegmentation.outlines` to nan"""
         outlines = self.outlines.copy().astype(np.float_)
         outlines[outlines == 0] = np.nan
 
@@ -136,22 +149,13 @@ class CellposeSegmentation:
     @property
     def points(self) -> np.ndarray:
         """Calculate center of each segmented area in XY pixel. `Array[int, [N, 2]]`"""
-        labels = np.unique(self.masks)
-        labels = labels[labels != 0]  # remove background
-
-        n_neurons = len(labels)
-        centers = np.zeros((n_neurons, 2))
-        for i, label in enumerate(labels):
-            segment_coords = np.argwhere(self.masks == label)
-            center = segment_coords.mean(axis=0)
-            centers[i] = center
-
+        centers = self._calculate_centers()
         return np.round(centers).astype(int)
 
     # noinspection PyTypeChecker
     def to_roi(self, output_file: PathLike):
         """
-        covert segmented roi to point roi, and save it as ``.roi`` for imageJ.
+        Covert segmented roi to point roi, and save it as ``.roi`` for imageJ.
 
         :param output_file: ``*.roi`` output file path
         """
@@ -170,3 +174,17 @@ class CellposeSegmentation:
         )
 
         roi.tofile(output_file)
+
+    def _calculate_centers(self):
+        """calculate center of each segmented area in XY pixel"""
+        labels = np.unique(self.masks)
+        labels = labels[labels != 0]  # remove background
+
+        n_neurons = len(labels)
+        centers = np.zeros((n_neurons, 2))
+        for i, label in enumerate(labels):
+            segment_coords = np.argwhere(self.masks == label)
+            center = segment_coords.mean(axis=0)
+            centers[i] = center
+
+        return centers
