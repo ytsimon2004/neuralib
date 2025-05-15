@@ -67,7 +67,6 @@ atlas = [
 ]
 scan = ["xmltodict", "aicspylibczi"]
 imaging = [
-    "scanimage-tiff-reader",
     "sbxreader",
     "ruamel.yaml",
     "numba", # oasis dcnv batch processing

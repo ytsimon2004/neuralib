@@ -9,7 +9,6 @@ neuralib.imaging
     :caption: Modules:
 
     neuralib.imaging.registration
-    neuralib.imaging.scan_image
     neuralib.imaging.scanbox
     neuralib.imaging.spikes
     neuralib.imaging.suite2p
