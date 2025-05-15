@@ -1,4 +1,3 @@
-
 from typing import Literal, Sequence
 
 import numpy as np
@@ -6,6 +5,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.offsetbox import AnchoredOffsetbox
 from matplotlib.transforms import Transform
+
 from neuralib.typing import ArrayLike, PathLike
 
 __all__ = [
@@ -227,8 +227,6 @@ class AxesExtendHelper:
 
             self.ax_y.tick_params(axis="y", labelleft=False)
 
-
-# ========================= #
 
 def insert_latex_equation(ax: Axes,
                           tex: str,
