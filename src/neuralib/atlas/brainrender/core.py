@@ -229,6 +229,8 @@ class BrainRenderCLI(AbstractParser):
     def render(self):
         """brainrender interactive"""
         self.scene = brainrender.Scene(root=not self.no_root, inset=False, title=self.title, screenshots_folder='.')
+        self.scene.plotter.camera.Zoom(0.3)
+
         if self.annotation is not None:
             self._reconstruct_annotation()
 
@@ -301,9 +303,7 @@ class BrainRenderCLI(AbstractParser):
         :param output_file: video output path
         """
         from brainrender import VideoMaker
-        import vedo
 
-        vedo.settings.default_backend = 'vtk'
         d, f = output_file.parent, output_file.stem
         vm = VideoMaker(self.scene, save_fld=d, name=f)
         vm.make_video(azimuth=1, elevation=0, roll=0)
