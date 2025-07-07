@@ -180,36 +180,20 @@ class PersistenceOptions(Generic[T], metaclass=abc.ABCMeta):
 
 def get_options_and_cache(opt_cls: type[PersistenceOptions[T]],
                           ref,
-                          error_when_missing=False,
+                          error_when_missing: bool = False,
+                          invalid_cache: bool = False,
                           **kwargs) -> T:
     """
-    copy the arguments from PersistenceOpt (class that compute the cache) to Apply*Opt
+    copy the arguments from ``PersistenceOptions`` (class that compute the cache) to ``ApplyOptions``
     Can be used for analysis apply two different cached files
 
-     **Example**
-        >>> @persistence.persistence_class
-        >>> class SortIdxCache:
-        ...     # for cache attributes declare
-        ...     pass
-
-        >>> class SortIdxOptions(PersistenceOptions[SortIdxCache]):
-        ...     # for cache computing
-        ...     def empty_cache(self) -> SortIdxCache:
-        ...         pass
-        ...     def _compute_cache(self, cache: SortIdxCache) -> SortIdxCache:
-        ...         pass
-
-        >>> class ApplySortIdxOptions:
-        ...     # for cache applying, suppose to be the one layer before parent class for analysis class
-        ...     def apply_sort_idx_cache(self) -> SortIdxCache:
-        ...         return get_options_and_cache(SortIdxOptions, self)
-
-        >>> class CPBeltSortOptions(ApplyPosBinActOptions, ApplySortIdxOptions):
-        ...     pass
-
-    :param opt_cls: PersistenceOpt
-    :param ref:
-    :param error_when_missing:
+    :param opt_cls: ``PersistenceOptions``
+    :param ref: reference class for applying the cache
+    :param error_when_missing: do not try to generate the cache when cache missing
+    :param invalid_cache: invalid_cache pass to ``PersistenceOptions``
     :return:
     """
-    return copy_argument(opt_cls(), ref).load_cache(error_when_missing=error_when_missing, **kwargs)
+    return (
+        copy_argument(opt_cls(), ref, invalid_cache=invalid_cache)
+        .load_cache(error_when_missing=error_when_missing, **kwargs)
+    )
