@@ -84,7 +84,7 @@ rastermap = ["rastermap"]
 cascade = ["tensorflow"]
 segmentation = ["pyqt6", "pyqtgraph", "csbdeep", "roifile", "napari"]
 stardist = ["neura-library[segmentation]", "stardist", "tensorflow", "numpy<2.0; extra == 'stardist'"]
-opt = ["dotenv", "slackclient", "gspread", "psutil"]
+opt = ["slackclient", "gspread", "psutil"]
 
 #
 all = [
