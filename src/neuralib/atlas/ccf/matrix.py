@@ -95,21 +95,20 @@ class CCFTransMatrix:
     @property
     def delta_xy(self) -> tuple[int, int]:
         """map delta value to xy slice view"""
-        return self.matrix.delta_values[1], self.matrix.delta_values[0]
+        return int(self.matrix.delta_values[1]), int(self.matrix.delta_values[0])
 
     def get_slice_plane(self) -> SlicePlane:
         """get slice plane"""
-        ret = (
-            get_slice_view('reference', self.plane_type, resolution=self.resolution)
-            .plane_at(self.slice_index)
-        )
-
         dw = self.delta_xy[0]
         dh = self.delta_xy[1]
 
-        ret = ret.with_offset(
-            dw=dw + 1 if dw != 0 else 0,  # avoid index err
-            dh=dh + 1 if dh != 0 else 0,  # avoid index err
+        ret = (
+            get_slice_view('reference', self.plane_type, resolution=self.resolution)
+            .plane_at(self.slice_index)
+            .with_offset(
+                dw=dw + 1 if dw != 0 else 0,  # avoid index err
+                dh=dh + 1 if dh != 0 else 0,  # avoid index err
+            )
         )
 
         return ret

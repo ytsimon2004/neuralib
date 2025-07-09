@@ -17,12 +17,10 @@ from typing_extensions import Self
 from neuralib.atlas.data import ATLAS_NAME
 from neuralib.atlas.typing import PLANE_TYPE
 from neuralib.atlas.util import ALLEN_CCF_10um_BREGMA
-from neuralib.util.deprecation import deprecated_func
 
 __all__ = [
     'VIEW_TYPE',
     'get_slice_view',
-    'load_slice_view',
     'AbstractSliceView',
     'SlicePlane'
 ]
@@ -32,8 +30,7 @@ VIEW_TYPE = Literal['annotation', 'reference']
 
 
 def get_slice_view(view: VIEW_TYPE,
-                   plane_type: PLANE_TYPE,
-                   *,
+                   plane_type: PLANE_TYPE, *,
                    name: str = 'allen_mouse',
                    resolution: int = 10,
                    check_latest: bool = True) -> AbstractSliceView:
@@ -445,7 +442,7 @@ class SlicePlane:
             print(f'{dw=}, {dh=}')
             print(f'{deg_x=}, {deg_y=}')
 
-        return attrs.evolve(self, dw=dw, dh=dh)
+        return attrs.evolve(self, dw=int(dw), dh=int(dh))
 
     def _value_to_angle(self, dw: int, dh: int) -> tuple[float, float]:
         """delta value to degree"""
@@ -605,8 +602,3 @@ def _get_xy_range(view: AbstractSliceView, to_um: bool = True) -> tuple[float, f
         y1 = 0
 
     return x0, x1, y0, y1
-
-
-@deprecated_func(new='get_slice_view()', removal_version='0.4.5')
-def load_slice_view(*args, **kwargs):
-    return get_slice_view(*args, **kwargs)
