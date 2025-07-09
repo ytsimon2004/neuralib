@@ -26,17 +26,19 @@ classifiers = [
 # Installation
 # -----------------------------------------------------------------------------
 
+# TODO add version info
+
 dependencies = [
-    "attrs",
-    "argclz",
-    "colorama",
-    "colorlog",
-    "matplotlib",
-    "matplotlib_venn",
-    "seaborn",
+    "attrs >= 25.3.0",
+    "argclz >= 1.0.0",
+    "colorama >= 0.4.6",
+    "colorlog >= 6.9.0",
+    "matplotlib >= 3.10.3",
+    "matplotlib_venn >= 1.1.2",
+    "seaborn >= 0.13.2",
     "numpy",
-    "scipy",
-    "scikit-image",
+    "scipy >= 1.15.3",
+    "scikit-image >= 0.25.2",
     "pandas",
     "polars",
     "pyarrow",
@@ -105,7 +107,7 @@ dev = [
 
 doc = [
     "neura-library[all]",
-    "neura-library[stardist]",
+    #    "neura-library[stardist]",
     "neura-library[cascade]",
     "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton"
 ]
