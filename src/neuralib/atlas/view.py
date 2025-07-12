@@ -558,31 +558,27 @@ class SlicePlane:
         ]
         ax.legend(handles=legend_elements, title="Regions", loc='upper right')
 
-    def _plot_boundaries(self, ax, extent, cmap='binary', alpha=0.3, **kwargs):
+    def _plot_boundaries(self, ax, extent, cmap='binary', alpha=0.5, **kwargs):
         """
         Plot the annotation boundaries
 
         :param ax: ``Axes``
         :param extent: A tuple defining the image boundaries (left, right, bottom, top). If None, boundaries are computed internally.
         :param cmap: Colormap to be used for the annotation image. Defaults to 'binary'.
-        :param alpha: The imshow alpha, between 0 (transparent) and 1 (opaque). Defaults to 0.3.
+        :param alpha: The imshow alpha, between 0 (transparent) and 1 (opaque). Defaults to 0.5.
         """
-        from neuralib.imglib.array import image_array
+        from skimage.segmentation import find_boundaries
 
         ann_img = (
             get_slice_view('annotation', self.slice_view.plane_type, resolution=self.slice_view.resolution)
             .plane(self.plane_offset)
         )
 
-        ann = (
-            image_array(ann_img)
-            .to_gray()
-            .canny_filter(10, 0)
-        )
+        ann = find_boundaries(ann_img, mode='outer').astype(float)
+        ann[ann == 0] = np.nan
 
-        ann = ann.astype(float)
-        ann[ann <= 10] = np.nan
-        ax.imshow(ann, cmap=cmap, extent=extent, alpha=alpha, clip_on=False, interpolation='none', vmin=0, vmax=255, **kwargs)
+        ax.imshow(ann, cmap=cmap, extent=extent, alpha=alpha,
+                  clip_on=False, interpolation='none', vmin=0, vmax=1, **kwargs)
 
     def _get_xy_range(self, to_um: bool = True) -> tuple[float, float, float, float]:
         self.unit = 'um' if to_um else 'mm'
