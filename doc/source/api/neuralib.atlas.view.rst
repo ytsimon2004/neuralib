@@ -9,6 +9,5 @@ neuralib.atlas.view
 
    VIEW_TYPE
    get_slice_view
-   load_slice_view
    AbstractSliceView
    SlicePlane

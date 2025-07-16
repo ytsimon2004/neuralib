@@ -13,3 +13,4 @@ neuralib.plot
     neuralib.plot.plot
     neuralib.plot.tools
     neuralib.plot.venn
+    neuralib.plot.psth
