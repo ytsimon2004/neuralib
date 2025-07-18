@@ -83,6 +83,23 @@ class CircularPosition(NamedTuple):
             v=self.v[x],
         )
 
+    def interp_time(self, time: np.ndarray, fill_value: float = 0.0) -> Self:
+        """Interpolate position data to new time points.
+        
+        This method interpolates the position (p), displacement (d), and velocity (v)
+        data to match the provided time array. Uses linear interpolation and fills
+        out-of-bounds values with the specified fill_value.
+        
+        :param time: Target time array to interpolate to. `Array[float, N]`
+        :param fill_value: Value to use for out-of-bounds interpolation, defaults to 0.0.
+        :return: A new CircularPosition instance with interpolated data aligned to the new time array.
+        """
+        p = interp1d(self.t, self.p, bounds_error=False, fill_value=fill_value)(time)
+        d = interp1d(self.t, self.d, bounds_error=False, fill_value=fill_value)(time)
+        v = interp1d(self.t, self.v, bounds_error=False, fill_value=fill_value)(time)
+
+        return self._replace(t=time, p=p, d=d, v=v)
+
     @property
     def trial_array(self) -> np.ndarray:
         """Trial number array as same shape as *P*
