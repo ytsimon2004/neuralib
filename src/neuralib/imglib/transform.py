@@ -39,14 +39,14 @@ def apply_transformation(img: np.ndarray,
                          trans_mtx: np.ndarray,
                          **kwargs) -> np.ndarray:
     """
-    2D image transform
+    Apply 2D image transform
 
-    :param img: image array
+    :param img: image array. `Array[float, [H, W, 3] | [H, W, 4] | [H, W]]`
     :param trans_mtx: Transformation matrix. `Array[float, [3, 3]]`
     :param kwargs: additional arguments pass to ``cv2.warpPerspective()``
-    :return:
+    :return: transformed image array
     """
-    height, width, _ = img.shape
+    height, width = img.shape[:2]
 
     if trans_mtx.shape != (3, 3):
         raise ValueError(f'invalid transformation shape: {trans_mtx.shape}')

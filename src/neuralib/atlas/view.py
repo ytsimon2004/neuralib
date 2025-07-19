@@ -518,11 +518,11 @@ class SlicePlane:
 
         # annotation region
         if annotation_region is not None:
-            self._plot_annotation_regions(ax, annotation_region, extent, annotation_cmap, **kwargs)
+            self.plot_annotation_regions(ax, annotation_region, extent, annotation_cmap, **kwargs)
 
         # with boundaries
         if boundaries:
-            self._plot_boundaries(ax, extent, **kwargs)
+            self.plot_boundaries(ax, extent, **kwargs)
 
         #
         if with_title:
@@ -530,7 +530,7 @@ class SlicePlane:
 
         ax.set(xlabel=self.unit, ylabel=self.unit)
 
-    def _plot_annotation_regions(self, ax, regions, extent, cmap='berlin', **kwargs):
+    def plot_annotation_regions(self, ax, regions, extent, cmap='berlin', **kwargs):
         from matplotlib.patches import Patch
         from neuralib.atlas.data import get_leaf_in_annotation
 
@@ -558,7 +558,7 @@ class SlicePlane:
         ]
         ax.legend(handles=legend_elements, title="Regions", loc='upper right')
 
-    def _plot_boundaries(self, ax, extent, cmap='binary', alpha=0.5, **kwargs):
+    def plot_boundaries(self, ax, extent, cmap='binary', alpha=0.5, **kwargs):
         """
         Plot the annotation boundaries
 
