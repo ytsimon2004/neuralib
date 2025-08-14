@@ -40,6 +40,7 @@ class SequenceSingularVector(NamedTuple):
 
 def compute_singular_vector(sequences: np.ndarray,
                             n_components: int = 128,
+                            mean_subtraction: bool = True,
                             **kwargs) -> SequenceSingularVector:
     """
     Performs truncated singular value decomposition (SVD) on a sequence of image frames
@@ -50,14 +51,16 @@ def compute_singular_vector(sequences: np.ndarray,
                       of frames, and 'width' and 'height' are the dimensions of each frame.
     :param n_components: An integer representing the number of components for Truncated SVD.
                          The default value is 128.
+    :param mean_subtraction: A boolean indicating whether to subtract the mean of each frame
     :param kwargs: Keyword arguments passed to ``TruncatedSVD()``.
     :return: A SequenceSingularVector object containing the singular values, the transformed
              components, and the left singular vectors.
     """
     n_frames, width, height = sequences.shape
     seq = sequences.reshape(n_frames, height * width).T
-    # subtracts the mean over time for each pixel
-    seq = seq - np.mean(seq, axis=1, keepdims=True)
+
+    if mean_subtraction:
+        seq = seq - np.mean(seq, axis=1, keepdims=True)
 
     svd = TruncatedSVD(n_components=n_components, **kwargs)
     Vsv = svd.fit_transform(seq.T)
