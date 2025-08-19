@@ -12,6 +12,7 @@ from neuralib.io import save_json, load_json
 from neuralib.io.core import ATLAS_CACHE_DIRECTORY
 from neuralib.typing import PathLike
 from neuralib.util.tqdm import download_with_tqdm
+from neuralib.util.utils import ensure_dir
 from neuralib.util.verbose import print_save, print_load
 
 __all__ = [
@@ -97,7 +98,7 @@ def load_bg_volumes(atlas_name: ATLAS_NAME = 'allen_mouse_10um',
     :return:
     """
     if cached_file is None:
-        cached_file = ATLAS_CACHE_DIRECTORY / f'{atlas_name}_bg_volumes.csv'
+        cached_file = ensure_dir(ATLAS_CACHE_DIRECTORY) / f'{atlas_name}_bg_volumes.csv'
 
     if cached_file.exists() and not force:
         print_load(cached_file)
@@ -239,7 +240,7 @@ def build_annotation_leaf_map(atlas_name: ATLAS_NAME = 'allen_mouse_10um', *,
     :return:
     """
     if cached_file is None:
-        cached_file = ATLAS_CACHE_DIRECTORY / f'{atlas_name}_annotation_leaf.json'
+        cached_file = ensure_dir(ATLAS_CACHE_DIRECTORY) / f'{atlas_name}_annotation_leaf.json'
 
     if Path(cached_file).suffix != '.json':
         raise ValueError('not a json file')
@@ -299,7 +300,7 @@ def get_dorsal_cortex(output_dir: Path | None = None) -> Path:
     """
 
     if output_dir is None:
-        output_dir = ATLAS_CACHE_DIRECTORY
+        output_dir = ensure_dir(ATLAS_CACHE_DIRECTORY)
 
     filename = 'cortical_map_top_down.svg'
     output = output_dir / filename
