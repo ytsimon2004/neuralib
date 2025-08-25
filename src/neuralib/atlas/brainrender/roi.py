@@ -98,6 +98,13 @@ class RoiRenderCLI(BrainRenderCLI):
         help='csv output file from allenccf'
     )
 
+    only_source: tuple[str, ...] | None = argument(
+        '--only-source',
+        metavar='SOURCE,...',
+        type=str_tuple_type,
+        help='only show the rois from the given source'
+    )
+
     file: list[Path] | None = argument(
         '--file',
         validator.list().on_item(validator.path.is_suffix(['.csv', '.npy'])) | validator.optional(),
@@ -145,7 +152,8 @@ class RoiRenderCLI(BrainRenderCLI):
     def _add_points_classifier_csv(self):
         iter_coords = iter_source_coordinates(
             self.classifier_file,
-            only_areas=self.roi_region,
+            area=self.roi_region,
+            source=self.only_source,
             region_col=self.region_col,
             hemisphere=self._get_hemisphere_lut[self.hemisphere],
             to_brainrender=True if self.coordinate_space == 'ccf' else False,
@@ -198,7 +206,8 @@ class RoiRenderCLI(BrainRenderCLI):
                 if data.shape[1] == 3:
                     colors = get_color(i, self.roi_colors)
                     self.logger.info(f'Plot Rois File: {i}, {file}, {colors}')
-                    self.scene.add(Points(data, name='roi', colors=colors, alpha=self.roi_alpha, radius=self.radius, res=20))
+                    points = Points(data, name='roi', colors=colors, alpha=self.roi_alpha, radius=self.radius, res=20)
+                    self.scene.add(points)
                 elif data.shape[1] == 4:  # TODO not test yet
                     k = data[:, 3].astype(int)
                     for t in np.unique(k):

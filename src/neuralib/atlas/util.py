@@ -44,7 +44,8 @@ class SourceCoordinates(NamedTuple):
 def iter_source_coordinates(
         file: Path,
         *,
-        only_areas: list[str] | str | None = None,
+        area: list[str] | str | None = None,
+        source: list[Source] | Source | None = None,
         region_col: str | None = None,
         hemisphere: HEMISPHERE_TYPE = 'both',
         to_brainrender: bool = True,
@@ -53,7 +54,8 @@ def iter_source_coordinates(
     """Load allen ccf roi output (merged different color channels).
 
     :param file: parsed csv file after
-    :param only_areas: only show rois in region(s)
+    :param area: only show rois in region(s)
+    :param source: only show rois from source(s)
     :param region_col: if None, auto infer, and check the lowest merge level contain all the regions specified
     :param hemisphere: which brain hemisphere
     :param to_brainrender: convert the coordinates to brain render
@@ -62,17 +64,26 @@ def iter_source_coordinates(
     """
     df = pl.read_csv(file)
     #
-    if only_areas is not None and len(only_areas) != 0:
-        if isinstance(only_areas, str):
-            only_areas = [only_areas]
+    if area is not None and len(area) != 0:
+        if isinstance(area, str):
+            area = [area]
 
         if region_col is None:
-            region_col = get_margin_merge_level(df, only_areas, 'lowest')
+            region_col = get_margin_merge_level(df, area, 'lowest')
 
-        df = df.filter(pl.col(region_col).is_in(only_areas))
-
+        df = df.filter(pl.col(region_col).is_in(area))
         if df.is_empty():
             raise RuntimeError('check lowest merge level')
+
+    #
+    if source is not None and len(source) != 0:
+        if isinstance(source, str):
+            source = [source]
+
+        df = df.filter(pl.col('source').is_in(source))
+        if df.is_empty():
+            raise RuntimeError(f'empty df: likely incorrect source selected {source}')
+
     #
     if hemisphere != 'both':
         df = df.filter(pl.col('hemisphere') == hemisphere)
