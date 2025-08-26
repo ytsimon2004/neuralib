@@ -395,7 +395,8 @@ class RoiClassifierDataFrame(DataFrameWrapper):
                      unit: Literal['counts', 'fraction'] = 'fraction',
                      source_order: tuple[str, ...] | None = None,
                      show_col: str | None = None,
-                     animal: str | None = None) -> RoiSubregionDataFrame:
+                     animal: str | None = None,
+                     normalize: bool = True) -> RoiSubregionDataFrame:
         """
         To the subregion dataframe (example as Visual region: VIS) ::
 
@@ -414,26 +415,41 @@ class RoiClassifierDataFrame(DataFrameWrapper):
         :param source_order: source order in dataframe (rows)
         :param show_col: force set show col to which level. use case: if a low level area name is classified and show in high level (i.e., TH).
         :param animal: with animal column as subregion dataframe
+        :param normalize: do subregion normalization. True: normalize per source within region (each source sums to 100% within this region),
+            False: normalize per source to total input counts (fraction of total input for that source). Default is True
         :return:
         """
 
-        _df = self.dataframe()
-        source_order = source_order or tuple(_df['source'].unique().to_list())
+        orig_df = self.dataframe()
+        source_order = source_order or tuple(orig_df['source'].unique().to_list())
 
         # query based on lowest tree level
-        query_col = get_margin_merge_level(_df, region, 'lowest')
-        result = _df.filter(pl.col(query_col) == region)
+        query_col = get_margin_merge_level(orig_df, region, 'lowest')
 
         # show based on highest tree level
-        show_col = show_col or get_margin_merge_level(_df, region, 'highest')
+        show_col = show_col or get_margin_merge_level(orig_df, region, 'highest')
         s, lv = show_col.rsplit('_', 1)
         show_col = f'{s}_{int(lv) + 1}'
 
-        df = (result.select(['source', show_col])
-              .group_by(['source', show_col])
-              .agg(pl.col(show_col).count().alias('counts'))
-              .with_columns((pl.col('counts') / pl.col('counts').sum().over('source') * 100).alias('fraction'))
-              .sort('fraction', descending=True))
+        df = (
+            orig_df
+            .filter(pl.col(query_col) == region)
+            .select(['source', show_col])
+            .group_by(['source', show_col])
+            .agg(pl.col(show_col).count().alias('counts'))
+        )
+
+        if normalize:
+            # normalize per source within this region (each source sums to 100% within the region)
+            df = df.with_columns((pl.col('counts') / pl.col('counts').sum().over('source') * 100).alias('fraction'))
+        else:
+            # normalize per source to total input counts for that source
+            source_totals = orig_df.group_by('source').len(name='total_input_counts')
+            df = df.join(source_totals, on='source')
+            df = df.with_columns((pl.col('counts') / pl.col('total_input_counts') * 100).alias('fraction'))
+            df = df.drop('total_input_counts')
+
+        df = df.sort('fraction', descending=True)
 
         # sort
         idx = {val: idx for idx, val in enumerate(source_order)}
@@ -442,7 +458,7 @@ class RoiClassifierDataFrame(DataFrameWrapper):
         # profile
         roi_profile = (
             df.group_by('source').agg(pl.col('counts').sum().alias('counts'))
-            .join(_df.group_by('source').len(name='total'), on='source')
+            .join(orig_df.group_by('source').len(name='total'), on='source')
             .with_columns((pl.col('counts') / pl.col('total')).alias('total_fraction'))
             .sort(sort_expr)
         )
@@ -566,12 +582,14 @@ class RoiNormalizedDataFrame(DataFrameWrapper):
         """
         match backend:
             case 'cellatlas':
-                df_cellatlas = load_cellatlas().select('Volumes [mm^3]', 'acronym').rename({'acronym': self.classified_column})
+                df_cellatlas = load_cellatlas().select('Volumes [mm^3]', 'acronym').rename(
+                    {'acronym': self.classified_column})
                 return (self.join(df_cellatlas, on=self.classified_column)
                         .with_columns((pl.col('counts') / pl.col('Volumes [mm^3]')).alias('normalized')))
 
             case 'brainglobe':
-                df_bg_volume = load_bg_volumes().select('volume_mm3', 'acronym').rename({'acronym': self.classified_column})
+                df_bg_volume = load_bg_volumes().select('volume_mm3', 'acronym').rename(
+                    {'acronym': self.classified_column})
                 return (self.join(df_bg_volume, on=self.classified_column)
                         .with_columns((pl.col('counts') / pl.col('volume_mm3')).alias('normalized')))
 
