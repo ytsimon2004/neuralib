@@ -149,7 +149,7 @@ MERGE_REGION_LV2 = {
 
     # HPF
     'CA': ['CA1', 'CA2', 'CA3'],
-    'SUB': ['ProS'],  # might not correct, converge due to the area not in cellatlas (Prosubiculum)
+    # 'SUB': ['ProS'],  # might not correct, converge due to the area not in cellatlas (Prosubiculum)
 
     # Isocortex
     'SS': ['SS*'],
