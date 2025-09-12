@@ -1,5 +1,6 @@
 import datetime
-from typing import overload, Any, TypeVar, Union
+from types import UnionType
+from typing import overload, Any, TypeVar, Union, get_origin, get_args
 
 from .annotation import *
 from .expr import *
@@ -221,7 +222,7 @@ def select_from_fields(*args) -> tuple[Union[type, SqlAlias, None], list[SqlExpr
 
             fields.append(arg)
 
-        elif isinstance(arg, SqlAliasField) and isinstance(field_table:=arg.table, type):
+        elif isinstance(arg, SqlAliasField) and isinstance(field_table := arg.table, type):
             if table is None:
                 table = SqlAlias(field_table, arg.name)
 
@@ -235,7 +236,7 @@ def select_from_fields(*args) -> tuple[Union[type, SqlAlias, None], list[SqlExpr
 
         elif isinstance(arg, SqlExpr):
             if table is None:
-                table =  use_table_first(arg)
+                table = use_table_first(arg)
 
             fields.append(arg)
 
@@ -513,23 +514,31 @@ def create_table(table: type[T], *, if_not_exists=True) -> SqlStat[T]:
 def column_def(self: SqlStat, field: Field, primary: PRIMARY = None):
     self.add(f"[{field.name}]")
 
-    if field.sql_type == Any:
+    # union types handle
+    sql_type = field.sql_type
+    if get_origin(sql_type) in (Union, UnionType):
+        union_args = get_args(sql_type)
+        non_none_types = [arg for arg in union_args if arg is not type(None)]
+        if non_none_types:
+            sql_type = non_none_types[0]
+
+    if sql_type == Any:
         pass
-    elif field.sql_type == int:
+    elif sql_type == int:
         self.add('INTEGER')
-    elif field.sql_type == float:
+    elif sql_type == float:
         self.add('FLOAT')
-    elif field.sql_type == bool:
+    elif sql_type == bool:
         self.add('BOOLEAN')
-    elif field.sql_type == bytes:
+    elif sql_type == bytes:
         self.add('BLOB')
-    elif field.sql_type == str:
+    elif sql_type == str:
         self.add('TEXT')
-    elif field.sql_type == datetime.time:
+    elif sql_type == datetime.time:
         self.add('DATETIME')
-    elif field.sql_type == datetime.date:
+    elif sql_type == datetime.date:
         self.add('DATETIME')
-    elif field.sql_type == datetime.datetime:
+    elif sql_type == datetime.datetime:
         self.add('DATETIME')
     else:
         raise RuntimeError(f'field type {field.sql_type}')
