@@ -3,7 +3,10 @@ import scipy
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
-__all__ = ['plot_peri_onset_1d']
+__all__ = [
+    'peri_onset_1d',
+    'plot_peri_onset_1d'
+]
 
 
 def plot_peri_onset_1d(event_time: np.ndarray,

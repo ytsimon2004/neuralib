@@ -50,6 +50,7 @@ def iter_source_coordinates(
         hemisphere: HEMISPHERE_TYPE = 'both',
         to_brainrender: bool = True,
         source_order: tuple[Source, ...] | None = None,
+        inverse_hemisphere: bool = False,
 ) -> Iterable[SourceCoordinates]:
     """Load allen ccf roi output (merged different color channels).
 
@@ -60,6 +61,7 @@ def iter_source_coordinates(
     :param hemisphere: which brain hemisphere
     :param to_brainrender: convert the coordinates to brain render
     :param source_order: whether specify the source generator order
+    :param inverse_hemisphere: if True, then inverse ML coordinates. default is False.
     :return: Iterable of :class:`SourceCoordinates`
     """
     df = pl.read_csv(file)
@@ -90,6 +92,10 @@ def iter_source_coordinates(
 
     #
     coords = as_coords_array(df)
+
+    if inverse_hemisphere:
+        coords[:, 2] *= -1
+
     if to_brainrender:
         coords = allen_to_brainrender_coord(coords)
 
