@@ -429,7 +429,8 @@ class RoiClassifierDataFrame(DataFrameWrapper):
         # show based on highest tree level
         show_col = show_col or get_margin_merge_level(orig_df, region, 'highest')
         s, lv = show_col.rsplit('_', 1)
-        show_col = f'{s}_{int(lv) + 1}'
+        next_lv = f'{s}_{int(lv) + 1}'
+        show_col = f'{s}_{int(lv)}' if next_lv not in orig_df.columns else next_lv
 
         df = (
             orig_df
