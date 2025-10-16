@@ -103,7 +103,7 @@ class PersistenceConcatError(Exception):
 def validate_concat_etl_persistence(data: list[T], field_check: tuple[str, ...] | None = None) -> None:
     """
 
-    :param data:
+    :param data: list of persistence instance
     :param field_check: field name under persistence cls for checking
     :return:
     """
