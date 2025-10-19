@@ -130,20 +130,30 @@ class AxesExtendHelper:
 
     def __init__(self,
                  ax: Axes,
-                 mode: Literal['both', 'x', 'y'] = 'both'):
+                 mode: Literal['both', 'x', 'y'] = 'both',
+                 x_position: Literal['top', 'bottom'] = 'top',
+                 y_position: Literal['right', 'left'] = 'right'):
         """
 
         :param ax: :class:`matplotlib.axes.Axes`
         :param mode: extended axis {'both', 'x', 'y'}. default is to add `both`
+        :param x_position: position of x-axis marginal plot {'top', 'bottom'}. default is 'top'
+        :param y_position: position of y-axis marginal plot {'right', 'left'}. default is 'right'
         """
         ax.set(aspect=1)
         if mode in ('both', 'x'):
-            self.ax_x = ax.inset_axes((0, 1.05, 1, 0.25), sharex=ax)
+            if x_position == 'top':
+                self.ax_x = ax.inset_axes((0, 1.05, 1, 0.25), sharex=ax)
+            else:  # bottom
+                self.ax_x = ax.inset_axes((0, -0.30, 1, 0.25), sharex=ax)
         else:
             self.ax_x = None
 
         if mode in ('both', 'y'):
-            self.ax_y = ax.inset_axes((1.05, 0, 0.25, 1), sharey=ax)
+            if y_position == 'right':
+                self.ax_y = ax.inset_axes((1.05, 0, 0.25, 1), sharey=ax)
+            else:  # left
+                self.ax_y = ax.inset_axes((-0.30, 0, 0.25, 1), sharey=ax)
         else:
             self.ax_y = None
 
