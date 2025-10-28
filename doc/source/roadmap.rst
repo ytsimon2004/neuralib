@@ -6,15 +6,8 @@ Roadmap
 
 This page outlines the planned features, improvements, and roadmap for the ongoing development of the project.
 
+
 Short-Term Goals (Next 1–3 Months)
-----------------------------------
-
-- Isolate general-purpose utility modules into an independent PyPI project, making this repository more neuroscience-specific:
-
-  - ``neuralib.sqlp``
-
-
-Mid-Term Goals (3–6 Months)
 ---------------------------
 
 - Migrate to Python ≥ 3.11 to support more recent dependencies and tooling.

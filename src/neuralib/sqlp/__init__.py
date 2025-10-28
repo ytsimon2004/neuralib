@@ -1,3 +1,12 @@
+import warnings
+
+warnings.warn(
+    "The 'sqlp' module is deprecated and will be removed in a separated module. "
+    "Use 'pip install sqlclz' instead.'",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from . import util
 from .annotation import *
 from .cli import *

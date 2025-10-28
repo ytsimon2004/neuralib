@@ -78,6 +78,11 @@ def setup_clogger(level: int | str = 11,
     )
 
     logger = logging.getLogger(caller_name)
+
+    # Clear existing handlers to prevent duplicates (crucial for interactive environments like Jupyter/Colab)
+    if logger.handlers:
+        logger.handlers.clear()
+
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
