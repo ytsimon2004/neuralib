@@ -1,5 +1,5 @@
 import pytest
-from polars.polars import ColumnNotFoundError
+from polars.exceptions import ColumnNotFoundError
 from polars.testing import assert_frame_equal
 
 from neuralib.io.dataset import load_example_dlc_h5, load_example_dlc_csv

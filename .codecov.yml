@@ -15,7 +15,6 @@ coverage:
         informational: false
 
 ignore:
-  - "neuralib/argp/*"
   - "neuralib/io/dataset/*"
   - "neuralib/locomotion/*"
   - "neuralib/segmentation/*"
