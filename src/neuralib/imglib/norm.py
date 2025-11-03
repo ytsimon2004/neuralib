@@ -1,9 +1,11 @@
+import cv2
 import numpy as np
 
 __all__ = [
     'normalize_sequences',
     'handle_invalid_value',
-    'get_percentile_value'
+    'get_percentile_value',
+    'enhance_blood_vessels'
 ]
 
 
@@ -60,3 +62,33 @@ def get_percentile_value(im: np.ndarray,
     im = im.flatten()
     lb, up = perc_interval
     return np.percentile(im, lb), np.percentile(im, up)
+
+
+def enhance_blood_vessels(image: np.ndarray, enhance_contrast: bool = True) -> np.ndarray:
+    """
+    Enhance blood vessel patterns in the image.
+
+    :param image: Input image (grayscale or color)
+    :param enhance_contrast: Whether to apply CLAHE for contrast enhancement
+    :return: Enhanced grayscale image with blood vessels highlighted
+    """
+    # grayscale
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image.copy()
+
+    # normalize to 0-255 range
+    gray = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+    # apply CLAHE for contrast enhancement
+    if enhance_contrast:
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+    else:
+        enhanced = gray
+
+    # apply bilateral filter to preserve edges while reducing noise
+    filtered = cv2.bilateralFilter(enhanced, 9, 75, 75)
+
+    return filtered
