@@ -159,8 +159,7 @@ class GoogleWorkSheet:
         return self._row(data), self._col(head)
 
     # noinspection PyTypeChecker
-    def get_cell(self,
-                 data: DataIndex,
+    def get_cell(self, data: DataIndex,
                  head: str,
                  value_render_option: VALUE_RENDER_OPT = 'FORMATTED_VALUE'):
         """
@@ -201,26 +200,38 @@ class GoogleWorkSheet:
             if len(value) != len(self.primary_key_list):
                 raise ValueError()
 
-            data = []
-            for it, v in enumerate(value):
-                data.append({'range': rowcol_to_a1(it + 2, col), 'values': [[v]]})
-                fprint(f'UPDATES: {rowcol_to_a1(it + 2, col)} from {self.get_cell(it, head)} -> {v}', vtype='io')
+            # Batch read old values first (single API call)
+            old_values = self.values(head)
 
-            self._worksheet.batch_update(data)
+            batch_updates = []
+            for it, v in enumerate(value):
+                old_val = old_values[it] if it < len(old_values) else None
+                batch_updates.append({'range': rowcol_to_a1(it + 2, col), 'values': [[v]]})
+                fprint(f'UPDATES: {rowcol_to_a1(it + 2, col)} from {old_val} -> {v}', vtype='io')
+
+            self._worksheet.batch_update(batch_updates)
 
         elif isinstance(row, int):
+            old_val = self.get_cell(data, head)
             self._worksheet.update_cell(row, col, value)
+            fprint(f'UPDATES: {rowcol_to_a1(row, col)} from {old_val} -> {value}', vtype='io')
 
         else:
             if len(value) != len(row):
                 raise ValueError()
 
-            data = []
-            for it, v in zip(row, value):
-                data.append({'range': rowcol_to_a1(it, col), 'values': [[v]]})
-                fprint(f'UPDATES: {rowcol_to_a1(it, col)} from {self.get_cell(it - 2, head)}-> {v}', vtype='io')
+            # Batch read old values first (pass original data to get_cell for batch read)
+            old_values = self.get_cell(data, head)
+            if not isinstance(old_values, list):
+                old_values = [old_values]
 
-            self._worksheet.batch_update(data)
+            batch_updates = []
+            for idx, (it, v) in enumerate(zip(row, value)):
+                old_val = old_values[idx] if idx < len(old_values) else None
+                batch_updates.append({'range': rowcol_to_a1(it, col), 'values': [[v]]})
+                fprint(f'UPDATES: {rowcol_to_a1(it, col)} from {old_val}-> {v}', vtype='io')
+
+            self._worksheet.batch_update(batch_updates)
 
     def clear(self):
         """Clears all cells in the worksheet"""
