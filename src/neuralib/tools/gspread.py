@@ -170,6 +170,8 @@ class GoogleWorkSheet:
         :param value_render_option: ``VALUE_RENDER_OPT``: {'FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'}
         :return:
         """
+        from gspread.utils import rowcol_to_a1
+
         if value_render_option not in get_args(VALUE_RENDER_OPT):
             raise ValueError('')
 
@@ -180,7 +182,18 @@ class GoogleWorkSheet:
         elif isinstance(row, int):
             return self._worksheet.cell(row, col, value_render_option=value_render_option).value
         else:
-            return [self._worksheet.cell(it, col, value_render_option=value_render_option).value for it in row]
+            # single API call
+            sheet_title = self._worksheet.title
+            ranges = [f"'{sheet_title}'!{rowcol_to_a1(r, col)}" for r in row]
+            batch_result = self._worksheet.spreadsheet.values_batch_get(
+                ranges,
+                params={'valueRenderOption': value_render_option}
+            )
+            # {'valueRanges': [{'values': [[val]]}, ...]}
+            return [
+                vr.get('values', [[None]])[0][0] if vr.get('values') else None
+                for vr in batch_result.get('valueRanges', [])
+            ]
 
     def update_cell(self, data: DataIndex,
                     head: str,
