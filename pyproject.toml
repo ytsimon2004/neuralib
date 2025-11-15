@@ -112,45 +112,6 @@ doc = [
     "sphinx", "nbsphinx", "sphinx-toolbox", "sphinx-rtd-theme", "sphinx-prompt", "sphinx_copybutton"
 ]
 
-# -----------------------------------------------------------------------------
-# Testing and Coverage Configuration
-# -----------------------------------------------------------------------------
-
-[tool.coverage.run]
-source = ["neuralib"]
-omit = [
-    "*/neuralib/io/dataset/*",
-    "*/neuralib/locomotion/*",
-    "*/neuralib/segmentation/*",
-    "*/neuralib/model/*",
-    "*/neuralib/atlas/brainrender/*",
-    "*/neuralib/dashboard/*",
-    "*/neuralib/persistence/*",
-    "*/neuralib/tools/*",
-    "*/neuralib/util/*"
-]
-
-[tool.coverage.report]
-omit = [
-    "*/neuralib/io/dataset/*",
-    "*/neuralib/locomotion/*",
-    "*/neuralib/segmentation/*",
-    "*/neuralib/model/*",
-    "*/neuralib/atlas/brainrender/*",
-    "*/neuralib/dashboard/*",
-    "*/neuralib/persistence/*",
-    "*/neuralib/tools/*",
-    "*/neuralib/util/*"
-]
-
-exclude_also = [
-    '@overload',
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if TYPE_CHECKING:",
-    "if __name__ == \"__main__\":",
-    "@abc.abstractmethod"
-]
 
 [tool.pytest.ini_options]
 testpaths = ["test/unit"]

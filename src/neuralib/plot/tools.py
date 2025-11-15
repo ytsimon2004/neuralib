@@ -128,32 +128,39 @@ class AxesExtendHelper:
     ax_x: Axes | None
     ax_y: Axes | None
 
-    def __init__(self,
-                 ax: Axes,
+    def __init__(self, ax: Axes,
                  mode: Literal['both', 'x', 'y'] = 'both',
                  x_position: Literal['top', 'bottom'] = 'top',
-                 y_position: Literal['right', 'left'] = 'right'):
+                 y_position: Literal['right', 'left'] = 'right',
+                 x_gap: float = 0.05,
+                 y_gap: float = 0.05,
+                 x_size: float = 0.25,
+                 y_size: float = 0.25):
         """
 
         :param ax: :class:`matplotlib.axes.Axes`
         :param mode: extended axis {'both', 'x', 'y'}. default is to add `both`
         :param x_position: position of x-axis marginal plot {'top', 'bottom'}. default is 'top'
         :param y_position: position of y-axis marginal plot {'right', 'left'}. default is 'right'
+        :param x_gap: gap between main axis and x marginal plot (default 0.05)
+        :param y_gap: gap between main axis and y marginal plot (default 0.05)
+        :param x_size: height of x marginal plot (default 0.25)
+        :param y_size: width of y marginal plot (default 0.25)
         """
         ax.set(aspect=1)
         if mode in ('both', 'x'):
             if x_position == 'top':
-                self.ax_x = ax.inset_axes((0, 1.05, 1, 0.25), sharex=ax)
+                self.ax_x = ax.inset_axes((0, 1 + x_gap, 1, x_size), sharex=ax)
             else:  # bottom
-                self.ax_x = ax.inset_axes((0, -0.30, 1, 0.25), sharex=ax)
+                self.ax_x = ax.inset_axes((0, -(x_size + x_gap), 1, x_size), sharex=ax)
         else:
             self.ax_x = None
 
         if mode in ('both', 'y'):
             if y_position == 'right':
-                self.ax_y = ax.inset_axes((1.05, 0, 0.25, 1), sharey=ax)
+                self.ax_y = ax.inset_axes((1 + y_gap, 0, y_size, 1), sharey=ax)
             else:  # left
-                self.ax_y = ax.inset_axes((-0.30, 0, 0.25, 1), sharey=ax)
+                self.ax_y = ax.inset_axes((-(y_size + y_gap), 0, y_size, 1), sharey=ax)
         else:
             self.ax_y = None
 
