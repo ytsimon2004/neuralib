@@ -1,6 +1,6 @@
 [project]
 name = "neura-library"
-version = "0.5.4"
+version = "0.5.5"
 requires-python = ">=3.10"
 description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
 authors = [
@@ -26,7 +26,6 @@ classifiers = [
 # Installation
 # -----------------------------------------------------------------------------
 
-# TODO add version info
 
 dependencies = [
     "attrs >= 25.3.0",
