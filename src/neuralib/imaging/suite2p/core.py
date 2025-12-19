@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import datetime
-from pathlib import Path
-from typing import Literal, TypedDict, final
-
 import attrs
+import datetime
 import numpy as np
 import polars as pl
+from pathlib import Path
+from typing import Literal, TypedDict, final
 from typing_extensions import Self
 
 from neuralib.imaging.registration import CellularCoordinates, get_cellular_coordinate
@@ -36,7 +35,7 @@ def read_suite2p(directory: PathLike, *,
                  red_cell_threshold: float = 0.65,
                  channel: int = 0,
                  runtime_check_frame_rate: float | None = 30.0) -> Suite2PResult:
-    """
+    r"""
     Load suite2p result from directory
 
     :param directory: Directory contain all the s2p output files. e.g., \*/suite2p/plane[P]
@@ -115,7 +114,7 @@ class Suite2PResult:
              red_cell_threshold: float = 0.65,
              channel: int = 0,
              runtime_check_frame_rate: float | None = 30.0) -> Self:
-        """
+        r"""
         Load suite2p result from directory
 
         :param directory: Directory contain all the s2p output files. e.g., \*/suite2p/plane[P]
