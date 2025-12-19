@@ -38,7 +38,7 @@ def test_run_plot_2p(mock):
     vel = BehavioralVT('velocity', t, cache['velocity'])
     pupil = BehavioralVT('pupil', t, cache['pupil_area'])
     #
-    plot_rastermap(ret, t, time_range=(0, 300), behaviors=[pos, vel, pupil])
+    plot_rastermap(ret, t, time_range=(0, 300), covars=[pos, vel, pupil])
     plot_cellular_spatial(ret, xpos=xy[0], ypos=xy[1])
 
 
