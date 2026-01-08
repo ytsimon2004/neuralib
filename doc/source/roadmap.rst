@@ -10,8 +10,7 @@ This page outlines the planned features, improvements, and roadmap for the ongoi
 Short-Term Goals (Next 1–3 Months)
 ---------------------------
 
-- Migrate to Python ≥ 3.11 to support more recent dependencies and tooling.
-- Initialize the ``neuralib.ephys`` module to mainly support in vivo electrophysiology data processing.
+
 
 Community Involvement
 ---------------------
