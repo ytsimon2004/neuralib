@@ -12,7 +12,6 @@ from typing_extensions import Self
 from neuralib.model.rastermap import RasterMapResult
 from neuralib.plot import plot_figure
 from neuralib.typing import PathLike
-from neuralib.util.deprecation import deprecated_class
 
 __all__ = [
     'plot_rastermap',
@@ -292,33 +291,5 @@ class Covariant(NamedTuple):
         if self.dtype == 'event':
             raise ValueError('method only available for continuous dtype')
 
-        v = interp1d(self.time, self.value, bounds_error=False, fill_value=0)(act_time)
-        return self._replace(time=act_time, value=v)
-
-
-@deprecated_class(new='neuralib.model.rastermap.plot.Covariant', removal_version='0.6.0')
-class BehavioralVT(NamedTuple):
-    name: str
-    """name of the behavioral variable"""
-    time: np.ndarray
-    """time array. `Array[float, T]`"""
-    value: np.ndarray
-    """value array. `Array[float, T]`"""
-
-    def masking_time(self, t: tuple[float, float]) -> Self:
-        """
-        mask given time range
-        :param t: (START,END) time range
-        :return:
-        """
-        mx = np.logical_and(t[0] < self.time, self.time < t[1])
-        return self._replace(time=self.time[mx], value=self.value[mx])
-
-    def interp_activity(self, act_time: np.ndarray) -> Self:
-        """
-        interpolation to another activity array. i.e., neural activity
-        :param act_time: activity array. `Array[float, T']`
-        :return:
-        """
         v = interp1d(self.time, self.value, bounds_error=False, fill_value=0)(act_time)
         return self._replace(time=act_time, value=v)
