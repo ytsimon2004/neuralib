@@ -10,7 +10,6 @@ Module for non-scientific purpose
    imglib
    io
    persistence
-   sqlp
    tool
 
 

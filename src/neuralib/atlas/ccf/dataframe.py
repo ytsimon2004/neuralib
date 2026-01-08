@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Literal, Sequence
-
 import numpy as np
 import polars as pl
 from polars.exceptions import ColumnNotFoundError
-from typing_extensions import Self
+from typing import Literal, Sequence
+from typing import Self
 
 from neuralib.atlas.cellatlas import load_cellatlas
 from neuralib.atlas.data import load_bg_volumes

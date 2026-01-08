@@ -21,7 +21,6 @@ neuralib utility module
     :maxdepth: 1
 
     neuralib.persistence
-    neuralib.sqlp
     neuralib.dashboard
     neuralib.plot
     neuralib.imglib

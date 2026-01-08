@@ -7,7 +7,7 @@ import pytest
 from neuralib.imglib.io import load_sequence
 from neuralib.io.dataset import load_example_rastermap_2p_result, load_example_rastermap_2p_cache
 from neuralib.model.rastermap import RasterMapResult, save_rastermap, read_rastermap
-from neuralib.model.rastermap.plot import BehavioralVT, plot_rastermap, plot_cellular_spatial, plot_wfield_spatial
+from neuralib.model.rastermap.plot import plot_rastermap, plot_cellular_spatial, plot_wfield_spatial, Covariant
 from neuralib.model.rastermap.run import run_rastermap
 
 
@@ -34,10 +34,9 @@ def test_run_plot_2p(mock):
     xy = cache['xy_pos']
 
     ret = run_rastermap(cache['neural_activity'], bin_size=50)
-    pos = BehavioralVT('position', t, cache['position'])
-    vel = BehavioralVT('velocity', t, cache['velocity'])
-    pupil = BehavioralVT('pupil', t, cache['pupil_area'])
-    #
+    pos = Covariant('position', dtype='continuous', time=t, value=cache['position'])
+    vel = Covariant('velocity', dtype='continuous', time=t, value=cache['velocity'])
+    pupil = Covariant('pupil', dtype='continuous', time=t, value=cache['pupil_area'])
     plot_rastermap(ret, t, time_range=(0, 300), covars=[pos, vel, pupil])
     plot_cellular_spatial(ret, xpos=xy[0], ypos=xy[1])
 

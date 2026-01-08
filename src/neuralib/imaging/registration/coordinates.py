@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Sequence, Literal
-
 import attrs
 import numpy as np
 from matplotlib.patches import Polygon
-from typing_extensions import Self
+from typing import Self
+from typing import Sequence, Literal
 
 from neuralib.util.unstable import unstable
 

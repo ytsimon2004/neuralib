@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import pickle
-from typing import TypedDict
-
 import h5py
 import numpy as np
+import pickle
 import polars as pl
-from typing_extensions import Self
+from typing import Self
+from typing import TypedDict
 
 from neuralib.typing import PathLike
 from neuralib.util.dataframe import DataFrameWrapper

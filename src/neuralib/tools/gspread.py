@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Union, Any, get_args, Final, Literal
 
 import gspread
 import numpy as np
 import pandas as pd
 import polars as pl
-from typing_extensions import Self
+from typing import Self
+from typing import Union, Any, get_args, Final, Literal
 
 from neuralib.typing import PathLike, DataFrame
 from neuralib.util.verbose import fprint

@@ -5,7 +5,7 @@ import polars as pl
 from brainglobe_atlasapi import BrainGlobeAtlas
 from brainrender.actors import Points
 from scipy.interpolate import interp1d
-from typing_extensions import Self
+from typing import Self
 
 from argclz import argument
 from neuralib.atlas.brainrender.core import BrainRenderCLI

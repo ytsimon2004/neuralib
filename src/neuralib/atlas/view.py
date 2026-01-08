@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import abc
-import math
-import warnings
-from typing import Final, ClassVar, Literal, get_args
-
 import attrs
+import math
 import matplotlib.pyplot as plt
 import numpy as np
+import warnings
 from brainglobe_atlasapi import BrainGlobeAtlas
 from matplotlib.axes import Axes
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
-from typing_extensions import Self
+from typing import Final, ClassVar, Literal, get_args
+from typing import Self
 
 from neuralib.atlas.data import ATLAS_NAME
 from neuralib.atlas.typing import PLANE_TYPE
