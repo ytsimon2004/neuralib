@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 from numpy.lib.npyio import NpzFile
-from typing_extensions import Self, Literal
+from typing import Self, Literal
 
 from neuralib.typing import PathLike
 

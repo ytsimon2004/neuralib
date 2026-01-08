@@ -21,7 +21,7 @@ jobs:
       - name: Set up Python and uv
         uses: astral-sh/setup-uv@v6.3.1
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Build wheels/sdist with uv
         run: uv build --no-sources

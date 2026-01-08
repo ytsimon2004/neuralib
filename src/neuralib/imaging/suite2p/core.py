@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import attrs
 import datetime
 import numpy as np
 import polars as pl
-from pathlib import Path
 from typing import Literal, TypedDict, final
-from typing_extensions import Self
+from typing import Self
 
 from neuralib.imaging.registration import CellularCoordinates, get_cellular_coordinate
 from neuralib.typing import PathLike

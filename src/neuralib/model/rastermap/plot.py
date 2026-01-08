@@ -7,7 +7,7 @@ from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from scipy.interpolate import interp1d
 from typing import NamedTuple, Literal
-from typing_extensions import Self
+from typing import Self
 
 from neuralib.model.rastermap import RasterMapResult
 from neuralib.plot import plot_figure

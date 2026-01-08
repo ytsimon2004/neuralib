@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from typing_extensions import Self
+from typing import Self
 
 from neuralib.typing import PathLike
 

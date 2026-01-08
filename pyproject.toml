@@ -1,7 +1,7 @@
 [project]
 name = "neura-library"
-version = "0.5.5"
-requires-python = ">=3.10"
+version = "0.6.0"
+requires-python = ">=3.11"
 description = "Utility tools for system neuroscience research, including Open Source Wrapper or Parser"
 authors = [
     { name = "Yu-Ting Wei", email = "ytsimon2004@gmail.com" },
@@ -11,9 +11,9 @@ license = { file = "LICENSE" }
 readme = "README.md"
 keywords = ["Neuroscience", "visual neuroscience", "cellular imaging", "brain mapping", "spatial navigation"]
 classifiers = [
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
