@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Literal
 
 import brainrender
 import numpy as np
 import polars as pl
 from brainglobe_atlasapi.bg_atlas import BrainGlobeAtlas
 from brainrender.actors import Points
-from typing_extensions import Self
+from typing import Literal
+from typing import Self
 
 from argclz import AbstractParser, argument, str_tuple_type, validator
 from neuralib.atlas.brainrender.util import get_color

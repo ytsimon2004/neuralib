@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import NamedTuple, Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
 import vedo
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle
-from typing_extensions import Self, overload
+from typing import NamedTuple, Iterator
+from typing import Self, overload
 
 from argclz import AbstractParser, argument
 from neuralib.typing import PathLike

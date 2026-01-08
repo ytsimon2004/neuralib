@@ -1,9 +1,8 @@
-from typing import NamedTuple
-
 import numpy as np
 from scipy import stats
 from scipy.interpolate import interp1d
-from typing_extensions import Self
+from typing import NamedTuple
+from typing import Self
 
 from neuralib.util.segments import segment_epochs, segment_duration, segment_contains
 from neuralib.util.unstable import unstable

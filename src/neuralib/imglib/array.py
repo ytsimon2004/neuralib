@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal, Sequence
-
 import cv2
 import numpy as np
-from typing_extensions import Self
+from typing import Literal, Sequence
+from typing import Self
 
 from neuralib.typing import PathLike
 

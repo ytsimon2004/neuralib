@@ -11,4 +11,4 @@ neuralib.model.rastermap.plot
    plot_cellular_spatial
    plot_wfield_spatial
    RasterMapPlot
-   BehavioralVT
+   Covariant

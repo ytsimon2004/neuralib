@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from os import PathLike
-from typing import TypedDict, Any
 
 import attrs
 import numpy as np
-from typing_extensions import Self
+from typing import Self
+from typing import TypedDict, Any
 
 from neuralib.util.verbose import print_load, print_save
 
