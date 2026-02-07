@@ -1,5 +1,13 @@
 # neuralib
 
+> **This package has been archived.** The `neura-library` PyPI package is no longer maintained.
+> Please use the new modular packages from [neuralib2](https://github.com/ytsimon2004/neuralib2):
+> - [neuralib-atlas](https://pypi.org/project/neuralib-atlas/)
+> - [neuralib-imaging](https://pypi.org/project/neuralib-imaging/)
+> - [neuralib-parser](https://pypi.org/project/neuralib-parser/)
+> - [neuralib-metric](https://pypi.org/project/neuralib-metric/)
+> - [neuralib-utils](https://pypi.org/project/neuralib-utils/)
+
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/neura-library)](https://pypi.org/project/neura-library/)
 [![PyPI version](https://badge.fury.io/py/neura-library.svg)](https://badge.fury.io/py/neura-library)
 [![Downloads](https://static.pepy.tech/badge/neura-library)](https://pepy.tech/project/neura-library)
